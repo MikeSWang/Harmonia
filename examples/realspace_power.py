@@ -64,7 +64,7 @@ k_, Nk_, Pk_, Pshot_, Pln_ = [], [], [], [], []
 for run in range(niter):
     # Generate data and random catalogues.
     data = LognormalCatalogue(
-        Plin, nbar, b=b, boxsize=2*expand*rmax, nmesh=meshgen
+        Plin, nbar, bias=b, boxsize=2*expand*rmax, nmesh=meshgen
         )
     if is_case_mock:
         nrand = contrast*nbar

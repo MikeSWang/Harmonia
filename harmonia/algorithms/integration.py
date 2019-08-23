@@ -18,7 +18,7 @@ Numerical integration against Fourier basis functions using `scipy.integrate`.
     radial_sphint_besselj
     angular_sphint_harmonic
 
-.. todo::
+.. topic:: Important note
 
     Cautious use of quadrature integration for spherical Bessel functions.
 
@@ -58,12 +58,12 @@ def _angular_integrand(phi, theta, afunc, complex_part):
     afunc : callable
         Angular function to be integrated.
     complex_part : {'real', 'imag'}
-        Real or imaginary part of the complex value.
+        Real or imaginary part.
 
     Returns
     -------
     float, array_like
-        Complex part of the angular integrand value.
+        Real or imaginary part of the complex angular integrand value.
 
     Raises
     ------
@@ -72,16 +72,14 @@ def _angular_integrand(phi, theta, afunc, complex_part):
 
     Notes
     -----
-    Angular coordinates are in reverse order in arguments for outward double
-    integration.
+    Angular arguments are in reverse order for outward double integration.
 
     """
-    jacobian = np.abs(np.sin(theta))
-
     if complex_part.lower() == 'real':
-        return jacobian * afunc(theta, phi).real
+        return np.abs(np.sin(theta)) * afunc(theta, phi).real
     if complex_part.lower() == 'imag':
-        return jacobian * afunc(theta, phi).imag
+        return np.abs(np.sin(theta)) * afunc(theta, phi).imag
+
     raise ValueError("`complex_part` neither 'real' nor 'imag'. ")
 
 
@@ -159,10 +157,10 @@ def radial_sphint_besselj(rfunc, ell, k, rmax, *args, **kwargs):
         Integral value
 
     """
-    def kernel(r):
+    def _kernel(r):
         return rfunc(r, *args, **kwargs) * sph_besselj(ell, k*r)
 
-    return radial_spherical_int(kernel, rmax)
+    return radial_spherical_int(_kernel, rmax)
 
 
 def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
@@ -193,10 +191,10 @@ def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
     [0, 2\pi)`.
 
     """
-    def kernel(theta, phi):
+    def _kernel(theta, phi):
         return afunc(theta, phi, *args, **kwargs) \
             * sph_harmonic(ell, m, theta, phi)
 
     if conjugate:
-        return np.conj(angular_spherical_int(kernel))
-    return angular_spherical_int(kernel)
+        return np.conj(angular_spherical_int(_kernel))
+    return angular_spherical_int(_kernel)

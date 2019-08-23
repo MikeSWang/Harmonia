@@ -81,9 +81,8 @@ def sph_besselj_root(ell, nmax, only=True, deriv=False):
         def _deriv(x):
             return sph_besselj(ell, x, deriv=True)
 
-        # Empirically set root range in [`ell`+1, max{4, `ell`}].
+        # Empirically set root search range [`ell`+1, max{4, `ell`}].
         u_ell = bisect_roots(_deriv, ell+1, nmax*max(4, ell), maxnum=nmax)
-
         if only:
             u_ell = u_ell[-1]
 
@@ -113,7 +112,7 @@ def sph_harmonic(ell, m, theta, phi):
 
     Warnings
     --------
-    The ordering of the arguments differ from that of
+    The ordering of the arguments differs from that of
     :func:`scipy.special.sph_harm`.
 
     """

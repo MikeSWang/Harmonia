@@ -1,7 +1,10 @@
 import pytest
+import sys
+sys.path.insert(0, "../")
+
 import numpy as np
 
-from concordia.algorithms.discretise import DiscreteSpectrum
+from harmonia.algorithms.discretisation import DiscreteSpectrum
 
 TEST_PARAMS = dict(
     radius = 100.,
@@ -25,7 +28,7 @@ def test_discretisation(TestInstance):
     assert TestInstance.depths == [3, 2, 2, 1, 1, 1]
     assert TestInstance.nmodes == sum(
         [(2*ell + 1) * nmax
-         for ell, nmax in zip(TestInstance.degree, TestInstance.depths)]
+         for ell, nmax in zip(TestInstance.degrees, TestInstance.depths)]
         )
     assert np.allclose(
         TestInstance.roots[TEST_CASE_ELL_INDEX],

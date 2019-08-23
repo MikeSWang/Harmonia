@@ -1,9 +1,8 @@
-import sys.path
+import sys
 sys.path.insert(0, "../")
 
 from argparse import ArgumentParser
 from os.path import basename, splitext
-from sys import argv
 
 from harmonia.collections import format_float as ff, harmony
 
@@ -17,7 +16,7 @@ def get_filename(filepath):
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
-fname = get_filename(argv)
+fname = get_filename(sys.argv)
 fdir = "{}/".format(fname)
 
 

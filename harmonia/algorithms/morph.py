@@ -214,8 +214,8 @@ class SphericalArray:
 
         if collapse:
             if not empty_flag:
-                data_arr = self._subarr_collapse(data_arr, 'data')
-            indx_arr = self._subarr_collapse(indx_arr, 'index')
+                data_arr = self.collapse_subarr(data_arr, 'data')
+            indx_arr = self.collapse_subarr(indx_arr, 'index')
 
         # Vectorisation.
         transpose = (axis_order == 'lnm')  # additional transpose step
@@ -229,7 +229,7 @@ class SphericalArray:
         if axis_order == 'k':  # additional ordering step
             roots = self.roots
             if not collapse:
-                roots = self._subarr_repeat(
+                roots = self.repeat_subarr(
                     roots, 'data', degrees=self.degrees
                     )
             order = np.argsort(self._flatten(roots, 'data'))
@@ -239,13 +239,14 @@ class SphericalArray:
 
         return data_flatarr, indx_flatarr
 
-    def refold(self, arr, in_struct, subarr_type):
-        """Return an array to its natural structure.
+    def refold(self, flatarr, in_struct, subarr_type):
+        """Return a flattened array to its natural structure which is taken
+        to be the same as :attr:`init_array`.
 
         Parameters
         ----------
         arr : array_like
-            Array to be refolded.
+            Flat array to be refolded.
         in_struct : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Input structure.
         subarr_type : {'data', 'index'}
@@ -257,41 +258,39 @@ class SphericalArray:
         list of tuple or float, array_like
             Refolded natural array.
 
-        """
-        if in_struct in ['natural', 'lmn']:
-            return arr
-        if in_struct == 'lnm':
-            return self._subarr_transpose(arr, subarr_type)
-        if in_struct == 'ln':
-            return self._subarr_repeat(
-                arr, subarr_type, degrees=self.degrees
-                )
+        Raises
+        ------
+        ValueError
+            If `in_struct` is not a valid string.
 
-        # Deal with 'scale' or 'k' structures.
+        """
         if subarr_type == 'index':
             return self.init_indices
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             _, ordered_indx = self.unfold(in_struct)
-        if in_struct == 'k':
+
+        if in_struct in ['natural', 'lmn', 'lnm', 'k']:
             retarr = [
                 [[None for n in range(nmax)]
                  for m in range(-ell, ell+1)]
                 for ell, nmax in zip(self.degrees, self.depths)
                 ]
-            for indx, entry in zip(ordered_indx, arr):
+            for indx, entry in zip(ordered_indx, flatarr):
                 ellidx, midx, nidx = indx[0], indx[1] + indx[0], indx[-1] - 1
                 retarr[ellidx][midx][nidx] = entry
-        elif in_struct == 'scale':
+        elif in_struct in ['ln', 'scale']:
             retarr = [
                 [None for n in range(nmax)]
                 for ell, nmax in zip(self.degrees, self.depths)
                 ]
-            for indx, entry in zip(ordered_indx, arr):
+            for indx, entry in zip(ordered_indx, flatarr):
                 ellidx, nidx = indx[0], indx[-1] - 1
                 retarr[ellidx][nidx] = entry
-            retarr = self._subarr_repeat(retarr, 'data', degrees=self.degrees)
+            retarr = self.repeat_subarr(retarr, 'data', degrees=self.degrees)
+        else:
+            raise ValueError("`in_struct` is invalid. ")
 
         return retarr
 
@@ -332,13 +331,13 @@ class SphericalArray:
         if out_struct == 'lmn':
             rearr = natarr
         if out_struct == 'lnm':
-            rearr = self._subarr_transpose(arr, subarr_type=subarr_type)
+            rearr = self.transpose_subarr(arr, subarr_type=subarr_type)
         if out_struct == 'ln':
-            rearr = self._subarr_collapse(arr, subarr_type=subarr_type)
+            rearr = self.collapse_subarr(arr, subarr_type=subarr_type)
         if out_struct == 'k':
             rearr = self._flatten(natarr, subarr_type)
             order = np.argsort(self._flatten(
-                self._subarr_repeat(self.roots, 'data', degrees=self.degrees),
+                self.repeat_subarr(self.roots, 'data', degrees=self.degrees),
                 'data'
                 ))
             if subarr_type == 'data':
@@ -347,7 +346,7 @@ class SphericalArray:
                 rearr = [rearr[iord] for iord in order]
         if out_struct == 'scale':
             rearr = self._flatten(
-                self._subarr_collapse(natarr, subarr_type), subarr_type
+                self.collapse_subarr(natarr, subarr_type), subarr_type
                 )
             order = np.argsort(self._flatten(self.roots, 'data'))
             if subarr_type == 'data':
@@ -357,66 +356,8 @@ class SphericalArray:
 
         return rearr
 
-    def _flatten(self, arr, subarr_type, subarr_trans=False):
-        """Flatten a natural structure array.
-
-        Parameters
-        ----------
-        arr : list of float or tuple, array_like
-            Natural structure array.
-        subarr_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
-        subarr_trans : bool, optional
-            If `True` (default is `False`), each subarray is flattened along
-            the columns rather than rows by a transposition.
-
-        Returns
-        -------
-        float or tuple, array_like
-            Flat 1-d array.
-
-        Raises
-        ------
-        ValueError
-            If `subarr_type` is neither ``'data'`` nor ``'index'``.
-
-        """
-        if subarr_trans:
-            arr = self._subarr_transpose(arr, subarr_type)
-
-        if subarr_type == 'data':
-            return np.concatenate(
-                [np.array(arrblock).flatten() for arrblock in arr]
-                )
-        if subarr_type == 'index':
-            return [
-                entry for block in arr for line in block for entry in line
-                ]
-
-        raise ValueError("Invalid `subarr_type` value. ")
-
     @staticmethod
-    def _alias(structname):
-        """Replace aliases of stucture names by the default structure name.
-
-        Parameters
-        ----------
-        structname : str
-            Array structure name.
-
-        Returns
-        -------
-        str
-            Equivalent array structure name.
-
-        """
-        if structname == 'natural':
-            return 'lmn'
-        return structname
-
-    @staticmethod
-    def _subarr_transpose(arr, subarr_type):
+    def transpose_subarr(arr, subarr_type):
         """Transpose array elements in a list.
 
         Parameters
@@ -446,7 +387,7 @@ class SphericalArray:
         raise ValueError("Invalid `subarr_type` value. ")
 
     @staticmethod
-    def _subarr_collapse(arr, subarr_type):
+    def collapse_subarr(arr, subarr_type):
         """Collapse a natural structure array over equivalent spherical orders
         while preserving array dimensions.
 
@@ -482,7 +423,7 @@ class SphericalArray:
         raise ValueError("Invalid `subarr_type` value. ")
 
     @staticmethod
-    def _subarr_repeat(arr, subarr_type, degrees=None):
+    def repeat_subarr(arr, subarr_type, degrees=None):
         """Repeat an array collapsed over equivalent spherical orders to
         recover the natural structure array.
 
@@ -526,6 +467,64 @@ class SphericalArray:
                 [list(map(lambda tup: (tup[0], m, tup[-1]), lineblock[0]))
                  for m in range(-ell, ell+1)]
                 for lineblock, ell in zip(arr, degrees)
+                ]
+
+        raise ValueError("Invalid `subarr_type` value. ")
+
+    @staticmethod
+    def _alias(structname):
+        """Replace aliases of stucture names by the default structure name.
+
+        Parameters
+        ----------
+        structname : str
+            Array structure name.
+
+        Returns
+        -------
+        str
+            Equivalent array structure name.
+
+        """
+        if structname == 'natural':
+            return 'lmn'
+        return structname
+
+    def _flatten(self, arr, subarr_type, subarr_trans=False):
+        """Flatten a natural structure array.
+
+        Parameters
+        ----------
+        arr : list of float or tuple, array_like
+            Natural structure array.
+        subarr_type : {'data', 'index'}
+            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
+            index arrays.
+        subarr_trans : bool, optional
+            If `True` (default is `False`), each subarray is flattened along
+            the columns rather than rows by a transposition.
+
+        Returns
+        -------
+        float or tuple, array_like
+            Flat 1-d array.
+
+        Raises
+        ------
+        ValueError
+            If `subarr_type` is neither ``'data'`` nor ``'index'``.
+
+        """
+        if subarr_trans:
+            arr = self.transpose_subarr(arr, subarr_type)
+
+        if subarr_type == 'data':
+            return np.concatenate(
+                [np.array(arrblock).flatten() for arrblock in arr]
+                )
+        if subarr_type == 'index':
+            return [
+                entry for block in arr for line in block for entry in line
                 ]
 
         raise ValueError("Invalid `subarr_type` value. ")

@@ -12,8 +12,17 @@ def test_filename():
     assert utils.filename(os.path.abspath(__file__)) == 'test_utils'
 
 
-# NOTE: Tests with files not performed.
-def test_collate():
+TMP_DATA = [
+    [[1, 2], [2, 4], [3, 6]],
+    [[1, -2], [2, -4], [3, -6]],
+    ]
+TMP_COL = {
+    'x': [[1, 2, 3], [1, 2, 3]],
+    'y': [[2, 4, 6], [-2, -4, -6]]
+    }
+
+
+def test_collate(tmpdir):
     with pytest.raises(NotImplementedError):
         utils.collate('some_pattern', 'invalid_ext')
     with pytest.raises(ValueError):
@@ -25,10 +34,24 @@ def test_collate():
             'pattern', 'txt', headings=['a', 'b', 'c'], columns=[1, 2]
             )
 
+    tmp_dir = tmpdir.strpath
+    for fidx, tmp_dat in enumerate(TMP_DATA):
+        np.savetxt("{}/tmp_dat_{}.txt".format(tmp_dir, fidx), tmp_dat)
+
+    collated_data, count, last_file = utils.collate(
+        "{}/tmp_dat_*.txt".format(tmp_dir), 'txt',
+        headings=['x', 'y'], columns=[0, 1]
+        )
+    assert np.allclose(collated_data['x'], TMP_COL['x'])
+    assert np.allclose(collated_data['y'], TMP_COL['y'])
+    assert count == 2
+    assert last_file.startswith('tmp_dat_')
+
 
 @pytest.mark.parametrize('ntasks,nproc', [(10, 3), (100, 12), (1000, 72)])
 def test_allocate_tasks(ntasks, nproc):
     tasks = utils.allocate_tasks(ntasks, nproc)
+
     assert np.sum(tasks) == ntasks
     assert np.max(np.abs(np.diff(tasks))) <= 1
 
@@ -73,11 +96,11 @@ def test_format_float(x, case, ff_str):
 
 
 def test_zeroconst():
-    assert utils.zeroconst() == 0
+    assert utils.zeroconst() == pytest.approx(0)
 
 
 def test_unitconst():
-    assert utils.unitconst() == 1
+    assert utils.unitconst() == pytest.approx(1)
 
 
 @pytest.mark.parametrize('ndim,nsize', [(3, 10), (5, 8)])
@@ -85,6 +108,7 @@ def test_covar_to_corr(ndim, nsize):
     randvec = np.random.random(size=(ndim, nsize))
     covar = np.cov(randvec)
     corr = np.corrcoef(randvec)
+
     assert np.allclose(
         utils.covar_to_corr(covar),
         corr
@@ -93,8 +117,8 @@ def test_covar_to_corr(ndim, nsize):
 
 @pytest.mark.parametrize(
     'func,a,b,maxnum,roots',
-    [(lambda x : np.sin(x), -0.01, 3.15, 1, np.array([0])),
-     (lambda x : np.cos(x), -0.01, 3.15, 10, np.array([np.pi/2]))]
+    [(np.sin, -0.01, 3.15, 1, np.array([0])),
+     (np.cos, -0.01, 3.15, 10, np.array([np.pi/2]))]
     )
 def test_bisect_roots(func, a, b, maxnum, roots):
     assert np.allclose(
@@ -103,7 +127,7 @@ def test_bisect_roots(func, a, b, maxnum, roots):
         )
 
 
-@pytest.mark.parametrize('vec', [([[1, 3, -5], [0.2, -0.88, -10]])])
+@pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])
 def test_normalise_vector(vec):
     assert np.allclose(
         np.array(vec)/np.linalg.norm(vec, axis=-1, keepdims=True),
@@ -111,7 +135,7 @@ def test_normalise_vector(vec):
         )
 
 
-@pytest.mark.parametrize('vec', [([[1, 3, -5], [0.2, -0.88, -10]])])
+@pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])
 def test_cartesian_to_spherical(vec):
     assert np.allclose(
         utils.cartesian_to_spherical(vec),
@@ -121,9 +145,10 @@ def test_cartesian_to_spherical(vec):
 
 
 @pytest.mark.parametrize(
-    'vec',
-    [([[5.91607978, 2.57765001, 1.24904577],
-       [10.04063743, 3.05159233, -1.34731973]])]
+    'vec', [
+        [[5.91607978, 2.57765001, 1.24904577],
+         [10.04063743, 3.05159233, -1.34731973]]
+    ]
     )
 def test_spherical_to_cartesian(vec):
     assert np.allclose(
@@ -132,19 +157,43 @@ def test_spherical_to_cartesian(vec):
 
 
 def test_bin_edges_from_centres():
-    assert np.allclose(
-        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='low'),
-        [0, 2, 7, 11]
+    assert (
+        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='low')
+        == pytest.approx([0, 2, 7, 11])
         )
-    assert np.allclose(
-        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='high'),
-        [0, 3, 6, 11]
+    assert (
+        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='high')
+        == pytest.approx([0, 3, 6, 11])
         )
 
 
-# NOTE: Tests with data not performed.
+TMP_COARSE_DATA = {
+    'x': np.array([0.4, 1.4, 2.6, 3.6, 4.3, 5.3, 6.7, 7.7, 8.5, 9.5]),
+    'y': np.array([0.8, 1.2, 1.7, 2.3, 2.95, 3.05, 3.98, 4.02, 4.99, 5.01]),
+    'dx': np.array([0.05] * 10),
+    'dy': np.array([0.1] * 10)
+    }
+TMP_SMOOTH_DATA = {
+    'x': np.array([0.9, 3.1, 4.8, 7.2, 9.]),
+    'y': np.array([1., 2., 3., 4., 5.]),
+    'dx': np.array([0.07071067811865477]*5),
+    'dy': np.array([2*0.07071067811865477]*5)
+    }
+
+TEST_BIN_EDEGS = [0, 2, 4, 6, 8, 10]
+TEST_BIN_COUNTS = [2, 2, 2, 2, 2]
+
+
 def test_smooth_by_bin_average():
     with pytest.raises(NotImplementedError):
         utils.smooth_by_bin_average(
             [1, 2, 3], [0, 0.005, 0.05, 0.1], 'kln', 'Pln'
             )
+
+    smoothed_data, count_in_bins = utils.smooth_by_bin_average(
+        TMP_COARSE_DATA, TEST_BIN_EDEGS, 'x', 'y',
+        dx_coarse='dx', dy_coarse='dy'
+        )
+    for key in smoothed_data:
+        assert smoothed_data[key] == pytest.approx(TMP_SMOOTH_DATA[key])
+    assert count_in_bins == pytest.approx(TEST_BIN_COUNTS)

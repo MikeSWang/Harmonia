@@ -57,7 +57,7 @@ html_sidebars = {
     '**': ['navigation.html',
            'searchbox.html',
            ],
-   'using/windows': ['windowssidebar.html', 'searchbox.html'],
+    'using/windows': ['windowssidebar.html', 'searchbox.html'],
 }
 
 htmlhelp_basename = 'Harmonia_doc'

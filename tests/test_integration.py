@@ -7,15 +7,15 @@ from harmonia.algorithms.integration import (
     )
 
 TEST_PARAMS = dict(
-    rmax = 100.,
-    ell = 5,
-    m = 2,
-    k = 0.05,
+    rmax=100.,
+    ell=5,
+    m=2,
+    k=0.05,
 )
 
 TEST_FUNCS = dict(
-    radial_func = lambda r: np.sin(r) / TEST_PARAMS['rmax'],
-    angular_func = lambda theta, phi: np.sin(theta + phi)
+    radial_func=lambda r: np.sin(r) / TEST_PARAMS['rmax'],
+    angular_func=lambda theta, phi: np.sin(theta + phi)
 )
 
 

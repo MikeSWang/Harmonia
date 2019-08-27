@@ -170,7 +170,7 @@ def collate(filename_pattern, file_extension, headings=None, columns=None):
         for file in glob(filename_pattern):
             data = np.loadtxt(file, usecols=columns)
             for keyidx, key in enumerate(headings):
-                collated_data[key].append(np.atleast_1d(data[:, keyidx]))
+                collated_data[key].append(np.atleast_2d(data[:, keyidx]))
             count += 1
         last_file = filename(glob(filename_pattern).pop())
 

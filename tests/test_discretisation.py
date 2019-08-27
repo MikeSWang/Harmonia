@@ -7,12 +7,12 @@ import testrc
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 
 TEST_PARAMS = dict(
-    radius = 100.,
-    condition = 'Dirichlet',
-    cutoff = 0.1,
-    cuton = 0.,
-    degmax = None,
-    degmin = 0,
+    radius=100.,
+    condition='Dirichlet',
+    cutoff=0.1,
+    cuton=0.,
+    degmax=None,
+    degmin=0,
 )
 
 TEST_CASE_ELL = 2

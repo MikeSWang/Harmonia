@@ -4,7 +4,7 @@ sys.path.insert(0, "../")
 from argparse import ArgumentParser
 from os.path import basename, splitext
 
-from harmonia.collections import format_float as ff, harmony
+from harmonia.collections import harmony
 
 
 def get_filename(filepath):

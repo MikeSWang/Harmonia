@@ -1,8 +1,6 @@
-import sys
-sys.path.insert(0, "../")
-
 import numpy as np
 
+import testrc
 from harmonia.algorithms.bases import (
     sph_besselj, sph_besselj_root, sph_harmonic
     )
@@ -18,12 +16,15 @@ TEST_PARAMS = dict(
 
 
 def test_sph_besselj():
-    # WolframAlpha: SphericalBesselJ[5, 10.]
+    # WolframAlpha:
+    # f"SphericalBesselJ[{TEST_PARAMS['ell']}, {TEST_PARAMS['x']}]"
     assert np.isclose(
         sph_besselj(TEST_PARAMS['ell'], TEST_PARAMS['x'], deriv=False),
         -0.05553451162145218090882828945258120943941079880731541183
         )
-    # WolframAlpha: ReplaceAll[D[SphericalBesselJ[5, z], z], {z -> 10.}]
+    # WolframAlpha:
+    # (f"ReplaceAll[D[SphericalBesselJ[{TEST_PARAMS['ell']}, z], z], "
+    # f"{{z -> {TEST_PARAMS['x']}}}]")
     assert np.isclose(
         sph_besselj(TEST_PARAMS['ell'], TEST_PARAMS['x'], deriv=True),
         -0.07226857814482036397320745610547477366425546136898368696
@@ -31,7 +32,7 @@ def test_sph_besselj():
 
 
 def test_sph_besselj_root():
-    # WolframAlpha: SphericalBesselJ[5, x] == 0
+    # WolframAlpha: f"SphericalBesselJ[{TEST_PARAMS['ell']}, x] == 0"
     assert np.isclose(
         sph_besselj_root(
             TEST_PARAMS['ell'], TEST_PARAMS['nmax'], only=True, deriv=False
@@ -44,7 +45,7 @@ def test_sph_besselj_root():
             ),
         [9.35581211104275, 12.9665301727743, 16.3547096393505,]
         )
-    # WolframAlpha: D[SphericalBesselJ[5, x], x] == 0
+    # WolframAlpha: f"D[SphericalBesselJ[{TEST_PARAMS['ell']}, x], x] == 0"
     assert np.isclose(
         sph_besselj_root(
             TEST_PARAMS['ell'], TEST_PARAMS['nmax'], only=True, deriv=True
@@ -60,7 +61,9 @@ def test_sph_besselj_root():
 
 
 def test_sph_harmonic():
-    # WolframAlpha: SphericalHarmonicY[5, 2, Pi/3, Pi/5]
+    # WolframAlpha:
+    # (f"SphericalHarmonicY[{TEST_PARAMS['ell']}, {TEST_PARAMS['m']}, "
+    # f"{TEST_PARAMS['theta']}, {TEST_PARAMS['phi']}]")
     assert np.isclose(
         sph_harmonic(
             TEST_PARAMS['ell'], TEST_PARAMS['m'],

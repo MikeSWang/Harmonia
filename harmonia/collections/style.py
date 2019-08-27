@@ -9,8 +9,9 @@ import os.path
 
 import matplotlib
 
-_cwd = os.path.split(os.path.abspath(__file__))[0]
+_cwd = os.path.dirname(__file__)
+_mplstyle_path = os.path.join(_cwd, 'harmony.mplstyle')
 
 globals()['harmony'] = matplotlib.rc_params_from_file(
-    os.path.join(_cwd, 'harmony.mplstyle'), use_default_template=False
+    _mplstyle_path, use_default_template=False
     )

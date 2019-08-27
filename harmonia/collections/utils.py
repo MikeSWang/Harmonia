@@ -36,8 +36,8 @@ Computational utilities
 
     zeroconst
     unitconst
-    bisect_roots
     covar_to_corr
+    bisect_roots
 
 **Geometrical algorithms**
 
@@ -95,6 +95,11 @@ def collate(filename_pattern, file_extension, headings=None, columns=None):
         Common root string of the file directory and name.
     file_extension : {'npy', 'txt', 'dat'}
         Data file extension.
+    headings : list of str or None, optional
+        Column headings to be used as dictionary keys (default is `None`).
+    columns : list of int or None, optional
+        Column indices (zero-indexed) to be used as dictionary keys
+        corresponding to headings (default is `None`).
 
     Returns
     -------
@@ -239,11 +244,18 @@ def allocate_segments(tasks=None, ntask=None, nproc=None):
     Raises
     ------
     ValueError
-        If `ntask` or `nproc` is `None` while `tasks` is also `None`.
+        If either `ntask` or `nproc` is `None` while `tasks` is also `None`.
 
     """
     if tasks is None:
+        if ntask is None or nproc is None:
+            raise ValueError(
+                "`ntask` and `nproc` cannot be None "
+                "while `tasks` is None. "
+                )
         tasks = allocate_tasks(ntask, nproc)
+    if nproc is None:
+        nproc = len(tasks)
 
     breakpoints = np.insert(np.cumsum(tasks), 0, 0)
     segments = [
@@ -612,13 +624,15 @@ def bin_edges_from_centres(centres, extremes, align='low'):
         centres = np.delete(centres, 0)
 
     nbins = len(centres)
-    edges = np.concatenate((extremes.min(), np.empty(nbins), extremes.max()))
+    edges = np.concatenate(
+        ([np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)])
+        )
     if align.lower().startswith('l'):
         for bin_idx in range(nbins-1):
             edges[bin_idx+1] = 2*centres[bin_idx] - edges[bin_idx]
     elif align.lower().startswith('h'):
         for bin_idx in range(nbins-1):
-            edges[-bin_idx-2] = 2*centres[bin_idx] - edges[-bin_idx-1]
+            edges[-bin_idx-2] = 2*centres[-bin_idx-1] - edges[-bin_idx-1]
 
     return edges
 

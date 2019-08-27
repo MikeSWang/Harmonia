@@ -2,7 +2,7 @@
 Numerical integration (:mod:`~harmonia.algorithms.integration`)
 ===============================================================================
 
-Numerical integration against Fourier basis functions using `scipy.integrate`.
+Numerical integration against Fourier basis functions.
 
 **Generic spherical integrals**
 
@@ -157,10 +157,10 @@ def radial_sphint_besselj(rfunc, ell, k, rmax, *args, **kwargs):
         Integral value
 
     """
-    def _kernel(r):
+    def _int_kernel(r):
         return rfunc(r, *args, **kwargs) * sph_besselj(ell, k*r)
 
-    return radial_spherical_int(_kernel, rmax)
+    return radial_spherical_int(_int_kernel, rmax)
 
 
 def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
@@ -191,10 +191,10 @@ def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
     [0, 2\pi)`.
 
     """
-    def _kernel(theta, phi):
+    def _int_kernel(theta, phi):
         return afunc(theta, phi, *args, **kwargs) \
             * sph_harmonic(ell, m, theta, phi)
 
     if conjugate:
-        return np.conj(angular_spherical_int(_kernel))
-    return angular_spherical_int(_kernel)
+        return np.conj(angular_spherical_int(_int_kernel))
+    return angular_spherical_int(_int_kernel)

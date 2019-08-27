@@ -154,7 +154,7 @@ class DiscreteSpectrum:
         elif condition.lower().startswith('n'):
             deriv = True
         else:
-            ValueError(f"Invalid boundary condition type: {condition}. ")
+            raise ValueError(f"Invalid boundary condition type: {condition}. ")
 
         # Initialise arrays and counters.
         ells, us, nmaxs = [], [], []
@@ -196,19 +196,20 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        k_elln : float, array_like
+        float, array_like
             Discrete wave numbers.
 
         """
         if self._wavenumbers is not None:
             return self._wavenumbers
 
-        k_elln = [
+        self._wavenumbers = [
             u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
             ]
+
         self._logger.info("Spectral wave numbers computed. ")
 
-        return k_elln
+        return self._wavenumbers
 
     @property
     def waveindices(self):
@@ -216,20 +217,20 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        elln : (int, int), array_like
+        (int, int), array_like
             Spectral mode indices.
 
         """
         if self._waveindices is not None:
             return self._waveindices
 
-        elln = [
+        self._waveindices = [
             [(ell, nidx+1) for nidx in range(self.depths[ellidx])]
             for ellidx, ell in enumerate(self.degrees)
             ]
         self._logger.info("Spectral mode indices compiled. ")
 
-        return elln
+        return self._waveindices
 
     @property
     def normcoeff(self):
@@ -259,6 +260,8 @@ class DiscreteSpectrum:
                     2 / (R**3 * sph_besselj(ell, u_ell)**2)
                     / (1 - ell*(ell+1)/np.square(u_ell))
                     )
+
+        self._normcoeff = kappa_elln
         self._logger.info("Spectral normalisations computed. ")
 
         return kappa_elln

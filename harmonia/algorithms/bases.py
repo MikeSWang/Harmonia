@@ -4,18 +4,45 @@ Fourier bases (:mod:`~harmonia.algorithms.bases`)
 
 Evaluate Fourier basis functions.
 
+.. topic:: Important note
+
+    Function evaluation relies on :func:`scipy.special.spherical_jn`,
+    :func:`scipy.special.sph_harm` and :func:`mpmath.besseljzero`.  Note the
+    types and ordering of arguments may differ here.
+
 """
 import numpy as np
-from mpmath import besseljzero
 from scipy.special import spherical_jn, sph_harm
+from mpmath import besseljzero
 
 from harmonia.collections.utils import bisect_roots
 
 
+def sph_harmonic(ell, m, theta, phi):
+    """Spherical harmonic function.
+
+    Parameters
+    ----------
+    ell : int, array_like
+        Degree of the spherical harmonic function (``ell >= 0``).
+    m : int, array_like
+        Order of the spherical harmonic function (``-ell <= m <= ell``).
+    theta : float, array_like
+        Polar angle (``0 <= theta <= np.pi``).
+    phi: float, array_like
+        Azimuthal angle (``0 <= phi < 2*np.pi``).
+
+    Returns
+    -------
+    complex, array_like
+        Function value.
+
+    """
+    return sph_harm(m, ell, phi, theta)
+
+
 def sph_besselj(ell, x, deriv=False):
     """Spherical Bessel function of the first kind or its derivative.
-
-    This function relies on :func:`scipy.special.spherical_jn`.
 
     Parameters
     ----------
@@ -36,7 +63,7 @@ def sph_besselj(ell, x, deriv=False):
 
 
 def sph_besselj_root(ell, nmax, only=True, deriv=False):
-    r"""Compute up to some number of positive zero of spherical Bessel
+    r"""Compute up to a maximum number of positive zeros of spherical Bessel
     function of the first kind or its derivative.
 
     The determination of roots of the spherical Bessel function:math:`j_\nu(x)`
@@ -46,8 +73,6 @@ def sph_besselj_root(ell, nmax, only=True, deriv=False):
 
     where :math:`J_\nu(x)` is the Bessel funcion of the first kind.  For roots
     of the derivative function, a built-in bisection root finder is employed.
-
-    This function relies on :func:`mpmath.besseljzero`.
 
     Parameters
     ----------
@@ -71,49 +96,17 @@ def sph_besselj_root(ell, nmax, only=True, deriv=False):
         if only:
             u_ell = float(besseljzero(ell+1/2, nmax, derivative=0))
         else:
-            u_ell = []
-            for n in range(1, nmax+1):
-                u_ell = np.append(
-                    u_ell, float(besseljzero(ell+1/2, n, derivative=0))
-                    )
+            u_ell = np.array(
+                [float(besseljzero(ell+1/2, n, derivative=0))
+                 for n in range(1, nmax+1)]
+                )
     else:
-        # Define auxiliary function.
-        def _deriv(x):
+        def _deriv_func(x):
             return sph_besselj(ell, x, deriv=True)
 
-        # Empirically set root search range [`ell`+1, max{4, `ell`}].
-        u_ell = bisect_roots(_deriv, ell+1, nmax*max(4, ell), maxnum=nmax)
+        # Empirically set root search range [`ell`+1, `nmax`*max{4, `ell`}].
+        u_ell = bisect_roots(_deriv_func, ell+1, nmax*max(4, ell), maxnum=nmax)
         if only:
             u_ell = u_ell[-1]
 
     return u_ell
-
-
-def sph_harmonic(ell, m, theta, phi):
-    """Spherical harmonic function.
-
-    This function relies on :func:`scipy.special.sph_harm`.
-
-    Parameters
-    ----------
-    ell : int, array_like
-        Degree of the spherical harmonic function (``ell >= 0``).
-    m : int, array_like
-        Order of the spherical harmonic function (``-ell <= m <= ell``).
-    theta : float, array_like
-        Polar angle (``0 <= theta <= np.pi``).
-    phi: float, array_like
-        Azimuthal angle (``0 <= phi < 2*np.pi``).
-
-    Returns
-    -------
-    complex, array_like
-        Function value.
-
-    Warnings
-    --------
-    The ordering of the arguments differs from that of
-    :func:`scipy.special.sph_harm`.
-
-    """
-    return sph_harm(m, ell, phi, theta)

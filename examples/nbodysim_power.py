@@ -1,15 +1,13 @@
-#!/usr/bin/env python3
+"""Recover real-space power spectrum from fixed-epoch N-body simulations.
 
-"""Recover real-space power spectrum from fixed-epoch N-body simulations."""
-
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from power_rc import (
-    PATHIN, PATHOUT, fdir, fname, params, harmony, get_filename
-    )
+from power_rc import PATHIN, PATHOUT, fdir, fname, params, get_filename
 from harmonia.algorithms import DiscreteSpectrum
+from harmonia.collections import harmony
 from harmonia.mapper import SphericalMap
 
 

@@ -1,10 +1,12 @@
-import sys
-sys.path.insert(0, "../")
+"""Power spectrum recovery runtime configuration.
 
+This sets file I/O paths and passes command line arguments to scripts.  It also
+provides the function to extract file name from the script being run.
+
+"""
+import sys
 from argparse import ArgumentParser
 from os.path import basename, splitext
-
-from harmonia.collections import harmony
 
 
 def get_filename(filepath):
@@ -18,6 +20,8 @@ PATHOUT = "./data/output/"
 
 fname = get_filename(sys.argv)
 fdir = "{}/".format(fname)
+
+sys.path.insert(0, "../")
 
 
 # -- SYSTEM ARGUMENTS ---------------------------------------------------------

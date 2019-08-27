@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+"""Recover real-space power spectrum from fixed-epoch log-normal catalogues.
 
-"""Recover real-space power spectrum from fixed-epoch log-normal catalogues."""
-
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from power_rc import PATHOUT, fdir, fname, params, harmony, ff
+from power_rc import PATHOUT, fdir, fname, params
 from harmonia.algorithms import DiscreteSpectrum
+from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 

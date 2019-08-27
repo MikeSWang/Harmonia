@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+"""Recover constant power spectrum from unclustered catalogues.
 
-"""Recover uniform power spectrum from unclustered catalogues."""
-
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from power_rc import PATHOUT, fdir, fname, ff, params, harmony
+from power_rc import PATHOUT, fdir, fname, params
 from harmonia.algorithms import DiscreteSpectrum
+from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, RandomCatalogue
 
 
@@ -26,8 +26,10 @@ progid = params.progid
 
 # -- Program identifier -------------------------------------------------------
 
-ftag = (f"-(nbar={0},rmax={1},niter={2})-[{3}]"
-        .format(ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid))
+ftag = (
+    "-(nbar={},rmax={},niter={})-[{}]"
+    .format(ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid)
+    )
 
 
 # == PROCESSING ===============================================================
@@ -80,7 +82,7 @@ output = {
     'Nk': Nk_all, 'k': k_all, 'Pk': Pk_all, 'Pshot': Pshot_all,
     'ln': modes, 'kln': waves, 'Pln': Pln_all,
     }
-np.save(f"{PATHOUT}{fdir}{fname}-{ftag}.npy", output)
+np.save(f"{PATHOUT}{fdir}{fname}{ftag}.npy", output)
 
 results = {
     'Nk': np.sum(output['Nk'], axis=0),

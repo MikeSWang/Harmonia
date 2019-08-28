@@ -14,7 +14,7 @@ PATHOUT = "./data/output/"
 def get_filename(*filepath):
     if not filepath:
         return os.path.splitext(os.path.basename(argv[0]))[0]
-    return os.path.splitext(os.path.basename(filepath))[0]
+    return os.path.splitext(os.path.basename(filepath[0]))[0]
 
 
 path.insert(0, "../")

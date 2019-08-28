@@ -6,12 +6,12 @@ from harmonia.algorithms.bases import (
     )
 
 TEST_PARAMS = dict(
-    ell = 5,
-    x = 10.,
-    nmax = 3,
-    m = 2,
-    theta = np.pi/3,
-    phi = np.pi/5,
+    ell=5,
+    x=10.,
+    nmax=3,
+    m=2,
+    theta=np.pi/3,
+    phi=np.pi/5,
 )
 
 

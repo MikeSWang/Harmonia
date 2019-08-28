@@ -17,8 +17,8 @@ from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 try:
     nbar, contrast = float(argv[1]), argv[2]
-    zmax, meshcal = float(argv[3]), float(argv[4])
-    meshgen, nmeshf, niter = int(argv[5]), int(argv[6]), int(argv[7])
+    zmax, expand = float(argv[3]), float(argv[4])
+    meshgen, meshcal, niter = int(argv[5]), int(argv[6]), int(argv[7])
 except:
     nbar, contrast = 1e-3, None
     zmax, expand = 0.05, 2.

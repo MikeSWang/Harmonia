@@ -10,7 +10,7 @@ from os.path import basename, splitext
 
 
 def get_filename(filepath):
-    return splitext(basename(filepath[0]))[0]
+    return splitext(basename(filepath))[0]
 
 
 # -- SYSTEM PATHS -------------------------------------------------------------
@@ -18,7 +18,7 @@ def get_filename(filepath):
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
-fname = get_filename(sys.argv)
+fname = get_filename(sys.argv[0])
 fdir = "{}/".format(fname)
 
 sys.path.insert(0, "../")

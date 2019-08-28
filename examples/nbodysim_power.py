@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from power_rc import PATHIN, PATHOUT, fdir, fname, params, get_filename
+from power_rc import PATHIN, PATHOUT, fdir, params, get_filename
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony
 from harmonia.mapper import SphericalMap
@@ -36,7 +36,7 @@ modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
 
 # Build catalogue (note unit conversion!).
-clog = CSVCatalog(f"{PATHIN}{fdir}{fname}", HEADINGS)
+clog = CSVCatalog(f"{PATHIN}{fdir}{file}", HEADINGS)
 clog.attrs['BoxSize'] = L
 
 clog['Position'] = clog['x'][:, None] * [1, 0, 0] \
@@ -112,8 +112,8 @@ except:
 
 """Use the following to combine results from two catalogues:
 
-dataL = np.load(f"{PATHOUT}{DIR}{filename(FILE)}-L.npy").item()
-dataR = np.load(f"{PATHOUT}{DIR}{filename(FILE)}-R.npy").item()
+dataL = np.load(f"{PATHOUT}{fdir}{}-L.npy").item()
+dataR = np.load(f"{PATHOUT}{fdir}{}-R.npy").item()
 
 data = {
     'Nk': (dataL['Nk'] + dataR['Nk']),

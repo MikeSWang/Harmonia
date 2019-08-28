@@ -1,5 +1,3 @@
-backend : PDF
-
 lines.linewidth: 2
 lines.markersize: 6
 lines.antialiased: True

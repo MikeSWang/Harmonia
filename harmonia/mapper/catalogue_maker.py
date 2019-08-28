@@ -5,6 +5,14 @@ Catalogue maker (:mod:`~harmonia.mapper.catalogue_maker`)
 Make discrete catalogues from observed or simulated realisations with
 :mod:`nbodykit.lab` implementation.
 
+.. autosummary::
+
+    spherical_indicator
+    RandomCatalogue
+    LognormalCatalogue
+
+|
+
 .. todo:: Under further development if ``nbodykit`` is to be subtituted.
 
 """

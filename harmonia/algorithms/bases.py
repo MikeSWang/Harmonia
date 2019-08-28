@@ -4,11 +4,21 @@ Fourier bases (:mod:`~harmonia.algorithms.bases`)
 
 Evaluate Fourier basis functions.
 
+.. autosummary::
+
+    sph_harmonic
+    sph_besselj
+    sph_besselj_root
+
+|
+
 .. topic:: Important note
 
     Function evaluation relies on :func:`scipy.special.spherical_jn`,
     :func:`scipy.special.sph_harm` and :func:`mpmath.besseljzero`.  Note the
     types and ordering of arguments may differ here.
+
+|
 
 """
 import numpy as np

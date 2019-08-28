@@ -18,9 +18,13 @@ Numerical integration against Fourier basis functions.
     radial_sphint_besselj
     angular_sphint_harmonic
 
+|
+
 .. topic:: Important note
 
     Cautious use of quadrature integration for spherical Bessel functions.
+
+|
 
 """
 import numpy as np

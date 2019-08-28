@@ -6,6 +6,8 @@ Compute the spherical model for Fourier-space :math:`n`-point functions.  The
 index for each \"point\" is a triplet labelled by a Greek letter, e.g.
 :math:`(\ell_\mu, m_\mu, n_\mu)` as ``(mu[0], mu[1], mu[2])``.
 
+|
+
 .. _ellidx-warning:
 
 .. topic:: Important notice

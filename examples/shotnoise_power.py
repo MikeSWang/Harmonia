@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from power_rc import PATHOUT, argv, fdir, fname
+from powerrc import PATHOUT, argv, fdir, fname
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, RandomCatalogue

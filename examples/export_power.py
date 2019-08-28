@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from power_rc import PATHOUT, harmony
+from powerrc import PATHOUT, harmony
 from harmonia.collections import collate
 
 

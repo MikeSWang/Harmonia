@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from power_rc import PATHIN, PATHOUT, fdir, get_filename
+from powerrc import PATHIN, PATHOUT, fdir, get_filename
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony
 from harmonia.mapper import SphericalMap

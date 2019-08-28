@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from power_rc import PATHOUT, argv, fdir, fname
+from powerrc import PATHOUT, argv, fdir, fname
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
@@ -17,15 +17,15 @@ from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 try:
     nbar, contrast = float(argv[1]), argv[2]
-    zmax, expand = float(argv[3]), float(argv[4])
-    nmeshc, nmeshf, niter = int(argv[5]), int(argv[6]), int(argv[7])
+    zmax, meshcal = float(argv[3]), float(argv[4])
+    meshgen, nmeshf, niter = int(argv[5]), int(argv[6]), int(argv[7])
 except:
     nbar, contrast = 1e-3, None
-    zmax, expand = 0.05, 1.
+    zmax, expand = 0.05, 2.
     meshgen, meshcal, niter = 256, 256, 25
     argv.extend(
         [str(nbar), str(contrast).lower(), str(zmax), str(expand),
-         str(nmeshc), str(nmeshf), str(niter),]
+         str(meshgen), str(meshcal), str(niter),]
         )
 
 if argv[8:]:
@@ -50,7 +50,7 @@ Plin = cosmology.LinearPower(cosmo, redshift=REDSHIFT, transfer='CLASS')
 
 try:
     ratio_tag, is_case_mock = ff(float(contrast), 'decdot'), True
-except:
+except (TypeError, ValueError):
     ratio_tag, is_case_mock = 'simu', False
 
 if meshgen == meshcal:

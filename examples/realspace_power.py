@@ -50,7 +50,7 @@ Plin = cosmology.LinearPower(cosmo, redshift=REDSHIFT, transfer='CLASS')
 
 try:
     ratio_tag, is_case_mock = ff(float(contrast), 'decdot'), True
-except TypeError:
+except:
     ratio_tag, is_case_mock = 'simu', False
 
 if meshgen == meshcal:

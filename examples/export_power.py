@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+"""Export recovered power spectra.
 
-"""Export recovered power spectra."""
-
+"""
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt

@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from power_rc import PATHOUT, fdir, fname, params
+from power_rc import PATHOUT, argv, fdir, fname
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
@@ -15,18 +15,35 @@ from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 # -- Runtime parameters -------------------------------------------------------
 
-nbar, b, z = params.nbar, params.bias, params.redshift
-zmax, kmax, dk = params.zmax, params.kmax, params.dk
-expand, contrast = params.expand, params.contrast
-meshgen, meshcal, niter = params.meshgen, params.meshcal, params.niter
-progid = params.progid
+try:
+    nbar, contrast = float(argv[1]), argv[2]
+    zmax, expand = float(argv[3]), float(argv[4])
+    nmeshc, nmeshf, niter = int(argv[5]), int(argv[6]), int(argv[7])
+except:
+    nbar, contrast = 1e-3, None
+    zmax, expand = 0.05, 1.
+    meshgen, meshcal, niter = 256, 256, 25
+    argv.extend(
+        [str(nbar), str(contrast).lower(), str(zmax), str(expand),
+         str(nmeshc), str(nmeshf), str(niter),]
+        )
+
+if argv[8:]:
+    progid = "-[{}]".format(argv[-1])
+else:
+    progid = ""
+
+REDSHIFT = 0.
+BIAS = 2.
+KMAX = 0.1
+DK = 1e-2
 
 
 # -- Cosmology ----------------------------------------------------------------
 
 cosmo = cosmology.Planck15
 rmax = cosmo.comoving_distance(zmax)
-Plin = cosmology.LinearPower(cosmo, redshift=z, transfer='CLASS')
+Plin = cosmology.LinearPower(cosmo, redshift=REDSHIFT, transfer='CLASS')
 
 
 # -- Program identifier -------------------------------------------------------
@@ -45,8 +62,7 @@ ftag = (
     f"-("
     f"nbar={ff(nbar, 'sci')},ratio={ratio_tag},rmax={ff(rmax, 'intdot')},"
     f"xpd={ff(expand, 'decdot')},nmesh=[{mesh_tag}],niter={niter}"
-    f")-"
-    f"[{progid}]"
+    f"){progid}"
     )
 
 
@@ -55,7 +71,7 @@ ftag = (
 print(ftag)
 
 # Set up discretisation.
-disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
+disc = DiscreteSpectrum(rmax, 'Dirichlet', KMAX)
 order = np.concatenate(disc.wavenumbers).argsort()
 modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
@@ -64,7 +80,7 @@ k_, Nk_, Pk_, Pshot_, Pln_ = [], [], [], [], []
 for run in range(niter):
     # Generate data and random catalogues.
     data = LognormalCatalogue(
-        Plin, nbar, bias=b, boxsize=2*expand*rmax, nmesh=meshgen
+        Plin, nbar, bias=BIAS, boxsize=2*expand*rmax, nmesh=meshgen
         )
     if is_case_mock:
         nrand = contrast*nbar
@@ -81,13 +97,13 @@ for run in range(niter):
             Nmesh=meshcal, resampler='tsc', compensated=True, interlaced=True
             )
         cpow = ConvolvedFFTPower(
-            mesh, poles=[0], dk=dk, kmax=waves.max()+dk
+            mesh, poles=[0], dk=DK, kmax=waves.max()+DK
             ).poles
     else:
         mesh = data.to_mesh(
             Nmesh=meshcal, resampler='tsc', compensated=True, interlaced=True
             )
-        cpow = FFTPower(mesh, mode='1d', dk=dk, kmax=waves.max()+dk).power
+        cpow = FFTPower(mesh, mode='1d', dk=DK, kmax=waves.max()+DK).power
 
     # Run spherical algorithm.
     mapp = SphericalMap(

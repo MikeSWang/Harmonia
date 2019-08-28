@@ -1,11 +1,13 @@
 """Recover real-space power spectrum from fixed-epoch N-body simulations.
 
 """
+from argparse import ArgumentParser
+
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from power_rc import PATHIN, PATHOUT, fdir, params, get_filename
+from power_rc import PATHIN, PATHOUT, fdir, get_filename
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony
 from harmonia.mapper import SphericalMap
@@ -14,6 +16,15 @@ from harmonia.mapper import SphericalMap
 # == INITIALISATION ===========================================================
 
 # -- Runtime parameters -------------------------------------------------------
+
+parser = ArgumentParser(description="Power spectrum recovery set-up. ")
+
+parser.add_argument('--infile', type=str, default="halos-(NG=0.,z=1.)-0L.txt")
+parser.add_argument('--kmax', type=float, default=2.)
+parser.add_argument('--boxside', type=float, default=1000.)
+parser.add_argument('--dk', type=float, default=1e-2)
+
+params = parser.parse_args()
 
 file = params.infile
 kmax = params.kmax

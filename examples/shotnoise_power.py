@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from power_rc import PATHOUT, fdir, fname, params
+from power_rc import PATHOUT, argv, fdir, fname
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, RandomCatalogue
@@ -15,19 +15,26 @@ from harmonia.mapper import SphericalMap, RandomCatalogue
 
 # -- Runtime parameters -------------------------------------------------------
 
-nbar = params.nbar
-rmax = params.rmax
-niter = params.niter
-kmax = params.kmax
-dk = params.dk
-meshcal = params.meshcal
-progid = params.progid
+try:
+    nbar, rmax, niter = float(argv[1]), float(argv[2]), int(argv[3])
+except:
+    nbar, rmax, niter = 1e-3, 150, 25
+    argv.extend([str(nbar), str(rmax), str(niter)])
+
+if argv[4:]:
+    progid = "-[{}]".format(argv[-1])
+else:
+    progid = ""
+
+KMAX = 0.125
+DK = 1e-2
+MESHCAL = 256
 
 
 # -- Program identifier -------------------------------------------------------
 
 ftag = (
-    "-(nbar={},rmax={},niter={})-[{}]"
+    "-(nbar={},rmax={},niter={}){}"
     .format(ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid)
     )
 
@@ -37,7 +44,7 @@ ftag = (
 print(ftag)
 
 # Set up discretisation.
-disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
+disc = DiscreteSpectrum(rmax, 'Dirichlet', KMAX)
 order = np.concatenate(disc.wavenumbers).argsort()
 modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
@@ -49,9 +56,9 @@ for run in range(niter):
 
     # Run Cartesian algorithm.
     mesh = data.to_mesh(
-        Nmesh=meshcal, resampler='tsc', compensated=True, interlaced=True
+        Nmesh=MESHCAL, resampler='tsc', compensated=True, interlaced=True
         )
-    cpow = FFTPower(mesh, mode='1d', dk=dk, kmax=waves.max()+dk).power
+    cpow = FFTPower(mesh, mode='1d', dk=DK, kmax=waves.max()+DK).power
 
     # Run spherical algorithm.
     mapp = SphericalMap(disc, data, nmean_data=nbar)

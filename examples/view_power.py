@@ -1,5 +1,6 @@
-"""Visualise recovered power spectrum."""
+"""Visualise recovered power spectrum.
 
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline as IUSpline

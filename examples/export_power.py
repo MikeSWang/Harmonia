@@ -5,8 +5,8 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from powerrc import PATHOUT, harmony
-from harmonia.collections import collate
+from powerrc import PATHOUT
+from harmonia.collections import collate, harmony
 
 
 # == DEFINITION ===============================================================

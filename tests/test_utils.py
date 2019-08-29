@@ -18,7 +18,7 @@ TMP_DATA = [
     ]
 TMP_COL = {
     'x': [[1, 2, 3], [1, 2, 3]],
-    'y': [[2, 4, 6], [-2, -4, -6]]
+    'y': [[2, 4, 6], [-2, -4, -6]],
     }
 
 
@@ -67,15 +67,15 @@ TEST_CASE_PROCS = 5
     )
 def test_allocate_segments(tasks, ntask, nproc):
     assert (
-        utils.allocate_segments(tasks=tasks) ==
-        [slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
-         for n in range(nproc-1)]
+        utils.allocate_segments(tasks=tasks)
+        == [slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
+            for n in range(nproc-1)]
         + [slice(TEST_CASE_INTERVAL*(nproc-1), TEST_CASE_INTERVAL*nproc+1)]
         )
     assert (
-        utils.allocate_segments(ntask=ntask, nproc=nproc) ==
-        [slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
-         for n in range(nproc-1)]
+        utils.allocate_segments(ntask=ntask, nproc=nproc)
+        == [slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
+            for n in range(nproc-1)]
         + [slice(TEST_CASE_INTERVAL*(nproc-1), TEST_CASE_INTERVAL*nproc+1)]
         )
     with pytest.raises(ValueError):
@@ -109,10 +109,7 @@ def test_covar_to_corr(ndim, nsize):
     covar = np.cov(randvec)
     corr = np.corrcoef(randvec)
 
-    assert np.allclose(
-        utils.covar_to_corr(covar),
-        corr
-        )
+    assert np.allclose(utils.covar_to_corr(covar), corr)
 
 
 @pytest.mark.parametrize(
@@ -121,10 +118,7 @@ def test_covar_to_corr(ndim, nsize):
      (np.cos, -0.01, 3.15, 10, np.array([np.pi/2]))]
     )
 def test_bisect_roots(func, a, b, maxnum, roots):
-    assert np.allclose(
-        utils.bisect_roots(func, a, b, maxnum=maxnum),
-        roots
-        )
+    assert np.allclose(utils.bisect_roots(func, a, b, maxnum=maxnum), roots)
 
 
 @pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])
@@ -145,10 +139,9 @@ def test_cartesian_to_spherical(vec):
 
 
 @pytest.mark.parametrize(
-    'vec', [
-        [[5.91607978, 2.57765001, 1.24904577],
-         [10.04063743, 3.05159233, -1.34731973]]
-    ]
+    'vec',
+    [[[5.91607978, 2.57765001, 1.24904577],
+      [10.04063743, 3.05159233, -1.34731973]]]
     )
 def test_spherical_to_cartesian(vec):
     assert np.allclose(

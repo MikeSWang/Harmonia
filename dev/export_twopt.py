@@ -2,11 +2,11 @@
 
 """
 import numpy as np
-import seaborn as sns
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology as cosmo
 
-from twopointrc import PATHOUT, harmony
+from twopointrc import PATHOUT
+from view_twopt import view_twopoint
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import collate
 
@@ -17,71 +17,14 @@ def aggregate(data):
     return {key: np.average(val, axis=0) for key, val in data.items()}
 
 
-def view_twopoint(d2pt, m2pt=None, diff=False, diag=None, lb=None, ind=None):  # !!!
-
-    plt.style.use(harmony)
-    plt.close('all')
-    sns.set(style='ticks', font='serif')
-
-    if ind is not None:
-        d2pt = d2pt[ind, ind]
-        if m2pt is not None: m2pt = m2pt[ind, ind]
-
-    if lb is None: lb = 10
-
-    if m2pt is None:
-        if diag == 'off': np.fill_diagonal(d2pt, np.nan)
-        sns.heatmap(
-            d2pt, center=0, square=True, xticklabels=lb, yticklabels=lb
-            )
-        return
-
-    if diff:
-        if diag == 'only':
-            mask = np.diag(np.ones(len(d2pt)))
-        else:
-            mask0 = ~np.isclose(m2pt, 0)
-            mask1 = m2pt / d2pt > 1e-3
-            mask = np.logical_and(mask0, mask1)
-
-        diff = np.where(mask, m2pt/d2pt, np.nan)  # m2pt/d2pt, d2pt/m2pt
-        sns.heatmap(
-            diff, center=1, annot=False,# vmin=0.9, vmax=1.1,
-            square=True, xticklabels=lb, yticklabels=lb
-            )
-        return diff
-
-    if diag == 'off':
-        np.fill_diagonal(d2pt, np.nan)
-        np.fill_diagonal(m2pt, np.nan)
-    if diag == 'only':
-        mask = np.diag(np.ones(len(d2pt)))
-        d2pt = np.where(mask, d2pt, np.nan)
-        m2pt = np.where(mask, m2pt, np.nan)
-
-    plt.subplot2grid((4, 9), (0, 0), rowspan=4, colspan=4)
-    sns.heatmap(
-        d2pt, center=0,
-        square=True, xticklabels=lb, yticklabels=lb, cbar_kws={'shrink': 0.6}
-        )
-
-    plt.subplot2grid((4, 9), (0, 5), rowspan=4, colspan=4)
-    sns.heatmap(
-        m2pt, center=0,
-        square=True, xticklabels=lb, yticklabels=lb, cbar_kws={'shrink': 0.6}
-        )
-
-    return
-
-
 # == EXECUTION ================================================================
 
 CASE = "nRSD/"
 BIASSTR = "b=2"
-STRUCT = 'k'
+STRUCT = 'natural'
 
-PREFIX_DATA = "measurements"
-PREFIX_MODEL = "predictions"
+PREFIX_DATA = "measure2pt"
+PREFIX_MODEL = "predict2pt"
 
 DIR_DATA = f"{PREFIX_DATA}/"
 DIR_MODEL = f"{PREFIX_MODEL}/"
@@ -96,7 +39,7 @@ COLLATE = False
 SAVE = 'agg'  # 'full', 'agg', ''
 
 LOAD_DATA = True
-LOAD_MODEL = True
+LOAD_MODEL = False
 
 SAVEFIG = False
 
@@ -137,7 +80,7 @@ if LOAD_MODEL:
 rmax = cosmo.Planck15.comoving_distance(0.05)
 Plin = cosmo.LinearPower(cosmo.Planck15, redshift=0., transfer='CLASS')
 
-disc = DiscreteSpectrum(rmax, 'Dirichlet', 0.1)
+disc = DiscreteSpectrum(500, 'Dirichlet', 0.1)
 
 order = np.concatenate(disc.wavenumbers).argsort()
 waves = np.concatenate(disc.wavenumbers)[order]
@@ -147,31 +90,32 @@ norms = np.concatenate(disc.normcoeff)[order]
 indx_arr = SphericalArray.build(disc=disc)
 _, indx_vec = indx_arr.unfold(axis_order=STRUCT)
 
-ref = np.load('./data/input/ref.npy').item()
+ref = np.load('./data/input/halos-(NG=0.,z=1.)-(side=1000.,nmesh=p256,npair=11)-inscribed.npy').item()
 
 # Visualise comparisons.
-Covar = data[STRUCT]
-covar = model['signal'] + model['shotnoise']
-ind = slice(len(indx_vec))  # len(indx_vec)
+#Covar = data[STRUCT]
+#covar = model['signal'] + model['shotnoise']
 
-d2pt = np.abs(Covar)
+ind = slice(50)  # len(indx_vec)
 
-if LOAD_MODEL: m2pt = np.abs(covar)
-else: m2pt = None
+#d2pt = np.abs(Covar)
+#
+#if LOAD_MODEL: m2pt = np.abs(covar)
+#else: m2pt = None
 
-#m2pt = np.zeros(disc.nmodes)
-#for idx, greek in enumerate(indx_vec):
-#    condition = np.logical_and(
-#        ref['ln'][:,0] == greek[0],
-#        ref['ln'][:,1] == greek[-1]
-#        )
-#    refidx = np.where(condition)[0][0]
-#    m2pt[idx] = ref['Pln'][refidx] / norms[refidx]
-#m2pt = np.diag(m2pt)
+m2pt = np.zeros(disc.nmodes)
+for idx, greek in enumerate(indx_vec):
+    condition = np.logical_and(
+        ref['ln'][:,0] == greek[0],
+        ref['ln'][:,1] == greek[-1]
+        )
+    refidx = np.where(condition)[0][0]
+    m2pt[idx] = ref['Pln'][refidx] / norms[refidx]
+m2pt = np.diag(m2pt)
 
 # None / indx_vec[ind], True / False, None / 'only' / 'off'
-diff = view_twopoint(d2pt, m2pt=m2pt, ind=ind,
-                     lb=None, diff=True, diag='only')
+diff = view_twopoint(m2pt, m2pt=None, ind=ind,
+                     lb=indx_vec[ind], diff=True, diag='only')
 if SAVEFIG:
     plt.savefig(
         f"{PATHOUT}2pt_{STRUCT}-(b=2.,rsd=none)-m_rel_d.png",

@@ -64,6 +64,7 @@ def test_build(discrete_spectrum, spherical_array):
     alternative_spherical_array = SphericalArray.build(
         disc=discrete_spectrum, filling=TEST_DATA_ARRAY
         )
+
     assert all([
         np.all(block == alternative_block)
         for block, alternative_block in zip(
@@ -113,6 +114,7 @@ def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
     unfolded_array, unfolded_indices = spherical_array.unfold(
         axis_order=axis_order
         )
+
     assert unfolded_array[:MAX_ENTRY] == pytest.approx(flat_array)
     assert unfolded_indices[:MAX_ENTRY] == flat_indices
 
@@ -145,9 +147,7 @@ def test_refold(spherical_array, in_struct):
         )
 
 
-@pytest.mark.parametrize(
-    'in_struct,out_struct', [('lnm', 'scale')]
-    )
+@pytest.mark.parametrize('in_struct,out_struct', [('lnm', 'scale')])
 def test_morph(spherical_array, in_struct, out_struct):
     in_array, in_indices = spherical_array.unfold(axis_order=in_struct)
     out_array, out_indices = spherical_array.unfold(axis_order=out_struct)

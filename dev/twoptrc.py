@@ -7,6 +7,8 @@ provides the function to extract file name from the script being run.
 import os
 from sys import argv, path
 
+import numpy
+
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
@@ -17,12 +19,17 @@ def get_filename(*filepath):
     return os.path.splitext(os.path.basename(filepath[0]))[0]
 
 
+def create_directory(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def save_data(path, data):
+    create_directory(path)
+    numpy.save(path, data)
+
+
 path.insert(0, "../")
 
 fname = get_filename()
-fdir = f"{fname}/"
-
-if not os.path.exists(PATHIN):
-    os.makedirs(PATHIN)
-if not os.path.exists(PATHOUT + fdir):
-    os.makedirs(PATHOUT + fdir)
+fdir = "{}/".format(fname)

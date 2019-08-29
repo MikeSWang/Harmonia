@@ -107,3 +107,4 @@ venv.bak/
 # User customised
 examples/data/
 dev/data/
+external/

@@ -113,6 +113,82 @@ class DiscreteSpectrum:
             self.attrs['maxscale'], self.attrs['minscale']
             )
 
+    @property
+    def wavenumbers(self):
+        """Discrete wave numbers.
+
+        Returns
+        -------
+        float, array_like
+            Discrete wave numbers.
+
+        """
+        if self._wavenumbers is not None:
+            return self._wavenumbers
+
+        self._wavenumbers = [
+            u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
+            ]
+
+        self._logger.info("Spectral wave numbers computed. ")
+
+        return self._wavenumbers
+
+    @property
+    def waveindices(self):
+        """Doublet indices for each discrete wave number.
+
+        Returns
+        -------
+        (int, int), array_like
+            Spectral mode indices.
+
+        """
+        if self._waveindices is not None:
+            return self._waveindices
+
+        self._waveindices = [
+            [(ell, nidx+1) for nidx in range(self.depths[ellidx])]
+            for ellidx, ell in enumerate(self.degrees)
+            ]
+        self._logger.info("Spectral mode indices compiled. ")
+
+        return self._waveindices
+
+    @property
+    def normcoeff(self):
+        """Normalisation coefficients for discretisation.
+
+        Returns
+        -------
+        kappa_elln : float, array_like
+            Normalisation coefficients.
+
+        """
+        if self._normcoeff is not None:
+            return self._normcoeff
+
+        R = self.attrs['boundary_radius']
+        cond = self.attrs['boundary_condition'].lower()
+
+        kappa_elln = []
+        if cond.startswith('d'):
+            for ell, u_ell in zip(self.degrees, self.roots):
+                kappa_elln.append(
+                    2 / (R**3 * sph_besselj(ell+1, u_ell)**2)
+                    )
+        elif cond.startswith('n'):
+            for ell, u_ell in zip(self.degrees, self.roots):
+                kappa_elln.append(
+                    2 / (R**3 * sph_besselj(ell, u_ell)**2)
+                    / (1 - ell*(ell+1)/np.square(u_ell))
+                    )
+
+        self._normcoeff = kappa_elln
+        self._logger.info("Spectral normalisations computed. ")
+
+        return kappa_elln
+
     @staticmethod
     def discretise(R, condition, kmin, kmax, ellmin, ellmax):
         """
@@ -189,79 +265,3 @@ class DiscreteSpectrum:
                 _logger_.debug("Moving on to next degree: %d. ", ell)
 
         return ells, nmaxs, us, ntotal
-
-    @property
-    def wavenumbers(self):
-        """Discrete wave numbers.
-
-        Returns
-        -------
-        float, array_like
-            Discrete wave numbers.
-
-        """
-        if self._wavenumbers is not None:
-            return self._wavenumbers
-
-        self._wavenumbers = [
-            u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
-            ]
-
-        self._logger.info("Spectral wave numbers computed. ")
-
-        return self._wavenumbers
-
-    @property
-    def waveindices(self):
-        """Doublet indices for each discrete wave number.
-
-        Returns
-        -------
-        (int, int), array_like
-            Spectral mode indices.
-
-        """
-        if self._waveindices is not None:
-            return self._waveindices
-
-        self._waveindices = [
-            [(ell, nidx+1) for nidx in range(self.depths[ellidx])]
-            for ellidx, ell in enumerate(self.degrees)
-            ]
-        self._logger.info("Spectral mode indices compiled. ")
-
-        return self._waveindices
-
-    @property
-    def normcoeff(self):
-        """Normalisation coefficients for discretisation.
-
-        Returns
-        -------
-        kappa_elln : float, array_like
-            Normalisation coefficients.
-
-        """
-        if self._normcoeff is not None:
-            return self._normcoeff
-
-        R = self.attrs['boundary_radius']
-        cond = self.attrs['boundary_condition'].lower()
-
-        kappa_elln = []
-        if cond.startswith('d'):
-            for ell, u_ell in zip(self.degrees, self.roots):
-                kappa_elln.append(
-                    2 / (R**3 * sph_besselj(ell+1, u_ell)**2)
-                    )
-        elif cond.startswith('n'):
-            for ell, u_ell in zip(self.degrees, self.roots):
-                kappa_elln.append(
-                    2 / (R**3 * sph_besselj(ell, u_ell)**2)
-                    / (1 - ell*(ell+1)/np.square(u_ell))
-                    )
-
-        self._normcoeff = kappa_elln
-        self._logger.info("Spectral normalisations computed. ")
-
-        return kappa_elln

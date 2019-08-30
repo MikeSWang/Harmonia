@@ -156,6 +156,11 @@ class SphericalMap:
         self.nmean = nmean
         self.alpha_ratio = alpha_ratio
 
+    def __repre__(self):
+        return "SphericalMap(maxdeg={}, nmodes={})".format(
+            max(self.disc.degrees), self.disc.nmodes
+            )
+
     @classmethod
     def discretise_catalogue(cls, data, rand=None, source='mock',
                              nmean_data=None, nmean_rand=None, **disc_params):
@@ -331,6 +336,29 @@ class SphericalMap:
             ord_collapse=ord_collapse
             )
 
+    def spherical_power(self, method=None):
+        """Compute spherically recovered power spectrum.
+
+        Parameters
+        ----------
+        method : str, optional
+            Expectation computation method (default is `None`).
+
+        Returns
+        -------
+        sph_power : float, array_like
+            Spherically recovered power.
+
+        """
+        if (self._n_ellmn is None) or (self._nbar_ellmn is None):
+            self._n_ellmn, self._nbar_ellmn = self.transform(method=method)
+
+        sph_power = self.square_amplitude(
+            self._n_ellmn, self._nbar_ellmn, normcoeff=self.disc.normcoeff
+            )
+
+        return sph_power
+
     @staticmethod
     def compute_stat2pt_from_coeff(n_coeff, nbar_coeff, disc, pivot='natural',
                                    ord_collapse=False):
@@ -370,29 +398,6 @@ class SphericalMap:
         dvec, _ = d_ellmn.unfold(pivot, collapse=ord_collapse)
 
         return np.outer(dvec, np.conj(dvec))
-
-    def spherical_power(self, method=None):
-        """Compute spherically recovered power spectrum.
-
-        Parameters
-        ----------
-        method : str, optional
-            Expectation computation method (default is `None`).
-
-        Returns
-        -------
-        sph_power : float, array_like
-            Spherically recovered power.
-
-        """
-        if (self._n_ellmn is None) or (self._nbar_ellmn is None):
-            self._n_ellmn, self._nbar_ellmn = self.transform(method=method)
-
-        sph_power = self.square_amplitude(
-            self._n_ellmn, self._nbar_ellmn, normcoeff=self.disc.normcoeff
-            )
-
-        return sph_power
 
     @staticmethod
     def square_amplitude(n_coeff, nbar_coeff, normcoeff=None):

@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from powerrc import PATHOUT, argv, fdir, fname
+from powerrc import PATHOUT, argv, fdir, fname, save_data
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, RandomCatalogue
@@ -15,27 +15,24 @@ from harmonia.mapper import SphericalMap, RandomCatalogue
 
 # -- Runtime parameters -------------------------------------------------------
 
+sarg = iter(argv[1:])
 try:
-    nbar, rmax, niter = float(argv[1]), float(argv[2]), int(argv[3])
-except:
-    nbar, rmax, niter = 1e-3, 150, 25
-    argv.extend([str(nbar), str(rmax), str(niter)])
-
-if argv[4:]:
-    progid = "-[{}]".format(argv[-1])
-else:
-    progid = ""
+    nbar, rmax, niter = float(next(sarg)), float(next(sarg)), int(next(sarg))
+    try:
+        progid = "-[{}]".format(next(sarg))
+    except StopIteration:
+        progid = ""
+except StopIteration:
+    nbar, rmax, niter, progid = 1e-3, 150, 25, ""
 
 KMAX = 0.125
-DK = 1e-2
 MESHCAL = 256
 
 
 # -- Program identifier -------------------------------------------------------
 
-ftag = (
-    "-(nbar={},rmax={},niter={}){}"
-    .format(ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid)
+ftag = "-(nbar={},rmax={},niter={}){}".format(
+    ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid
     )
 
 
@@ -55,10 +52,8 @@ for run in range(niter):
     data = RandomCatalogue(nbar, boxsize=2*rmax)
 
     # Run Cartesian algorithm.
-    mesh = data.to_mesh(
-        Nmesh=MESHCAL, resampler='tsc', compensated=True, interlaced=True
-        )
-    cpow = FFTPower(mesh, mode='1d', dk=DK, kmax=waves.max()+DK).power
+    mesh = data.to_mesh(Nmesh=MESHCAL, resampler='tsc', compensated=True)
+    cpow = FFTPower(mesh, mode='1d', kmax=KMAX).power
 
     # Run spherical algorithm.
     mapp = SphericalMap(disc, data, nmean_data=nbar)
@@ -89,15 +84,18 @@ output = {
     'Nk': Nk_all, 'k': k_all, 'Pk': Pk_all, 'Pshot': Pshot_all,
     'ln': modes, 'kln': waves, 'Pln': Pln_all,
     }
-np.save(f"{PATHOUT}{fdir}{fname}{ftag}.npy", output)
+save_data(f"{PATHOUT}{fdir}", f"{fname}{ftag}.npy", output)
+
+
+# -- Visualise ----------------------------------------------------------------
 
 results = {
-    'Nk': np.sum(output['Nk'], axis=0),
+    'Nk': np.sum(output['Nk'], axis=0)/2,
     'k': np.average(output['k'], axis=0),
     'Pk': np.average(output['Pk'], axis=0),
     'Pshot': np.average(output['Pshot']),
     'ln': output['ln'],
-    'kln':output['kln'],
+    'kln': output['kln'],
     'Pln': np.average(output['Pln'], axis=0),
     }
 results.update({
@@ -108,25 +106,20 @@ results.update({
     'dof2': np.size(output['Pln'], axis=0) - 1,
     })
 
-
-# -- Visualise ----------------------------------------------------------------
-
 try:
     plt.style.use(harmony)
     plt.close('all')
     plt.figure('No-clustering power recovery')
 
-    # NOTE: Modifiable.
     c = plt.errorbar(
         results['k'], results['Pk'],
         xerr=results['dk']/np.sqrt(results['dof1']),
-        yerr=results['dPk']/np.sqrt(results['dof1']),
-        color='#0087BD', elinewidth=.8, label='Cartesian'
+        yerr=results['dPk']/np.sqrt(results['dof2']),
+        elinewidth=.8, color='#0087BD', label='Cartesian'
         )
 
     s = plt.loglog(
-        results['kln'], results['Pln'], color='#C40233',
-        label='spherical'
+        results['kln'], results['Pln'], color='#C40233', label='spherical'
         )
     plt.fill_between(
         results['kln'],
@@ -145,7 +138,7 @@ try:
             plt.annotate(
                 r'$({:d},{:d})$'.format(ind_lab[0], ind_lab[1]),
                 xy=(results['kln'][idx], results['Pln'][idx]),
-                verticalalignment='bottom', fontsize=7
+                verticalalignment='bottom', fontsize=6
                 )
 
     plt.axhline(y=results['Pshot'], ls='--', c=c[0].get_color(), alpha=.5)

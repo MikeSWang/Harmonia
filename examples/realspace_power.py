@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from powerrc import PATHOUT, argv, fdir, fname
+from powerrc import PATHOUT, argv, fdir, fname, save_data
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
@@ -15,23 +15,18 @@ from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 # -- Runtime parameters -------------------------------------------------------
 
+sarg = iter(argv[1:])
 try:
-    nbar, contrast = float(argv[1]), argv[2]
-    zmax, expand = float(argv[3]), float(argv[4])
-    meshgen, meshcal, niter = int(argv[5]), int(argv[6]), int(argv[7])
-except:
-    nbar, contrast = 1e-3, None
-    zmax, expand = 0.05, 2.
-    meshgen, meshcal, niter = 256, 256, 25
-    argv.extend(
-        [str(nbar), str(contrast).lower(), str(zmax), str(expand),
-         str(meshgen), str(meshcal), str(niter),]
-        )
-
-if argv[8:]:
-    progid = "-[{}]".format(argv[-1])
-else:
-    progid = ""
+    nbar, contrast = float(next(sarg)), next(sarg)
+    zmax, expand = float(next(sarg)), float(next(sarg))
+    meshgen, meshcal, niter = int(next(sarg)), int(next(sarg)), int(next(sarg))
+    try:
+        progid = "-[{}]".format(next(sarg))
+    except StopIteration:
+        progid = ""
+except StopIteration:
+    nbar, contrast, zmax, expand = 1e-3, None, 0.05, 2.
+    meshgen, meshcal, niter, progid = 256, 256, 25, ""
 
 REDSHIFT = 0.
 BIAS = 2.
@@ -93,16 +88,12 @@ for run in range(niter):
 
     # Run Cartesian algorithm.
     if is_case_mock:
-        mesh = fkplog.to_mesh(
-            Nmesh=meshcal, resampler='tsc', compensated=True, interlaced=True
-            )
+        mesh = fkplog.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
         cpow = ConvolvedFFTPower(
             mesh, poles=[0], dk=DK, kmax=waves.max()+DK
             ).poles
     else:
-        mesh = data.to_mesh(
-            Nmesh=meshcal, resampler='tsc', compensated=True, interlaced=True
-            )
+        mesh = data.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
         cpow = FFTPower(mesh, mode='1d', dk=DK, kmax=waves.max()+DK).power
 
     # Run spherical algorithm.
@@ -114,12 +105,12 @@ for run in range(niter):
     # Append reordered results.
     k_.append([cpow['k']])
     Nk_.append([cpow['modes']])
+    Pshot_.append([cpow.attrs['shotnoise']])
+    Pln_.append([np.concatenate(spow)[order]])
     if is_case_mock:
         Pk_.append([cpow['power_0'].real])
     else:
         Pk_.append([cpow['power'].real])
-    Pshot_.append([cpow.attrs['shotnoise']])
-    Pln_.append([np.concatenate(spow)[order]])
 
 
 # == FINALISATION =============================================================
@@ -139,7 +130,10 @@ output = {
     'Nk': Nk_all, 'k': k_all, 'Pk': Pk_all, 'Pshot': Pshot_all,
     'ln': modes, 'kln': waves, 'Pln': Pln_all,
     }
-np.save(f"{PATHOUT}{fdir}{fname}{ftag}.npy", output)
+save_data(f"{PATHOUT}{fdir}", f"{fname}{ftag}.npy", output)
+
+
+# -- Visualise ----------------------------------------------------------------
 
 results = {
     'Nk': np.sum(output['Nk'], axis=0),
@@ -158,9 +152,6 @@ results.update({
     'dof2': np.size(output['Pln'], axis=0) - 1,
     })
 
-
-# -- Visualise ----------------------------------------------------------------
-
 try:
     plt.style.use(harmony)
     plt.close('all')
@@ -169,8 +160,8 @@ try:
     c = plt.errorbar(
         results['k'], results['Pk'],
         xerr=results['dk']/np.sqrt(results['dof1']),
-        yerr=results['dPk']/np.sqrt(results['dof1']),
-        color='#0087BD', elinewidth=.8, label='Cartesian'
+        yerr=results['dPk']/np.sqrt(results['dof2']),
+        elinewidth=.8, color='#0087BD', label='Cartesian'
         )
 
     s = plt.loglog(
@@ -193,7 +184,7 @@ try:
             plt.annotate(
                 r'$({:d},{:d})$'.format(ind_lab[0], ind_lab[1]),
                 xy=(results['kln'][idx], results['Pln'][idx]),
-                verticalalignment='bottom', fontsize=7
+                verticalalignment='bottom', fontsize=6
                 )
 
     plt.xlim(left=0.99*results['kln'].min(), right=1.01*results['kln'].max())

@@ -1,11 +1,13 @@
 """Recover real-space power spectrum from fixed-epoch log-normal catalogues.
 
 """
+from collections import defaultdict
+
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from powerrc import PATHOUT, argv, fdir, fname, save_data
+from powerrc import PATHOUT, fdir, fname, params, confirm_dir
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony, format_float as ff
 from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
@@ -15,30 +17,24 @@ from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
 
 # -- Runtime parameters -------------------------------------------------------
 
-sarg = iter(argv[1:])
-try:
-    nbar, contrast = float(next(sarg)), next(sarg)
-    zmax, expand = float(next(sarg)), float(next(sarg))
-    meshgen, meshcal, niter = int(next(sarg)), int(next(sarg)), int(next(sarg))
-    try:
-        progid = "-[{}]".format(next(sarg))
-    except StopIteration:
-        progid = ""
-except StopIteration:
-    nbar, contrast, zmax, expand = 1e-3, None, 0.05, 2.
-    meshgen, meshcal, niter, progid = 256, 256, 25, ""
-
-REDSHIFT = 0.
-BIAS = 2.
-KMAX = 0.1
-DK = 1e-2
-
+nbar = params.nbar
+contrast = params.contrast
+bias = params.bias
+redshift = params.redshift
+zmax = params.zmax
+kmax = params.kmax
+dk = params.dk
+expand = params.expand
+meshgen = params.meshgen
+meshcal = params.meshcal
+niter = params.niter
+progid = params.progid
 
 # -- Cosmology ----------------------------------------------------------------
 
 cosmo = cosmology.Planck15
 rmax = cosmo.comoving_distance(zmax)
-Plin = cosmology.LinearPower(cosmo, redshift=REDSHIFT, transfer='CLASS')
+Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
 
 
 # -- Program identifier -------------------------------------------------------
@@ -66,16 +62,16 @@ ftag = (
 print(ftag)
 
 # Set up discretisation.
-disc = DiscreteSpectrum(rmax, 'Dirichlet', KMAX)
+disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 order = np.concatenate(disc.wavenumbers).argsort()
 modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
 
-k_, Nk_, Pk_, Pshot_, Pln_ = [], [], [], [], []
+suite = defaultdict(list)
 for run in range(niter):
     # Generate data and random catalogues.
     data = LognormalCatalogue(
-        Plin, nbar, bias=BIAS, boxsize=2*expand*rmax, nmesh=meshgen
+        Plin, nbar, bias=bias, boxsize=2*expand*rmax, nmesh=meshgen
         )
     if is_case_mock:
         nrand = contrast*nbar
@@ -90,11 +86,11 @@ for run in range(niter):
     if is_case_mock:
         mesh = fkplog.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
         cpow = ConvolvedFFTPower(
-            mesh, poles=[0], dk=DK, kmax=waves.max()+DK
+            mesh, poles=[0], dk=dk, kmax=waves.max()+dk
             ).poles
     else:
         mesh = data.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
-        cpow = FFTPower(mesh, mode='1d', dk=DK, kmax=waves.max()+DK).power
+        cpow = FFTPower(mesh, mode='1d', dk=dk, kmax=waves.max()+dk).power
 
     # Run spherical algorithm.
     mapp = SphericalMap(
@@ -103,35 +99,27 @@ for run in range(niter):
     spow = mapp.spherical_power()
 
     # Append reordered results.
-    k_.append([cpow['k']])
-    Nk_.append([cpow['modes']])
-    Pshot_.append([cpow.attrs['shotnoise']])
-    Pln_.append([np.concatenate(spow)[order]])
+    suite['k'].append([cpow['k']])
+    suite['Nk'].append([cpow['modes']]/2)
+    suite['Pshot'].append([cpow.attrs['shotnoise']])
+    suite['Pln'].append([np.concatenate(spow)[order]])
     if is_case_mock:
-        Pk_.append([cpow['power_0'].real])
+        suite['Pk'].append([cpow['power_0'].real])
     else:
-        Pk_.append([cpow['power'].real])
+        suite['Pk'].append([cpow['power'].real])
 
 
 # == FINALISATION =============================================================
 
-# -- Gather -------------------------------------------------------------------
-
-k_all = np.concatenate(k_)
-Nk_all = np.concatenate(Nk_)
-Pk_all = np.concatenate(Pk_)
-Pshot_all = np.concatenate(Pshot_)
-Pln_all = np.concatenate(Pln_)
-
+fpathful, fnameful = f"{PATHOUT}{fdir}", f"{fname}{ftag}"
+confirm_dir(fpathful)
 
 # -- Export -------------------------------------------------------------------
 
-output = {
-    'Nk': Nk_all, 'k': k_all, 'Pk': Pk_all, 'Pshot': Pshot_all,
-    'ln': modes, 'kln': waves, 'Pln': Pln_all,
-    }
-save_data(f"{PATHOUT}{fdir}", f"{fname}{ftag}.npy", output)
+output = {var: np.concatenate(val_list) for var, val_list in suite.iteritems()}
+output.update({'ln': modes, 'kln': waves})
 
+np.save("".join([fpathful, fnameful, ".npy"]), output)
 
 # -- Visualise ----------------------------------------------------------------
 
@@ -155,30 +143,29 @@ results.update({
 try:
     plt.style.use(harmony)
     plt.close('all')
-    plt.figure('Real-space power recovery')
 
     c = plt.errorbar(
-        results['k'], results['Pk'],
-        xerr=results['dk']/np.sqrt(results['dof1']),
-        yerr=results['dPk']/np.sqrt(results['dof2']),
-        elinewidth=.8, color='#0087BD', label='Cartesian'
-        )
+            results['k'], results['Pk'],
+            xerr=results['dk']/np.sqrt(results['dof1']),
+            yerr=results['dPk']/np.sqrt(results['dof2']),
+            elinewidth=.8, color='#0087BD', label='Cartesian'
+            )
 
     s = plt.loglog(
-        results['kln'], results['Pln'], color='#C40233', label='spherical'
-        )
+            results['kln'], results['Pln'], color='#C40233', label='spherical'
+            )
     plt.fill_between(
-        results['kln'],
-        results['Pln']-results['dPln']/np.sqrt(results['dof2']),
-        results['Pln']+results['dPln']/np.sqrt(results['dof2']),
-        color=s[0].get_color(), alpha=1/4
-        )
+            results['kln'],
+            results['Pln']-results['dPln']/np.sqrt(results['dof2']),
+            results['Pln']+results['dPln']/np.sqrt(results['dof2']),
+            color=s[0].get_color(), alpha=1/4
+            )
     plt.fill_between(
-        results['kln'],
-        results['Pln']-2*results['dPln']/np.sqrt(results['dof2']),
-        results['Pln']+2*results['dPln']/np.sqrt(results['dof2']),
-        color=s[0].get_color(), alpha=1/20
-        )
+            results['kln'],
+            results['Pln']-2*results['dPln']/np.sqrt(results['dof2']),
+            results['Pln']+2*results['dPln']/np.sqrt(results['dof2']),
+            color=s[0].get_color(), alpha=1/20
+            )
     for idx, ind_lab in enumerate(results['ln']):
         if ind_lab[0] == 0:
             plt.annotate(
@@ -191,6 +178,6 @@ try:
     plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
-    plt.savefig(f"{PATHOUT}{fdir}{fname}{ftag}.pdf")
-except:
-    pass
+    plt.savefig("".join([fpathful, fnameful, ".pdf"]))
+except Exception as e:
+    print(e)

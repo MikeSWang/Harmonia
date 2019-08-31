@@ -1,13 +1,11 @@
 """Recover real-space power spectrum from fixed-epoch N-body simulations.
 
 """
-from argparse import ArgumentParser
-
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from powerrc import PATHIN, PATHOUT, fdir, get_filename, params
+from powerrc import PATHIN, PATHOUT, fdir, params, get_filename, confirm_dir
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import harmony
 from harmonia.mapper import SphericalMap
@@ -17,18 +15,14 @@ from harmonia.mapper import SphericalMap
 
 # -- Runtime parameters -------------------------------------------------------
 
-params = parser.parse_args()
-
 file = params.infile
 kmax = params.kmax
 L = params.boxside
-dk = params.dk
-
+meshcal = params.meshcal
 
 # -- Runtime constants --------------------------------------------------------
 
 HEADINGS = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'mass',]
-NMESH = 512
 
 
 # == PROCESSING ===============================================================
@@ -41,6 +35,7 @@ waves = np.concatenate(disc.wavenumbers)[order]
 
 # Build catalogue (note unit conversion!).
 clog = CSVCatalog(f"{PATHIN}{fdir}{file}", HEADINGS)
+
 clog.attrs['BoxSize'] = L
 
 clog['Position'] = clog['x'][:, None] * [1, 0, 0] \
@@ -49,9 +44,9 @@ clog['Position'] = clog['x'][:, None] * [1, 0, 0] \
 
 # Run Cartesian algorithm.
 mesh = clog.to_mesh(
-    resampler='tsc', Nmesh=NMESH, compensated=True, interlaced=True
+    resampler='tsc', Nmesh=meshcal, compensated=True, interlaced=True
     )
-cpow = FFTPower(mesh, mode='1d', dk=dk, kmax=kmax).power
+cpow = FFTPower(mesh, mode='1d', kmax=kmax).power
 
 # Run spherical algorithm.
 mapp = SphericalMap(disc, clog)
@@ -60,10 +55,13 @@ spow = mapp.spherical_power()
 
 # == FINALISATION =============================================================
 
+fpathful, fnameful = f"{PATHOUT}{fdir}", f"{get_filename(file)}"
+confirm_dir(fpathful)
+
 # -- Export -------------------------------------------------------------------
 
-data = {
-    'Nk': cpow['modes'],
+output = {
+    'Nk': cpow['modes']/2,
     'k': cpow['k'],
     'Pk': cpow['power'].real,
     'Pshot': cpow.attrs['shotnoise'],
@@ -71,66 +69,67 @@ data = {
     'kln': waves,
     'Pln': np.concatenate(spow)[order],
     }
-np.save(f"{PATHOUT}{fdir}{get_filename(file)}.npy", data)
-
+np.save("".join([fpathful, fnameful, ".npy"]), output)
 
 # -- Visualise ----------------------------------------------------------------
 
 try:
     plt.style.use(harmony)
     plt.close('all')
-    plt.figure('N-body simulation power recovery')
 
     c = plt.errorbar(
-        data['k'], data['Pk'], yerr=np.sqrt(2*data['Pk']**2/data['Nk']),
-        color='#C40233', elinewidth=.8, label='Cartesian'
-        )
+            output['k'], output['Pk'],
+            yerr=np.sqrt(2*output['Pk']**2/output['Nk']),
+            elinewidth=.8, color='#C40233', label='Cartesian'
+            )
     s = plt.loglog(
-        data['kln'], data['Pln'], color='#0087BD', label='spherical'
-        )
+            output['kln'], output['Pln'], color='#0087BD', label='spherical'
+            )
 
     POL_NUM = 2  # number of poles
-    POL_COLOUR = ['#000000', '#FFD300']  # colour of poles
+    POL_COLOUR = ['#000000', '#FFD300',]  # colour of poles
     for ell in range(POL_NUM):
-        ellsel = (data['ln'][:, 0] == ell)
+        ellsel = (output['ln'][:, 0] == ell)
         plt.scatter(
-            data['kln'][ellsel], data['Pln'][ellsel],
+            output['kln'][ellsel], output['Pln'][ellsel],
             color=POL_COLOUR[ell], label=r'$\ell={:d}$'.format(ell)
             )
 
-    for idx, ind_lab in enumerate(data['ln']):
+    for idx, ind_lab in enumerate(output['ln']):
         if ind_lab[0] == 0 and False:
             plt.annotate(
                 r'$({:d},{:d})$'.format(ind_lab[0], ind_lab[1]),
-                xy=(data['kln'][idx], data['Pln'][idx]),
-                verticalalignment='bottom', fontsize=7
+                xy=(output['kln'][idx], output['Pln'][idx]),
+                verticalalignment='bottom', fontsize=6
                 )
 
-    plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
+    plt.xlim(left=0.99*output['kln'].min(), right=1.01*output['kln'].max())
     plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
-    plt.savefig(f"{PATHOUT}{fdir}{get_filename(file)}.pdf")
-except:
-    pass
+    plt.savefig("".join([fpathful, fnameful, ".pdf"]))
+except Exception as e:
+    print(e)
 
 """Use the following to combine results from two catalogues:
 
-dataL = np.load(f"{PATHOUT}{fdir}{}-L.npy").item()
-dataR = np.load(f"{PATHOUT}{fdir}{}-R.npy").item()
+outputL = np.load(f"{PATHOUT}{fdir}{}L.npy").item()
+outputR = np.load(f"{PATHOUT}{fdir}{}R.npy").item()
 
-data = {
-    'Nk': (dataL['Nk'] + dataR['Nk']),
-    'k': (dataL['k'] + dataR['k'])/2,
-    'Pk': (dataL['Pk'] + dataR['Pk'])/2,
-    'Pshot': (dataL['Pshot'] + dataR['Pshot'])/2,
-    'ln': (dataL['ln'] + dataR['ln'])/2,
-    'kln': (dataL['kln'] + dataR['kln'])/2,
-    'Pln': (dataL['Pln'] + dataR['Pln'])/2,
+output = {
+    'Nk': (outputL['Nk'] + outputR['Nk']),
+    'k': (outputL['k'] + outputR['k'])/2,
+    'Pk': (outputL['Pk'] + outputR['Pk'])/2,
+    'Pshot': (outputL['Pshot'] + outputR['Pshot'])/2,
+    'ln': (outputL['ln'] + outputR['ln'])/2,
+    'kln': (outputL['kln'] + outputR['kln'])/2,
+    'Pln': (outputL['Pln'] + outputR['Pln'])/2,
     }
 
 LS = ['--', ':']
-for l, data in enumerate([dataL, dataR]):
-    plt.loglog(data['kln'], data['Pln'], ls=LS[l], color='#009F6B', alpha=.5)
+for flag, output in enumerate([outputL, outputR]):
+    plt.loglog(
+        output['kln'], output['Pln'], ls=LS[flag], color='#009F6B', alpha=.5
+        )
 
 """

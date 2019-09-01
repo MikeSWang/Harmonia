@@ -49,16 +49,11 @@ if rsd:
 else:
     subdir, rsd_tag = "nrsd/", 'none'
 
-if meshgen == meshcal:
-    mesh_tag = f"cp{meshgen}"
-else:
-    mesh_tag = f"c{meshgen},p{meshcal}"
-
 ftag = (
     f"-(nbar={ff(nbar, 'sci')},ratio={ratio_tag},"
     f"b={ff(bias, 'decdot')},rsd={rsd_tag},"
     f"rmax={ff(rmax, 'intdot')},xpd={ff(expand, 'decdot')},"
-    f"nmesh=[{mesh_tag}],niter={niter}){progid}"
+    f"nmesh=c{meshgen},niter={niter}){progid}"
     )
 
 

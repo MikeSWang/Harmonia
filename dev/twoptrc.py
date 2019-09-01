@@ -26,7 +26,6 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--rsd', action='store_true')
 
     cli_parser.add_argument('--zmax', type=float, default=0.05)
-    cli_parser.add_argument('--rmax', type=float, default=150.)
     cli_parser.add_argument('--kmax', type=float, default=0.1)
     cli_parser.add_argument('--dk', type=float, default=1e-2)
 
@@ -35,12 +34,10 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--boxside', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--meshgen', type=int, default=256)
-    cli_parser.add_argument('--meshcal', type=int, default=256)
 
     # Program parameters
     cli_parser.add_argument('--niter', type=int, default=25)
     cli_parser.add_argument('--progid', default="")
-    cli_parser.add_argument('--infile', default="halos-(NG=0.,z=1.)-0L.txt")
 
     return cli_parser.parse_args()
 

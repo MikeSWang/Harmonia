@@ -79,8 +79,7 @@ try:
     plt.close('sall')
 
     c = plt.errorbar(
-            data['k'], data['Pk'],
-            yerr=np.sqrt(2*data['Pk']**2/data['Nk']),
+            data['k'], data['Pk'], yerr=data['Pk']/np.sqrt(data['Nk']),
             elinewidth=.8, color='#C40233', label='Cartesian'
             )
     s = plt.loglog(

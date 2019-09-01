@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 from nbodykit.lab import cosmology as cosmo
 
-from twoptrc import PATHOUT, argv, fdir, fname, save_data
+from twoptrc import PATHOUT, fdir, fname, params, confirm_dir
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     allocate_segments, unitconst, format_float as ff
@@ -17,40 +17,23 @@ from harmonia.reader import coupling_list, twopoint_signal, twopoint_shotnoise
 
 # -- Runtime parameters -------------------------------------------------------
 
-try:
-    sarg = iter(argv[1:])
-    nbar, zmax, bias = float(next(sarg)), float(next(sarg)), float(next(sarg))
-    rsd, struct = next(sarg), next(sarg)
-    try:
-        progid = "-[{}]".format(next(sarg))
-    except StopIteration:
-        progid = ""
-except:
-    nbar, zmax, bias, rsd, struct, progid = 1e-3, 0.05, 1., 'T', 'natural', ""
-
-if rsd.upper().startswith('T'):
-    rsd = True
-elif rsd.upper().startswith('F'):
-    rsd = False
-
-KMAX = 0.1
-Z = 0.
+nbar = params.nbar
+bias = params.bias
+redshift = params.redshift
+rsd = params.rsd
+zmax = params.zmax
+kmax = params.kmax
+struct = params.struct
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
-
 # -- Cosmology ----------------------------------------------------------------
 
 rmax = cosmo.Planck15.comoving_distance(zmax)
-Plin = cosmo.LinearPower(cosmo.Planck15, redshift=Z, transfer='CLASS')
-
-if rsd:
-    beta = cosmo.Planck15.scale_independent_growth_rate(Z) / bias
-else:
-    beta = 0
-
+Plin = cosmo.LinearPower(cosmo.Planck15, redshift=redshift, transfer='CLASS')
+beta = rsd * cosmo.Planck15.scale_independent_growth_rate(redshift) / bias
 
 # -- Program identifier -------------------------------------------------------
 
@@ -61,7 +44,7 @@ else:
 
 ftag = (
     f"-(nbar={ff(nbar, 'sci')},rmax={ff(rmax, 'intdot')},"
-    f"b={ff(bias, 'decdot')},rsd={rsd_tag},ord={struct}){progid}"
+    f"b={ff(bias, 'decdot')},rsd={rsd_tag},ord={struct})"
     )
 
 
@@ -70,7 +53,7 @@ ftag = (
 if rank == 0: print(ftag)
 
 # Set up discretisation and indexing.
-disc = DiscreteSpectrum(rmax, 'dirichlet', KMAX)
+disc = DiscreteSpectrum(rmax, 'dirichlet', kmax)
 
 indx_arr = SphericalArray.build(disc=disc)
 _, indx_vec = indx_arr.unfold(struct)
@@ -124,13 +107,16 @@ if rank == 0:
 # == FINALISATION =============================================================
 
 if rank == 0:
+    fpathful, fnameroot = f"{PATHOUT}{fdir}{subdir}", fname.split("_").pop()
+    confirm_dir(fpathful)
+
     output_couplings = {
         'ang': M_all,
         'rad': Phi_all,
         'rsd': Upsi_all,
         }
-    save_data(
-        f"{PATHOUT}{fdir}couplings/predict_couplings{ftag}.npy",
+    np.save(
+        "".join([fpathful, fnameroot, "_couplings", ftag, ".npy"]),
         output_couplings
         )
 
@@ -139,4 +125,7 @@ if rank == 0:
         'shotnoise': cov_shotnoise,
         'covar': cov_signal + cov_shotnoise,
         }
-    save_data(f"{PATHOUT}{fdir}{subdir}{fname}{ftag}.npy", output_2pt)
+    np.save(
+        "".join([fpathful, fnameroot, "_2pt", ftag, ".npy"]),
+        output_2pt
+        )

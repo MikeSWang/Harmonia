@@ -1,82 +1,79 @@
-"""Export recovered two-point values.
+"""Export recovered 2-point function values.
 
 """
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology as cosmo
 
-from twopointrc import PATHOUT
-from view_twopt import view_twopoint
+from twopointrc import PATHOUT, aggregate, confirm_dir
+from view_twopt_ import view_covariance_ as view_covariance
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import collate
 
 
-# == DEFINITION ===============================================================
+# == CONFIGURATION ============================================================
 
-def aggregate(data):
-    return {key: np.average(val, axis=0) for key, val in data.items()}
-
-
-# == EXECUTION ================================================================
-
-CASE = "nRSD/"
-BIASSTR = "b=2"
 STRUCT = 'natural'
 
-PREFIX_DATA = "measure2pt"
-PREFIX_MODEL = "predict2pt"
+DATADIR = "measure_twopt/"
+MODELDIR = "predict_twopt/"
+SUBDIR = "nRSD/"
 
-DIR_DATA = f"{PREFIX_DATA}/"
-DIR_MODEL = f"{PREFIX_MODEL}/"
+DATANAME = "measure_twopt"
+MODELNAME = "predict_2pt"
 
-TAG_DATA = ("2pt-("
-            "nbar=0.001,ratio=simu,b=2.,rsd=none,"
-            "rmax=148.,xpd=2.,nmesh=[cp256],niter=25*100"
-            ")-agg")
-TAG_MODEL = f"2pt-(nbar=0.001,rmax=148.,b=2.,rsd=none,ord={STRUCT})"
+TAG_DATA = (
+    "-("
+    ")-agg"
+    )
+TAG_MODEL = f"-(ord={STRUCT})"
 
 COLLATE = False
 SAVE = 'agg'  # 'full', 'agg', ''
 
-LOAD_DATA = True
+LOAD_DATA = False
 LOAD_MODEL = False
 
 SAVEFIG = False
 
-# Collate or load data.
+
+# == OPERATION ================================================================
+
+collate_path = f"{PATHOUT}{DATADIR}{SUBDIR}collated/"
+confirm_dir(collate_path)
+
+# Load files.
 if COLLATE:
     output_data, count, _ = collate(
-        f"{PATHOUT}{DIR_DATA}2pt/{CASE}{PREFIX_DATA}-*{BIASSTR}*.npy", 'npy'
+        f"{PATHOUT}{DATADIR}{SUBDIR}{DATANAME}-*.npy", 'npy'
         )
     data = aggregate(output_data)
 
     save_str = "".join(_.split("(")[-1].split(")")[:-1])
     if SAVE == 'full':
-        np.save(f"{PATHOUT}{DIR_DATA}collated/{CASE}"
-                + f"{PREFIX_DATA}-2pt-({save_str}*{count}).npy",
-                output_data)
+        np.save(
+            f"{collate_path}{DATANAME}-({save_str}*{count}).npy",
+            output_data
+            )
     elif SAVE == 'agg':
-        np.save(f"{PATHOUT}{DIR_DATA}collated/{CASE}"
-                + f"{PREFIX_DATA}-2pt-({save_str}*{count})-agg.npy",
-                data
-                )
+        np.save(
+            f"{collate_path}{DATANAME}-({save_str}*{count})-agg.npy",
+            data
+            )
 
 if LOAD_DATA:
-    output_data = np.load(
-        f"{PATHOUT}{DIR_DATA}collated/{CASE}{PREFIX_DATA}-{TAG_DATA}.npy"
-        ).item()
+    output_data = np.load(f"{collate_path}{DATANAME}{TAG_DATA}.npy").item()
     if TAG_DATA.endswith("agg"):
         data = output_data
     else:
         data = aggregate(output_data)
 
-# Load model.
 if LOAD_MODEL:
     model = np.load(
-        f"{PATHOUT}{DIR_MODEL}{CASE}{PREFIX_MODEL}-{TAG_MODEL}.npy"
+        f"{PATHOUT}{MODELDIR}{SUBDIR}{MODELNAME}{TAG_MODEL}.npy"
         ).item()
 
-# Indexing set up.
+# Set up indexing. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 rmax = cosmo.Planck15.comoving_distance(0.05)
 Plin = cosmo.LinearPower(cosmo.Planck15, redshift=0., transfer='CLASS')
 
@@ -114,7 +111,7 @@ for idx, greek in enumerate(indx_vec):
 m2pt = np.diag(m2pt)
 
 # None / indx_vec[ind], True / False, None / 'only' / 'off'
-diff = view_twopoint(m2pt, m2pt=None, ind=ind,
+diff = view_covariance(m2pt, m2pt=None, ind=ind,
                      lb=indx_vec[ind], diff=True, diag='only')
 if SAVEFIG:
     plt.savefig(

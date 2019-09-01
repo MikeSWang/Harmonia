@@ -4,10 +4,11 @@
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
+
 from harmonia.collections import harmony
 
 
-def view_twopoint(d2pt, m2pt=None, diff=False, diag=None, lb=None, ind=None):  # !!!
+def view_covariance_(d2pt, m2pt=None, diff=False, diag=None, lb=None, ind=None):  # !!!
 
     plt.style.use(harmony)
     plt.close('all')

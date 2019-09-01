@@ -47,9 +47,6 @@ if LOAD and (TAG_ADD is not None):
     if AGGREGATE:
         results_add = aggregate(output_add)
 
-if SCRIPT == 'nbodysim_power':
-    results['ln'] = results['ln'][-1]
-
 if EXPORT:
     view_spectrum(results, case='error')
     if SAVEFIG: plt.savefig(f"{fpath}{PREFIX}{TAG}.pdf")

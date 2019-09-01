@@ -117,7 +117,7 @@ confirm_dir(fpathful)
 # -- Export -------------------------------------------------------------------
 
 output = {var: np.concatenate(val_list) for var, val_list in suite.items()}
-output.update({'ln': modes, 'kln': waves})
+output.update({'ln': [modes], 'kln': [waves]})
 
 np.save("".join([fpathful, fnameful, ".npy"]), output)
 

@@ -61,49 +61,50 @@ confirm_dir(fpathful)
 # -- Export -------------------------------------------------------------------
 
 output = {
-    'Nk': cpow['modes']/2,
-    'k': cpow['k'],
-    'Pk': cpow['power'].real,
-    'Pshot': cpow.attrs['shotnoise'],
-    'ln': modes,
-    'kln': waves,
-    'Pln': np.concatenate(spow)[order],
+    'Nk': [cpow['modes']],
+    'k': [cpow['k']],
+    'Pk': [cpow['power'].real],
+    'Pshot': [cpow.attrs['shotnoise']],
+    'ln': [modes],
+    'kln': [waves],
+    'Pln': [np.concatenate(spow)[order]],
     }
 np.save("".join([fpathful, fnameful, ".npy"]), output)
 
 # -- Visualise ----------------------------------------------------------------
 
+data = {var: val[0] for var, val in output.items()}
 try:
     plt.style.use(harmony)
-    plt.close('all')
+    plt.close('sall')
 
     c = plt.errorbar(
-            output['k'], output['Pk'],
-            yerr=np.sqrt(2*output['Pk']**2/output['Nk']),
+            data['k'], data['Pk'],
+            yerr=np.sqrt(2*data['Pk']**2/data['Nk']),
             elinewidth=.8, color='#C40233', label='Cartesian'
             )
     s = plt.loglog(
-            output['kln'], output['Pln'], color='#0087BD', label='spherical'
+            data['kln'], data['Pln'], color='#0087BD', label='spherical'
             )
 
     POL_NUM = 2  # number of poles
     POL_COLOUR = ['#000000', '#FFD300',]  # colour of poles
     for ell in range(POL_NUM):
-        ellsel = (output['ln'][:, 0] == ell)
+        ellsel = (data['ln'][:, 0] == ell)
         plt.scatter(
-            output['kln'][ellsel], output['Pln'][ellsel],
+            data['kln'][ellsel], data['Pln'][ellsel],
             color=POL_COLOUR[ell], label=r'$\ell={:d}$'.format(ell)
             )
 
-    for idx, ind_lab in enumerate(output['ln']):
+    for idx, ind_lab in enumerate(data['ln']):
         if ind_lab[0] == 0 and False:
             plt.annotate(
                 r'$({:d},{:d})$'.format(ind_lab[0], ind_lab[1]),
-                xy=(output['kln'][idx], output['Pln'][idx]),
+                xy=(data['kln'][idx], data['Pln'][idx]),
                 verticalalignment='bottom', fontsize=6
                 )
 
-    plt.xlim(left=0.99*output['kln'].min(), right=1.01*output['kln'].max())
+    plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
     plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
@@ -113,23 +114,23 @@ except Exception as e:
 
 """Use the following to combine results from two catalogues:
 
-outputL = np.load(f"{PATHOUT}{fdir}{}L.npy").item()
-outputR = np.load(f"{PATHOUT}{fdir}{}R.npy").item()
+dataL = np.load(f"{fpathful}{}L.npy").item()
+dataR = np.load(f"{fpathful}{}R.npy").item()
 
-output = {
-    'Nk': (outputL['Nk'] + outputR['Nk']),
-    'k': (outputL['k'] + outputR['k'])/2,
-    'Pk': (outputL['Pk'] + outputR['Pk'])/2,
-    'Pshot': (outputL['Pshot'] + outputR['Pshot'])/2,
-    'ln': (outputL['ln'] + outputR['ln'])/2,
-    'kln': (outputL['kln'] + outputR['kln'])/2,
-    'Pln': (outputL['Pln'] + outputR['Pln'])/2,
+data = {
+    'Nk': (dataL['Nk'] + dataR['Nk']),
+    'k': (dataL['k'] + dataR['k'])/2,
+    'Pk': (dataL['Pk'] + dataR['Pk'])/2,
+    'Pshot': (dataL['Pshot'] + dataR['Pshot'])/2,
+    'ln': (dataL['ln'] + dataR['ln'])/2,
+    'kln': (dataL['kln'] + dataR['kln'])/2,
+    'Pln': (dataL['Pln'] + dataR['Pln'])/2,
     }
 
 LS = ['--', ':']
-for flag, output in enumerate([outputL, outputR]):
+for flag, data in enumerate([dataL, dataR]):
     plt.loglog(
-        output['kln'], output['Pln'], ls=LS[flag], color='#009F6B', alpha=.5
+        data['kln'], data['Pln'], ls=LS[flag], color='#009F6B', alpha=.5
         )
 
 """

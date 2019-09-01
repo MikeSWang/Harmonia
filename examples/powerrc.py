@@ -61,7 +61,7 @@ def aggregate(result):
         'dk': np.std(result['k'], axis=0, ddof=1),
         'dPk': np.std(result['Pk'], axis=0, ddof=1),
         'dPln': np.std(result['Pln'], axis=0, ddof=1),
-        'dof1': np.size(result['Pk'], axis=0) - 1,
+        'dof1': np.size(result['k'], axis=-1) - 1,
         'dof2': np.size(result['Pln'], axis=0) - 1,
         }
 

@@ -53,7 +53,7 @@ ftag = (
     f"-("
     f"nbar={ff(nbar, 'sci')},ratio={ratio_tag},rmax={ff(rmax, 'intdot')},"
     f"xpd={ff(expand, 'decdot')},nmesh=[{mesh_tag}],niter={niter}"
-    f"){progid}"
+    f")-[{progid}]"
     )
 
 
@@ -100,7 +100,7 @@ for run in range(niter):
 
     # Append reordered results.
     suite['k'].append([cpow['k']])
-    suite['Nk'].append([cpow['modes']]/2)
+    suite['Nk'].append([cpow['modes']])
     suite['Pshot'].append([cpow.attrs['shotnoise']])
     suite['Pln'].append([np.concatenate(spow)[order]])
     if is_case_mock:
@@ -116,7 +116,7 @@ confirm_dir(fpathful)
 
 # -- Export -------------------------------------------------------------------
 
-output = {var: np.concatenate(val_list) for var, val_list in suite.iteritems()}
+output = {var: np.concatenate(val_list) for var, val_list in suite.items()}
 output.update({'ln': modes, 'kln': waves})
 
 np.save("".join([fpathful, fnameful, ".npy"]), output)

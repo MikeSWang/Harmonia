@@ -58,8 +58,9 @@ Computational utilities
 
 """
 import warnings
-from os.path import basename, splitext
+from collections import defaultdict
 from glob import glob
+from os.path import basename, splitext
 
 import numpy as np
 from numpy import arccos, arctan2
@@ -160,12 +161,8 @@ def collate(filename_pattern, file_extension, headings=None, columns=None):
                 "Lengths of `headings` and `columns` must agree. "
                 )
 
-        # Initialise collated data using headings.
-        collated_data = {}
-        for key in headings:
-            collated_data.update({key: []})
-
         # Aggregate data.
+        collated_data = defaultdict(list)
         count = 0
         for file in glob(filename_pattern):
             data = np.loadtxt(file, usecols=columns)

@@ -26,7 +26,7 @@ progid = params.progid
 
 # -- Program identifier -------------------------------------------------------
 
-ftag = "-(nbar={},rmax={},niter={}){}".format(
+ftag = "-(nbar={},rmax={},niter={})-[{}]".format(
     ff(nbar, 'sci'), ff(rmax, 'intdot'), niter, progid
     )
 

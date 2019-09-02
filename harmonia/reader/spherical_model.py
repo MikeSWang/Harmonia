@@ -168,7 +168,8 @@ def angular_kernel(theta, phi, mu, nu, mask_func=None):
     else:
         warnings.warn(
             "`mask_func` is `None`. "
-            "Angular model evaluation may be redundant. "
+            "Angular model evaluation may be redundant. ",
+            RuntimeWarning
             )
 
     return kernel
@@ -341,7 +342,9 @@ def shotnoise_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None):
 
     """
     if (sel_func is None) and (wgt_func is None) and (mu[0] == nu[0]):
-        warnings.warn("Shot noise evaluation may be redundant. ")
+        warnings.warn(
+            "Shot noise evaluation may be redundant. ", RuntimeWarning
+            )
 
     kernel = sph_besselj(mu[0], k_mu*r) * sph_besselj(nu[0], k_nu*r)
     if sel_func is not None:

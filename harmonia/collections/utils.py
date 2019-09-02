@@ -452,7 +452,7 @@ def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         if f1 == 0:
             return x1
         if f0 * f1 > 0:
-            warnings.warn("Root is not bracketed. ")
+            warnings.warn("Root is not bracketed. ", RuntimeWarning)
             return None
 
         # Determine maximum iteration given convergence precision.

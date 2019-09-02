@@ -6,9 +6,12 @@ This sets I/O paths and provides common parameters and functionalities to
 """
 import os
 from argparse import ArgumentParser
+from collections import defaultdict
 from sys import argv, path
 
 import numpy as np
+
+path.insert(0, "../")
 
 
 def get_filename(*filepath):
@@ -42,6 +45,10 @@ def parse_cli_args(cli_parser):
     return cli_parser.parse_args()
 
 
+def clean_warnings(message, category, filename, lineno, line=None):
+    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
+
+
 def confirm_dir(dirpath):
     if not dirpath.endswith("/"):
         dirpath += "/"
@@ -53,11 +60,33 @@ def aggregate(result):
     return {var: np.average(val, axis=0) for var, val in result.items()}
 
 
+def mpicomp(data_arr, mappings, comm, root=0):
+
+    from harmonia.collections import allocate_segments
+
+    segment = allocate_segments(ntask=len(data_arr), nproc=comm.size)
+    data_chunk = data_arr[segment[comm.rank]]
+
+    outputs = defaultdict(list)
+    for var, comp in mappings.items():
+        for data_element in data_chunk:
+            outputs[var].append(comp(data_element))
+
+    comm.Barrier()
+
+    result = {var: comm.gather(val, root=root) for var, val in outputs.items()}
+
+    if comm.rank == root:
+        result = {
+            var: np.concatenate(val, axis=0) for var, val in result.items()
+            }
+
+    return result
+
+
 # I/O paths and files
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
-
-path.insert(0, "../")
 
 fname = get_filename()
 fdir = "{}/".format(fname)

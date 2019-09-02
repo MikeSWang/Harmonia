@@ -13,7 +13,7 @@ from harmonia.collections import collate
 
 SCRIPT = "nbodysim_power"
 PREFIX = "halos-(NG=0.,z=1.)"
-TAG = "-(nbar=0.001,ratio=simu,rmax=148.,xpd=2.,nmesh=[cp256],niter=)"
+TAG = "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxside=1000.,nmesh=256)"
 TAG_ADD = None
 
 COLLATE = True
@@ -33,7 +33,8 @@ confirm_dir(fpath)
 if COLLATE:
     output, count, _ = collate(f"{fpath}{PREFIX}*.npy", 'npy')
     if SAVE:
-        np.save(f"{fpath}{PREFIX}{TAG}.npy", output)
+        confirm_dir(fpath+"collated/")
+        np.save(f"{fpath}collated/{PREFIX}{TAG}.npy", output)
     if AGGREGATE:
         results = aggregate(output)
 

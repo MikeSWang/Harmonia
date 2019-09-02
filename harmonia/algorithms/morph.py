@@ -172,7 +172,7 @@ class SphericalArray:
 
         return cls(degrees, depths, filling=filling)
 
-    def unfold(self, axis_order, collapse=False):
+    def unfold(self, axis_order, collapse=False, retonly=False):
         r"""Flatten data and index arrays in the specified order.
 
         If the arrays are collapsed amongst equivalent spherical orders, each
@@ -189,6 +189,8 @@ class SphericalArray:
             If `True` (default is `False`), the arrays are collapsed over
             spherical orders before flattening.  This is overriden to `True`
             if `axis_order` is ``'ln'`` or ``'k'``.
+        retonly : {'data', 'index'} or bool, optional
+            Only return the 'data' or 'index' array (default is `False`).
 
         Returns
         -------
@@ -203,7 +205,10 @@ class SphericalArray:
         empty_flag = (data_arr is None)
         if empty_flag:
             data_flatarr = None
-            warnings.warn("`init_array` is None and thus not flattened. ")
+            warnings.warn(
+                "`init_array` is None and thus not flattened. ",
+                RuntimeWarning
+                )
 
         # Spherical order collapse (`collapse` overriden if appropriate).
         axis_order = self._alias(axis_order)
@@ -237,6 +242,10 @@ class SphericalArray:
                 data_flatarr = data_flatarr[order]
             indx_flatarr = [indx_flatarr[iord] for iord in order]
 
+        if retonly == 'data':
+            return data_flatarr
+        if retonly == 'index':
+            return indx_flatarr
         return data_flatarr, indx_flatarr
 
     def refold(self, flatarr, in_struct, subarr_type):
@@ -267,9 +276,7 @@ class SphericalArray:
         if subarr_type == 'index':
             return self.init_indices
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            _, ordered_indx = self.unfold(in_struct)
+        ordered_indx = self.unfold(in_struct, retonly='index')
 
         if in_struct in ['natural', 'lmn', 'lnm', 'k']:
             retarr = [

@@ -89,7 +89,7 @@ if rank == 0:
 # == FINALISATION =============================================================
 
 if rank == 0:
-    fpathful, fnameroot = f"{PATHOUT}{fdir}{subdir}", fname.split("_").pop()
+    fpathful, fnameroot = f"{PATHOUT}{fdir}{subdir}", fname.split("_")[0]
     confirm_dir(fpathful)
 
     np.save(

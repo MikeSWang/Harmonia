@@ -33,7 +33,7 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--dk', type=float, default=1e-2)
 
     # Computing parameters
-    cli_parser.add_argument('--struct', required=True)
+    cli_parser.add_argument('--struct')
     cli_parser.add_argument('--boxside', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--meshgen', type=int, default=256)

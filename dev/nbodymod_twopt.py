@@ -30,7 +30,7 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
-FILE = "halos-Pk-(NG=0.,z=1.,nbar=2.49e-4,b=2.3415)"
+FILE = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
 # -- Cosmology ----------------------------------------------------------------
 

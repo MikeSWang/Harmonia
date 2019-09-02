@@ -13,7 +13,7 @@ from harmonia.collections import collate
 
 SCRIPT = "nbodysim_power"
 PREFIX = "halos-(NG=0.,z=1.)"
-TAG = "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxside=1000.,nmesh=256)"
+TAG = "-(nbar=2.49e-4,b=2.3415,kmax=0.04,side=1000.,nmesh=256)"
 TAG_ADD = None
 
 COLLATE = True

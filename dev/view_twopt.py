@@ -34,8 +34,9 @@ def view_covariance(d2pt, m2pt=None, indices=None, label_interval=None,
             np.fill_diagonal(m2pt, np.nan)
 
     if diff:
-        safety = np.logical_and(~np.isclose(m2pt, 0), m2pt/d2pt > 1e-3)
-        diff = np.where(safety, m2pt/d2pt, np.nan)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            safety = np.logical_and(~np.isclose(m2pt, 0), m2pt/d2pt > 1e-3)
+            diff = np.where(safety, m2pt/d2pt, np.nan)
         sns.heatmap(
             diff, center=1, annot=anno,
             square=True, xticklabels=label_interval, yticklabels=label_interval

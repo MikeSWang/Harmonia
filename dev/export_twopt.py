@@ -24,7 +24,7 @@ REFNAME = "halos"
 # == CONFIGURATION ============================================================
 
 SUBDIR = "nrsd/"
-STRUCT = 'natural'
+STRUCT = 'k'
 
 TAG_DATA = "-()-agg"
 TAG_MODEL = f"-(ord={STRUCT})"
@@ -81,7 +81,9 @@ if LOAD_REF:
     ref = aggregate(ref)
 
 # Set up indexing.
-indx_vec = SphericalArray.build(disc=DISC).unfold(STRUCT, retonly='index')
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=RuntimeWarning)
+    indx_vec = SphericalArray.build(disc=DISC).unfold(STRUCT, retonly='index')
 order = np.concatenate(DISC.wavenumbers).argsort()
 norms = np.concatenate(DISC.normcoeff)[order]
 

@@ -603,7 +603,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
     ----------
     centres : float, array_like
         Bin centers (``centres > 0``).
-    extremes : tuple or list (of length 2)
+    extremes : tuple or list [of length 2]
         Binning range extremities (``extremes >= 0``).
     align : {'high', 'low'}, optional
         Conversion from high end of the binning range for ``'high'``, or from

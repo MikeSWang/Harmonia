@@ -142,7 +142,7 @@ def angular_kernel(theta, phi, mu, nu, mask_func=None):
     ----------
     theta, phi : float, array_like
         Spherical angular coordinates :math:`(\theta, \phi)`.
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     mask_func : callable or None, optional
         Mask as a function of spherical angular coordinates (default is
@@ -183,7 +183,7 @@ def radial_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None,
     ----------
     r : float, array_like
         Spherical radial coordinate (in Mpc/h).
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     k_mu, k_nu : float
         Discretised spherical wave numbers corresponding to indices `mu`, `nu`.
@@ -244,7 +244,7 @@ def rsd_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None,
     ----------
     r : float, array_like
         Spherical radial coordinate (in Mpc/h).
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     k_mu, k_nu : float
         Discretised spherical wave numbers corresponding to indices `mu`, `nu`.
@@ -327,7 +327,7 @@ def shotnoise_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None):
     ----------
     r : float, array_like
         Spherical radial coordinate (in Mpc/h).
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     k_mu, k_nu : float
         Discretised spherical wave numbers corresponding to indices `mu`, `nu`.
@@ -366,7 +366,7 @@ def angular_coupling(mu, nu, mask=None):
 
     Parameters
     ----------
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     mask : callable or None, optional
         `mask` as a keyword argument to be passed to :func:`angular_kernel`
@@ -400,7 +400,7 @@ def radial_coupling(mu, nu, rmax, k_elln, normcoeff, sel=None,
 
     Parameters
     ----------
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     rmax : float
         Radial integration upper limit (in Mpc/h).
@@ -451,7 +451,7 @@ def rsd_coupling(mu, nu, rmax, k_elln, normcoeff, sel=None, wgt=None,
 
     Parameters
     ----------
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     rmax : float
         Radial integration upper limit (in Mpc/h).
@@ -514,7 +514,7 @@ def coupling_list(mu, coupletype, disc, **funcs):
 
     Parameters
     ----------
-    mu : tuple or list (of length 3) of int
+    mu : tuple or list [of length 3] of int
         Fixed triplet index.
     coupletype : {'ang', 'rad', 'rsd'}
         Coupling function to be evaluated and compiled, with ``'ang'`` for
@@ -654,7 +654,7 @@ def twopoint_shotnoise(mu, nu, nmean, disc, M_munu, sel=None, wgt=None):
 
     Parameters
     ----------
-    mu, nu : tuple or list (of length 3) of int
+    mu, nu : tuple or list [of length 3] of int
         Coefficient triplet indices.
     nmean : float
         Sampled homogeneous mean particle number density (length unit Mpc/h).

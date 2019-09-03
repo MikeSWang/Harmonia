@@ -10,6 +10,8 @@ from sys import argv, path
 
 import numpy as np
 
+path.insert(0, "../../")
+
 
 def get_filename(*filepath):
     if not filepath:
@@ -69,8 +71,6 @@ def aggregate(result):
 # I/O paths and files
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
-
-path.insert(0, "../")
 
 fname = get_filename()
 fdir = "{}/".format(fname)

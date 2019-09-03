@@ -11,7 +11,7 @@ from sys import argv, path
 
 import numpy as np
 
-path.insert(0, "../")
+path.insert(0, "../../")
 
 
 def get_filename(*filepath):

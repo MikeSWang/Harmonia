@@ -50,10 +50,12 @@ else:
     subdir, rsd_tag = "nrsd/", 'none'
 
 ftag = (
-    f"-(nbar={ff(nbar, 'sci')},ratio={ratio_tag},"
+    f"-("
+    f"nbar={ff(nbar, 'sci')},ratio={ratio_tag},"
     f"b={ff(bias, 'decdot')},rsd={rsd_tag},"
     f"rmax={ff(rmax, 'intdot')},xpd={ff(expand, 'decdot')},"
-    f"nmesh=c{meshgen},niter={niter})-[{progid}]"
+    f"kmax={ff(kmax, 'sci')},nmesh=c{meshgen},niter={niter}"
+    f")-[{progid}]"
     )
 
 

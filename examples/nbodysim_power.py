@@ -69,7 +69,14 @@ output = {
     'kln': [waves],
     'Pln': [np.concatenate(spow)[order]],
     }
-np.save("".join([fpathful, fnameful, ".npy"]), output)
+np.save(
+    "".join([
+        fpathful, fnameful,
+        "-(rmax={ff(L/2, 'intdot')},kmax={ff(kmax, 'sci')},nmesh={meshcal})",
+        ".npy"
+    ]),
+    output
+    )
 
 # -- Visualise ----------------------------------------------------------------
 

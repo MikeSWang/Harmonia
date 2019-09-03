@@ -47,8 +47,10 @@ else:
     subdir, rsd_tag = "nrsd/", 'none'
 
 ftag = (
-    f"-(nbar={ff(nbar, 'sci')},rmax={ff(rmax, 'intdot')},"
-    f"b={ff(bias, 'decdot')},rsd={rsd_tag},ord={struct})"
+    f"-("
+    f"nbar={ff(nbar, 'sci')},b={ff(bias, 'decdot')},rsd={rsd_tag},"
+    f"rmax={ff(rmax, 'intdot')},kmax={ff(kmax, 'sci')},ord={struct}"
+    f")"
     )
 
 

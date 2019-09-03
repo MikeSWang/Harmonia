@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 from twoptrc import PATHIN, PATHOUT, fname, fdir, params
 from twoptrc import clean_warnings, confirm_dir, mpicomp
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
+from harmonia.collections import format_float as ff
 from harmonia.reader import coupling_list, twopoint_signal, twopoint_shotnoise
 
 
@@ -96,12 +97,18 @@ if rank == 0:
 
     np.save(
         "".join([
-            fpathful, fnameroot, "_couplings", f"-(struct={struct})", ".npy"
+            fpathful, fnameroot, "_couplings",
+            f"-(nbar=2.49e-4,b=2.3415,kmax={ff(kmax, 'sci')},struct={struct})",
+            ".npy"
         ]),
         couplings
         )
     np.save(
-        "".join([fpathful, fnameroot, "_2pt", f"-(struct={struct})", ".npy"]),
+        "".join([
+            fpathful, fnameroot, "_2pt",
+            f"-(nbar=2.49e-4,b=2.3415,kmax={ff(kmax, 'sci')},struct={struct})",
+            ".npy"
+        ]),
         {'signal': cov_signal,
          'shotnoise': cov_shotnoise,
          'covar': cov_signal + cov_shotnoise,

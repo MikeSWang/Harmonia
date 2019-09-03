@@ -52,7 +52,8 @@ else:
 ftag = (
     f"-("
     f"nbar={ff(nbar, 'sci')},ratio={ratio_tag},rmax={ff(rmax, 'intdot')},"
-    f"xpd={ff(expand, 'decdot')},nmesh=[{mesh_tag}],niter={niter}"
+    f"xpd={ff(expand, 'decdot')},kmax={ff(kmax, 'sci')},"
+    f"nmesh=[{mesh_tag}],niter={niter}"
     f")-[{progid}]"
     )
 

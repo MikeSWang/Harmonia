@@ -40,10 +40,12 @@ def gen_regular_grid(unitscale, ncells, retnorm=False):
         for indx, centre in zip(indxarr, centres)
         ]
 
-    if retnorm:
-        normgrid = np.sqrt(sum([coords**2 for coords in coords_list]))
-        return coords_list, normgrid
-    return coords_list
+    if not retnorm:
+        return coords_list
+
+    normgrid = np.sqrt(sum([coords**2 for coords in coords_list]))
+
+    return coords_list, normgrid
 
 
 def gen_complex_white_noise(boxside, ncells, seed=None):
@@ -95,20 +97,19 @@ def gen_gaussian_random_field(boxside, ncells, power_spectrum, seed=None):
         Gaussian random field in configuration space.
 
     """
-    vol = boxside ** 3
-    volcell = (boxside / ncells)**3
+    whitenoise = gen_complex_white_noise(boxside, ncells, seed=seed)
 
+    volcell = (boxside/ncells)**3
     _, karr = gen_regular_grid(2*np.pi/boxside, ncells, retnorm=True)
 
-    whitenoise = gen_complex_white_noise(boxside, ncells, seed=seed)
-    fourier_field = np.sqrt(vol * power_spectrum(karr)) * whitenoise
+    fourier_field = np.sqrt(volcell*power_spectrum(karr)) * whitenoise
     field = fftp.ifftn(fftp.fftshift(fourier_field)) / volcell
 
     return field
 
 
-def compute_isotropic_power_spectrum(field, boxside, nbins=10,
-                                     binscaling='linear', retmodes=False):
+def compute_isotropic_power_spectrum(field, boxside, binscaling='linear',
+                                     kmax=None, nbins=10, retmodes=False):
     """Compute the isotropic power spectrum of a field on a regular grid.
 
     Parameters
@@ -117,44 +118,46 @@ def compute_isotropic_power_spectrum(field, boxside, nbins=10,
         Random field in configuration space.
     boxside : float
         Side length of the Cartesian box (in Mpc/h).
+    binscaling : {'linear', 'log'}, optional
+        Binning in 'linear' or 'log' scale (default is ``'log'``).
+    kmax : float or None, optional
+        Maximum wave number (default is `None`).  If `None`, this is set to
+        largest wave number the field supports.
     nbins : int or None, optional
         Number of bins each corresponding to a wave number.
-    binscaling : {'linear', 'log'}, optional
-        Binning in 'linear' or 'log' scale (default is ``'linear'``).
     retmodes : bool, optional
         If `True`, also return the number of modes corresponding to each wave
         number of the power spectrum.
 
     Returns
     -------
+    wavenumbers : float, array_like
+        Bin-centre wave numbers.
     powers : float, array_like
         Isotropic power spectrum.
-    wavenumbers : float, array_like
-        Isotropic wave numbers.
     nmodes : int, optional
         Number of modes corresponding to each wave number.
 
     """
-    if len(set(field.shape)) != 1:
+    if len(set(field.shape)) > 1:
         raise ValueError("`field` does not fit on a cubic regular grid. ")
 
     ncells = max(np.array(field).shape)
-    volcell = (boxside / ncells)**3
+    volcell = (boxside/ncells)**3
 
     _, karr = gen_regular_grid(2*np.pi/boxside, ncells, retnorm=True)
     powerarr = volcell * np.abs(fftp.fftshift(fftp.fftn(field)))**2
 
     powers, wavenumbers, nmodes = _radial_binning(
-        karr, powerarr, nbins=nbins, rmin=2*np.pi/boxside
+        karr, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
         )
 
-    if retmodes:
-        return powers, wavenumbers, nmodes
-    return powers, wavenumbers
+    if not retmodes:
+        return wavenumbers, powers
+    return wavenumbers, powers, nmodes
 
 
-def _radial_binning(norm3d, data3d, nbins=10, rmin=None, rmax=None,
-                    binscaling='linear'):
+def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
 
     if rmin is None:
         rmin = np.min(norm3d)
@@ -178,14 +181,25 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from nbodykit.lab import cosmology as cosmo
 
-    boxside = 512.
+    import sys  #
+    sys.path.insert(0, "../")  #
+
+    from harmonia.collections import harmony
+
+    boxside = 5000.
     nmesh = 256
 
     Plin = cosmo.LinearPower(cosmo.Planck15, redshift=0., transfer='CLASS')
 
-    grf = gen_gaussian_random_field(boxside, nmesh, Plin)
-    Pk, k = compute_isotropic_power_spectrum(grf, boxside)
+    field = gen_gaussian_random_field(boxside, nmesh, Plin, seed=81)
 
+    k, Pk = compute_isotropic_power_spectrum(field, boxside, kmax=0.10)
+
+    plt.style.use(harmony)
+    plt.close('all')
+    plt.figure('Gaussian random field')
     plt.loglog(k, Pk, label='recovered power')
-    plt.loglog(k, Plin(k), '--', label='input spectrum')
-    plt.legend(frameon=False)
+    plt.loglog(k, Plin(k), '--', label='model spectrum')
+    plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
+    plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
+    plt.legend()

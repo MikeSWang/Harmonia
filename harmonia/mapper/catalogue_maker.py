@@ -58,7 +58,7 @@ class RandomCatalogue(UniformCatalog):
         nmean : float
             Input mean particle number density.
         boxsize : float, array_like
-            Catalogue box size as a scalar or a triple of scalars.
+            Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
         seed : int or None, optional
             Random seed of the catalogue (default is `None`).
 
@@ -89,9 +89,9 @@ class LognormalCatalogue(LogNormalCatalog):
         powerlin : callable
             Linear matter power spectrum with specified cosmology and redshift.
         nmean : float
-            Input mean particle number density.
+            Input mean particle number density (lenght unit Mpc/h).
         boxsize : float, array_like
-            Catalogue box size as a scalar or a triple of scalars.
+            Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
         nmesh : int
             Mesh grid number for FFT generation.
         bias : float, optional

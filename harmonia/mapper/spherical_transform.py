@@ -39,7 +39,8 @@ class SphericalMap:
     FKP : :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog` or None
         FKP catalogue of both data and random particles.
     nmean : float
-        Mean particle number density for the data catalogue.
+        Mean particle number density (lenght unit Mpc/h) for the data
+        catalogue.
     alpha_ratio : float or None
         Ratio of weighted mean particle number densities of the data catalogue
         to the random catalogue.
@@ -63,8 +64,8 @@ class SphericalMap:
             Catalogue source, either mock simulations (``'mock'``) or survey
             data (``'survey'``).
         nbar_data, nbar_rand : float or None, optional
-            Input mean particle number density used to generate the data or the
-            random catalogue (default is `None`).
+            Input mean particle number density (lenght unit Mpc/h) used to
+            generate the data or the random catalogue (default is `None`).
 
 
         .. todo::
@@ -178,8 +179,8 @@ class SphericalMap:
             Catalogue source, either mock simulations (``'mock'``) or survey
             data (``'survey'``).
         nmean_data, nmean_rand : float or None, optional
-            Input mean particle number density used to generate the data or the
-            random catalogue (default is `None`).
+            Input mean particle number density (lenght unit Mpc/h) used to
+            generate the data or the random catalogue (default is `None`).
         **disc_params
             Parameters as keyword arguments to be passed to
             :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.

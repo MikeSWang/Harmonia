@@ -46,6 +46,8 @@ class DiscreteSpectrum:
 
     for Neumann boundary conditions.
 
+    Note the length unit is Mpc/h.
+
     Attributes
     ----------
     degrees : int, array_like

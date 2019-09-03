@@ -182,7 +182,7 @@ def radial_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None,
     Parameters
     ----------
     r : float, array_like
-        Spherical radial coordinate.
+        Spherical radial coordinate (in Mpc/h).
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     k_mu, k_nu : float
@@ -243,7 +243,7 @@ def rsd_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None,
     Parameters
     ----------
     r : float, array_like
-        Spherical radial coordinate.
+        Spherical radial coordinate (in Mpc/h).
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     k_mu, k_nu : float
@@ -326,7 +326,7 @@ def shotnoise_kernel(r, mu, nu, k_mu, k_nu, sel_func=None, wgt_func=None):
     Parameters
     ----------
     r : float, array_like
-        Spherical radial coordinate.
+        Spherical radial coordinate (in Mpc/h).
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     k_mu, k_nu : float
@@ -403,7 +403,7 @@ def radial_coupling(mu, nu, rmax, k_elln, normcoeff, sel=None,
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     rmax : float
-        Radial integration upper limit.
+        Radial integration upper limit (in Mpc/h).
     k_elln : float, array_like
         Discrete wave numbers.
     normcoeff : float, array_like
@@ -454,7 +454,7 @@ def rsd_coupling(mu, nu, rmax, k_elln, normcoeff, sel=None, wgt=None,
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     rmax : float
-        Radial integration upper limit.
+        Radial integration upper limit (in Mpc/h).
     k_elln : float, array_like
         Discrete wave numbers.
     normcoeff : float, array_like
@@ -586,7 +586,7 @@ def twopoint_signal(pklin, beta0, disc, M_mu_all=None, M_nu_all=None,
     Parameters
     ----------
     pklin : callable
-        Linear galaxy-clustering power spectrum model.
+        Linear galaxy-clustering power spectrum model (length unit Mpc/h).
     beta0 : float
         Linear growth rate over bias :math:`\beta_0` at the current epoch.
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
@@ -657,7 +657,7 @@ def twopoint_shotnoise(mu, nu, nmean, disc, M_munu, sel=None, wgt=None):
     mu, nu : tuple or list (of length 3) of int
         Coefficient triplet indices.
     nmean : float
-        Sampled homogeneous mean particle number density.
+        Sampled homogeneous mean particle number density (length unit Mpc/h).
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum.
     M_munu : complex

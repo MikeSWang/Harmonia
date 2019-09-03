@@ -37,6 +37,7 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--boxside', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--meshgen', type=int, default=256)
+    cli_parser.add_argument('--meshcal', type=int, default=256)
 
     # Program parameters
     cli_parser.add_argument('--niter', type=int, default=25)

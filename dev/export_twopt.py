@@ -24,7 +24,7 @@ REFNAME = "halos"
 # == CONFIGURATION ============================================================
 
 SUBDIR = "nrsd/"
-STRUCT = 'k'
+STRUCT = 'natural'
 
 TAG_DATA = "-()-agg"
 TAG_MODEL = f"-(ord={STRUCT})"

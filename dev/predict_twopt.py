@@ -58,7 +58,9 @@ if rank == 0: print(ftag)
 
 # Set up discretisation and indexing.
 disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
-indx_vec = SphericalArray.build(disc=disc).unfold(struct, retonly='index')
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=RuntimeWarning)
+    indx_vec = SphericalArray.build(disc=disc).unfold(struct, retonly='index')
 
 # Compute couplings with parallel processes.
 in2co = {

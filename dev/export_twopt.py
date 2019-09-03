@@ -105,21 +105,23 @@ if LOAD_REF:
         Covar[idx] = ref['Pln'][refidx] / norms[refidx]
     Covar = np.diag(Covar)
 
-d2pt = np.abs(Covar)
+if LOAD_DATA or LOAD_REF or COLLATE:
+    d2pt = np.abs(Covar)
 if LOAD_MODEL or LOAD_REF:
     m2pt = np.abs(covar)
 else:
     m2pt = None
 
+indrange = slice(len(indx_vec))  #  len(indx_vec)
 view = view_covariance(
-    d2pt, m2pt=m2pt,
-    indices=slice(50),  # len(indx_vec)
-    label_interval=None,  # None, indx_vec[ind]
+    d2pt, m2pt=m2pt, indices=indrange,
+    label_interval=indx_vec[indrange],  # None, indx_vec[indrange]
     diff=True,  # True, False
     diag='only'  # 'none', 'only', 'off'
     )
 if SAVEFIG:
-    savefig(f"{PATHOUT}" +
+    savefig(
+        f"{PATHOUT}" +
         f"{REFNAME}-cov-(beta=none,kmax=0.04,struct={STRUCT})-m2d.png",
         format='png', dpi=500, transparent=False
         )

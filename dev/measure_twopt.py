@@ -53,7 +53,7 @@ ftag = (
     f"-(nbar={ff(nbar, 'sci')},ratio={ratio_tag},"
     f"b={ff(bias, 'decdot')},rsd={rsd_tag},"
     f"rmax={ff(rmax, 'intdot')},xpd={ff(expand, 'decdot')},"
-    f"nmesh=c{meshgen},niter={niter}){progid}"
+    f"nmesh=c{meshgen},niter={niter})-[{progid}]"
     )
 
 
@@ -67,7 +67,7 @@ output = defaultdict(list)
 for run in range(niter):
     clog = LognormalCatalogue(
         Plin, nbar, bias=bias, boxsize=expand*2*rmax, nmesh=meshgen,
-        add_rsd=rsd
+        add_RSD=rsd
         )
     smap = SphericalMap(disc, clog, nmean_data=nbar)
 

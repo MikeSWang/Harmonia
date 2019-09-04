@@ -95,7 +95,7 @@ if LOAD_MODEL:
 if LOAD_REF:
     covar = mod['signal'] + mod['shotnoise']
 
-    Covar = np.zeros(DISC.nmodes)
+    Covar = np.zeros(DISC.nmode)
     for idx, greek in enumerate(indx_vec):
         condition = np.logical_and(
             ref['ln'][:,0] == greek[0],

@@ -158,8 +158,8 @@ class SphericalMap:
         self.alpha_ratio = alpha_ratio
 
     def __repre__(self):
-        return "SphericalMap(maxdeg={}, nmodes={})".format(
-            max(self.disc.degrees), self.disc.nmodes
+        return "SphericalMap(maxdeg={}, nmode={})".format(
+            max(self.disc.degrees), self.disc.nmode
             )
 
     @classmethod

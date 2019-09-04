@@ -1,22 +1,30 @@
 import logging
 
 import numpy as np
-from nbodykit.base.catalog import CatalogSource, column
 from nbodykit import CurrentMPIComm
+from nbodykit.base.catalog import CatalogSource, column
 
-from gaussian_random_field import gen_gaussian_random_field as gen_grf
-# from harmonia.algorithms import gen_gaussian_random_field as gen_grf
+from randomfield import (
+    generate_gaussian_randomfields as gen_field,
+    perform_lognormal_transformation as trf_field,
+    perform_poisson_sampling as smp_field
+    )
+# from harmonia.algorithms import (
+#     generate_gaussian_randomfields as gen_field,
+#     perform_lognormal_transformation as trf_field,
+#     perform_poisson_sampling as smp_field
+#     )
 
 
-class GaussianRandomCatalogue(CatalogSource):
-    """Gaussian random catalogue of given number density and power spectrum.
+class LogNormalCatalogue(CatalogSource):
+    """Log-normal random catalogue of given number density and power spectrum.
 
     Attributes
     ----------
 
     """
 
-    _logger = logging.getLogger("GaussianRandomCatalogue")
+    _logger = logging.getLogger("LogNormalCatalogue")
 
     @CurrentMPIComm.enable
     def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., seed=None,
@@ -44,12 +52,16 @@ class GaussianRandomCatalogue(CatalogSource):
         self.comm = comm
 
         # Update attributes.
-        self.attrs = {
-            'nbar': nbar,
-            'bias': bias,
-            'BoxSize': BoxSize,
-            'Nmesh': Nmesh,
-            }
+        if not isinstance(BoxSize, list):
+            BoxSizes = [BoxSize]*3
+
+        if hasattr(self, 'attrs'):
+            self.attrs.update({
+                'nbar': nbar,
+                'bias': bias,
+                'BoxSize': BoxSizes,
+                'Nmesh': Nmesh,
+                })
 
         if hasattr(Plin, 'attrs'):
             self.attrs.update(Plin.attrs)
@@ -60,7 +72,27 @@ class GaussianRandomCatalogue(CatalogSource):
             seed = self.comm.bcast(seed)
         self.attrs['seed'] = seed
 
-        grf = gen_grf(BoxSize, Nmesh, Plin, seed=seed)
+        # Generate fields.
+        Ncell = nbar * np.prod(BoxSizes) / Nmesh**3
 
+        field_seed, sampling_seed = np.random.RandomState(seed).randint(
+            0, 0xfffffff, size=2
+            )
 
+        gaussian_field, _ = gen_field(BoxSize, Nmesh, Plin, seed=field_seed)
+        lognormal_field = trf_field(gaussian_field, bias=bias)
+        position = smp_field(
+            lognormal_field, Ncell, BoxSize, seed=sampling_seed
+            )
 
+        # Initiate the base class.
+        self._size = len(position)
+        self._pos = position
+        super().__init__(comm=comm)
+
+    @column
+    def Position(self):
+        """Particle positions (in Mpc/h).
+
+        """
+        return self.make_column(self._pos)

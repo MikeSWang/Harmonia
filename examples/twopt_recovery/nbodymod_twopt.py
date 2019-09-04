@@ -64,9 +64,9 @@ couplings = mpicomp(indx_vec, in2co, comm)
 
 # Compute 2-pt values.
 if rank == 0:
-    cov_signal = np.zeros((disc.nmodes, disc.nmodes), dtype=complex)
-    cov_shotnoise = np.zeros((disc.nmodes, disc.nmodes), dtype=complex)
-    for rowidx in range(disc.nmodes):
+    cov_signal = np.zeros((disc.nmode, disc.nmode), dtype=complex)
+    cov_shotnoise = np.zeros((disc.nmode, disc.nmode), dtype=complex)
+    for rowidx in range(disc.nmode):
         for colidx in range(rowidx+1):
             cov_signal[rowidx, colidx] = bias**2 * twopoint_signal(
                 Plin, beta, disc,
@@ -84,7 +84,7 @@ if rank == 0:
                 mu, nu, nbar, disc, M_munu
                 )
 
-    idx_upper = np.triu_indices(disc.nmodes, k=1)
+    idx_upper = np.triu_indices(disc.nmode, k=1)
     cov_signal[idx_upper] = cov_signal.T[idx_upper]
     cov_shotnoise[idx_upper] = cov_shotnoise.T[idx_upper]
 

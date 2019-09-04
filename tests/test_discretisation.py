@@ -42,7 +42,7 @@ def test_init(discrete_spectrum, caplog):
 
     assert discrete_spectrum.degrees == [0, 1, 2, 3, 4, 5]
     assert discrete_spectrum.depths == [3, 2, 2, 1, 1, 1]
-    assert discrete_spectrum.nmodes == sum(
+    assert discrete_spectrum.nmode == sum(
         [(2*ell + 1) * nmax for ell, nmax in zip(
             discrete_spectrum.degrees, discrete_spectrum.depths
             )

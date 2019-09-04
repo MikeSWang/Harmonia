@@ -36,7 +36,6 @@ cosmo = cosmology.Planck15
 rmax = cosmo.comoving_distance(zmax)
 Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
 
-
 # -- Program identifier -------------------------------------------------------
 
 try:

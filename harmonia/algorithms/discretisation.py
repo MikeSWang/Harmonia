@@ -56,7 +56,7 @@ class DiscreteSpectrum:
         Spectral depths associated with the discrete spectrum.
     roots : float, array_like
         Spherical Bessel roots associated with the discrete spectrum.
-    nmodes : int
+    nmode : int
         Total number of allowed spectral modes.
     attrs : dict
         Discrete spectrum information.  Contains the following keys:
@@ -88,7 +88,7 @@ class DiscreteSpectrum:
             Minimum spherical degree (default is 0).
 
         """
-        self.degrees, self.depths, self.roots, self.nmodes = self.discretise(
+        self.degrees, self.depths, self.roots, self.nmode = self.discretise(
             radius, condition, cuton, cutoff, degmin, degmax
             )
 
@@ -106,7 +106,7 @@ class DiscreteSpectrum:
 
         self._logger.info(
             "%s computed: %d degrees and %d modes in total. ",
-            self.__repr__(), len(self.degrees), self.nmodes
+            self.__repr__(), len(self.degrees), self.nmode
             )
 
     def __repr__(self):

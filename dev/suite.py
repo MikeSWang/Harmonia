@@ -123,7 +123,7 @@ results.update({
     'dk': np.std(output['k'], axis=0, ddof=1),
     'dPk': np.std(output['Pk'], axis=0, ddof=1),
     'dof1': np.size(output['k'], axis=0) - 1,
-    'dof2': np.size(output['Pln'], axis=0) - 1,
+    'dof2': np.size(output['Pk'], axis=0) - 1,
     })
 
 try:

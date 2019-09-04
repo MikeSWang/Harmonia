@@ -105,5 +105,4 @@ venv.bak/
 .mypy_cache/
 
 # User customised
-examples/*/data/
-dev/*/data/
+*/data/

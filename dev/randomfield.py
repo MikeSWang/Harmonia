@@ -25,6 +25,8 @@ regular grid cells in a cubic box.
 |
 
 """
+import warnings
+
 import numpy as np
 from scipy import fftpack as fftp
 
@@ -144,6 +146,48 @@ def generate_gaussian_randomfields(boxside, ncell, power_spectrum, seed=None):
     displacement_field = None
 
     return contrast_field, displacement_field
+
+
+def perform_biased_clipping(gaussian_random_field, bias=1.):
+    """Apply bias and clipping to Gaussian random fields in configuration
+    space.
+
+    The clipping threshold is -1 and the number of clipped field values should
+    not exceed 1% of the total.
+
+    Parameters
+    ----------
+    gaussian_random_field : :class:`numpy.ndarray` of float
+        Gaussian random field.
+    bias : float, optional
+        Bias applied to the field (default is 1.).
+
+    Returns
+    -------
+    transformed_field : :class:`numpy.ndarray` of float
+        Clipped biased random field.
+
+    Raises
+    ------
+    RuntimeError
+        If more than 1% of field values are clipped to -1.
+
+    """
+    transformed_field = bias * gaussian_random_field
+
+    veto_mask = transformed_field <= -1.
+    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
+
+    if veto_ratio > 0:
+        warnings.warn("Some field values have been clipped. ", RuntimeWarning)
+    if veto_ratio > 0.01:
+        raise RuntimeError(
+            "{:g}% (>1%) field values are clipped. ".format(100*veto_ratio)
+            )
+
+    transformed_field[veto_mask] = -1.
+
+    return transformed_field
 
 
 def perform_lognormal_transformation(gaussian_random_field, bias=1.):
@@ -322,6 +366,7 @@ if __name__ == '__main__':
     from harmonia.collections import harmony
 
     # Parameters
+    BIAS = 2.
     Z = 0.
     BOXSIZE = 5000.
     NMESH = 256
@@ -331,9 +376,12 @@ if __name__ == '__main__':
     # Generation (Planck15 cosmology)
     Plin = cosmo.LinearPower(COSMOLOGY, redshift=Z, transfer='CLASS')
 
-    gaussian_field, _ = generate_gaussian_randomfields(BOXSIZE, NMESH, Plin)
+    raw_field, _ = generate_gaussian_randomfields(BOXSIZE, NMESH, Plin)
+    gaussian_field = perform_biased_clipping(raw_field, bias=BIAS)
 
-    lognormal_field = perform_lognormal_transformation(gaussian_field)
+    lognormal_field = perform_lognormal_transformation(
+        raw_field, bias=BIAS
+        )
 
     # Evaluation
     k, Pk_gauss, nmodes = _compute_isotropic_power_spectrum(
@@ -343,12 +391,12 @@ if __name__ == '__main__':
         lognormal_field, BOXSIZE, kmax=KMAX
         )
 
-    Pk = Plin(k)
+    Pk = BIAS**2 * Plin(k)
 
     # Visualisation
     plt.style.use(harmony)
     plt.close('all')
-    plt.figure('Random fields')
+    plt.figure('Biased random fields')
 
     plt.errorbar(
         k, Pk_gauss, yerr=np.sqrt(2/nmodes)*Pk_gauss, label='Gaussian'

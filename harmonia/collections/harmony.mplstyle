@@ -26,6 +26,7 @@ ytick.direction: out
 legend.loc: best
 legend.frameon: False
 legend.fancybox: False
+legend.handlelength: 2.5
 
 figure.figsize: 8, 5
 figure.titlesize: large

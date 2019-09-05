@@ -9,7 +9,7 @@ from nbodykit.lab import cosmology, FFTPower
 
 sys.path.insert(0, "../")
 
-from gen_catalogue import GaussianCatalogue, LogNormalCatalogue
+from catalogue import GaussianCatalogue, LogNormalCatalogue
 from harmonia.collections import harmony, format_float as ff
 
 
@@ -128,12 +128,12 @@ for run in range(niter):
     suite['Pshot'].append([cpow.attrs['shotnoise']])
     suite['Pk'].append([cpow['power'].real])
 
-print("{:d} of niter runs discarded. ".format(count_invalid))
+print("{:d} of {:d} runs discarded. ".format(count_invalid, niter))
 
 
 # == FINALISATION =============================================================
 
-fpathful, fnameful = f"{PATHOUT}", f"{get_filename()}{fname}{ftag}"
+fpathful, fnameful = f"{PATHOUT}", f"{get_filename()}{ftag}"
 confirm_dir(fpathful)
 
 # -- Export -------------------------------------------------------------------

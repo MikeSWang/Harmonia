@@ -20,7 +20,7 @@ from harmonia.algorithms.bases import sph_besselj, sph_harmonic
 from harmonia.algorithms.integration import (
     angular_sphint_harmonic as aint_harmonic,
     radial_sphint_besselj as rint_besselj,
-)
+    )
 from harmonia.collections.utils import unitconst, cartesian_to_spherical as c2s
 from .catalogue_maker import spherical_indicator as sphind
 

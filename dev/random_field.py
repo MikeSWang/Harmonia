@@ -30,7 +30,10 @@ import warnings
 
 import numpy as np
 from scipy import fftpack as fftp
-from nbodykit.cosmology import correlation as corr
+from nbodykit.cosmology.correlation import (
+    pk_to_xi as power_to_corr,
+    xi_to_pk as corr_to_power
+    )
 
 
 def _gen_circsym_whitenoise(nmesh, seed=None):
@@ -194,8 +197,8 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
         Box size per dimension (in Mpc/h).
     nmesh : int
         Mesh number per dimension.
-    power_spectrum : callable
-        Input power spectrum (in cubic Mpc/h).
+    power_spectrum : :class:`nbodykit.cosmology.power.linear.LinearPower`
+        ``nbodykit`` linear power spectrum (in cubic Mpc/h).
     bias : float, optional
         Bias of the density contrast field (default is 1.).
     retdisp : bool, optional
@@ -213,38 +216,39 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
         for each dimension.  Returned if `retdisp` is `True`.
 
     """
-    # FIXME
-    correlation = corr.CorrelationFunction(power_spectrum)
+    KMIN, KMAX, NPOINT = 1e-5, 10, 1024
 
-    working_r = 10**np.linspace(0, 5, 10**4+1)
-    working_correlation = lognormal_transform(
-        correlation, 'xi'
+    k_samples = np.linspace(KMIN, KMAX, NPOINT)
+    r_samples = 2*np.pi / k_samples
+
+    Pk_target = power_spectrum(k_samples)
+    xi_target = power_to_corr(k_samples, Pk_target, extrap=True)(r_samples)
+
+    xi_gen = lognormal_transform(xi_target, '2pt')
+    power_gen = corr_to_power(r_samples, xi_gen, extrap=True)
+
+    field_gen = generate_gaussian_random_field(
+        boxside, nmesh, power_gen, bias=1., retdisp=retdisp, seed=seed
         )
+    field_target = lognormal_transform(field_gen, '1pt')
 
-    working_power = corr.xi_to_pk(working_r, working_correlation(working_r))
-
-    working_contrast, displacement = generate_gaussian_random_field(
-        boxside, nmesh, working_power, seed=seed
-        )
-
-    overdensity = lognormal_transform(
-        working_contrast, 'delta', bias=bias
-        )
+    overdensity = field_target
 
     return overdensity, displacement
 
 
 def lognormal_transform(obj, objtype, bias=1.):
-    """Perform log-normal transform from target to auxiliary field,
-    correlation function or power spectrum.
+    r"""Perform log-normal transform of a statistically homogeneous and
+    isotropic field or its 2-point functions in either configuration or Fourier
+    space.
 
     Parameters
     ----------
     obj : :class:`numpy.ndarray` of float or callable
-        Object to be transformed.
-    objtype : {'xi', 'pk', 'delta'}
-        Object type can be correlation function 'xi', power spectrum 'pk' or
-        random field 'delta'.
+        The object to be transformed.
+    objtype : {'delta', 'xi', 'pk'}
+        Transform either the field (``'delta'``), the correlation function
+        (``'xi'``) or the power spectrum (``'pk'``).
     bias : float, optional
         Bias to be applied to the field (default is 1.).
 
@@ -253,27 +257,44 @@ def lognormal_transform(obj, objtype, bias=1.):
     :class:`numpy.ndarray` of float or callable
         Log-normal transformed object.
 
+    Raises
+    ------
+    TypeError
+        If `objtype` is ``'xi'`` or ``'pk'`` (i.e. 2-point functions) but
+        `obj` is not callable.
+    ValueError
+        If `objtype` is one ``'delta'``, ``'xi'`` or ``'pk'``.
+
     """
-    # FIXME
-    if objtype.lower().startswith('d'):
-        field = obj
+    KMIN, KMAX, NPOINT = 1e-5, 10, 1024
 
-        biased_field = bias * field
-        field_var = np.var(biased_field)
+    k_samples = np.linspace(KMIN, KMAX, NPOINT)
+    r_samples = 2*np.pi / k_samples
 
-        transformed_field = np.exp(-field_var + biased_field) - 1
-
-        return transformed_field
-
-    if objtype.lower().startswith('x') or objtype.lower().startswith('c'):
+    if objtype.lower().startswith('x') or objtype.lower().startswith('p'):
         if not hasattr(obj, '__call__'):
-            raise TypeError("Input correlation function is not callable. ")
-        xi = obj
+            raise TypeError("Input 2-point function is not of type callable. ")
 
-        def transformed_xi(r):
-            return np.log(1 + xi(r))
+    # FIXME: No biasing implemented.
+    if objtype.lower().startswith('d'):
+        return
 
-        return transformed_xi
+    if objtype.lower().startswith('x'):
+        def xi_gen(r):
+            return np.log(1 + bias**2 * obj(r))
+        return xi_gen
+
+    if objtype.lower().startswith('p'):
+        Pk_samples = obj(k_samples)
+
+        xi_target = power_to_corr(k_samples, Pk_samples, extrap=True)
+        xi_gen = lambda r: np.log(1 + xi_target(r))
+
+        xi_samples = xi_gen(r_samples)
+
+        Pk_gen = corr_to_power(r_samples, xi_samples, extrap=True)
+
+        return Pk_gen
 
     raise ValueError(
         "`objtype` must be correlation function 'xi', power spectrum 'pk', "
@@ -305,23 +326,19 @@ def threshold_clip(density_contrast, threshold=-1.):
         If more than 1% of field values are clipped.
 
     """
-#    veto_mask = density_contrast < -1.
-#    density_contrast[veto_mask] = -1.
-#
-#    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
-#    if veto_ratio > 0.:
-#        warnings.warn(
-#            "{:g}% of field values are clipped. ".format(100*veto_ratio),
-#            RuntimeWarning
-#            )
+    veto_mask = density_contrast < -1.
+    density_contrast[veto_mask] = -1.
+
+    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
+    if veto_ratio > 0.:
+        warnings.warn(
+            "{:g}% of field values are clipped. ".format(100*veto_ratio),
+            RuntimeWarning
+            )
 #    if veto_ratio > 0.01:
 #        raise RuntimeError("Too many field values (over 1%) are clipped. ")
-#
-#    return density_contrast
-    rescaling = np.abs(np.min(density_contrast))
-    density_contrast /= rescaling
 
-    return density_contrast, rescaling
+    return density_contrast
 
 
 def poisson_sample(density_contrast, mean_density, boxside, seed=None):
@@ -430,10 +447,11 @@ def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
 
     """
     nmesh = max(np.array(field).shape)
-    volcell = (boxside/nmesh)**3
+    vol = boxside**3
+    volcell = vol / nmesh**3
 
     knorm = generate_regular_grid(2*np.pi/boxside, nmesh, ret='norm')
-    powerarr = volcell * np.abs(fftp.fftshift(fftp.fftn(field)))**2
+    powerarr = volcell**2 / vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2
 
     powers, wavenumbers, nmodes = _radial_binning(
         knorm, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
@@ -478,7 +496,7 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
     if binscaling == 'linear':
         bins = np.linspace(rmin, rmax, nbins+1)
     elif binscaling == 'log':
-        bins = 10 ** np.linspace(np.log10(rmin), np.log10(rmax), nbins+1)
+        bins = np.logspace(np.log10(rmin), np.log10(rmax), nbins+1)
 
     counts, _ = np.histogram(norm3d.flatten(), bins=bins)
     bincoord, _ = np.histogram(
@@ -525,11 +543,11 @@ if __name__ == '__main__':
         BOXSIZE, NMESH, Plin, bias=BIAS, seed=field_seed
         )
 
-    gaussian_field, rescaling = threshold_clip(gaussian_field)
+    gaussian_field = threshold_clip(gaussian_field)
 
     gaussian_realisation = poisson_sample(
         gaussian_field, NBAR, BOXSIZE, seed=sampling_seed
-        ) * rescaling
+        )
 
     # -- Evaluation -----------------------------------------------------------
 
@@ -545,8 +563,9 @@ if __name__ == '__main__':
     plt.close('all')
     plt.figure('Unsampled biased random field')
 
+    Pk_gauss *= 2.556073158732712
     plt.errorbar(
-        k, Pk_gauss/1e8, yerr=np.sqrt(2/nmodes)*Pk_gauss,
+        k, Pk_gauss, yerr=np.sqrt(2/nmodes)*Pk_gauss,
         label='Gaussian realisation'
         )
     plt.loglog(k, Pk, '--', label='power spectrum with shot noise')

@@ -14,10 +14,10 @@ from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import format_float as ff
 from harmonia.reader import coupling_list, twopoint_signal, twopoint_shotnoise
 
+warnings.formatwarning = clean_warnings
+
 
 # == INITIALISATION ===========================================================
-
-warnings.formatwarning = clean_warnings
 
 # -- Runtime parameters -------------------------------------------------------
 

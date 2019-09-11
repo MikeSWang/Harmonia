@@ -21,10 +21,14 @@ DATANAME = "measure_twopt"
 MODELNAME = "predict_2pt"
 REFNAME = "halos"
 
+
 # == CONFIGURATION ============================================================
 
 SUBDIR = "nrsd/"
-STRUCT = 'natural'
+STRUCT = 'k'
+
+BETA = 'none'  # float
+KMAX = 0.04
 
 TAG_DATA = "-()-agg"
 TAG_MODEL = f"-(ord={STRUCT})"
@@ -42,7 +46,7 @@ LOAD_REF = True
 
 SAVEFIG = False
 
-DISC = DiscreteSpectrum(500, 'Dirichlet', 0.04)
+DISC = DiscreteSpectrum(500, 'Dirichlet', KMAX)
 
 
 # == OPERATION ================================================================
@@ -112,16 +116,16 @@ if LOAD_MODEL or LOAD_REF:
 else:
     m2pt = None
 
-indrange = slice(len(indx_vec))  #  len(indx_vec)
+indrange = slice(len(indx_vec))  # len(indx_vec)
 view = view_covariance(
     d2pt, m2pt=m2pt, indices=indrange,
-    label_interval=indx_vec[indrange],  # None, indx_vec[indrange]
-    diff=True,  # True, False
-    diag='only'  # 'none', 'only', 'off'
+    label_interval=None,  # None, indx_vec[indrange]
+    diff=False,  # True, False
+    diag='none'  # 'none', 'only', 'off'
     )
 if SAVEFIG:
     savefig(
         f"{PATHOUT}" +
-        f"{REFNAME}-cov-(beta=none,kmax=0.04,struct={STRUCT})-m2d.png",
+        f"{REFNAME}-cov-(beta={BETA},kmax={KMAX},struct={STRUCT})-m2d.png",
         format='png', dpi=500, transparent=False
         )

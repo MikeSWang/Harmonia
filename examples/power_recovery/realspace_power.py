@@ -30,11 +30,13 @@ meshcal = params.meshcal
 niter = params.niter
 progid = params.progid
 
+
 # -- Cosmology ----------------------------------------------------------------
 
 cosmo = cosmology.Planck15
 rmax = cosmo.comoving_distance(zmax)
 Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
+
 
 # -- Program identifier -------------------------------------------------------
 
@@ -114,12 +116,14 @@ for run in range(niter):
 fpathful, fnameful = f"{PATHOUT}{fdir}", f"{fname}{ftag}"
 confirm_dir(fpathful)
 
+
 # -- Export -------------------------------------------------------------------
 
 output = {var: np.concatenate(val_list) for var, val_list in suite.items()}
 output.update({'ln': [modes], 'kln': [waves]})
 
 np.save("".join([fpathful, fnameful, ".npy"]), output)
+
 
 # -- Visualise ----------------------------------------------------------------
 

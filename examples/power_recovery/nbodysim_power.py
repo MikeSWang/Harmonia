@@ -20,6 +20,7 @@ kmax = params.kmax
 L = params.boxside
 meshcal = params.meshcal
 
+
 # -- Runtime constants --------------------------------------------------------
 
 HEADINGS = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'mass',]
@@ -58,6 +59,7 @@ spow = mapp.spherical_power()
 fpathful, fnameful = f"{PATHOUT}{fdir}", f"{get_filename(file)}"
 confirm_dir(fpathful)
 
+
 # -- Export -------------------------------------------------------------------
 
 output = {
@@ -77,6 +79,7 @@ np.save(
     ]),
     output
     )
+
 
 # -- Visualise ----------------------------------------------------------------
 
@@ -120,23 +123,26 @@ except Exception as e:
 
 """Use the following to combine results from two catalogues:
 
-dataL = np.load(f"{fpathful}{}L.npy").item()
-dataR = np.load(f"{fpathful}{}R.npy").item()
+::
 
-data = {
-    'Nk': (dataL['Nk'] + dataR['Nk']),
-    'k': (dataL['k'] + dataR['k'])/2,
-    'Pk': (dataL['Pk'] + dataR['Pk'])/2,
-    'Pshot': (dataL['Pshot'] + dataR['Pshot'])/2,
-    'ln': (dataL['ln'] + dataR['ln'])/2,
-    'kln': (dataL['kln'] + dataR['kln'])/2,
-    'Pln': (dataL['Pln'] + dataR['Pln'])/2,
-    }
+    dataL = np.load(f"{fpathful}{}L.npy").item()
+    dataR = np.load(f"{fpathful}{}R.npy").item()
 
-LS = ['--', ':']
-for flag, data in enumerate([dataL, dataR]):
-    plt.loglog(
-        data['kln'], data['Pln'], ls=LS[flag], color='#009F6B', alpha=.5
-        )
+    data = {
+        'Nk': (dataL['Nk'] + dataR['Nk']),
+        'k': (dataL['k'] + dataR['k'])/2,
+        'Pk': (dataL['Pk'] + dataR['Pk'])/2,
+        'Pshot': (dataL['Pshot'] + dataR['Pshot'])/2,
+        'ln': (dataL['ln'] + dataR['ln'])/2,
+        'kln': (dataL['kln'] + dataR['kln'])/2,
+        'Pln': (dataL['Pln'] + dataR['Pln'])/2,
+        }
+    plt.loglog(data['kln'], data['Pln'])
+
+    datasets = [dataL, dataR]
+    linestyles = ['--', ':']#
+    colours = ['#0087BD', '#009F6B']
+    for dat, linsty, cl in zip(datasets, linestyles, colours):
+        plt.loglog(dat['kln'], dat['Pln'], ls=linsty, color=cl, alpha=.5)
 
 """

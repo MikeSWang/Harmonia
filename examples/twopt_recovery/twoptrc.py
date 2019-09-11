@@ -11,6 +11,9 @@ from sys import argv, path
 
 import numpy as np
 
+PATHIN = "./data/input/"
+PATHOUT = "./data/output/"
+
 path.insert(0, "../../")
 
 
@@ -86,9 +89,6 @@ def mpicomp(data_arr, mappings, comm, root=0):
 
 
 # I/O paths and files
-PATHIN = "./data/input/"
-PATHOUT = "./data/output/"
-
 fname = get_filename()
 fdir = "{}/".format(fname)
 

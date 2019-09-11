@@ -36,34 +36,6 @@ from nbodykit.cosmology.correlation import (
     )
 
 
-def _gen_circsym_whitenoise(nmesh, seed=None):
-    """Generate white noise samples drawn from the circularly-symmetric complex
-    normal distribution on a 3-d regular grid.
-
-    Both the real and imaginary parts follow the standard normal distribution,
-    so the complex samples have variance 2.
-
-    Parameters
-    ----------
-    nmesh : int
-        Mesh number per dimension.
-    seed : int or None, optional
-        Random seed (default is `None`).
-
-    Returns
-    -------
-    whitenoise : (N, N, N) :class:`numpy.ndarray` of complex
-        Circularly-symmetric Gaussian noise with double unit variance.
-
-    """
-    size = (2,) + (nmesh,)*3
-    samples = np.random.RandomState(seed=seed).normal(size=size)
-
-    whitenoise = samples[0] + 1j*samples[1]
-
-    return whitenoise
-
-
 def generate_regular_grid(cellsize, nmesh, ret='norm'):
     """Generate 3-d coordinate grids for the given cell size and mesh number
     per dimension.
@@ -186,36 +158,6 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
         return overdensity, displacement
 
     return overdensity
-
-
-def _threshold_clip(density_contrast, threshold=-1.):
-    """Apply threshold clipping to density contrast field in configuration
-    space.
-
-    Parameters
-    ----------
-    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
-        Density contrast field.
-    threshold : float, optional
-        Threshold below which the field values is clipped (default is -1.).
-
-    Returns
-    -------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
-        Clipped density contrast field.
-
-    """
-    veto_mask = density_contrast < -1.
-    density_contrast[veto_mask] = -1.
-
-    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
-    if veto_ratio > 5e-3:
-        warnings.warn(
-            "{:g}% of field values are clipped. ".format(100*veto_ratio),
-            RuntimeWarning
-            )
-
-    return density_contrast
 
 
 def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
@@ -427,49 +369,6 @@ def particle_populate(sampled_field, mean_density, boxside, seed=None):
     return position
 
 
-def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
-                                  binscaling='linear'):
-    """Calculate the isotropic power spectrum of a random field in
-    configuration space.
-
-    Parameters
-    ----------
-    field : (N, N, N) array_like float
-        Random field.
-    boxside : float
-        Box size per dimension (in Mpc/h).
-    kmax : float or None, optional
-        Maximum wave number.  If `None` (default), this is set to largest wave
-        number the field supports.
-    nbins : int or None, optional
-        Number of bins each corresponding to a wave number (default is 10).
-    binscaling : {'linear', 'log'}, optional
-        Binning in 'linear' (default) or 'log' scale.
-
-    Returns
-    -------
-    wavenumbers : float, array_like
-        Bin-averaged wave numbers.
-    powers : float, array_like
-        Radially averaged power spectrum at bin wave numbers.
-    nmodes : int, array_like
-        Number of modes in bins corresponding to each wave number (double
-        counting for wave vector parity).
-
-    """
-    nmesh = max(np.array(field).shape)
-    vol, ncell = boxside**3, nmesh**3
-
-    knorm = generate_regular_grid(2*np.pi/boxside, nmesh, ret='norm')
-    powerarr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / ncell**2
-
-    powers, wavenumbers, nmodes = _radial_binning(
-        knorm, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
-        )
-
-    return wavenumbers, powers, nmodes
-
-
 def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
     """Radial binning by coordinate vector norm for 3-d data over a regular
     grid.
@@ -520,6 +419,107 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
     bindat /= counts
 
     return bindat, bincoord, counts
+
+
+def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
+                                  binscaling='linear'):
+    """Calculate the isotropic power spectrum of a random field in
+    configuration space.
+
+    Parameters
+    ----------
+    field : (N, N, N) array_like float
+        Random field.
+    boxside : float
+        Box size per dimension (in Mpc/h).
+    kmax : float or None, optional
+        Maximum wave number.  If `None` (default), this is set to largest wave
+        number the field supports.
+    nbins : int or None, optional
+        Number of bins each corresponding to a wave number (default is 10).
+    binscaling : {'linear', 'log'}, optional
+        Binning in 'linear' (default) or 'log' scale.
+
+    Returns
+    -------
+    wavenumbers : float, array_like
+        Bin-averaged wave numbers.
+    powers : float, array_like
+        Radially averaged power spectrum at bin wave numbers.
+    nmodes : int, array_like
+        Number of modes in bins corresponding to each wave number (double
+        counting for wave vector parity).
+
+    """
+    nmesh = max(np.array(field).shape)
+    vol, ncell = boxside**3, nmesh**3
+
+    knorm = generate_regular_grid(2*np.pi/boxside, nmesh, ret='norm')
+    powerarr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / ncell**2
+
+    powers, wavenumbers, nmodes = _radial_binning(
+        knorm, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
+        )
+
+    return wavenumbers, powers, nmodes
+
+
+def _gen_circsym_whitenoise(nmesh, seed=None):
+    """Generate white noise samples drawn from the circularly-symmetric complex
+    normal distribution on a 3-d regular grid.
+
+    Both the real and imaginary parts follow the standard normal distribution,
+    so the complex samples have variance 2.
+
+    Parameters
+    ----------
+    nmesh : int
+        Mesh number per dimension.
+    seed : int or None, optional
+        Random seed (default is `None`).
+
+    Returns
+    -------
+    whitenoise : (N, N, N) :class:`numpy.ndarray` of complex
+        Circularly-symmetric Gaussian noise with double unit variance.
+
+    """
+    size = (2,) + (nmesh,)*3
+    samples = np.random.RandomState(seed=seed).normal(size=size)
+
+    whitenoise = samples[0] + 1j*samples[1]
+
+    return whitenoise
+
+
+def _threshold_clip(density_contrast, threshold=-1.):
+    """Apply threshold clipping to density contrast field in configuration
+    space.
+
+    Parameters
+    ----------
+    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
+        Density contrast field.
+    threshold : float, optional
+        Threshold below which the field values is clipped (default is -1.).
+
+    Returns
+    -------
+    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+        Clipped density contrast field.
+
+    """
+    veto_mask = density_contrast < -1.
+    density_contrast[veto_mask] = -1.
+
+    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
+    if veto_ratio > 5e-3:
+        warnings.warn(
+            "{:g}% of field values are clipped. ".format(100*veto_ratio),
+            RuntimeWarning
+            )
+
+    return density_contrast
 
 
 if __name__ == '__main__':

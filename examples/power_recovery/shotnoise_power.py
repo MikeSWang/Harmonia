@@ -24,6 +24,7 @@ meshcal = params.meshcal
 niter = params.niter
 progid = params.progid
 
+
 # -- Program identifier -------------------------------------------------------
 
 ftag = "-(nbar={},rmax={},kmax={},niter={})-[{}]".format(
@@ -35,12 +36,14 @@ ftag = "-(nbar={},rmax={},kmax={},niter={})-[{}]".format(
 
 print(ftag)
 
+
 # -- Discretisation -----------------------------------------------------------
 
 disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 order = np.concatenate(disc.wavenumbers).argsort()
 modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
+
 
 # -- Realisations -------------------------------------------------------------
 
@@ -70,12 +73,14 @@ for run in range(niter):
 fpathful, fnameful = f"{PATHOUT}{fdir}", f"{fname}{ftag}"
 confirm_dir(fpathful)
 
+
 # -- Export -------------------------------------------------------------------
 
 output = {var: np.concatenate(val_list) for var, val_list in suite.iteritems()}
 output.update({'ln': [modes], 'kln': [waves]})
 
 np.save("".join([fpathful, fnameful, ".npy"]), output)
+
 
 # -- Visualise ----------------------------------------------------------------
 

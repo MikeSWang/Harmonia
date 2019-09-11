@@ -32,7 +32,7 @@ import numpy as np
 from scipy import fftpack as fftp
 from nbodykit.cosmology.correlation import (
     pk_to_xi as power_to_corr,
-    xi_to_pk as corr_to_power
+    xi_to_pk as corr_to_power,
     )
 
 
@@ -114,7 +114,7 @@ def generate_regular_grid(cellsize, nmesh, ret='norm'):
 
 
 def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
-                                   retdisp=False, seed=None):
+                                   clip=True, retdisp=False, seed=None):
     r"""Generate a Gaussian random field corresponding to the density contrast
     :math:`\delta(\mathbf{r})` in configuration space with matching input power
     spectrum, and optionally a second derived random vector field corresponding
@@ -141,9 +141,12 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
     nmesh : int
         Mesh number per dimension.
     power_spectrum : callable
-        Input power spectrum (in cubic Mpc/h).
+        Desired power spectrum (in cubic Mpc/h).
     bias : float, optional
         Bias of the density contrast field (default is 1.).
+    clip : bool, optional
+        If `True` (default), the configuratuion-space field is clipped at
+        threshold -1.
     retdisp : bool, optional
         If `True` (default is `False`), also return the velocity displacement
         field for each dimension.
@@ -160,26 +163,59 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
 
     """
     vol, ncell = boxside**3, nmesh**3
-    volcell = vol / ncell
 
-    knorm, kcoor = generate_regular_grid(2*np.pi/boxside, nmesh, ret='both')
+    kk, kcoords = generate_regular_grid(2*np.pi/boxside, nmesh, ret='both')
     whitenoise = _gen_circsym_whitenoise(nmesh, seed=seed)
 
-    fourier_field = np.sqrt(power_spectrum(knorm)*vol) * whitenoise
+    amplitude = power_spectrum(kk) / vol
+    fourier_field = np.sqrt(amplitude) * whitenoise
 
-    overdensity = np.real(fftp.ifftn(fftp.fftshift(fourier_field))) / volcell
+    overdensity = ncell * np.real(fftp.ifftn(fftp.fftshift(fourier_field)))
     overdensity *= bias
 
+    if clip:
+        overdensity = _threshold_clip(overdensity)
+
     if retdisp:
-        fourier_disp = [1j * ki/knorm**2 * fourier_field for ki in kcoor]
+        fourier_disp = [1j * ki/kk**2 * fourier_field for ki in kcoords]
 
         displacement = [
-            np.real(fftp.ifftn(fftp.fftshift(fourier_disp))) / volcell
+            ncell * np.real(fftp.ifftn(fftp.fftshift(fourier_disp)))
             ]
 
         return overdensity, displacement
 
     return overdensity
+
+
+def _threshold_clip(density_contrast, threshold=-1.):
+    """Apply threshold clipping to density contrast field in configuration
+    space.
+
+    Parameters
+    ----------
+    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
+        Density contrast field.
+    threshold : float, optional
+        Threshold below which the field values is clipped (default is -1.).
+
+    Returns
+    -------
+    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+        Clipped density contrast field.
+
+    """
+    veto_mask = density_contrast < -1.
+    density_contrast[veto_mask] = -1.
+
+    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
+    if veto_ratio > 5e-3:
+        warnings.warn(
+            "{:g}% of field values are clipped. ".format(100*veto_ratio),
+            RuntimeWarning
+            )
+
+    return density_contrast
 
 
 def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
@@ -197,8 +233,8 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
         Box size per dimension (in Mpc/h).
     nmesh : int
         Mesh number per dimension.
-    power_spectrum : :class:`nbodykit.cosmology.power.linear.LinearPower`
-        ``nbodykit`` linear power spectrum (in cubic Mpc/h).
+    power_spectrum : callable
+        Desired power spectrum (in cubic Mpc/h).
     bias : float, optional
         Bias of the density contrast field (default is 1.).
     retdisp : bool, optional
@@ -216,28 +252,43 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
         for each dimension.  Returned if `retdisp` is `True`.
 
     """
-    KMIN, KMAX, NPOINT = 1e-5, 10, 1024
+    vol, ncell = boxside**3, nmesh**3
 
-    k_samples = np.linspace(KMIN, KMAX, NPOINT)
-    r_samples = 2*np.pi / k_samples
+    kk, kcoords = generate_regular_grid(2*np.pi/boxside, nmesh, ret='both')
+    whitenoise = _gen_circsym_whitenoise(nmesh, seed=seed)
 
-    Pk_target = power_spectrum(k_samples)
-    xi_target = power_to_corr(k_samples, Pk_target, extrap=True)(r_samples)
+    # Apply biasing at target power spectrum level.
+    power_tar = lambda k: bias**2 * power_spectrum(k)
 
-    xi_gen = lognormal_transform(xi_target, '2pt')
-    power_gen = corr_to_power(r_samples, xi_gen, extrap=True)
+    # Transform target power spectrum.
+    amplitude_tar = power_tar(kk) / vol
+    xi_tar = ncell * np.real(fftp.ifftn(fftp.fftshift(amplitude_tar)))
+    xi_gen = lognormal_transform(xi_tar, 'xi')
+    amplitude_gen = fftp.fftshift(fftp.fftn(xi_gen)) / ncell
 
-    field_gen = generate_gaussian_random_field(
-        boxside, nmesh, power_gen, bias=1., retdisp=retdisp, seed=seed
-        )
-    field_target = lognormal_transform(field_gen, '1pt')
+    fourier_field_gen = np.sqrt(amplitude_gen) * whitenoise
 
-    overdensity = field_target
+    field_gen = ncell * np.real(fftp.ifftn(fftp.fftshift(fourier_field_gen)))
+    field_tar = lognormal_transform(field_gen, 'delta')
 
-    return overdensity, displacement
+    overdensity = field_tar
+
+    # Fulfill continuity equation and no velocity bias.
+    if retdisp:
+
+        fourier_field_tar = fftp.fftshift(fftp.fftn(field_tar))  # / ncell
+        fourier_disp = [1j * ki/kk**2 * fourier_field_tar for ki in kcoords]
+
+        displacement = [
+            np.real(fftp.ifftn(fftp.fftshift(fourier_disp)))  # * ncell
+            ]
+
+        return overdensity, displacement
+
+    return overdensity
 
 
-def lognormal_transform(obj, objtype, bias=1.):
+def lognormal_transform(obj, objtype):
     r"""Perform log-normal transform of a statistically homogeneous and
     isotropic field or its 2-point functions in either configuration or Fourier
     space.
@@ -247,10 +298,8 @@ def lognormal_transform(obj, objtype, bias=1.):
     obj : :class:`numpy.ndarray` of float or callable
         The object to be transformed.
     objtype : {'delta', 'xi', 'pk'}
-        Transform either the field (``'delta'``), the correlation function
-        (``'xi'``) or the power spectrum (``'pk'``).
-    bias : float, optional
-        Bias to be applied to the field (default is 1.).
+        Type of the object to be transformed: field (``'delta'``), correlation
+        function (``'xi'``) or power spectrum (``'pk'``).
 
     Returns
     -------
@@ -260,39 +309,40 @@ def lognormal_transform(obj, objtype, bias=1.):
     Raises
     ------
     TypeError
-        If `objtype` is ``'xi'`` or ``'pk'`` (i.e. 2-point functions) but
-        `obj` is not callable.
+        If `objtype` is ``'pk'`` (power spectrum) but `obj` is not callable.
     ValueError
-        If `objtype` is one ``'delta'``, ``'xi'`` or ``'pk'``.
+        If `objtype` is not one of the following: ``'delta'``, ``'xi'`` or
+        ``'pk'``.
 
     """
-    KMIN, KMAX, NPOINT = 1e-5, 10, 1024
+    NPOINT = 1024
+    LOG_KMIN, LOG_KMAX = -5, 1
+    LOG_RMIN, LOG_RMAX = -1, 5
 
-    k_samples = np.linspace(KMIN, KMAX, NPOINT)
-    r_samples = 2*np.pi / k_samples
+    k_samples = np.logspace(LOG_KMIN, LOG_KMAX, NPOINT)
+    r_samples = np.logspace(LOG_RMIN, LOG_RMAX, NPOINT)
 
-    if objtype.lower().startswith('x') or objtype.lower().startswith('p'):
-        if not hasattr(obj, '__call__'):
-            raise TypeError("Input 2-point function is not of type callable. ")
-
-    # FIXME: No biasing implemented.
     if objtype.lower().startswith('d'):
-        return
+        field_var = np.sum(obj**2) / np.size(obj)
+        transformed_field = -1 + np.exp(obj - field_var/2)
+        return transformed_field
 
     if objtype.lower().startswith('x'):
-        def xi_gen(r):
-            return np.log(1 + bias**2 * obj(r))
-        return xi_gen
+        if hasattr(obj, '__call__'):
+            return lambda r: np.log(1 + obj(r))
+        return np.log(1 + obj)
 
     if objtype.lower().startswith('p'):
-        Pk_samples = obj(k_samples)
+        if not hasattr(obj, '__call__'):
+            raise TypeError("Input 2-point function is not of callable type. ")
 
-        xi_target = power_to_corr(k_samples, Pk_samples, extrap=True)
-        xi_gen = lambda r: np.log(1 + xi_target(r))
+        Pk_tar_samples = obj(k_samples)
+        xi_tar = power_to_corr(k_samples, Pk_tar_samples)
 
-        xi_samples = xi_gen(r_samples)
+        xi_gen = lambda r: np.log(1 + xi_tar(r))
 
-        Pk_gen = corr_to_power(r_samples, xi_samples, extrap=True)
+        xi_gen_samples = xi_gen(r_samples)
+        Pk_gen = corr_to_power(r_samples, xi_gen_samples)
 
         return Pk_gen
 
@@ -300,45 +350,6 @@ def lognormal_transform(obj, objtype, bias=1.):
         "`objtype` must be correlation function 'xi', power spectrum 'pk', "
         "or random field 'delta'. "
         )
-
-
-def threshold_clip(density_contrast, threshold=-1.):
-    """Apply threshold clipping to density contrast field in configuration
-    space.
-
-    The number of clipped field values should not exceed 1% of the total.
-
-    Parameters
-    ----------
-    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
-        Density contrast field.
-    threshold : float, optional
-        Threshold below which the field values is clipped (default is -1.).
-
-    Returns
-    -------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
-        Clipped density contrast field.
-
-    Raises
-    ------
-    RuntimeError
-        If more than 1% of field values are clipped.
-
-    """
-    veto_mask = density_contrast < -1.
-    density_contrast[veto_mask] = -1.
-
-    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
-    if veto_ratio > 0.:
-        warnings.warn(
-            "{:g}% of field values are clipped. ".format(100*veto_ratio),
-            RuntimeWarning
-            )
-#    if veto_ratio > 0.01:
-#        raise RuntimeError("Too many field values (over 1%) are clipped. ")
-
-    return density_contrast
 
 
 def poisson_sample(density_contrast, mean_density, boxside, seed=None):
@@ -375,7 +386,7 @@ def poisson_sample(density_contrast, mean_density, boxside, seed=None):
     return sampled_field
 
 
-def particle_populate(sampled_field, mean_density, boxsize, seed=None):
+def particle_populate(sampled_field, mean_density, boxside, seed=None):
     """Uniformly place particle at positions within grid cells from a
     discretely sampled field.
 
@@ -385,7 +396,7 @@ def particle_populate(sampled_field, mean_density, boxsize, seed=None):
         Discretely sampled density contrast field.
     mean_density : float
         Overall mean number density of particles.
-    boxsize : float
+    boxside : float
         Box size per dimension.
     seed : int or None, optional
         Particle placement random seed (default is `None`).
@@ -399,7 +410,7 @@ def particle_populate(sampled_field, mean_density, boxsize, seed=None):
     if len(set(sampled_field.shape)) > 1:
         raise ValueError("Input `field` is not a regular grid. ")
     nmesh = max(sampled_field.shape)
-    cellsize = boxsize / nmesh
+    cellsize = boxside / nmesh
     volcell = cellsize**3
 
     grid_coords = generate_regular_grid(cellsize, nmesh, ret='coords')
@@ -428,12 +439,12 @@ def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
     boxside : float
         Box size per dimension (in Mpc/h).
     kmax : float or None, optional
-        Maximum wave number (default is `None`).  If `None`, this is set to
-        largest wave number the field supports.
+        Maximum wave number.  If `None` (default), this is set to largest wave
+        number the field supports.
     nbins : int or None, optional
-        Number of bins each corresponding to a wave number.
+        Number of bins each corresponding to a wave number (default is 10).
     binscaling : {'linear', 'log'}, optional
-        Binning in 'linear' or 'log' (default) scale.
+        Binning in 'linear' (default) or 'log' scale.
 
     Returns
     -------
@@ -447,11 +458,10 @@ def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
 
     """
     nmesh = max(np.array(field).shape)
-    vol = boxside**3
-    volcell = vol / nmesh**3
+    vol, ncell = boxside**3, nmesh**3
 
     knorm = generate_regular_grid(2*np.pi/boxside, nmesh, ret='norm')
-    powerarr = volcell**2 / vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2
+    powerarr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / ncell**2
 
     powers, wavenumbers, nmodes = _radial_binning(
         knorm, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
@@ -475,8 +485,8 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
     binscaling : {'linear', 'log'}
         Binning in 'linear' or 'log' scale.
     rmin, rmax : float or None, optional
-        Binning range.  If `None`, the values are set to the extreme norm
-        values that the grid supports.
+        Binning range.  If `None` (default), the values are set to the extreme
+        norm values that the grid supports.
 
     Returns
     -------
@@ -517,58 +527,83 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from nbodykit.lab import cosmology as cosmo
 
-    import sys  #
-    sys.path.insert(0, "../")  #
+    # TODO: To be removed. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    import sys
+    sys.path.insert(0, "../")
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     from harmonia.collections import harmony
+
+    # TODO: To be removed. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def clean_warnings(message, category, filename, lineno, line=None):
+        return '%s:%s: %s: %s\n' % (
+            filename, lineno, category.__name__, message
+            )
+
+    warnings.formatwarning = clean_warnings
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     # -- Parameters -----------------------------------------------------------
 
-    NBAR = 1e-3
+    STAT = 'log-normal'
+    SAMP = True
+    NBAR = 1e-4
     BIAS = 2.
     Z = 0.
     KMAX = 0.1
-    BOXSIZE = 1000.
+    BOXSIZE = 5000.
     NMESH = 256
 
-    cosmology = cosmo.Planck15
+    cosmology = cosmo.Planck15  # Planck15 cosmology
+    mechanism = {'Gaussian': generate_gaussian_random_field,
+                 'log-normal': generate_lognormal_random_field}
     field_seed, sampling_seed, drift_seed = \
         np.random.RandomState().randint(low=0, high=4294967295, size=3)
+        # 2741526203, 2792722664, 362034065
 
     # -- Generation -----------------------------------------------------------
 
-    # Planck15 cosmology
     Plin = cosmo.LinearPower(cosmology, redshift=Z, transfer='CLASS')
 
-    gaussian_field = generate_gaussian_random_field(
-        BOXSIZE, NMESH, Plin, bias=BIAS, seed=field_seed
-        )
+    field = mechanism[STAT](BOXSIZE, NMESH, Plin, bias=BIAS, seed=field_seed)
 
-    gaussian_field = threshold_clip(gaussian_field)
+    if SAMP:
+        realisation = poisson_sample(field, NBAR, BOXSIZE, seed=sampling_seed)
 
-    gaussian_realisation = poisson_sample(
-        gaussian_field, NBAR, BOXSIZE, seed=sampling_seed
-        )
+    # -- Validation -----------------------------------------------------------
 
-    # -- Evaluation -----------------------------------------------------------
+    if not SAMP:
+        k, Pk, Nk = _cal_isotropic_power_spectrum(field, BOXSIZE, kmax=KMAX)
+        pk = BIAS**2 * Plin(k)
+        samp_tag = 'unsampled'
+        sn_tag = 'without'
+    else:
+        k, Pk, Nk = _cal_isotropic_power_spectrum(
+            realisation, BOXSIZE, kmax=KMAX
+            )
+        pk = BIAS**2 * Plin(k) + 1 / NBAR
+        samp_tag = 'sampled'
+        sn_tag = 'with'
 
-    k, Pk_gauss, nmodes = _cal_isotropic_power_spectrum(
-        gaussian_realisation, BOXSIZE, kmax=KMAX
-        )
-
-    Pk = BIAS**2 * Plin(k) + 1/NBAR
-
-    # -- Visualisation --------------------------------------------------------
+    ratio = np.average(Pk/pk)
+    if np.isclose(ratio, 1, rtol=1e-2):
+        corrct_tag = ''
+    else:
+        corrct_tag = r'${:g} \times$ '.format(ratio)
+        pk *= ratio
+        warnings.warn(
+            "Power spectrum model upscaled by {:g}. ".format(ratio),
+            RuntimeWarning
+            )
 
     plt.style.use(harmony)
     plt.close('all')
-    plt.figure('Unsampled biased random field')
+    plt.figure(f'{samp_tag} biased {STAT} random field')
 
-    Pk_gauss *= 2.556073158732712
+    plt.loglog(k, pk, '--', label=f'power spectrum {sn_tag} shot noise')
     plt.errorbar(
-        k, Pk_gauss, yerr=np.sqrt(2/nmodes)*Pk_gauss,
-        label='Gaussian realisation'
+        k, Pk, yerr=np.sqrt(2/Nk)*Pk, label=f'{corrct_tag}{STAT} realisation'
         )
-    plt.loglog(k, Pk, '--', label='power spectrum with shot noise')
 
     plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')

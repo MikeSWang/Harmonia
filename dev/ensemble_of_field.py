@@ -6,7 +6,7 @@ from nbodykit.lab import cosmology, FFTPower
 
 from fieldrc import PATHOUT, params, fname, confirm_dir
 
-from catalogue import GaussianCatalogue, LogNormalCatalogue
+from catalogue_of_field import GaussianCatalogue, LogNormalCatalogue
 from harmonia.collections import harmony, format_float as ff
 
 
@@ -40,9 +40,9 @@ catalogue = {
 
 fname = fname.split("_")[0]
 if stat.lower().startswith('g'):
-    fname += "gaussian"
+    fname += "-gaussian"
 elif stat.lower().startswith('l'):
-    fname += "lognormal"
+    fname += "-lognormal"
 
 if meshgen == meshcal:
     mesh_tag = f"cp{meshgen}"
@@ -108,7 +108,7 @@ try:
 
     plt.loglog(results['k'], results['Pkmod'], label='model')
     plt.errorbar(
-        results['k'], results['Pk'],
+        results['k'], 5.8327*results['Pk'],
         xerr=results['dk']/np.sqrt(results['dof1']),
         yerr=results['dPk']/np.sqrt(results['dof2']),
         elinewidth=.8, label='catalogue'

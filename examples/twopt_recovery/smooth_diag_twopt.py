@@ -6,11 +6,9 @@ import warnings
 import numpy as np
 from matplotlib import pyplot as plt
 
-from twoptrc import PATHIN, PATHOUT, aggregate, clean_warnings
+from twoptrc import PATHIN, PATHOUT, aggregate
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import harmony
-
-warnings.formatwarning = clean_warnings
 
 
 # == CONFIGURATION ============================================================

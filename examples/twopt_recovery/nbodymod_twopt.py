@@ -8,13 +8,10 @@ import numpy as np
 from mpi4py import MPI
 from scipy.interpolate import interp1d
 
-from twoptrc import PATHIN, PATHOUT, fname, fdir, params
-from twoptrc import clean_warnings, confirm_dir, mpicomp
+from twoptrc import PATHIN, PATHOUT, fname, fdir, params, confirm_dir, mpicomp
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import format_float as ff
 from harmonia.reader import coupling_list, twopoint_signal, twopoint_shotnoise
-
-warnings.formatwarning = clean_warnings
 
 
 # == INITIALISATION ===========================================================

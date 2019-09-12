@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from powerrc import PATHOUT
+from fieldrc import PATHOUT
 from harmonia.collections import collate, harmony
 
 
@@ -16,7 +16,7 @@ def aggregate(result):
         }
 
 
-PREFIX = "suite"
+PREFIX = "ensemble"
 TAG = "-(nbar=0.001,ratio=simu,rmax=148.,xpd=2.,nmesh=[cp256],niter=1000)"
 
 COLLATE = True

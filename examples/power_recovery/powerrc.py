@@ -10,8 +10,6 @@ from sys import argv, path
 
 import numpy as np
 
-path.insert(0, "../../")
-
 
 def get_filename(*filepath):
     if not filepath:
@@ -67,6 +65,8 @@ def aggregate(result):
         'dof2': np.size(result['Pln'], axis=0) - 1,
         }
 
+
+path.insert(0, "../../")
 
 # I/O paths and files
 PATHIN = "./data/input/"

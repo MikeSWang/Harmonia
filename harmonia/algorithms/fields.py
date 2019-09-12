@@ -385,7 +385,9 @@ def populate_particles(sampled_field, mean_density, boxside, seed=None):
     grid_coords = generate_regular_grid(cellsize, nmesh, ret='coords')
     cellpos = np.transpose([np.ravel(coords) for coords in grid_coords])
 
-    number_field = np.around((1 + sampled_field) * mean_density * volcell)
+    number_field = np.around(
+        (1 + sampled_field) * mean_density * volcell
+        ).astype(int)
     position = np.repeat(cellpos, np.ravel(number_field), axis=0)
 
     np.random.seed(seed=seed)

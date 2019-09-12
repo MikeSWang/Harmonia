@@ -5,6 +5,7 @@ This sets I/O paths and provides common parameters and functionalities to
 
 """
 import os
+import warnings
 from argparse import ArgumentParser
 from collections import defaultdict
 from sys import argv, path
@@ -13,8 +14,6 @@ import numpy as np
 
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
-
-path.insert(0, "../../")
 
 
 def get_filename(*filepath):
@@ -28,7 +27,7 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--contrast', type=float, default=None)
     cli_parser.add_argument('--bias', type=float, default=2.)
-    cli_parser.add_argument('--redshift', type=float, default=0)
+    cli_parser.add_argument('--redshift', type=float, default=0.)
     cli_parser.add_argument('--rsd', action='store_true')
 
     cli_parser.add_argument('--zmax', type=float, default=0.05)
@@ -87,6 +86,9 @@ def mpicomp(data_arr, mappings, comm, root=0):
 
     return result
 
+
+path.insert(0, "../../")
+warnings.formatwarning = clean_warnings
 
 # I/O paths and files
 fname = get_filename()

@@ -6,12 +6,10 @@ import warnings
 import numpy as np
 from matplotlib.pyplot import savefig
 
-from twoptrc import PATHIN, PATHOUT, aggregate, confirm_dir, clean_warnings
+from twoptrc import PATHIN, PATHOUT, aggregate, confirm_dir
 from view_twopt import view_covariance
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import collate
-
-warnings.formatwarning = clean_warnings
 
 DATADIR = "measure_twopt/"
 MODELDIR = "predict_twopt/"

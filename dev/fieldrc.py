@@ -40,7 +40,7 @@ def parse_cli_args(cli_parser):
 
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--bias', type=float, default=2.)
-    cli_parser.add_argument('--redshift', type=float, default=0)
+    cli_parser.add_argument('--redshift', type=float, default=0.)
 
     cli_parser.add_argument('--kmax', type=float, default=0.1)
     cli_parser.add_argument('--boxside', type=float, default=1000.)

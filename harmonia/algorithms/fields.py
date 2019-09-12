@@ -1,10 +1,10 @@
 """
-Random field generator (:mod:`~harmonia.algorithms.random_field`)
+Random fields (:mod:`~harmonia.algorithms.fields`)
 ===============================================================================
 
 Generate random fields on 3-d regular grids from input power spectrum in a
 cubic box.  Perform biasing, threshold clipping, log-normal transformation and
-discrete Poisson sampling of random fields.
+discrete Poisson sampling of fields.
 
 **Generation**
 
@@ -14,14 +14,14 @@ discrete Poisson sampling of random fields.
     generate_gaussian_random_field
     generate_lognormal_random_field
 
-**Operation**
+**Transformation**
 
 .. autosummary::
 
     threshold_clip
     lognormal_transform
     poisson_sample
-    particle_populate
+    populate_particles
 
 |
 
@@ -30,10 +30,7 @@ import warnings
 
 import numpy as np
 from scipy import fftpack as fftp
-from nbodykit.cosmology.correlation import (
-    pk_to_xi as power_to_corr,
-    xi_to_pk as corr_to_power,
-    )
+from nbodykit.cosmology.correlation import pk_to_xi, xi_to_pk
 
 
 def generate_regular_grid(cellsize, nmesh, ret='norm'):
@@ -146,7 +143,7 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
     overdensity *= bias
 
     if clip:
-        overdensity = _threshold_clip(overdensity)
+        overdensity = threshold_clip(overdensity)
 
     if retdisp:
         fourier_disp = [1j * ki/kk**2 * fourier_field for ki in kcoords]
@@ -230,6 +227,36 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
     return overdensity
 
 
+def threshold_clip(density_contrast, threshold=-1.):
+    """Apply threshold clipping to density contrast field in configuration
+    space.
+
+    Parameters
+    ----------
+    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
+        Density contrast field.
+    threshold : float, optional
+        Threshold below which the field values is clipped (default is -1.).
+
+    Returns
+    -------
+    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+        Clipped density contrast field.
+
+    """
+    veto_mask = density_contrast < -1.
+    density_contrast[veto_mask] = -1.
+
+    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
+    if veto_ratio > 5e-3:
+        warnings.warn(
+            "{:.2g}% of field values are clipped. ".format(100*veto_ratio),
+            RuntimeWarning
+            )
+
+    return density_contrast
+
+
 def lognormal_transform(obj, objtype):
     r"""Perform log-normal transform of a statistically homogeneous and
     isotropic field or its 2-point functions in either configuration or Fourier
@@ -279,12 +306,12 @@ def lognormal_transform(obj, objtype):
             raise TypeError("Input 2-point function is not of callable type. ")
 
         Pk_tar_samples = obj(k_samples)
-        xi_tar = power_to_corr(k_samples, Pk_tar_samples)
+        xi_tar = pk_to_xi(k_samples, Pk_tar_samples)
 
         xi_gen = lambda r: np.log(1 + xi_tar(r))
 
         xi_gen_samples = xi_gen(r_samples)
-        Pk_gen = corr_to_power(r_samples, xi_gen_samples)
+        Pk_gen = xi_to_pk(r_samples, xi_gen_samples)
 
         return Pk_gen
 
@@ -328,7 +355,7 @@ def poisson_sample(density_contrast, mean_density, boxside, seed=None):
     return sampled_field
 
 
-def particle_populate(sampled_field, mean_density, boxside, seed=None):
+def populate_particles(sampled_field, mean_density, boxside, seed=None):
     """Uniformly place particle at positions within grid cells from a
     discretely sampled field.
 
@@ -490,121 +517,3 @@ def _gen_circsym_whitenoise(nmesh, seed=None):
     whitenoise = samples[0] + 1j*samples[1]
 
     return whitenoise
-
-
-def _threshold_clip(density_contrast, threshold=-1.):
-    """Apply threshold clipping to density contrast field in configuration
-    space.
-
-    Parameters
-    ----------
-    density_contrast :  (N, N, N) :class:`numpy.ndarray` of float
-        Density contrast field.
-    threshold : float, optional
-        Threshold below which the field values is clipped (default is -1.).
-
-    Returns
-    -------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
-        Clipped density contrast field.
-
-    """
-    veto_mask = density_contrast < -1.
-    density_contrast[veto_mask] = -1.
-
-    veto_ratio = np.sum(veto_mask) / np.size(veto_mask)
-    if veto_ratio > 5e-3:
-        warnings.warn(
-            "{:g}% of field values are clipped. ".format(100*veto_ratio),
-            RuntimeWarning
-            )
-
-    return density_contrast
-
-
-if __name__ == '__main__':
-
-    from matplotlib import pyplot as plt
-    from nbodykit.lab import cosmology as cosmo
-
-    # TODO: To be removed. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    import sys
-    sys.path.insert(0, "../")
-    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    from harmonia.collections import harmony
-
-    # TODO: To be removed. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    def clean_warnings(message, category, filename, lineno, line=None):
-        return '%s:%s: %s: %s\n' % (
-            filename, lineno, category.__name__, message
-            )
-
-    warnings.formatwarning = clean_warnings
-    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    # -- Parameters -----------------------------------------------------------
-
-    STAT = 'log-normal'
-    SAMP = True
-    NBAR = 1e-4
-    BIAS = 2.
-    Z = 0.
-    KMAX = 0.1
-    BOXSIZE = 5000.
-    NMESH = 256
-
-    cosmology = cosmo.Planck15  # Planck15 cosmology
-    mechanism = {'Gaussian': generate_gaussian_random_field,
-                 'log-normal': generate_lognormal_random_field}
-    field_seed, sampling_seed, drift_seed = \
-        np.random.RandomState().randint(low=0, high=4294967295, size=3)
-        # 2741526203, 2792722664, 362034065
-
-    # -- Generation -----------------------------------------------------------
-
-    Plin = cosmo.LinearPower(cosmology, redshift=Z, transfer='CLASS')
-
-    field = mechanism[STAT](BOXSIZE, NMESH, Plin, bias=BIAS, seed=field_seed)
-
-    if SAMP:
-        realisation = poisson_sample(field, NBAR, BOXSIZE, seed=sampling_seed)
-
-    # -- Validation -----------------------------------------------------------
-
-    if not SAMP:
-        k, Pk, Nk = _cal_isotropic_power_spectrum(field, BOXSIZE, kmax=KMAX)
-        pk = BIAS**2 * Plin(k)
-        samp_tag = 'unsampled'
-        sn_tag = 'without'
-    else:
-        k, Pk, Nk = _cal_isotropic_power_spectrum(
-            realisation, BOXSIZE, kmax=KMAX
-            )
-        pk = BIAS**2 * Plin(k) + 1 / NBAR
-        samp_tag = 'sampled'
-        sn_tag = 'with'
-
-    ratio = np.average(Pk/pk)
-    if np.isclose(ratio, 1, rtol=1e-2):
-        corrct_tag = ''
-    else:
-        corrct_tag = r'${:g} \times$ '.format(ratio)
-        pk *= ratio
-        warnings.warn(
-            "Power spectrum model upscaled by {:g}. ".format(ratio),
-            RuntimeWarning
-            )
-
-    plt.style.use(harmony)
-    plt.close('all')
-    plt.figure(f'{samp_tag} biased {STAT} random field')
-
-    plt.loglog(k, pk, '--', label=f'power spectrum {sn_tag} shot noise')
-    plt.errorbar(
-        k, Pk, yerr=np.sqrt(2/Nk)*Pk, label=f'{corrct_tag}{STAT} realisation'
-        )
-
-    plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
-    plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
-    plt.legend()

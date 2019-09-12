@@ -1,84 +1,48 @@
-import sys, os
-import warnings
-from argparse import ArgumentParser
 from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower
 
-sys.path.insert(0, "../")
+from fieldrc import PATHOUT, params, fname, confirm_dir
 
 from catalogue import GaussianCatalogue, LogNormalCatalogue
 from harmonia.collections import harmony, format_float as ff
 
 
-def get_filename():
-    return os.path.splitext(os.path.basename(sys.argv[0]))[0]
-
-
-def confirm_dir(dirpath):
-    if not dirpath.endswith("/"):
-        dirpath += "/"
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
-
-
-def clean_warnings(message, category, filename, lineno, line=None):
-    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
-
-
-def _setup_params(parser):
-
-    parser.add_argument('--stat', required=True)
-    parser.add_argument('--nbar', type=float, default=1e-3)
-    parser.add_argument('--bias', type=float, default=2.)
-    parser.add_argument('--redshift', type=float, default=0.)
-    parser.add_argument('--zmax', type=float, default=0.05)
-    parser.add_argument('--kmax', type=float, default=0.1)
-    parser.add_argument('--meshgen', type=int, default=256)
-    parser.add_argument('--meshcal', type=int, default=256)
-    parser.add_argument('--niter', type=int, default=10)
-    parser.add_argument('--progid', default="")
-
-    return parser.parse_args()
-
-
 # == INITIALISATION ===========================================================
 
-PATHOUT = "./data/output/"
-
-warnings.formatwarning = clean_warnings
-
 # -- Runtime parameters -------------------------------------------------------
-
-params = _setup_params(ArgumentParser(
-    description="Simulate a suite of log-normal catalogues."
-    ))
 
 stat = params.stat
 nbar = params.nbar
 bias = params.bias
 redshift = params.redshift
-zmax = params.zmax
+rmax = params.boxside
 kmax = params.kmax
 meshgen = params.meshgen
 meshcal = params.meshcal
 niter = params.niter
 progid = params.progid
 
+
 # -- Cosmology ----------------------------------------------------------------
 
 cosmo = cosmology.Planck15
-rmax = cosmo.comoving_distance(zmax)
 Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
+catalogue = {
+    'gaussian': GaussianCatalogue,
+    'lognormal': LogNormalCatalogue
+    }
+
 
 # -- Program identifier -------------------------------------------------------
 
-if stat.upper().startswith('G'):
-    fname = "gaussian"
-elif stat.upper().startswith('L'):
-    fname = "lognormal"
+fname = fname.split("_")[0]
+if stat.lower().startswith('g'):
+    fname += "gaussian"
+elif stat.lower().startswith('l'):
+    fname += "lognormal"
 
 if meshgen == meshcal:
     mesh_tag = f"cp{meshgen}"
@@ -86,7 +50,6 @@ else:
     mesh_tag = f"c{meshgen},p{meshcal}"
 
 ftag = (
-    f"-{fname}"
     f"-("
     f"nbar={ff(nbar, 'sci')},b={ff(bias, 'decdot')},rmax={ff(rmax, 'intdot')},"
     f"kmax={ff(kmax, 'sci')},nmesh=[{mesh_tag}],niter={niter}"
@@ -96,45 +59,26 @@ ftag = (
 
 # == PROCESSING ===============================================================
 
-print(ftag)
+print(fname, ftag)
 
 suite = defaultdict(list)
-count_invalid = 0
 for run in range(niter):
-    if stat.upper().startswith('G'):
-        try:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('ignore')
-                warnings.filterwarnings(
-                    'always', message=".*clipped.*", category=RuntimeWarning
-                    )
-                clog = GaussianCatalogue(
-                    Plin, nbar, bias=bias, BoxSize=2*rmax, Nmesh=meshgen
-                    )
-                count_invalid += len(w)
-        except RuntimeError as e:
-            print(e)
-            pass
-    elif stat.upper().startswith('L'):
-        clog = LogNormalCatalogue(
-            Plin, nbar, bias=bias, BoxSize=2*rmax, Nmesh=meshgen
-            )
+    clog = catalogue[stat](
+        Plin, nbar, bias=bias, BoxSize=2*rmax, Nmesh=meshgen
+        )
     mesh = clog.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
     cpow = FFTPower(mesh, mode='1d', kmax=kmax).power
 
-    # Append reordered results.
     suite['k'].append([cpow['k']])
     suite['Nk'].append([cpow['modes']])
     suite['Pshot'].append([cpow.attrs['shotnoise']])
     suite['Pk'].append([cpow['power'].real])
 
-print("{:d} of {:d} runs discarded. ".format(count_invalid, niter))
-
 
 # == FINALISATION =============================================================
 
-fpathful, fnameful = f"{PATHOUT}", f"{get_filename()}{ftag}"
-confirm_dir(fpathful)
+fpathful, fnameful = PATHOUT, fname + ftag
+assert confirm_dir(fpathful)
 
 # -- Export -------------------------------------------------------------------
 

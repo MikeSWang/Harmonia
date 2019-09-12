@@ -22,6 +22,7 @@ STRUCT = 'k'
 
 BETA = 'none'  # float
 KMAX = 0.04
+REBIAS2 = 1.1057  # 1.1057, 1.
 
 TAG_REF = (
     "-(NG=0.,z=1.)-"
@@ -61,28 +62,32 @@ for idx, greek in enumerate(indx_vec):
 
 # Post-process imported data.
 Covar = np.abs(sp2pt)
-covar = np.abs(np.diag(mod['signal'] + mod['shotnoise']))
+covar = np.abs(np.diag(REBIAS2*mod['signal'] + mod['shotnoise']))
 
 rough_data = {
     'measurements': kappa * Covar,
     'predictions': kappa * covar,
     }
 smooth_data = {}
-bins = np.linspace(6e-3, 4e-2, 8)  # [k_ell[0] for k_ell in DISC.wavenumbers]
+bins = np.concatenate([
+    np.array([k_ell[0] for k_ell in DISC.wavenumbers])[[0,4,6,8,10]],
+    [0.0325]
+    ])
+# bins = np.linspace(6e-3, 4e-2, 8)  # linspace(6e-3, 4e-2, 8), logspace(-2.2, -1.4, 5)
 
 counts, _ = np.histogram(coord, bins=bins)
 bincoord = np.histogram(coord, bins=bins, weights=coord)[0] / counts
 for key, val in rough_data.items():
-    bindat, _ = np.histogram(coord, bins=bins, weights=val)  # aggregated
+    bindat, _ = np.histogram(coord, bins=bins, weights=val)  # aggregate values
     smooth_data[key] = bindat / counts
 
 ratio = np.average(
-    smooth_data['measurements'][1:] / smooth_data['predictions'][1:]
+    smooth_data['measurements'][1:] / smooth_data['predictions'][1:]  # [0:]
     )
-if np.isclose(ratio, 1, rtol=1e-2):
+if np.isclose(ratio, 1, atol=1.25e-2):
     corrct_tag = ''
 else:
-    corrct_tag = r'${:g} \times$ '.format(ratio)
+    corrct_tag = r'${:.2f} \times$'.format(ratio)
     smooth_data['measurements'] = smooth_data['measurements'] / ratio
     warnings.warn(
         "2-point measurements downscaled by {:g}. ".format(ratio),
@@ -94,15 +99,16 @@ plt.style.use(harmony)
 plt.close('all')
 
 plt.subplot2grid((4, 8), (0, 0), rowspan=3, colspan=8)
+
 plt.loglog(
     bincoord, smooth_data['measurements'], '-', marker='+',
-    label='{:.2f}x measurements'.format(1/ratio))
-plt.loglog(
-    bincoord, smooth_data['predictions'], ':', marker='+', label='predictions'
+    label='measurements'
     )
-
+plt.loglog(
+    bincoord, smooth_data['predictions'], ':', marker='+',
+    label=f'{corrct_tag} predictions (corrected)'
+    )
 xlim = plt.gca().get_xlim()
-yceil = 0.02
 
 plt.tick_params(axis='x', which='both', labelbottom=False)
 plt.ylabel(
@@ -111,19 +117,23 @@ plt.ylabel(
 plt.legend()
 
 plt.subplot2grid((4, 8), (3, 0), rowspan=1, colspan=8)
+
 plt.plot(
     bincoord, smooth_data['measurements']/smooth_data['predictions']-1, '--'
     )
 
 yceil = 0.02
+plt.fill_between(xlim, [yceil,]*2, [-yceil]*2, alpha=0.2)
+plt.axhline(y=0, lw=1, ls='--')
 
-plt.fill_between(xlim, [yceil,]*2, [-yceil]*2, alpha=0.25)
+plt.xscale('log')
 plt.xlim(xlim)
-plt.ylim(bottom=-0.1,top=0.04)
+plt.ylim(bottom=-0.05,top=0.05)
 plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
 plt.ylabel(
-    r'${:.2f} \left\langle \delta\delta^* \right\rangle /$'.format(1/ratio)
-    + r'$\left\langle \delta\delta^* \right\rangle_\mathrm{{model}} - 1$'
+    r'$\langle\delta\delta^*\rangle_\mathrm{{dat}} \big/$' +  # \big(
+    r'{}$\langle\delta\delta^*\rangle_\mathrm{{crt}}$'.format(corrct_tag) +
+    r'$- 1$'  # \big)
     )
 
 plt.subplots_adjust(wspace=0, hspace=0)

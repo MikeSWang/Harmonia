@@ -4,20 +4,12 @@ import numpy as np
 from nbodykit import CurrentMPIComm
 from nbodykit.base.catalog import CatalogSource, column
 
-from random_field import (
-    generate_gaussian_random_fields as gen_field,
-    perform_biased_clipping as clp_field,
-    perform_lognormal_transformation as trf_field,
-    perform_poisson_sampling as smp_field,
-    perform_particle_population as pop_prtcl,
+from harmonia.algorithms import (
+    generate_gaussian_random_fields as gen_gaussian_field,
+    generate_gaussian_random_fields as gen_lognormal_field,
+    poisson_sample as smp_field,
+    particle_populate as pop_field,
     )
-# from harmonia.algorithms import (
-#     generate_gaussian_random_fields as gen_field,
-#     perform_biased_clipping as clp_field,
-#     perform_lognormal_transformation as trf_field,
-#     perform_poisson_sampling as smp_field
-#     perform_particle_population as pop_prtcl,
-#     )
 
 
 class GaussianCatalogue(CatalogSource):
@@ -28,7 +20,7 @@ class GaussianCatalogue(CatalogSource):
     comm : :class:`nbodykit.CurrentMPIComm`
         Current MPI communicator.
     Plin : callable
-        Linear matter power spectrum with specified cosmology and redshift.
+        Input linear matter power spectrum (in cubic Mpc/h).
     attrs : dict
         Generic attributes.
 
@@ -43,16 +35,15 @@ class GaussianCatalogue(CatalogSource):
         Parameters
         ----------
         Plin : callable
-            Linear matter power spectrum (in cubic Mpc/h) with specified
-            cosmology and redshift.
+            Linear matter power spectrum (in cubic Mpc/h).
         nbar : float
-            Input mean particle number density (in cubic h/Mpc).
+            Desired mean particle number density (in cubic h/Mpc).
         BoxSize : float
-            Catalogue box size (in Mpc/h) as a scalar.
+            Catalogue box size per dimension (in Mpc/h).
         Nmesh : int
-            Mesh grid number for discrete generation.
+            Mesh grid number per dimension.
         bias : float, optional
-            Particle bias relative to the matter distribution (default is 2.).
+            Particle bias relative to the input power spectrum (default is 2.).
         seed : int or None, optional
             Random seed of the catalogue (default is `None`).
         comm : :class:`nbodykit.CurrentMPIComm` or None, optional
@@ -82,13 +73,13 @@ class GaussianCatalogue(CatalogSource):
         field_seed, sampling_seed, drift_seed = \
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
-        gaussian_field, _ = gen_field(BoxSize, Nmesh, Plin, seed=field_seed)
-        biased_field = clp_field(gaussian_field, bias=bias)
-        sampled_field = smp_field(
-            biased_field, nbar, BoxSize, seed=sampling_seed
+        gaussian_field = gen_gaussian_field(
+            BoxSize, Nmesh, Plin, bias=bias, seed=field_seed
             )
-
-        position = pop_prtcl(sampled_field, nbar, BoxSize, seed=drift_seed)
+        sampled_field = smp_field(
+            gaussian_field, nbar, BoxSize, seed=sampling_seed
+            )
+        position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
 
         # Initiate the base class.
         self._size = len(position)
@@ -120,7 +111,7 @@ class LogNormalCatalogue(CatalogSource):
     comm : :class:`nbodykit.CurrentMPIComm`
         Current MPI communicator.
     Plin : callable
-        Linear matter power spectrum with specified cosmology and redshift.
+        Input linear matter power spectrum (in cubic Mpc/h).
     attrs : dict
         Generic attributes.
 
@@ -135,16 +126,15 @@ class LogNormalCatalogue(CatalogSource):
         Parameters
         ----------
         Plin : callable
-            Linear matter power spectrum (in cubic Mpc/h) with specified
-            cosmology and redshift.
+            Linear matter power spectrum (in cubic Mpc/h).
         nbar : float
-            Input mean particle number density (in cubic h/Mpc).
+            Desired mean particle number density (in cubic h/Mpc).
         BoxSize : float
-            Catalogue box size (in Mpc/h) as a scalar.
+            Catalogue box size per dimension (in Mpc/h).
         Nmesh : int
-            Mesh grid number for discrete generation.
+            Mesh grid number per dimension.
         bias : float, optional
-            Particle bias relative to the matter distribution (default is 2.).
+            Particle bias relative to the input power spectrum (default is 2.).
         seed : int or None, optional
             Random seed of the catalogue (default is `None`).
         comm : :class:`nbodykit.CurrentMPIComm` or None, optional
@@ -174,14 +164,13 @@ class LogNormalCatalogue(CatalogSource):
         field_seed, sampling_seed, drift_seed = \
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
-        gaussian_field, _ = gen_field(BoxSize, Nmesh, Plin, seed=field_seed)
-        biased_field = trf_field(gaussian_field, bias=bias)
+        lognormal_field = gen_lognormal_field(
+            BoxSize, Nmesh, Plin, bias=bias, seed=field_seed
+            )
         sampled_field = smp_field(
-            biased_field, nbar, BoxSize, seed=sampling_seed
+            lognormal_field, nbar, BoxSize, seed=sampling_seed
             )
-        position = pop_prtcl(
-            sampled_field, nbar, BoxSize, seed=drift_seed
-            )
+        position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
 
         # Initiate the base class.
         self._size = len(position)

@@ -4,6 +4,7 @@ import numpy as np
 from nbodykit import CurrentMPIComm
 from nbodykit.base.catalog import CatalogSource, column
 
+import fieldrc
 from harmonia.algorithms import (
     generate_gaussian_random_field as gen_gaussian_field,
     generate_lognormal_random_field as gen_lognormal_field,

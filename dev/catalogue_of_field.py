@@ -6,7 +6,7 @@ from nbodykit.base.catalog import CatalogSource, column
 
 from harmonia.algorithms import (
     generate_gaussian_random_field as gen_gaussian_field,
-    generate_gaussian_random_field as gen_lognormal_field,
+    generate_lognormal_random_field as gen_lognormal_field,
     poisson_sample as smp_field,
     populate_particles as pop_field,
     )

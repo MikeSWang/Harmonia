@@ -80,11 +80,13 @@ for run in range(niter):
 fpathful, fnameful = PATHOUT, fname + ftag
 assert confirm_dir(fpathful)
 
+
 # -- Export -------------------------------------------------------------------
 
 output = {var: np.concatenate(val_list) for var, val_list in suite.items()}
 
 np.save("".join([fpathful, fnameful, ".npy"]), output)
+
 
 # -- Visualise ----------------------------------------------------------------
 

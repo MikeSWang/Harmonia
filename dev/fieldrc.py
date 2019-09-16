@@ -9,8 +9,6 @@ import warnings
 from argparse import ArgumentParser
 from sys import argv, path
 
-import numpy as np
-
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
@@ -36,6 +34,7 @@ def clean_warnings(message, category, filename, lineno, line=None):
 def parse_cli_args(cli_parser):
 
     cli_parser.add_argument('--stat', default='lognormal')
+    cli_parser.add_argument('--noncat', action='store_true')
     cli_parser.add_argument('--nosmp', action='store_true')
 
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
@@ -51,10 +50,6 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--progid', default="")
 
     return cli_parser.parse_args()
-
-
-def aggregate(result):
-    return {var: np.average(val, axis=0) for var, val in result.items()}
 
 
 path.insert(0, "../")

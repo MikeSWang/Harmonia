@@ -19,19 +19,51 @@ def aggregate(result):
         }
 
 
+def collate_and_optsave(pattern, extension, save=False, opath=None, oname=None):
+
+    def owck(path_tocheck):
+        if path.exists(path_tocheck):
+            raise FileExistsError
+
+    output, count, _ = collate(pattern, extension)
+
+    overwrite_permission = False
+    while save:
+        try:
+            assert confirm_dir(opath)
+            if not overwrite_permission:
+                owck(opath + oname)
+            np.save(opath + oname, output)
+        except FileExistsError:
+            assent = input(
+                "Saving would overwrite existing file at destination. "
+                "Do you want to continue? [y/n] "
+                )
+            if assent.lower().startswith('y'):
+                overwrite_permission = True
+                continue
+            else:
+                print("Overwrite permission denied. File not saved. ")
+        break
+
+    return output, count
+
+
 # == CONFIGURATION ============================================================
 
-PREFIX = "ensemble-"
+PREFIX = "catalogue-"
 STAT = "lognormal"
+
+NBAR = 0.0005
+NMESH = 128
+BIAS = 2.
+
 TAG = "-(nbar=0.0001,b=2.,rmax=1000.,kmax=0.1,nmesh=[cp128],niter=1000)"
 
-COLLATE = True
-LOAD = False
+COLLATE = False
+LOAD = True
 SAVE = True
-SAVEFIG = False
-
-NBAR = 1e-3
-BIAS = 2.
+SAVEFIG = True
 
 prefix = PREFIX + STAT
 savepath = f"{PATHOUT}{prefix}/"
@@ -42,15 +74,13 @@ collpath = savepath + "collated/"
 # == OPERATION ================================================================
 
 if COLLATE:
-    output, count, _ = collate(f"{savepath}{prefix}*.npy", 'npy')
-    if SAVE:
-        assert confirm_dir(collpath)
-        if path.exists(collpath + savename):
-            raise FileExistsError(
-                "Saving would overwrite existing file at destination. "
-                "Please change file saving path. "
-                )
-        np.save(collpath + savename, output)
+    output, count = collate_and_optsave(
+        pattern=f"{savepath}{prefix}*.npy",
+        extension='npy',
+        save=SAVE,
+        opath=collpath,
+        oname=savename
+        )
     results = aggregate(output)
 
 if LOAD:
@@ -70,6 +100,7 @@ Plin = cosmology.LinearPower(cosmology.Planck15, redshift=0, transfer='CLASS')
 Pmod = BIAS**2 * Plin(k) + 1 / NBAR
 
 ratio = Pk / Pmod
+epanel_cl = 0.10
 epatch_ht = 0.05
 
 plt.style.use(harmony)
@@ -82,6 +113,7 @@ mainax = plt.subplot2grid((5,6), (0,0), rowspan=4, colspan=6)
 plt.loglog(k, Pmod, '--', label='model')
 plt.errorbar(k, Pk, dPk, elinewidth=.8, label=f'{STAT} catalogue')
 
+plt.ylim(2.25e4, 1.2e5)
 plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
 plt.legend()
 
@@ -93,15 +125,17 @@ plt.axhline(y=0, lw=1, ls='--')
 plt.fill_between(xlim, [epatch_ht,]*2, [-epatch_ht]*2, alpha=0.2)
 
 plt.xlim(xlim)
-plt.ylim(-0.2, 0.2)
+plt.ylim(-epanel_cl, epanel_cl)
 plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
 plt.ylabel(r'$\hat{P} \big/ P_\mathrm{model}(k) - 1$')
 
 plt.setp(mainax.get_xticklabels(), visible=False)
 fig.subplots_adjust(hspace=0)
 fig.suptitle(
-    'Suite of size 1000, boxsize 1000, mesh number 128, '
-    r'density $\bar{n} = 10^{-3}$',
+    f'Suite of size 1000, boxsize 1000, mesh number {NMESH}, '
+    r'density $\bar{{n}} = {} \times 10^{{{}}}$'.format(
+        *"{:.1e}".format(NBAR).split("e")
+        ),
     fontsize=12
     )
 

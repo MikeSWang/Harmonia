@@ -77,7 +77,7 @@ for run in range(niter):
 
 # == FINALISATION =============================================================
 
-fpathful, fnameful = PATHOUT + fname, fname + ftag
+fpathful, fnameful = PATHOUT + fname + "/", fname + ftag
 assert confirm_dir(fpathful)
 
 

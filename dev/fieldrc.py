@@ -36,7 +36,7 @@ def clean_warnings(message, category, filename, lineno, line=None):
 def parse_cli_args(cli_parser):
 
     cli_parser.add_argument('--stat', default='lognormal')
-    cli_parser.add_argument('--smp', action='store_true')
+    cli_parser.add_argument('--nosmp', action='store_true')
 
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--bias', type=float, default=2.)

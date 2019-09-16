@@ -19,7 +19,7 @@ from harmonia.collections import harmony
 # -- Parameters ---------------------------------------------------------------
 
 stat = params.stat
-samp = params.smp
+samp = not params.nosmp
 nbar = params.nbar
 bias = params.bias
 redshift = params.redshift

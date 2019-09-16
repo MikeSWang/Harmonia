@@ -33,7 +33,7 @@ nmesh = params.nmeshgen
 cosmology = cosmo.Planck15
 Plin = cosmo.LinearPower(cosmology, redshift=redshift, transfer='CLASS')
 mechanism = {
-    'Gaussian': generate_gaussian_random_field,
+    'gaussian': generate_gaussian_random_field,
     'lognormal': generate_lognormal_random_field
     }
 

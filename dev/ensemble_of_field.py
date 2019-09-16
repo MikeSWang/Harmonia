@@ -77,7 +77,7 @@ for run in range(niter):
 
 # == FINALISATION =============================================================
 
-fpathful, fnameful = PATHOUT, fname + ftag
+fpathful, fnameful = PATHOUT + fname, fname + ftag
 assert confirm_dir(fpathful)
 
 
@@ -110,7 +110,7 @@ try:
 
     plt.loglog(results['k'], results['Pkmod'], label='model')
     plt.errorbar(
-        results['k'], 5.8327*results['Pk'],
+        results['k'], results['Pk'],
         xerr=results['dk']/np.sqrt(results['dof1']),
         yerr=results['dPk']/np.sqrt(results['dof2']),
         elinewidth=.8, label='catalogue'

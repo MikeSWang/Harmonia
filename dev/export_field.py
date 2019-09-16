@@ -1,3 +1,5 @@
+from os import path
+
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit import cosmology
@@ -19,30 +21,40 @@ def aggregate(result):
 
 # == CONFIGURATION ============================================================
 
-PREFIX = "ensemble-lognormal"
-TAG = "-(nbar=0.001,b=2.,rmax=1000.,kmax=0.1,nmesh=[c128,p256],niter=1000)"
+PREFIX = "ensemble-"
+STAT = "lognormal"
+TAG = "-(nbar=0.0001,b=2.,rmax=1000.,kmax=0.1,nmesh=[cp128],niter=1000)"
 
-COLLATE = False
-LOAD = True
-SAVE = False
-SAVEFIG = True
+COLLATE = True
+LOAD = False
+SAVE = True
+SAVEFIG = False
 
 NBAR = 1e-3
 BIAS = 2.
+
+prefix = PREFIX + STAT
+savepath = f"{PATHOUT}{prefix}/"
+savename = f"{prefix}{TAG}.npy"
+collpath = savepath + "collated/"
 
 
 # == OPERATION ================================================================
 
 if COLLATE:
-    output, count, _ = collate(f"{PATHOUT}{PREFIX}/{PREFIX}*.npy", 'npy')
+    output, count, _ = collate(f"{savepath}{prefix}*.npy", 'npy')
     if SAVE:
-        savepath = f"{PATHOUT}{PREFIX}/collated/"
-        assert confirm_dir(savepath)
-        np.save(savepath + f"{PREFIX}{TAG}.npy", output)
+        assert confirm_dir(collpath)
+        if path.exists(collpath + savename):
+            raise FileExistsError(
+                "Saving would overwrite existing file at destination. "
+                "Please change file saving path. "
+                )
+        np.save(collpath + savename, output)
     results = aggregate(output)
 
-if LOAD and (TAG is not None):
-    output = np.load(f"{PATHOUT}{PREFIX}/collated/{PREFIX}{TAG}.npy").item()
+if LOAD:
+    output = np.load(collpath + savename).item()
     results = aggregate(output)
 
 
@@ -68,7 +80,7 @@ fig = plt.figure("Catalogue fidelity")
 mainax = plt.subplot2grid((5,6), (0,0), rowspan=4, colspan=6)
 
 plt.loglog(k, Pmod, '--', label='model')
-plt.errorbar(k, Pk, dPk, elinewidth=.8, label='log-normal catalogue')
+plt.errorbar(k, Pk, dPk, elinewidth=.8, label=f'{STAT} catalogue')
 
 plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
 plt.legend()
@@ -94,4 +106,4 @@ fig.suptitle(
     )
 
 if SAVEFIG:
-    plt.savefig(f"{PATHOUT}{PREFIX}{TAG}.pdf")
+    plt.savefig(f"{PATHOUT}{prefix}{TAG}.pdf")

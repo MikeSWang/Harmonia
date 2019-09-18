@@ -52,7 +52,7 @@ def generate_regular_grid(cellsize, nmesh, ret='norm'):
     grid_norm : (N, N, N) :class:`numpy.ndarray` of float, optional
         Grid coordinate norm array.  Returned if `ret` is ``'norm'`` or
         ``'both'``.
-    grid_coords : list [of length 3] of (N, N, N) of float array_like, optional
+    grid_coords : list [of length 3] of (N, N, N) array_like, optional
         Grid coordinate arrays for each dimension.  Returned if `ret` is
         ``'coords'`` or ``'both'``.
 
@@ -126,7 +126,7 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
     -------
     overdensity : (N, N, N) :class:`numpy.ndarray` of float
         Gaussian random field of density contrast in configuration space.
-    displacement : list of [length 3] of (N, N, N) float array_like, optional
+    displacement : list [of length 3] of (N, N, N) array_like, optional
         Gaussian random fields of velocity displacement in configuration space
         for each dimension.  Returned if `retdisp` is `True`.
 
@@ -186,7 +186,7 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
     -------
     overdensity : (N, N, N) :class:`numpy.ndarray` of float
         Gaussian random field of density contrast in configuration space.
-    displacement : list of [length 3] of (N, N, N) float array_like, optional
+    displacement : list [of length 3] of (N, N, N) array_like, optional
         Gaussian random fields of velocity displacement in configuration space
         for each dimension.  Returned if `retdisp` is `True`.
 
@@ -355,7 +355,8 @@ def poisson_sample(density_contrast, mean_density, boxside, seed=None):
     return sampled_field
 
 
-def populate_particles(sampled_field, mean_density, boxside, seed=None):
+def populate_particles(sampled_field, mean_density, boxside, voff_fields=None,
+                       seed=None):
     """Uniformly place particle at positions within grid cells from a
     discretely sampled field.
 
@@ -367,6 +368,8 @@ def populate_particles(sampled_field, mean_density, boxside, seed=None):
         Overall mean number density of particles.
     boxside : float
         Box size per dimension.
+    voff_fields : list [of length 3] of (N, N, N) array_like or None, optional
+        Particle velocity offset field (default is `None`).
     seed : int or None, optional
         Particle placement random seed (default is `None`).
 
@@ -374,6 +377,8 @@ def populate_particles(sampled_field, mean_density, boxside, seed=None):
     -------
     position : (N, 3) :class:`numpy.ndarray` of float
         Position of particles generated from the sampled field.
+    displacements : (N, 3) :class:`numpy.ndarray` of float
+        Displacements of particles from their `position`.
 
     """
     if len(set(sampled_field.shape)) > 1:
@@ -395,7 +400,11 @@ def populate_particles(sampled_field, mean_density, boxside, seed=None):
         low=-0.5, high=0.5, size=position.shape
         )
 
-    return position
+    if voff_fields is not None:
+        celldsp = np.transpose([np.ravel(psii) for psii in voff_fields])
+        displacements = np.repeat(celldsp, np.ravel(number_field), axis=0)
+
+    return position, displacements
 
 
 def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
@@ -457,7 +466,7 @@ def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
 
     Parameters
     ----------
-    field : (N, N, N) array_like float
+    field : (N, N, N) :class:`numpy.ndarray` of float
         Random field.
     boxside : float
         Box size per dimension (in Mpc/h).

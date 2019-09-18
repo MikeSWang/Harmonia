@@ -24,6 +24,12 @@ class GaussianCatalogue(CatalogSource):
     attrs : dict
         Generic attributes.
 
+    Warnings
+    --------
+
+    The field statistics may change after Poisson sampling to discrete
+    particles as the density contrast is clipped below at -1.
+
     """
 
     _logger = logging.getLogger("GaussianCatalogue")
@@ -64,7 +70,7 @@ class GaussianCatalogue(CatalogSource):
         self.attrs.update({
             'nbar': nbar,
             'bias': bias,
-            'BoxSize': [BoxSize]*3,
+            'BoxSize': [BoxSize,]*3,
             'Nmesh': Nmesh,
             'seed': seed,
             })
@@ -155,7 +161,7 @@ class LogNormalCatalogue(CatalogSource):
         self.attrs.update({
             'nbar': nbar,
             'bias': bias,
-            'BoxSize': [BoxSize]*3,
+            'BoxSize': [BoxSize,]*3,
             'Nmesh': Nmesh,
             'seed': seed
             })

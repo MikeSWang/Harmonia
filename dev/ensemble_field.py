@@ -94,7 +94,7 @@ else:
     for run in range(niter):
         field = MECHANISM[stat](L, meshg, Plin, bias=b)
         if samp: field = poisson_sample(field, nbar, L)
-        k, Pk, Nk = cal_power(field, L, kmax=kmax)
+        k, Pk, Nk = cal_power(field, L, kmax=kmax, nbins=15)
 
         suite['k'].append([k])
         suite['Nk'].append([Nk])

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
-from nbodykit.lab import cosmology, FFTPower
+from nbodykit.lab import cosmology, FFTPower, LogNormalCatalog
 
 from fieldrc import PATHOUT, params, confirm_dir
 
@@ -17,11 +17,12 @@ from harmonia.collections import harmony, format_float as ff
 
 MECHANISM = {
     'gaussian': generate_gaussian_random_field,
-    'lognormal': generate_lognormal_random_field
+    'lognormal': generate_lognormal_random_field,
     }
 CATALOGUE = {
     'gaussian': GaussianCatalogue,
-    'lognormal': LogNormalCatalogue
+    'lognormal': LogNormalCatalogue,
+    'nbodykit': LogNormalCatalog,
     }
 
 
@@ -58,6 +59,8 @@ if stat.lower().startswith('g'):
     fname += "-gaussian"
 elif stat.lower().startswith('l'):
     fname += "-lognormal"
+elif stat.lower().startswith('n'):
+    fname += "-nbodykit"
 
 if meshg == meshc:
     mesh_tag = f"cp{meshg}"

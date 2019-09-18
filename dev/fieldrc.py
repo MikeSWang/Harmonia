@@ -5,18 +5,50 @@ field fidelity assurance scripts.
 
 """
 import os
+import sys
 import warnings
 from argparse import ArgumentParser
-from sys import argv, path
+sys.path.insert(0, "../")
+
+from harmonia.collections import collate, harmony
 
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
 
-def get_filename(*filepath):
-    if not filepath:
-        filepath = [argv[0]]
-    return os.path.splitext(os.path.basename(filepath[0]))[0]
+def clean_warnings(message, category, filename, lineno, line=None):
+    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
+
+
+def collate_and_save(pattern, extension, save=True, opath=None, oname=None):
+
+    def owck(path_tocheck):
+        if os.path.exists(path_tocheck):
+            raise FileExistsError
+
+    output, count, _ = collate(pattern, extension)
+
+    overwrite_permission = False
+    while save:
+        import numpy
+        try:
+            assert confirm_dir(opath)
+            if not overwrite_permission:
+                owck(opath + oname)
+            numpy.save(opath + oname, output)
+        except FileExistsError:
+            assent = input(
+                "Saving would overwrite existing file at destination. "
+                "Do you want to continue? [y/n] "
+                )
+            if assent.lower().startswith('y'):
+                overwrite_permission = True
+                continue
+            else:
+                print("Overwrite permission denied. File not saved. ")
+        break
+
+    return output, count
 
 
 def confirm_dir(dirpath):
@@ -27,8 +59,10 @@ def confirm_dir(dirpath):
     return os.path.exists(dirpath)
 
 
-def clean_warnings(message, category, filename, lineno, line=None):
-    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
+def get_filename(*filepath):
+    if not filepath:
+        filepath = [sys.argv[0]]
+    return os.path.splitext(os.path.basename(filepath[0]))[0]
 
 
 def parse_cli_args(cli_parser):
@@ -52,7 +86,7 @@ def parse_cli_args(cli_parser):
     return cli_parser.parse_args()
 
 
-path.insert(0, "../")
+# Warning reformatting
 warnings.formatwarning = clean_warnings
 
 # I/O paths and files

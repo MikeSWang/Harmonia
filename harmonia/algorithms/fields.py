@@ -149,7 +149,8 @@ def generate_gaussian_random_field(boxside, nmesh, power_spectrum, bias=1.,
         fourier_disp = [1j * ki/kk**2 * fourier_field for ki in kcoords]
 
         displacement = [
-            ncell * np.real(fftp.ifftn(fftp.fftshift(fourier_disp)))
+            ncell * np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))
+            for fourier_disp_i in fourier_disp
             ]
 
         return overdensity, displacement
@@ -219,7 +220,8 @@ def generate_lognormal_random_field(boxside, nmesh, power_spectrum, bias=1.,
         fourier_disp = [1j * ki/kk**2 * fourier_field_tar for ki in kcoords]
 
         displacement = [
-            np.real(fftp.ifftn(fftp.fftshift(fourier_disp)))  # * ncell
+            np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))  # * ncell
+            for fourier_disp_i in fourier_disp
             ]
 
         return overdensity, displacement
@@ -401,7 +403,7 @@ def populate_particles(sampled_field, mean_density, boxside, voff_fields=None,
         )
 
     if voff_fields is not None:
-        celldsp = np.transpose([np.ravel(psii) for psii in voff_fields])
+        celldsp = np.transpose([np.ravel(psi_i) for psi_i in voff_fields])
         displacements = np.repeat(celldsp, np.ravel(number_field), axis=0)
 
     return position, displacements

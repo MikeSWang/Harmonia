@@ -8,9 +8,9 @@ Make discrete catalogues from observed or simulated realisations.
 
     spherical_indicator
     RandomCatalogue
-    GaussianCatalogue
     LognormalCatalogue
     LogNormalCatalogue
+    GaussianCatalogue
 
 """
 import logging
@@ -76,121 +76,6 @@ class RandomCatalogue(UniformCatalog):
         return "RandomCatalogue(nmean={0}, boxsize={1}, seed={2})".format(
             self.attrs['nbar'], self.attrs['BoxSize'], self.attrs['seed']
             )
-
-
-class GaussianCatalogue(CatalogSource):
-    """Gaussian random catalogue of given number density and power spectrum
-    with particle velocities predicted by the Zel'dovich approximation.
-
-    Attributes
-    ----------
-    comm : :class:`nbodykit.CurrentMPIComm`
-        Current MPI communicator.
-    Plin : callable
-        Input linear matter power spectrum (in cubic Mpc/h).
-    attrs : dict
-        Generic attributes.
-
-    Warnings
-    --------
-
-    The field statistics may change after Poisson sampling to discrete
-    particles as the density contrast is clipped below at -1.
-
-    """
-
-    _logger = logging.getLogger("GaussianCatalogue")
-
-    @CurrentMPIComm.enable
-    def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., add_RSD=False,
-                 seed=None, comm=None):
-        """
-        Parameters
-        ----------
-        Plin : callable
-            Linear matter power spectrum (in cubic Mpc/h).
-        nbar : float
-            Desired mean particle number density (in cubic h/Mpc).
-        BoxSize : float
-            Catalogue box size per dimension (in Mpc/h).
-        Nmesh : int
-            Mesh grid number per dimension.
-        bias : float, optional
-            Particle bias relative to the input power spectrum (default is 2.).
-        add_RSD : bool, optional
-            If `True` (default is `False`), add appropriately normalised
-            redshift-space velocity offset to particle positions.
-        seed : int or None, optional
-            Random seed of the catalogue (default is `None`).
-        comm : :class:`nbodykit.CurrentMPIComm` or None, optional
-            Current MPI communicator.
-
-        """
-        self.comm = comm
-        self.Plin = Plin
-
-        if seed is None:
-            if self.comm.rank == 0:
-                seed = np.random.randint(0, 4294967295)
-            seed = self.comm.bcast(seed)
-
-        if hasattr(Plin, 'attrs'):
-            self.attrs.update(Plin.attrs)
-
-        self.attrs.update({
-            'nbar': nbar,
-            'bias': bias,
-            'BoxSize': [BoxSize,]*3,
-            'Nmesh': Nmesh,
-            'RSD': add_RSD,
-            'seed': seed,
-            })
-
-        # Generate fields.
-        field_seed, sampling_seed, drift_seed = \
-            np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
-
-        if not add_RSD:
-            gaussian_field = gen_gaussian_field(
-                BoxSize, Nmesh, Plin, bias=bias, seed=field_seed
-                )
-        else:
-            gaussian_field, gaussian_vfield = gen_gaussian_field(
-                BoxSize, Nmesh, Plin, bias=bias, retdisp=True, seed=field_seed
-                )
-
-        sampled_field = smp_field(
-            gaussian_field, nbar, BoxSize, seed=sampling_seed
-            )
-        position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
-
-        # Initiate the base class.
-        self._size = len(position)
-        self._pos = position
-        super().__init__(comm=comm)
-        self._logger.info("%s generated. ", self.__repr__())
-
-        # Add redshift-space distortions,
-        if add_RSD:
-            self['Position'] += self['VelocityOffset'] \
-                * normalise_vector(self['Position'])  # radial distortion only
-            self._logger.info("RSDs added to radial particle positions. ")
-
-    def __repr__(self):
-        return (
-            "GaussianCatalogue"
-            "(nmean={0}, bias={1}, RSD={2}, boxsize={3}, nmesh={4}, seed={5})"
-            ).format(
-                self.attrs['nbar'], self.attrs['bias'], self.attrs['RSD'],
-                self.attrs['BoxSize'], self.attrs['Nmesh'], self.attrs['seed']
-                )
-
-    @column
-    def Position(self):
-        """Particle positions (in Mpc/h).
-
-        """
-        return self.make_column(self._pos)
 
 
 class LognormalCatalogue(LogNormalCatalog):
@@ -263,7 +148,7 @@ class LogNormalCatalogue(CatalogSource):
 
     @CurrentMPIComm.enable
     def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., add_RSD=False,
-                 seed=None, comm=None):
+                 growth_rate=None, los=None, seed=None, comm=None):
         """
         Parameters
         ----------
@@ -280,6 +165,12 @@ class LogNormalCatalogue(CatalogSource):
         add_RSD : bool, optional
             If `True` (default is `False`), add appropriately normalised
             redshift-space velocity offset to particle positions.
+        growth_rate : float or None, optional
+            If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
+            'redshift' attributes, then this cannot be `None` (default).
+        los : tuple or list [of length 3] or (3,) array_like or None, optional
+            Line-of-sight direction vector.  If `None` (default), this is set
+            to the radial directions.
         seed : int or None, optional
             Random seed of the catalogue (default is `None`).
         comm : :class:`nbodykit.CurrentMPIComm` or None, optional
@@ -306,6 +197,19 @@ class LogNormalCatalogue(CatalogSource):
             'seed': seed
             })
 
+        if hasattr(Plin, 'cosmo') and hasattr(Plin, 'redshift'):
+            cosmo = getattr(Plin, 'cosmo', None)
+            redshift = getattr(Plin, 'redshift', None)
+            growth_rate = cosmo.scale_independent_growth_rate(redshift)
+        elif add_RSD and growth_rate is None:
+            raise ValueError(
+                "`growth_rate` cannot be None if `add_RSD` is True and "
+                "'cosmo' and 'redshift' attributes are absent in `Plin`. "
+                )
+        elif not add_RSD:
+            growth_rate = None
+        self.attrs['growth_rate'] = growth_rate
+
         # Generate fields.
         field_seed, sampling_seed, drift_seed = \
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
@@ -321,7 +225,13 @@ class LogNormalCatalogue(CatalogSource):
         sampled_field = smp_field(
             lognormal_field, nbar, BoxSize, seed=sampling_seed
             )
-        position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
+        if not add_RSD:
+            position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
+        else:
+            position, displacement = pop_field(
+                sampled_field, nbar, BoxSize, voff_fields=lognormal_vfield,
+                seed=drift_seed
+                )
 
         # Initiate the base class.
         self._size = len(position)
@@ -331,17 +241,22 @@ class LogNormalCatalogue(CatalogSource):
 
         # Add redshift-space distortions,
         if add_RSD:
-            self['Position'] += self['VelocityOffset'] \
-                * normalise_vector(self['Position'])  # radial distortion only
+            self._veloff = growth_rate * displacement
+            if los is None:  # radial distortion only
+                self['Position'] += self['VelocityOffset'] \
+                    * normalise_vector(self['Position'])
+            else:  # forced line-of-sight direction
+                self['Position'] += self['VelocityOffset'] * np.array(los)
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __repr__(self):
         return (
             "LogNormalCatalogue"
-            "(nmean={0}, bias={1}, RSD={2}, boxsize={3}, nmesh={4}, seed={5})"
+            "(nmean={0}, bias={1}, fRSD={2}, boxsize={3}, nmesh={4}, seed={5})"
             ).format(
-                self.attrs['nbar'], self.attrs['bias'], self.attrs['RSD'],
-                self.attrs['BoxSize'], self.attrs['Nmesh'], self.attrs['seed']
+                self.attrs['nbar'], self.attrs['bias'],
+                self.attrs['growth_rate'], self.attrs['BoxSize'],
+                self.attrs['Nmesh'], self.attrs['seed']
                 )
 
     @column
@@ -352,11 +267,156 @@ class LogNormalCatalogue(CatalogSource):
         return self.make_column(self._pos)
 
     @column
-    def Velocity(self):
-        """Particle velocities (in km/s).
+    def VelocityOffset(self):
+        """Particle velocity offsets to positions appropriately normalised (in
+        Mpc/h).
 
         """
-        return self.make_column(self._vel)
+        return self.make_column(self._veloff)
+
+
+class GaussianCatalogue(CatalogSource):
+    """Gaussian random catalogue of given number density and power spectrum
+    with particle velocities predicted by the Zel'dovich approximation.
+
+    Attributes
+    ----------
+    comm : :class:`nbodykit.CurrentMPIComm`
+        Current MPI communicator.
+    Plin : callable
+        Input linear matter power spectrum (in cubic Mpc/h).
+    attrs : dict
+        Generic attributes.
+
+    Warnings
+    --------
+
+    The field statistics may change after Poisson sampling to discrete
+    particles as the density contrast is clipped below at -1.
+
+    """
+
+    _logger = logging.getLogger("GaussianCatalogue")
+
+    @CurrentMPIComm.enable
+    def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., add_RSD=False,
+                 growth_rate=None, los=None, seed=None, comm=None):
+        """
+        Parameters
+        ----------
+        Plin : callable
+            Linear matter power spectrum (in cubic Mpc/h).
+        nbar : float
+            Desired mean particle number density (in cubic h/Mpc).
+        BoxSize : float
+            Catalogue box size per dimension (in Mpc/h).
+        Nmesh : int
+            Mesh grid number per dimension.
+        bias : float, optional
+            Particle bias relative to the input power spectrum (default is 2.).
+        add_RSD : bool, optional
+            If `True` (default is `False`), add appropriately normalised
+            redshift-space velocity offset to particle positions.
+        growth_rate : float or None, optional
+            If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
+            'redshift' attributes, then this cannot be `None` (default).
+        los : tuple or list [of length 3] or (3,) array_like or None, optional
+            Line-of-sight direction vector.  If `None` (default), this is set
+            to the radial directions.
+        seed : int or None, optional
+            Random seed of the catalogue (default is `None`).
+        comm : :class:`nbodykit.CurrentMPIComm` or None, optional
+            Current MPI communicator.
+
+        """
+        self.comm = comm
+        self.Plin = Plin
+
+        if seed is None:
+            if self.comm.rank == 0:
+                seed = np.random.randint(0, 4294967295)
+            seed = self.comm.bcast(seed)
+
+        if hasattr(Plin, 'attrs'):
+            self.attrs.update(Plin.attrs)
+
+        self.attrs.update({
+            'nbar': nbar,
+            'bias': bias,
+            'BoxSize': [BoxSize,]*3,
+            'Nmesh': Nmesh,
+            'RSD': add_RSD,
+            'seed': seed,
+            })
+
+        if add_RSD and hasattr(Plin, 'cosmo') and hasattr(Plin, 'redshift'):
+            cosmo = getattr(Plin, 'cosmo', None)
+            redshift = getattr(Plin, 'redshift', None)
+            growth_rate = cosmo.scale_independent_growth_rate(redshift)
+        elif add_RSD and growth_rate is None:
+            raise ValueError(
+                "`growth_rate` cannot be None if `add_RSD` is True and "
+                "'cosmo' and 'redshift' attributes are absent in `Plin`. "
+                )
+        elif not add_RSD:
+            growth_rate = None
+        self.attrs['growth_rate'] = growth_rate
+
+        # Generate fields.
+        field_seed, sampling_seed, drift_seed = \
+            np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
+
+        if not add_RSD:
+            gaussian_field = gen_gaussian_field(
+                BoxSize, Nmesh, Plin, bias=bias, seed=field_seed
+                )
+        else:
+            gaussian_field, gaussian_vfield = gen_gaussian_field(
+                BoxSize, Nmesh, Plin, bias=bias, retdisp=True, seed=field_seed
+                )
+        sampled_field = smp_field(
+            gaussian_field, nbar, BoxSize, seed=sampling_seed
+            )
+        if not add_RSD:
+            position = pop_field(sampled_field, nbar, BoxSize, seed=drift_seed)
+        else:
+            position, displacement = pop_field(
+                sampled_field, nbar, BoxSize, voff_fields=gaussian_vfield,
+                seed=drift_seed
+                )
+
+        # Initiate the base class.
+        self._size = len(position)
+        self._pos = position
+        super().__init__(comm=comm)
+        self._logger.info("%s generated. ", self.__repr__())
+
+        # Add redshift-space distortions,
+        if add_RSD:
+            self._veloff = growth_rate * displacement
+            if los is None:  # radial distortion only
+                self['Position'] += self['VelocityOffset'] \
+                    * normalise_vector(self['Position'])
+            else:  # forced line-of-sight direction
+                self['Position'] += self['VelocityOffset'] * np.array(los)
+            self._logger.info("RSDs added to radial particle positions. ")
+
+    def __repr__(self):
+        return (
+            "GaussianCatalogue"
+            "(nmean={0}, bias={1}, fRSD={2}, boxsize={3}, nmesh={4}, seed={5})"
+            ).format(
+                self.attrs['nbar'], self.attrs['bias'],
+                self.attrs['growth_rate'], self.attrs['BoxSize'],
+                self.attrs['Nmesh'], self.attrs['seed']
+                )
+
+    @column
+    def Position(self):
+        """Particle positions (in Mpc/h).
+
+        """
+        return self.make_column(self._pos)
 
     @column
     def VelocityOffset(self):
@@ -364,4 +424,4 @@ class LogNormalCatalogue(CatalogSource):
         Mpc/h).
 
         """
-        return self.make_column(self._vel)
+        return self.make_column(self._veloff)

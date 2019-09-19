@@ -1,10 +1,11 @@
+import warnings
 from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, LogNormalCatalog
 
-from fieldrc import PATHOUT, params, confirm_dir
+from fieldrc import PATHOUT, params, clean_warnings, confirm_dir
 
 from catalogue import GaussianCatalogue, LogNormalCatalogue
 from harmonia.algorithms.fields import (
@@ -51,22 +52,40 @@ Plin = cosmology.LinearPower(cosmology.Planck15, redshift=z, transfer='CLASS')
 
 # -- Program identifier -------------------------------------------------------
 
-if samp:
-    fname = "catalogue"
-else:
-    fname = "realisation"
 if stat.lower().startswith('g'):
-    fname += "-gaussian"
+    statname = "gaussian"
 elif stat.lower().startswith('l'):
-    fname += "-lognormal"
+    statname = "lognormal"
 elif stat.lower().startswith('n'):
-    fname += "-nbodykit"
+    statname = "nbodykit"
+    if not cat:
+        cat = True
+        warnings.warn(
+            RuntimeWarning,
+            "'--stat' flag value 'nbodykit' has overriden "
+            "'--noncat' flag to `False`. "
+            )
+
+if cat:
+    objname = "catalogue"
+    if not samp:
+        samp = True
+        warnings.warn(
+            RuntimeWarning,
+            "'--noncat' flag value `False` has overriden "
+            "'--nosamp' flag to `False`. "
+            )
+elif samp:
+    objname = "mesh"
+else:
+    objname = "realisation"
 
 if meshg == meshc:
     mesh_tag = f"cp{meshg}"
 else:
     mesh_tag = f"c{meshg},p{meshc}"
 
+fname = "-".join([objname, statname])
 ftag = (
     f"-("
     f"nbar={ff(nbar, 'sci')},b={ff(b, 'decdot')},size={ff(L, 'intdot')},"

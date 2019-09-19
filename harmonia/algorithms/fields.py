@@ -422,8 +422,8 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
     binscaling : {'linear', 'log'}
         Binning in 'linear' or 'log' scale.
     rmin, rmax : float or None, optional
-        Binning range.  If `None` (default), the values are set to the extreme
-        norm values that the grid supports.
+        Binning range.  If `None` (default), the values are respectively set to
+        zero and the largest norm value that the grid supports.
 
     Returns
     -------
@@ -436,7 +436,7 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
 
     """
     if rmin is None:
-        rmin = np.min(norm3d)
+        rmin = 0.
     if rmax is None:
         rmax = np.max(norm3d)
 

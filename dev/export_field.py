@@ -18,22 +18,22 @@ def aggregate(result):
 
 # == CONFIGURATION ============================================================
 
-COLLATE = False
-LOAD = True
-SAVEFIG = False
+COLLATE = True
+LOAD = False
+SAVEFIG = True
 
 NBAR = 0.0005
-NMESH = 256
+NMESH = 128
 
 BIAS = 2.
 LSIDE = 1000.
 NITER = 1000
 
 PREFIX = "catalogue-lognormal"
-TAG = "-(nbar=0.0005,b=2.,size=1000.,kmax=0.1,nmesh=[c256,p128],niter=1000)"
-if str(NMESH) not in TAG or str(NBAR) not in TAG or str(NITER) not in TAG:
-    cont = input("Mesh number/number density mismatch! Continue? [y/n] ")
-    if cont.lower().startswith('n'):
+TAG = "-(nbar=0.0005,b=2.,size=1000.,kmax=0.1,nmesh=[cp128],niter=1000)"
+if not all([str(NMESH) in TAG, f"bar={NBAR}" in TAG, f"iter={NITER}" in TAG,]):
+    cont = input("Parameters mismatch in tag! Continue? [y/n] ")
+    if not cont.lower().startswith('y'):
         raise InterruptedError("User stopped execution. ")
 
 
@@ -59,7 +59,7 @@ if LOAD:
 sel, dof = slice(1, None), results['dof']
 k = results['k'][sel]
 Nk = results['Nk'][sel]
-Pk = results['Pk'][sel]  # - results['Pshot']
+Pk = results['Pk'][sel]
 dPk = results['dPk'][sel] / np.sqrt(dof)
 
 Plin = cosmology.LinearPower(cosmology.Planck15, redshift=0., transfer='CLASS')

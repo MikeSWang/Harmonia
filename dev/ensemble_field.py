@@ -3,11 +3,12 @@ from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
-from nbodykit.lab import cosmology, FFTPower, LogNormalCatalog
+from nbodykit.lab import cosmology, FFTPower
 
-from fieldrc import PATHOUT, params, clean_warnings, confirm_dir
+from fieldrc import PATHOUT, params, confirm_dir
 
 from catalogue import GaussianCatalogue, LogNormalCatalogue
+from nbkit_catalogue import LogNormalCatalog
 from harmonia.algorithms.fields import (
     generate_gaussian_random_field,
     generate_lognormal_random_field,

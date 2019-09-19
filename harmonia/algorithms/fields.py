@@ -436,7 +436,7 @@ def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):
 
     """
     if rmin is None:
-        rmin = 0.
+        rmin = np.min(norm3d)
     if rmax is None:
         rmax = np.max(norm3d)
 
@@ -496,7 +496,7 @@ def _cal_isotropic_power_spectrum(field, boxside, kmax=None, nbins=10,
     powerarr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / ncell**2
 
     powers, wavenumbers, nmodes = _radial_binning(
-        knorm, powerarr, nbins, binscaling, rmin=2*np.pi/boxside, rmax=kmax
+        knorm, powerarr, nbins, binscaling, rmin=0., rmax=kmax
         )
 
     return wavenumbers, powers, nmodes

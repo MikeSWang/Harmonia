@@ -1,13 +1,14 @@
 """Field generator runtime configuration.
 
-This sets I/O paths and provides common parameters and functionalities to
-field fidelity assurance scripts.
+This sets I/O paths and provides common parameters and functionalities to field
+fidelity assurance scripts.
 
 """
 import os
 import sys
 import warnings
 from argparse import ArgumentParser
+
 sys.path.insert(0, "../")
 
 from harmonia.collections import collate, harmony

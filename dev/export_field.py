@@ -18,19 +18,19 @@ def aggregate(result):
 
 # == CONFIGURATION ============================================================
 
-COLLATE = True
-LOAD = False
-SAVEFIG = True
+COLLATE = False
+LOAD = True
+SAVEFIG = False
 
 NBAR = 0.0005
-NMESH = 128
+NMESH = 256
 
 BIAS = 2.
-LSIDE = 1000.
-NITER = 1000
+LSIDE = 300.
+NITER = 5000
 
-PREFIX = "catalogue-lognormal"
-TAG = "-(nbar=0.0005,b=2.,size=1000.,kmax=0.1,nmesh=[cp128],niter=1000)"
+PREFIX = "catalogue-nbodykit"
+TAG = "-(nbar=0.0005,b=2.,size=300.,kmax=0.1,nmesh=[cp256],niter=5000)"
 if not all([str(NMESH) in TAG, f"bar={NBAR}" in TAG, f"iter={NITER}" in TAG,]):
     cont = input("Parameters mismatch in tag! Continue? [y/n] ")
     if not cont.lower().startswith('y'):
@@ -65,7 +65,7 @@ dPk = results['dPk'][sel] / np.sqrt(dof)
 Plin = cosmology.LinearPower(cosmology.Planck15, redshift=0., transfer='CLASS')
 Pshot = 1 / NBAR
 Pmod = BIAS**2 * Plin(k) + Pshot
-Perr = Pmod / np.sqrt(Nk)
+Perr = Pmod / np.sqrt(Nk - 1)
 
 deviat = Pk / Pmod - 1
 if np.abs(np.average(deviat)) > 0.05:
@@ -90,7 +90,7 @@ fig = plt.figure("Catalogue fidelity")
 
 mainax = plt.subplot2grid((5,6), (0,0), rowspan=4, colspan=6)
 
-plt.errorbar(k, Pmod, Perr, elinewidth=.8, ls='--', label='model')
+plt.errorbar(k, Pmod, Perr, ls='--', label='model')
 plt.errorbar(k, Pk, dPk, label=' '.join(list(reversed(PREFIX.split("-")))))
 
 plt.tick_params(axis='x', which='both', labelbottom=False)
@@ -102,7 +102,7 @@ plt.legend()
 
 subax = plt.subplot2grid((5,6), (4,0), rowspan=1, colspan=6, sharex=mainax)
 
-plt.plot(k, deviat, ls='--')   # c='#C40233', c='#0087BD'
+plt.plot(k, deviat, ls='--')
 plt.axhline(y=0., lw=1., ls='--')
 plt.fill_between(xlim, [EPATCH_HT,]*2, [-EPATCH_HT]*2, alpha=0.2)
 
@@ -113,8 +113,9 @@ plt.ylabel(r'$\hat{P} \big/ P_\mathrm{model}(k) - 1$')
 
 fig.subplots_adjust(hspace=0)
 fig.suptitle(
-    f"Suite of size {NITER}, boxsize {LSIDE}, mesh number {NMESH}, "
-    r"density $\bar{{n}} = {} \times 10^{{-{}}}$".format(
+    r"Suite of size {}, boxsize {} $\textrm{{Mpc}}/h$, mesh number {}, "
+        .format(NITER, LSIDE, NMESH) +
+    r"density $\bar{{n}} = {} \times 10^{{-{}}} (h/\textrm{{Mpc}})^3$".format(
         "{:.1e}".format(NBAR).split("e")[0],
         "{:.1e}".format(NBAR).split("e")[1].lstrip("-").lstrip("0")
         ),

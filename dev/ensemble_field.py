@@ -3,12 +3,10 @@ from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
-from nbodykit.lab import cosmology, FFTPower
+from nbodykit.lab import cosmology, FFTPower, LogNormalCatalog
 
 from fieldrc import PATHOUT, params, confirm_dir
 
-from catalogue import GaussianCatalogue, LogNormalCatalogue
-from nbodykit.lab import LogNormalCatalog
 from harmonia.algorithms.fields import (
     generate_gaussian_random_field,
     generate_lognormal_random_field,
@@ -16,6 +14,7 @@ from harmonia.algorithms.fields import (
     _cal_isotropic_power_spectrum as cal_power
     )
 from harmonia.collections import harmony, format_float as ff
+from harmonia.mapper import GaussianCatalogue, LogNormalCatalogue
 
 MECHANISM = {
     'gaussian': generate_gaussian_random_field,

@@ -406,7 +406,9 @@ def populate_particles(sampled_field, mean_density, boxside, voff_fields=None,
         celldsp = np.transpose([np.ravel(psi_i) for psi_i in voff_fields])
         displacements = np.repeat(celldsp, np.ravel(number_field), axis=0)
 
-    return position, displacements
+        return position, displacements
+
+    return position
 
 
 def _radial_binning(norm3d, data3d, nbins, binscaling, rmin=None, rmax=None):

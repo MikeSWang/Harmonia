@@ -76,7 +76,9 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--redshift', type=float, default=0.)
 
     cli_parser.add_argument('--kmax', type=float, default=0.1)
+    cli_parser.add_argument('--dk', type=float, default=None)
     cli_parser.add_argument('--boxside', type=float, default=1000.)
+    cli_parser.add_argument('--bins', type=int, default=15)
     cli_parser.add_argument('--meshgen', type=int, default=256)
     cli_parser.add_argument('--meshcal', type=int, default=256)
 

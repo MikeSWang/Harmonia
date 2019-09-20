@@ -8,7 +8,7 @@ from nbodykit.lab import cosmology, FFTPower
 from fieldrc import PATHOUT, params, confirm_dir
 
 from catalogue import GaussianCatalogue, LogNormalCatalogue
-from nbkit_catalogue import LogNormalCatalog
+from nbodykit.lab import LogNormalCatalog
 from harmonia.algorithms.fields import (
     generate_gaussian_random_field,
     generate_lognormal_random_field,
@@ -39,6 +39,8 @@ nbar = params.nbar
 b = params.bias
 z = params.redshift
 kmax = params.kmax
+dk = params.dk
+nbins = params.nbins
 L = params.boxside
 meshg = params.meshgen
 meshc = params.meshcal
@@ -104,7 +106,7 @@ if cat:
     for run in range(niter):
         clog = CATALOGUE[stat](Plin, nbar, bias=b, BoxSize=L, Nmesh=meshg)
         mesh = clog.to_mesh(Nmesh=meshc, resampler='tsc', compensated=True)
-        cpow = FFTPower(mesh, mode='1d', kmax=kmax).power
+        cpow = FFTPower(mesh, mode='1d', kmax=kmax, dk=dk).power
 
         suite['k'].append([cpow['k']])
         suite['Nk'].append([cpow['modes']])
@@ -114,7 +116,7 @@ else:
     for run in range(niter):
         field = MECHANISM[stat](L, meshg, Plin, bias=b)
         if samp: field = poisson_sample(field, nbar, L)
-        k, Pk, Nk = cal_power(field, L, kmax=kmax, nbins=15)
+        k, Pk, Nk = cal_power(field, L, kmax=kmax, nbins=nbins)
 
         suite['k'].append([k])
         suite['Nk'].append([Nk])

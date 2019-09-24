@@ -34,8 +34,8 @@ Computational utilities
 
 .. autosummary::
 
-    zeroconst
-    unitconst
+    zero_const
+    unit_const
     covar_to_corr
     bisect_roots
 
@@ -317,7 +317,7 @@ def format_float(x, case):
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
 
-def zeroconst(*args):
+def zero_const(*args):
     """Return constant 0.
 
     Parameters
@@ -333,7 +333,7 @@ def zeroconst(*args):
     return 0.
 
 
-def unitconst(*args):
+def unit_const(*args):
     """Return constant 1.
 
     Parameters

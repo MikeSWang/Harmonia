@@ -68,8 +68,8 @@ rough_data = {
     }
 smooth_data = {}
 bins = np.concatenate([
-    np.array([k_ell[0] for k_ell in DISC.wavenumbers])[[0, 4, 6, 8, 10,]],
-    [0.0325,]
+    np.array([k_ell[0] for k_ell in DISC.wavenumbers])[[0, 4, 6, 9, 12,]],
+    [0.04,]
     ])
 # bins = np.linspace(6e-3, 4e-2, 8), logspace(-2.2, -1.4, 5)
 
@@ -99,12 +99,12 @@ plt.close('all')
 plt.subplot2grid((4, 8), (0, 0), rowspan=3, colspan=8)
 
 plt.loglog(
-    bincoord, smooth_data['measurements'], '-', marker='+',
+    bincoord, smooth_data['measurements'], ls='-', marker='+',
     label='measurements'
     )
 plt.loglog(
     bincoord, smooth_data['predictions'], ':', marker='+',
-    label=f'{corrct_tag} predictions (corrected)'
+    label=f'{corrct_tag} predictions'
     )
 xlim = plt.gca().get_xlim()
 

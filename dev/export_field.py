@@ -18,19 +18,19 @@ def aggregate(result):
 
 # == CONFIGURATION ============================================================
 
-COLLATE = False
-LOAD = True
-SAVEFIG = False
+COLLATE = True
+LOAD = False
+SAVEFIG = True
 
 NBAR = 0.0005
 NMESH = 256
 
 BIAS = 2.
-LSIDE = 300.
-NITER = 5000
+LSIDE = 1000.
+NITER = 1000
 
-PREFIX = "catalogue-nbodykit"
-TAG = "-(nbar=0.0005,b=2.,size=300.,kmax=0.1,nmesh=[cp256],niter=5000)"
+PREFIX = "catalogue-lognormal"
+TAG = "-(nbar=0.0005,b=2.,size=1000.,kmax=0.1,nmesh=[cp256],niter=1000)"
 if not all([str(NMESH) in TAG, f"bar={NBAR}" in TAG, f"iter={NITER}" in TAG,]):
     cont = input("Parameters mismatch in tag! Continue? [y/n] ")
     if not cont.lower().startswith('y'):

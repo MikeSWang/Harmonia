@@ -2,7 +2,7 @@
 Array morphing (:mod:`~harmonia.algorithms.morph`)
 ===============================================================================
 
-Manipulate cosmological data array structure.
+Manipulate cosmological data array structures.
 
 .. autosummary::
 
@@ -15,7 +15,7 @@ import warnings
 
 import numpy as np
 
-from .bases import sph_besselj_root
+from .bases import spherical_besselj_root
 
 
 class SphericalArray:
@@ -30,11 +30,12 @@ class SphericalArray:
 
     Spherical degrees :math:`\ell` and orders :math:`m` are associated with the
     spherical Bessel and harmonic functions, and spherical depths :math:`n` are
-    the number of allowed radial modes for each degree of a discrete Fourier
-    spectrum, implemented in this program by
+    the number of allowed radial wave numbers for each degree of a discrete
+    Fourier spectrum, implemented by
     :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.
 
     The supported array structures include the following:
+
         * 'natural' or equivalently :math:`(\ell, m, n)`;
         * :math:`(\ell, n, m)`, where ordering by spherical depths takes
           precedence over that by spherical orders;
@@ -45,6 +46,20 @@ class SphericalArray:
         * 'scale', as above but values for equivalent :math:`m` have first been
           averaged/collapsed in the corresponding axis.
 
+    Parameters
+    ----------
+    degrees : int, array_like
+        Spherical degrees.
+    depths : int, array_like
+        Spherical depths for each degree.
+    roots : float, array_like or None, optional
+        Roots of spherical Bessel functions or their derivatives corresponding
+        to `degrees` and `depths`.  If this is `None` (default), the roots are
+        computed by calling
+        :func:`~harmonia.algorithms.bases.spherical_besselj_root`.
+    filling : float, array_like or None, optional
+        Data array from which the spherical array is built (default is `None`).
+
     Attributes
     ----------
     degrees : int, array_like
@@ -54,55 +69,46 @@ class SphericalArray:
     roots : float, array_like
         Roots of spherical Bessel functions or their derivatives corresponding
         to :attr:`degrees` and :attr:`depths`.
-    init_indices : list of (int, int, int), array_like
+    index_array : list of (int, int, int), array_like
         Triplet indices stored in the natural structure.
-    init_array : list of float, array_like or None
+    data_array : list of float, array_like or None
         Data stored in the natural structure.
+
+    Raises
+    ------
+    ValueError
+        If `filling` does not have the natural structure matching `degrees`
+        and `depths`.
 
     """
 
     def __init__(self, degrees, depths, roots=None, filling=None):
-        r"""
-        Parameters
-        ----------
-        degrees : int, array_like
-            Spherical degrees.
-        depths : int, array_like
-            Spherical depths for each degree.
-        roots : float, array_like, optional
-            Roots of spherical Bessel functions or their derivatives
-            corresponding to `degrees` and `depths`.  If this is `None`
-            (default), the roots are computed by calling
-            :func:`~harmonia.toolbox.basis.sph_besselj_root`.
-        filling : float, array_like or None, optional
-            Data array from which the spherical array is built (default is
-            `None`).
 
-        Raises
-        ------
-        ValueError
-            If `filling` does not have the natural structure matching `degrees`
-            and `depths`.
-
-        """
         if roots is None:
             roots = [
-                sph_besselj_root(ell, nmax, only=False)
+                spherical_besselj_root(ell, nmax, only=False)
                 for ell, nmax in zip(degrees, depths)
-                ]
+            ]
         self.degrees, self.depths, self.roots = degrees, depths, roots
 
-        self._waveindices = [
-            [[(ell, nidx+1) for nidx in range(nmax)]]
-            for ell, nmax in zip(degrees, depths)
+        self._wavetuples = [
+            [
+                [
+                    (ell, nidx+1) for nidx in range(nmax)
+                ]
             ]
+            for ell, nmax in zip(degrees, depths)
+        ]
 
-        self.init_indices = [
-            [[(ell, m, nidx+1)
-              for nidx in range(nmax)]
-             for midx, m in enumerate(range(-ell, ell+1))]
-            for ell, nmax in zip(degrees, depths)
+        self.index_array = [
+            [
+                [
+                    (ell, m, nidx+1) for nidx in range(nmax)
+                ]
+                for midx, m in enumerate(range(-ell, ell+1))
             ]
+            for ell, nmax in zip(degrees, depths)
+        ]
 
         if filling is not None:
             if len(filling) == len(degrees):
@@ -112,18 +118,17 @@ class SphericalArray:
                             f"Element of spherical degree {ell} in `filling` "
                             "is not a rectangular array whose shape "
                             "is consistent with `degrees` and `depths`. "
-                            )
+                        )
             else:
                 raise ValueError(
                     "Length of `filling` is not consistent with `degrees`. "
-                    )
-            self.init_array = [np.array(fillblock) for fillblock in filling]
+                )
+            self.data_array = [np.array(fillblock) for fillblock in filling]
         else:
-            self.init_array = None
+            self.data_array = None
 
     def __repr__(self):
-        return (f"SphericalArray("
-                f"ndegrees={len(self.degrees)},id={id(self)})")
+        return f"SphericalArray(ndegrees={len(self.degrees)},id={id(self)})"
 
     @classmethod
     def build(cls, filling=None, disc=None):
@@ -132,13 +137,13 @@ class SphericalArray:
 
         If `disc` is not provided, the natural structure is inferred from
         `filling`; if only `disc` is provided, a natural structue index array
-        is returned with NoneType :attr:`init_array`.
+        is returned with NoneType :attr:`data_array`.
 
         Parameters
         ----------
-        filling : array_like or None, optional
+        filling : array_like
             Natural structure data array for filling (default is `None`).
-        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum` or None, optional
+        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
             Discretisation set-up (default is `None`).
 
         Raises
@@ -152,8 +157,11 @@ class SphericalArray:
         """
         if disc is not None:
             return cls(
-                disc.degrees, disc.depths, roots=disc.roots, filling=filling
-                )
+                disc.degrees,
+                disc.depths,
+                roots=disc.roots,
+                filling=filling,
+            )
         if filling is None:
             raise ValueError("`disc` and `filling` cannot both be None. ")
 
@@ -161,23 +169,26 @@ class SphericalArray:
             raise ValueError(
                 "At least one block element of `filling` "
                 "is not of odd lengths. "
-                )
+            )
+
         degrees = [len(fillblock) // 2 for fillblock in filling]
+
         if sorted(degrees) != degrees:
             raise ValueError(
                 "Block elements of `filling` are not ordered in ascension "
                 "by block lenths. "
-                )
+            )
+
         depths = [np.size(fillblock, axis=-1) for fillblock in filling]
 
         return cls(degrees, depths, filling=filling)
 
-    def unfold(self, axis_order, collapse=False, retonly=False):
+    def unfold(self, axis_order, collapse=False, return_only=None):
         r"""Flatten data and index arrays in the specified order.
 
         If the arrays are collapsed amongst equivalent spherical orders, each
-        block element in :attr:`init_array` is first averaged over the rows and
-        the triplet index tuple elements in :attr:`init_indices` are stripped
+        block element in :attr:`data_array` is first averaged over the rows and
+        the triplet index tuple elements in :attr:`index_array` are stripped
         of their middle :math:`m`-index before flattening.
 
         Parameters
@@ -189,26 +200,26 @@ class SphericalArray:
             If `True` (default is `False`), the arrays are collapsed over
             spherical orders before flattening.  This is overriden to `True`
             if `axis_order` is ``'ln'`` or ``'k'``.
-        retonly : {'data', 'index'} or bool, optional
-            Only return the 'data' or 'index' array (default is `False`).
+        return_only : {'data', 'index'} or None, optional
+            Only return the 'data' or 'index' array (default is `None`).
 
         Returns
         -------
-        data_flatarr : float, array_like or None
+        data_flat : float, array_like or None
             Flattend 1-d data array.
-        indx_flatarr : list of tuple
+        index_flat : list of tuple
             Flattend 1-d index array.
 
         """
-        data_arr, indx_arr = self.init_array, self.init_indices
+        data_arr, indx_arr = self.data_array, self.index_array
 
         empty_flag = (data_arr is None)
         if empty_flag:
-            data_flatarr = None
+            data_flat = None
             warnings.warn(
-                "`init_array` is None and thus not flattened. ",
+                "`data_array` is None and thus not flattened. ",
                 RuntimeWarning
-                )
+            )
 
         # Spherical order collapse (`collapse` overriden if appropriate).
         axis_order = self._alias(axis_order)
@@ -219,46 +230,53 @@ class SphericalArray:
 
         if collapse:
             if not empty_flag:
-                data_arr = self.collapse_subarr(data_arr, 'data')
-            indx_arr = self.collapse_subarr(indx_arr, 'index')
+                data_arr = self.collapse_subarray(data_arr, 'data')
+            indx_arr = self.collapse_subarray(indx_arr, 'index')
 
         # Vectorisation.
-        transpose = (axis_order == 'lnm')  # additional transpose step
+        transpose = (axis_order == 'lnm')
 
         if not empty_flag:
-            data_flatarr = np.array(
-                self._flatten(data_arr, 'data', subarr_trans=transpose)
-                )
-        indx_flatarr = self._flatten(indx_arr, 'index', subarr_trans=transpose)
+            data_flat = np.array(
+                self._flatten(data_arr, 'data', subarray_transpose=transpose)
+            )
+        index_flat = self._flatten(
+            indx_arr,
+            'index',
+            subarray_transpose=transpose
+        )
 
-        if axis_order == 'k':  # additional ordering step
+        if axis_order == 'k':
             roots = self.roots
             if not collapse:
-                roots = self.repeat_subarr(
-                    roots, 'data', degrees=self.degrees
-                    )
+                roots = self.repeat_subarray(
+                    roots,
+                    'data',
+                    degrees=self.degrees
+                )
+
             order = np.argsort(self._flatten(roots, 'data'))
             if not empty_flag:
-                data_flatarr = data_flatarr[order]
-            indx_flatarr = [indx_flatarr[iord] for iord in order]
+                data_flat = data_flat[order]
+            index_flat = [index_flat[iord] for iord in order]
 
-        if retonly == 'data':
-            return data_flatarr
-        if retonly == 'index':
-            return indx_flatarr
-        return data_flatarr, indx_flatarr
+        if return_only == 'data':
+            return data_flat
+        if return_only == 'index':
+            return index_flat
+        return data_flat, index_flat
 
-    def refold(self, flatarr, in_struct, subarr_type):
+    def refold(self, flat_array, in_structure, subarray_type):
         """Return a flattened array to its natural structure which is taken
-        to be the same as :attr:`init_array`.
+        to be the same as :attr:`data_array`.
 
         Parameters
         ----------
-        arr : array_like
+        flat_array : array_like
             Flat array to be refolded.
-        in_struct : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
+        in_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Input structure.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
 
@@ -270,38 +288,43 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `in_struct` is not a valid string.
+            If `in_structure` is not a valid string.
 
         """
-        if subarr_type == 'index':
-            return self.init_indices
+        if subarray_type == 'index':
+            return self.index_array
 
-        ordered_indx = self.unfold(in_struct, retonly='index')
+        ordered_indx = self.unfold(in_structure, return_only='index')
 
-        if in_struct in ['natural', 'lmn', 'lnm', 'k']:
+        if in_structure in ['natural', 'lmn', 'lnm', 'k']:
             retarr = [
-                [[None for n in range(nmax)]
-                 for m in range(-ell, ell+1)]
+                [
+                    [
+                        None for n in range(nmax)
+                    ]
+                    for m in range(-ell, ell+1)]
                 for ell, nmax in zip(self.degrees, self.depths)
-                ]
-            for indx, entry in zip(ordered_indx, flatarr):
+            ]
+            for indx, entry in zip(ordered_indx, flat_array):
                 ellidx, midx, nidx = indx[0], indx[1] + indx[0], indx[-1] - 1
                 retarr[ellidx][midx][nidx] = entry
-        elif in_struct in ['ln', 'scale']:
+        elif in_structure in ['ln', 'scale']:
             retarr = [
-                [None for n in range(nmax)]
-                for ell, nmax in zip(self.degrees, self.depths)
+                [
+                    None for n in range(nmax)
                 ]
-            for indx, entry in zip(ordered_indx, flatarr):
+                for ell, nmax in zip(self.degrees, self.depths)
+            ]
+            for indx, entry in zip(ordered_indx, flat_array):
                 ellidx, nidx = indx[0], indx[-1] - 1
                 retarr[ellidx][nidx] = entry
-            retarr = self.repeat_subarr(retarr, 'data', degrees=self.degrees)
+            retarr = self.repeat_subarray(retarr, 'data', degrees=self.degrees)
         else:
-            raise ValueError("`in_struct` is invalid. ")
+            raise ValueError("`in_structure` is invalid. ")
 
         return retarr
 
-    def morph(self, arr, in_struct, out_struct, subarr_type):
+    def morph(self, array, in_structure, out_structure, subarray_type):
         """Morph an array from one structure to another structure.
 
         All morphings are performed by returning the array shape to the natural
@@ -315,63 +338,76 @@ class SphericalArray:
 
         Parameters
         ----------
-        arr : array_like
+        array : array_like
             Array to be morphed.
-        in_struct : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
+        in_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Input structure.
-        out_struct : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
+        out_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Output structure.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
 
         Returns
         -------
-        rearr : array_like
+        morph_array : array_like
             Reshaped array.
 
         """
-        in_struct = self._alias(in_struct)
-        out_struct = self._alias(out_struct)
+        in_structure = self._alias(in_structure)
+        out_structure = self._alias(out_structure)
 
-        natarr = self.refold(arr, in_struct, subarr_type)
-        if out_struct == 'lmn':
-            rearr = natarr
-        if out_struct == 'lnm':
-            rearr = self.transpose_subarr(arr, subarr_type=subarr_type)
-        if out_struct == 'ln':
-            rearr = self.collapse_subarr(arr, subarr_type=subarr_type)
-        if out_struct == 'k':
-            rearr = self._flatten(natarr, subarr_type)
-            order = np.argsort(self._flatten(
-                self.repeat_subarr(self.roots, 'data', degrees=self.degrees),
-                'data'
-                ))
-            if subarr_type == 'data':
-                rearr = rearr[order]
-            elif subarr_type == 'index':
-                rearr = [rearr[iord] for iord in order]
-        if out_struct == 'scale':
-            rearr = self._flatten(
-                self.collapse_subarr(natarr, subarr_type), subarr_type
+        natarr = self.refold(array, in_structure, subarray_type)
+        if out_structure == 'lmn':
+            morph_array = natarr
+        if out_structure == 'lnm':
+            morph_array = self.transpose_subarray(
+                array,
+                subarray_type=subarray_type
                 )
+        if out_structure == 'ln':
+            morph_array = self.collapse_subarray(
+                array,
+                subarray_type=subarray_type
+                )
+        if out_structure == 'k':
+            morph_array = self._flatten(natarr, subarray_type)
+            order = np.argsort(
+                self._flatten(
+                    self.repeat_subarray(
+                        self.roots,
+                        'data',
+                        degrees=self.degrees
+                    ),
+                    'data'
+                )
+            )
+            if subarray_type == 'data':
+                morph_array = morph_array[order]
+            elif subarray_type == 'index':
+                morph_array = [morph_array[iord] for iord in order]
+        if out_structure == 'scale':
+            morph_array = self._flatten(
+                self.collapse_subarray(natarr, subarray_type),
+                subarray_type
+            )
             order = np.argsort(self._flatten(self.roots, 'data'))
-            if subarr_type == 'data':
-                rearr = rearr[order]
-            elif subarr_type == 'index':
-                rearr = [rearr[iord] for iord in order]
+            if subarray_type == 'data':
+                morph_array = morph_array[order]
+            elif subarray_type == 'index':
+                morph_array = [morph_array[iord] for iord in order]
 
-        return rearr
+        return morph_array
 
     @staticmethod
-    def transpose_subarr(arr, subarr_type):
+    def transpose_subarray(arr, subarray_type):
         """Transpose array elements in a list.
 
         Parameters
         ----------
         arr : list of float or tuple, array_like
             List of subarrays.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
 
@@ -383,26 +419,25 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `subarr_type` is neither ``'data'`` nor ``'index'``.
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
-        if subarr_type == 'data':
+        if subarray_type == 'data':
             return [np.array(ellblock).T for ellblock in arr]
-        if subarr_type == 'index':
+        if subarray_type == 'index':
             return [list(map(list, zip(*ellblock))) for ellblock in arr]
-
-        raise ValueError("Invalid `subarr_type` value. ")
+        raise ValueError("Invalid `subarray_type` value. ")
 
     @staticmethod
-    def collapse_subarr(arr, subarr_type):
+    def collapse_subarray(array, subarray_type):
         """Collapse a natural structure array over equivalent spherical orders
         while preserving array dimensions.
 
         Parameters
         ----------
-        arr : list of float or tuple, array_like
+        array : list of float or tuple, array_like
             Natural structure array.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
 
@@ -414,31 +449,32 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `subarr_type` is neither ``'data'`` nor ``'index'``.
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
-        if subarr_type == 'data':
+        if subarray_type == 'data':
             return [
-                np.mean(ellblock, axis=0, keepdims=True) for ellblock in arr
-                ]
-        if subarr_type == 'index':
+                np.mean(ellblock, axis=0, keepdims=True) for ellblock in array
+            ]
+        if subarray_type == 'index':
             return [
-                [list(map(lambda tup: (tup[0], tup[-1]), ellblock[0]))]
-                for ellblock in arr
+                [
+                    list(map(lambda tup: (tup[0], tup[-1]), ellblock[0]))
                 ]
-
-        raise ValueError("Invalid `subarr_type` value. ")
+                for ellblock in array
+            ]
+        raise ValueError("Invalid `subarray_type` value. ")
 
     @staticmethod
-    def repeat_subarr(arr, subarr_type, degrees=None):
+    def repeat_subarray(array, subarray_type, degrees=None):
         """Repeat an array collapsed over equivalent spherical orders to
         recover the natural structure array.
 
         Parameters
         ----------
-        arr : list of float or tuple, array_like
+        array : list of float or tuple, array_like
             Array collapsed over spherical orders.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
         degrees : list of int, array_like or None
@@ -454,37 +490,38 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `subarr_type` is neither ``'data'`` nor ``'index'``.
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
         ValueError
-            If length of `arr` disagrees with input `degrees`.
+            If length of `array` disagrees with input `degrees`.
 
         """
         if degrees is None:
-            degrees = np.arange(len(arr))
-        elif len(degrees) != len(arr):
-            raise ValueError("`arr` length and `degrees` disagree. ")
+            degrees = np.arange(len(array))
+        elif len(degrees) != len(array):
+            raise ValueError("`array` length and `degrees` disagree. ")
 
-        if subarr_type == 'data':
+        if subarray_type == 'data':
             return [
                 np.repeat(np.atleast_2d(line), 2*ell+1, axis=0)
-                for line, ell in zip(arr, degrees)
-                ]
-        if subarr_type == 'index':
+                for line, ell in zip(array, degrees)
+            ]
+        if subarray_type == 'index':
             return [
-                [list(map(lambda tup: (tup[0], m, tup[-1]), lineblock[0]))
-                 for m in range(-ell, ell+1)]
-                for lineblock, ell in zip(arr, degrees)
+                [
+                    list(map(lambda tup: (tup[0], m, tup[-1]), lineblock[0]))
+                    for m in range(-ell, ell+1)
                 ]
-
-        raise ValueError("Invalid `subarr_type` value. ")
+                for lineblock, ell in zip(array, degrees)
+            ]
+        raise ValueError("Invalid `subarray_type` value. ")
 
     @staticmethod
-    def _alias(structname):
+    def _alias(structure_name):
         """Replace aliases of stucture names by the default structure name.
 
         Parameters
         ----------
-        structname : str
+        structure_name : str
             Array structure name.
 
         Returns
@@ -493,21 +530,21 @@ class SphericalArray:
             Equivalent array structure name.
 
         """
-        if structname == 'natural':
+        if structure_name == 'natural':
             return 'lmn'
-        return structname
+        return structure_name
 
-    def _flatten(self, arr, subarr_type, subarr_trans=False):
+    def _flatten(self, array, subarray_type, subarray_transpose=False):
         """Flatten a natural structure array.
 
         Parameters
         ----------
-        arr : list of float or tuple, array_like
+        array : list of float or tuple, array_like
             Natural structure array.
-        subarr_type : {'data', 'index'}
+        subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
             index arrays.
-        subarr_trans : bool, optional
+        subarray_transpose : bool, optional
             If `True` (default is `False`), each subarray is flattened along
             the columns rather than rows by a transposition.
 
@@ -519,19 +556,19 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `subarr_type` is neither ``'data'`` nor ``'index'``.
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
-        if subarr_trans:
-            arr = self.transpose_subarr(arr, subarr_type)
+        if subarray_transpose:
+            array = self.transpose_subarray(array, subarray_type)
 
-        if subarr_type == 'data':
+        if subarray_type == 'data':
             return np.concatenate(
-                [np.array(arrblock).flatten() for arrblock in arr]
-                )
-        if subarr_type == 'index':
+                [np.array(arrblock).flatten() for arrblock in array]
+            )
+        if subarray_type == 'index':
             return [
-                entry for block in arr for line in block for entry in line
-                ]
+                entry for block in array for line in block for entry in line
+            ]
 
-        raise ValueError("Invalid `subarr_type` value. ")
+        raise ValueError("Invalid `subarray_type` value. ")

@@ -8,21 +8,21 @@ Numerical integration against Fourier basis functions.
 
 .. autosummary::
 
-    radial_spherical_int
-    angular_spherical_int
+    radial_spherical_integral
+    angular_spherical_integral
 
 **Linear kernel spherical integrals**
 
 .. autosummary::
 
-    radial_sphint_besselj
-    angular_sphint_harmonic
+    radial_besselj_integral
+    angular_harmonic_integral
 
 |
 
-.. topic:: Important note
+.. topic:: Caution
 
-    Cautious use of quadrature integration for spherical Bessel functions.
+    Quadrature integration of spherical Bessel functions may converge slowly.
 
 |
 
@@ -30,7 +30,7 @@ Numerical integration against Fourier basis functions.
 import numpy as np
 from scipy.integrate import dblquad, quad
 
-from .bases import sph_besselj, sph_harmonic
+from .bases import spherical_besselj, spherical_harmonic
 
 
 def _radial_integrand(r, rfunc):
@@ -87,12 +87,12 @@ def _angular_integrand(phi, theta, afunc, complex_part):
     raise ValueError("`complex_part` neither 'real' nor 'imag'. ")
 
 
-def radial_spherical_int(rfunc, rmax):
+def radial_spherical_integral(radial_func, rmax):
     """Radial integral up to the given maximal radius.
 
     Parameters
     ----------
-    rfunc : callable
+    radial_func : callable
         Radial function to be integrated.
     rmax : float
         Upper radial limit.
@@ -103,17 +103,17 @@ def radial_spherical_int(rfunc, rmax):
         Radial integral value.
 
     """
-    integral, _ = quad(_radial_integrand, 0, rmax, args=(rfunc))
+    integral, _ = quad(_radial_integrand, 0, rmax, args=(radial_func,))
 
     return integral
 
 
-def angular_spherical_int(afunc):
+def angular_spherical_integral(angular_func):
     r"""Full angular integral.
 
     Parameters
     ----------
-    afunc : callable
+    angular_func : callable
         Angular function be integrated.
 
     Returns
@@ -121,30 +121,35 @@ def angular_spherical_int(afunc):
     complex
         Full angular integral value.
 
-    Notes
-    -----
-    Arguments of the angular function `afunc` must be in radians and in the
-    following order and range: :math:`(\theta, \phi) \in [0, \pi] \times
-    [0, 2\pi)`.
+    Warnings
+    --------
+    Arguments of `angular_func` must be in radians in the following order and
+    range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
     """
     integral_real, _ = dblquad(
-        _angular_integrand, 0, np.pi, 0, 2*np.pi, args=(afunc, 'real')
+        _angular_integrand,
+        0, np.pi,
+        0, 2*np.pi,
+        args=(angular_func, 'real')
         )
     integral_imag, _ = dblquad(
-        _angular_integrand, 0, np.pi, 0, 2*np.pi, args=(afunc, 'imag')
+        _angular_integrand,
+        0, np.pi,
+        0, 2*np.pi,
+        args=(angular_func, 'imag')
         )
 
     return integral_real + 1j*integral_imag
 
 
-def radial_sphint_besselj(rfunc, ell, k, rmax, *args, **kwargs):
+def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
     """Radial integral against spherical Bessel functions at the specified wave
     number up to the given maximal radius.
 
     Parameters
     ----------
-    rfunc : callable
+    radial_func : callable
         Radial function to be integrated.
     ell : int
         Order of the spherical Bessel function.
@@ -153,7 +158,8 @@ def radial_sphint_besselj(rfunc, ell, k, rmax, *args, **kwargs):
     rmax : float
         Upper radial limit.
     *args, **kwargs
-        Additional positional and keyword arguments to be passed to `rfunc`.
+        Additional positional and keyword arguments to be passed to
+        `radial_func`.
 
     Returns
     -------
@@ -161,18 +167,20 @@ def radial_sphint_besselj(rfunc, ell, k, rmax, *args, **kwargs):
         Integral value
 
     """
-    def _int_kernel(r):
-        return rfunc(r, *args, **kwargs) * sph_besselj(ell, k*r)
+    return radial_spherical_integral(
+        lambda r: radial_func(r, *args, **kwargs) \
+            * spherical_besselj(ell, k*r),
+        rmax
+    )
 
-    return radial_spherical_int(_int_kernel, rmax)
 
-
-def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
+def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
+                              **kwargs):
     r"""Full angular integral against spherical harmonic functions.
 
     Parameters
     ----------
-    afunc : callable
+    angular_func : callable
         Angular function be integrated.
     ell : int
         Degree of the spherical harmonic function.
@@ -181,24 +189,24 @@ def angular_sphint_harmonic(afunc, ell, m, *args, conjugate=True, **kwargs):
     conjugate : bool, optional
         If `True` (default), use conjugate of the spherical harmonic function.
     *args, **kwargs
-        Additional positional and keyword arguments to be passed to `afunc`.
+        Additional positional and keyword arguments to be passed to
+        `angular_func`.
 
     Returns
     -------
     complex
         Integral value.
 
-    Notes
-    -----
-    The arguments of the angular function `afunc` must be in radians and in
-    the following order and range: :math:`(\theta, \phi) \in [0, \pi] \times
-    [0, 2\pi)`.
+    Warnings
+    --------
+    Arguments of `angular_func` must be in radians in the following order and
+    range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
     """
     def _int_kernel(theta, phi):
-        return afunc(theta, phi, *args, **kwargs) \
-            * sph_harmonic(ell, m, theta, phi)
+        return angular_func(theta, phi, *args, **kwargs) \
+            * spherical_harmonic(ell, m, theta, phi)
 
     if conjugate:
-        return np.conj(angular_spherical_int(_int_kernel))
-    return angular_spherical_int(_int_kernel)
+        return np.conj(angular_spherical_integral(_int_kernel))
+    return angular_spherical_integral(_int_kernel)

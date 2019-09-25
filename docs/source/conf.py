@@ -12,7 +12,7 @@ release = '0.0'
 
 # -- General configuration ---------------------------------------------------
 
-source_suffix = ['.rst', '.txt', '.md',]
+source_suffix = ['.rst', '.txt', '.md']
 
 master_doc = 'harmonia'
 
@@ -42,8 +42,8 @@ exclude_patterns = []
 html_theme = 'alabaster'
 
 html_theme_options = {
-    'page_width': '1125px',
-    'sidebar_width': '225px',
+    'page_width': '1150px',
+    'sidebar_width': '250px',
     'fixed_sidebar' : False,
     'github_user': 'MikeSWang',
     'github_repo': 'Harmonia',
@@ -54,9 +54,7 @@ html_static_path = ['_static']
 html_logo = '_static/Harmonia.png'
 
 html_sidebars = {
-    '**': ['navigation.html',
-           'searchbox.html',
-           ],
+    '**': ['navigation.html', 'searchbox.html'],
     'using/windows': ['windowssidebar.html', 'searchbox.html'],
 }
 

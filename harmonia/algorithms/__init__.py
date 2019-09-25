@@ -3,14 +3,14 @@
 Core algorithms (:mod:`~harmonia.algorithms`)
 *******************************************************************************
 
-Algorithms employed in :mod:`~harmonia.mapper` and :mod:`~harmonia.reader` for
-transforming and analysing cosmological fields.
+Cosmological field transformation and analysis algorithms employed in
+:mod:`~harmonia.mapper` and :mod:`~harmonia.reader`.
 
 """
 from .bases import (
-    spherical_besselj as sph_besselj,
-    spherical_besselj_root as sph_besselj_root,
-    spherical_harmonic as sph_harmonic,
+    spherical_besselj,
+    spherical_besselj_root,
+    spherical_harmonic,
 )
 from .discretisation import DiscreteSpectrum
 from .fields import (
@@ -21,11 +21,11 @@ from .fields import (
     lognormal_transform,
     poisson_sample,
     populate_particles,
-    )
+)
 from .integration import (
     radial_spherical_integral,
     angular_spherical_integral,
     radial_besselj_integral,
     angular_harmonic_integral,
-    )
+)
 from .morph import SphericalArray

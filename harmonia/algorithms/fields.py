@@ -29,8 +29,8 @@ discrete Poisson sampling of fields.
 import warnings
 
 import numpy as np
-from scipy import fftpack as fftp
 from nbodykit.cosmology.correlation import pk_to_xi, xi_to_pk
+from scipy import fftpack as fftp
 
 
 def generate_regular_grid(cell_size, num_mesh, variable='norm'):
@@ -67,8 +67,7 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     origin = np.array([(num_mesh - 1)/2]*3)
 
     grid_coords = [
-        cell_size * (index - centre)
-        for index, centre in zip(indices, origin)
+        cell_size * (index - centre) for index, centre in zip(indices, origin)
     ]
     grid_norm = np.sqrt(sum([coord**2 for coord in grid_coords]))
 
@@ -79,7 +78,7 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     if variable.lower().startswith('b'):
         return grid_norm, grid_coords
 
-    raise ValueError("Unknown grid `variable`. ")
+    raise ValueError(f"Unknown grid `variable`: {variable}. ")
 
 
 def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
@@ -118,7 +117,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         threshold -1.
     return_disp : bool, optional
         If `True` (default is `False`), also return the velocity displacement
-        field for each dimension.
+        field for each dimension that is not `None`.
     seed : int or None, optional
         Random seed for the field(s) (default is `None`).
 
@@ -126,9 +125,9 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     -------
     overdensity : (N, N, N) :class:`numpy.ndarray` of float
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of (N, N, N) array_like, optional
+    displacement : list [of length 3] of (N, N, N) array_like or None
         Gaussian random fields of velocity displacement in configuration space
-        for each dimension.  Returned if `return_disp` is `True`.
+        for each dimension.  Returned as `None` unless `return_disp` is `True`.
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
@@ -154,18 +153,19 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
             num_cell * np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))
             for fourier_disp_i in fourier_disp
         ]
+    else:
+        displacement = None
 
-        return overdensity, displacement
-
-    return overdensity
+    return overdensity, displacement
 
 
 def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
                                     return_disp=False, seed=None):
-    """Generate a log-normal random field corresponding to the density contrast
-    :math:`\delta(\mathbf{r})` in configuration space with matching input power
-    spectrum, and optionally a second derived random vector field corresponding
-    to the velocity displacement :math:`\boldsymbol{\Psi}(\mathbf{r})`.
+    r"""Generate a log-normal random field corresponding to the density
+    contrast :math:`\delta(\mathbf{r})` in configuration space with matching
+    input power spectrum, and optionally a second derived random vector field
+    corresponding to the velocity displacement
+    :math:`\boldsymbol{\Psi}(\mathbf{r})`.
 
     See :func:`generate_gaussian_random_field` for their relations.
 
@@ -181,7 +181,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         Bias of the density contrast field (default is 1.).
     return_disp : bool, optional
         If `True` (default is `False`), also return the velocity displacement
-        fields for each dimension.
+        field for each dimension that is not `None`.
     seed : int or None, optional
         Random seed for the field(s) (default is `None`).
 
@@ -189,9 +189,9 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     -------
     overdensity : (N, N, N) :class:`numpy.ndarray` of float
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of (N, N, N) array_like, optional
+    displacement : list [of length 3] of (N, N, N) array_like or None
         Gaussian random fields of velocity displacement in configuration space
-        for each dimension.  Returned if `return_disp` is `True`.
+        for each dimension.  Returned as `None` unless `return_disp` is `True`.
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
@@ -201,14 +201,12 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         variable='both',
     )
 
-    # Apply biasing and transform target power spectrum.
     power_spectrum_target = lambda k: bias**2 * power_spectrum(k)
     amplitude_target = power_spectrum_target(k_norm) / vol
     xi_target = num_cell * np.real(fftp.ifftn(fftp.fftshift(amplitude_target)))
     xi_gen = lognormal_transform(xi_target, 'xi')
     amplitude_gen = fftp.fftshift(fftp.fftn(xi_gen)) / num_cell
 
-    # Generate fields.
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
     fourier_field_gen = np.sqrt(amplitude_gen) * whitenoise
 
@@ -220,20 +218,18 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     # Fulfill continuity equation and no velocity bias.
     if return_disp:
-
         fourier_field_target = fftp.fftshift(fftp.fftn(field_target))
         fourier_disp = [
             1j * ki/k_norm**2 * fourier_field_target for ki in k_vec
         ]
-
         displacement = [
             np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))
             for fourier_disp_i in fourier_disp
         ]
+    else:
+        displacement = None
 
-        return overdensity, displacement
-
-    return overdensity
+    return overdensity, displacement
 
 
 def threshold_clip(density_contrast, threshold=-1.):
@@ -260,7 +256,7 @@ def threshold_clip(density_contrast, threshold=-1.):
     if clip_ratio > 5e-3:
         warnings.warn(
             "{:.2g}% of field values are clipped. ".format(100*clip_ratio),
-            RuntimeWarning
+            RuntimeWarning,
         )
 
     return density_contrast
@@ -293,12 +289,12 @@ def lognormal_transform(obj, obj_type):
         ``'pk'``.
 
     """
-    NPOINT = 1024
+    NUM_POINT = 1024
     LOG_KMIN, LOG_KMAX = -5, 1
     LOG_RMIN, LOG_RMAX = -1, 5
 
-    k_samples = np.logspace(LOG_KMIN, LOG_KMAX, NPOINT)
-    r_samples = np.logspace(LOG_RMIN, LOG_RMAX, NPOINT)
+    k_samples = np.logspace(LOG_KMIN, LOG_KMAX, NUM_POINT)
+    r_samples = np.logspace(LOG_RMIN, LOG_RMAX, NUM_POINT)
 
     if obj_type.lower().startswith('d'):
         field_var = np.sum(obj**2) / np.size(obj)
@@ -325,7 +321,9 @@ def lognormal_transform(obj, obj_type):
         return Pk_gen
 
     raise ValueError(
-        "`objtype` must be correlation function 'xi', power spectrum 'pk', "
+        f"Invalid `obj_type`: {obj_type}. This must be "
+        "correlation function 'xi', "
+        "power spectrum 'pk', "
         "or random field 'delta'. "
     )
 
@@ -353,7 +351,7 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
     if len(set(density_contrast.shape)) > 1:
         raise ValueError("`density_contrast` field is not a regular grid. ")
     num_mesh = max(density_contrast.shape)
-    mean_num_per_cell = mean_density * (boxsize/num_mesh)**3
+    mean_num_per_cell = mean_density * (boxsize / num_mesh)**3
 
     np.random.seed(seed=seed)
     number_field = np.random.poisson(
@@ -391,24 +389,24 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
     """
     if len(set(sampled_field.shape)) > 1:
-        raise ValueError("Input `field` is not a regular grid. ")
+        raise ValueError("`field` is not a regular grid. ")
     num_mesh = max(sampled_field.shape)
     cell_size = boxsize / num_mesh
     vol_cell = cell_size**3
 
     grid_coords = generate_regular_grid(cell_size, num_mesh, variable='coords')
-    cellpos = np.transpose([np.ravel(coords) for coords in grid_coords])
+    cell_position = np.transpose([np.ravel(coords) for coords in grid_coords])
 
     number_field = np.around(
         (1 + sampled_field) * mean_density * vol_cell
     ).astype(int)
-    position = np.repeat(cellpos, np.ravel(number_field), axis=0)
+    position = np.repeat(cell_position, np.ravel(number_field), axis=0)
 
     np.random.seed(seed=seed)
     position += cell_size * np.random.uniform(
         low=-0.5,
         high=0.5,
-        size=position.shape
+        size=position.shape,
     )
 
     if vel_offset_fields is not None:

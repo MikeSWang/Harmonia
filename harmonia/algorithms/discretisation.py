@@ -2,7 +2,7 @@
 Spectrum discretisation (:mod:`~harmonia.algorithms.discretisation`)
 ===============================================================================
 
-Discretise Fourier spectrum for analysing cosmological fields.
+Discretise Fourier spectrum of cosmological fields.
 
 .. autosummary::
 
@@ -22,8 +22,7 @@ class DiscreteSpectrum:
     r"""Discrete Fourier spectrum for given radial boundary conditions.
 
     When a boundary condition is prescribed at some maximum radius
-    :math:`r = R`, the allowed wave numbers for the discretised
-    spectrum are
+    :math:`r = R`, the allowed wave numbers for the discretised spectrum are
 
     .. math::
 
@@ -32,11 +31,10 @@ class DiscreteSpectrum:
 
     are roots of the spherical Bessel functions of degree :math:`\ell` if the
     boundary condition is Dirichlet, or their derivatives if the boundary
-    condition is Neumann.  The spherical depths
-    :math:`\{ n_{\mathrm{max},\ell} \}_{\ell}` are the maximal number of radial
-    wave numbers allowed in the specified range, and are indexed by
-    :math:`(\ell, n)` tuples.  The normalisation coefficients derived from
-    completeness relations are
+    condition is Neumann.  The spherical depths :math:`\{ n_{\mathrm{max},\ell}
+    \}_{\ell}` are the maximal number of radial wave numbers allowed in the
+    specified range, and are indexed by :math:`(\ell, n)` tuples.  The
+    normalisation coefficients derived from completeness relations are
 
     .. math::
 
@@ -74,7 +72,7 @@ class DiscreteSpectrum:
         Spectral depths associated with the discrete spectrum.
     roots : float, array_like
         Spherical Bessel roots associated with the discrete spectrum.
-    num_mode : int
+    mode_count : int
         Total number of allowed spectral modes, counting spherical order
         multuplicities.
     attrs : dict
@@ -91,7 +89,7 @@ class DiscreteSpectrum:
     def __init__(self, radius, condition, cutoff, degmax=None, cuton=0.,
                  degmin=0):
 
-        self.degrees, self.depths, self.roots, self.num_mode = \
+        self.degrees, self.depths, self.roots, self.mode_count = \
             self.discretise(radius, condition, cuton, cutoff, degmin, degmax)
 
         self.attrs = {
@@ -103,12 +101,14 @@ class DiscreteSpectrum:
         }
 
         self._wavenumbers = None
-        self._wavetuples = None
-        self._normcoeff = None
+        self._wave_tuples = None
+        self._norm_coeff = None
 
         self._logger.info(
             "%s computed: %d degrees and %d modes in total. ",
-            self.__str__(), len(self.degrees), self.num_mode
+            self.__str__(),
+            len(self.degrees),
+            self.mode_count,
         )
 
     def __str__(self):
@@ -121,12 +121,12 @@ class DiscreteSpectrum:
 
     @property
     def wavenumbers(self):
-        r"""Discrete wave numbers.
+        r"""Discrete wave numbers :math:`k_{\ell, n}`.
 
         Returns
         -------
         float, array_like
-            Discrete wave numbers :math:`k_{\ell, n}`.
+            Wave numbers.
 
         """
         if self._wavenumbers is not None:
@@ -135,37 +135,39 @@ class DiscreteSpectrum:
         self._wavenumbers = [
             u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
         ]
-
         self._logger.info("Spectral wave numbers computed. ")
 
         return self._wavenumbers
 
     @property
-    def waveindices(self):
-        r"""Doublet indices for each discrete wave number.
+    def dbl_indices(self):
+        r"""Doublet index :math:`(\ell, n)` for each discrete wave number.
 
         Returns
         -------
         (int, int), array_like
-            Wave number indices :math:`(\ell, n)`.
+            Doublet indices.
 
         """
-        if self._wavetuples is not None:
-            return self._wavetuples
+        if self._wave_tuples is not None:
+            return self._wave_tuples
 
-        self._wavetuples = [
+        self._wave_tuples = [
             [
                 (ell, nidx+1) for nidx in range(self.depths[ellidx])
             ]
             for ellidx, ell in enumerate(self.degrees)
         ]
-        self._logger.info("Spectral wave number indices compiled. ")
+        self._logger.info(
+            "Doublet indices compiled for spectral wave numbers. "
+        )
 
-        return self._wavetuples
+        return self._wave_tuples
 
     @property
     def normalisation(self):
-        """Normalisation coefficients for discretisation.
+        r"""Normalisation coefficient :math:`\kappa_{\ell n}` for each discrete
+        wave number.
 
         Returns
         -------
@@ -173,27 +175,28 @@ class DiscreteSpectrum:
             Normalisation coefficients.
 
         """
-        if self._normcoeff is not None:
-            return self._normcoeff
+        if self._norm_coeff is not None:
+            return self._norm_coeff
 
         radius = self.attrs['boundary_radius']
         condition = self.attrs['boundary_condition'].lower()
 
-        self._normcoeff = []
         if condition.startswith('d'):
-            for ell, u_ell in zip(self.degrees, self.roots):
-                self._normcoeff.append(
-                    2 / (radius**3 * spherical_besselj(ell+1, u_ell)**2)
-                )
+            self._norm_coeff = [
+                2 / (radius**3 * spherical_besselj(ell+1, u_ell)**2)
+                for ell, u_ell in zip(self.degrees, self.roots)
+            ]
         elif condition.startswith('n'):
-            for ell, u_ell in zip(self.degrees, self.roots):
-                self._normcoeff.append(
-                    2 / (radius**3 * spherical_besselj(ell, u_ell)**2)
+            self._norm_coeff = [
+                2 / (radius**3 * spherical_besselj(ell, u_ell)**2) \
                     / (1 - ell*(ell+1)/np.square(u_ell))
-                )
-        self._logger.info("Spectral normalisations computed. ")
+                for ell, u_ell in zip(self.degrees, self.roots)
+            ]
+        self._logger.info(
+            "Normalisations computed for spectral wave numbers. "
+        )
 
-        return self._normcoeff
+        return self._norm_coeff
 
     @staticmethod
     def discretise(radius, condition, kmin, kmax, ellmin, ellmax):
@@ -214,11 +217,11 @@ class DiscreteSpectrum:
         degrees : int, array_like
             Spherical function degrees.
         depths : int, array_like
-            Maximum radial numbers, i.e. the number of allowed spectral modes
-            for each degree.
+            Maximum radial numbers, i.e. the number of allowed radial modes for
+            each degree.
         roots : float, array_like
             Spherical Bessel roots.
-        num_mode : int
+        mode_count : int
             Total number of spectral modes, counting spherical order
             multiplicities.
 
@@ -231,16 +234,15 @@ class DiscreteSpectrum:
         """
         _logger_ = logging.getLogger('discretisation')
 
-        # Whether derivative is taken of the spherical Bessel function.
         if condition.lower().startswith('d'):
             derivative = False
         elif condition.lower().startswith('n'):
             derivative = True
         else:
-            raise ValueError(f"Invalid boundary condition type: {condition}. ")
+            raise ValueError(f"Invalid boundary `condition`: {condition}. ")
 
         degrees, roots, depths = [], [], []
-        ell, num_mode = ellmin, 0
+        ell, mode_count = ellmin, 0
         while True:
             # Terminate if maximum `ell` passed.
             if ellmax is not None:
@@ -264,10 +266,10 @@ class DiscreteSpectrum:
                 roots.append(np.asarray(u_ell))
                 degrees.append(ell)
                 depths.append(n_ell)
-                num_mode += (2*ell+1) * n_ell
+                mode_count += (2*ell + 1) * n_ell
                 _logger_.debug("Results for degree %d appended. ", ell)
 
                 ell += 1
                 _logger_.debug("Moving on to next degree: %d. ", ell)
 
-        return degrees, depths, roots, num_mode
+        return degrees, depths, roots, mode_count

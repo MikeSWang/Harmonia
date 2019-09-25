@@ -2,11 +2,11 @@
 Fourier bases (:mod:`~harmonia.algorithms.bases`)
 ===============================================================================
 
-Evaluations and solutions of Fourier basis functions.
+Evaluations related to Fourier basis functions.
 
-Function evaluation relies on :func:`scipy.special.spherical_jn`,
-:func:`scipy.special.sph_harm` and :func:`mpmath.besseljzero`.  Note the data
-type and ordering of arguments may differ in implementation.
+Function evaluation relies on :func:`scipy.special.sph_harm`,
+:func:`scipy.special.spherical_jn` and :func:`mpmath.besseljzero`.  Note the
+argument ordering and data type may differ in this implementation.
 
 **Spherical basis**
 
@@ -20,10 +20,10 @@ type and ordering of arguments may differ in implementation.
 
 """
 import numpy as np
-from scipy.special import spherical_jn, sph_harm
 from mpmath import besseljzero
+from scipy.special import spherical_jn, sph_harm
 
-from harmonia.collections.utils import bisect_roots
+from harmonia.collections.utils import binary_search
 
 
 def spherical_harmonic(ell, m, theta, phi):
@@ -71,25 +71,27 @@ def spherical_besselj(ell, x, derivative=False):
     return spherical_jn(ell, x, derivative=derivative)
 
 
-def spherical_besselj_root(ell, nmax, only=True, derivative=False):
-    r"""Compute positive zeros, up to a maximum number, of spherical Bessel
-    functions of the first kind or their derivatives.
+def spherical_besselj_root(ell, n, only=True, derivative=False):
+    r"""Compute positive zeros, up to a maximum number :math:`n`, of spherical
+    Bessel functions of the first kind or their derivatives.
 
-    Solving for roots of the spherical Bessel function :math:`j_\nu(x)` relies
+    Solving for roots of the spherical Bessel function :math:`j_\ell(x)` relies
     on the identity
 
-    .. math:: j_\nu(x) = \sqrt{\frac{\pi}{2x}} J_{\nu+1/2}(x)
+    .. math:: j_\ell(x) = \sqrt{\frac{\pi}{2x}} J_{\ell+1/2}(x)
 
-    where :math:`J_\nu(x)` is the Bessel funcion of the first kind.  For roots
-    of the derivative function :math:`j'_\nu(x)`, the interval bisection method
-    is employed.
+    where :math:`J_\ell(x)` is the Bessel funcion of the first kind.
+
+    Solving for roots of the derivative function :math:`j'_\ell(x)` employs the
+    bisection method, with the initial interval ansatz :math:`\ell + 1
+    \leqslant x \leqslant n \mathrm{max}\{4, \ell\}`.
 
     Parameters
     ----------
     ell : int
         Degree :math:`\ell \geqslant 0` of the spherical harmonic function.
-    nmax : int
-        Maximum number of positive zeros to be found (``nmax >= 1``).
+    n : int
+        Maximum number of positive zeros to be found.
     only : bool, optional
         If `True` (default), return the maximum-number root only.
     derivative : bool, optional
@@ -104,20 +106,20 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
     """
     if not derivative:
         if only:
-            u_ell = float(besseljzero(ell+1/2, nmax, derivative=0))
+            u_ell = float(besseljzero(ell+1/2, n, derivative=0))
         else:
             u_ell = np.array(
                 [
-                    float(besseljzero(ell+1/2, n, derivative=0))
-                    for n in range(1, nmax+1)
+                    float(besseljzero(ell+1/2, i, derivative=0))
+                    for i in range(1, n+1)
                 ]
             )
     else:
-        # Empirically set root search range [`ell`+1, `nmax`*max{4, `ell`}].
-        u_ell = bisect_roots(
+        u_ell = binary_search(
             lambda x: spherical_besselj(ell, x, derivative=True),
-            ell+1, nmax*max(4, ell),
-            maxnum=nmax
+            ell+1,
+            n*max(4, ell),
+            maxnum=n,
         )
         if only:
             u_ell = u_ell[-1]

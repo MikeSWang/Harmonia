@@ -6,7 +6,7 @@ from harmonia.algorithms.integration import (
     angular_spherical_integral,
     radial_besselj_integral,
     angular_harmonic_integral,
-    )
+)
 
 TEST_PARAMS = dict(
     rmax=100.,
@@ -54,7 +54,7 @@ def test_radial_besselj_integral():
             TEST_PARAMS['k'],
             TEST_PARAMS['rmax'],
         ),
-        -9.45626
+        -9.45626,
     )
 
 
@@ -69,7 +69,7 @@ def test_angular_harmonic_integral():
         angular_harmonic_integral(
             angular_func,
             TEST_PARAMS['ell'],
-            TEST_PARAMS['m']
+            TEST_PARAMS['m'],
         ),
-        0.
+        0.,
     )

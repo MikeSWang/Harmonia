@@ -11,7 +11,7 @@ System utilities
 
 .. autosummary::
 
-    filename
+    get_filename
     collate
 
 **Multi-processing**
@@ -37,7 +37,7 @@ Computational utilities
     zero_const
     unit_const
     covar_to_corr
-    bisect_roots
+    binary_search
 
 **Geometrical algorithms**
 
@@ -58,57 +58,55 @@ Computational utilities
 
 """
 import warnings
+import os.path
 from collections import defaultdict
 from glob import glob
-from os.path import basename, splitext
 
 import numpy as np
-from numpy import arccos, arctan2
-from numpy.linalg import norm
 
 
 # SYSTEM UTILITIES
 # -----------------------------------------------------------------------------
 
-def filename(filepath):
+def get_filename(file_path):
     """Return file name without directory path or file extension.
 
     Parameters
     ----------
-    filepath : str
+    file_path : str
         Full or partial file path.
 
     Returns
     -------
     str
-        File name only.
+        File name without extension.
 
     """
-    return splitext(basename(filepath))[0]
+    return os.path.splitext(os.path.basename(file_path))[0]
 
 
-def collate(filename_pattern, file_extension, headings=None, columns=None):
+def collate(file_path_pattern, file_extension, headings=None, columns=None):
     """Collate data files.
 
     Parameters
     ----------
-    filename_pattern : str
-        Common root string of the file directory and name.
+    file_path_pattern : str
+        Common substring of the data file paths.
     file_extension : {'npy', 'txt', 'dat'}
         Data file extension.
     headings : list of str or None, optional
-        Column headings to be used as dictionary keys (default is `None`).
+        Data column headings to be used as dictionary keys (default is `None`).
     columns : list of int or None, optional
-        Column indices (zero-indexed) to be used as dictionary keys
-        corresponding to headings (default is `None`).
+        Data column indices (zero-indexed)  corresponding to headings (default
+        is `None`).
 
     Returns
     -------
     collated_data : dict
         Collated data.
-    count : int
+    collation_count : int
         Number of data files collated.
-    last_file : str
+    last_collated_file : str
         Last collated file name.
 
     Raises
@@ -128,70 +126,66 @@ def collate(filename_pattern, file_extension, headings=None, columns=None):
     :obj:`dict`.
 
     """
-    if file_extension.lower().endswith('npy', -3):
-        # Append all data to a list.
-        all_data = []
-        for file in glob(filename_pattern):
-            # Use `allow_pickle` for old numpy versions.
-            all_data.append(np.load(file, allow_pickle=True).item())
+    all_files = glob(file_path_pattern)
+    collation_count = len(all_files)
+    last_collated_file = get_filename(all_files[-1])
 
-        # Get aggregate data files information.
-        count = len(all_data)
-        last_file = filename(glob(filename_pattern).pop())
+    if file_extension.lower().endswith('npy'):
+        all_data = [
+            np.load(file, allow_pickle=True).item()
+            for file in all_files
+        ]
 
-        # Initialise collated data using keys from the first data file.
-        collated_data = dict.fromkeys(all_data[0].keys())
+        collated_data = dict.fromkeys(all_data[-1].keys())
         for key in collated_data:
             collated_data[key] = np.concatenate(
-                [np.atleast_1d(data[key]) for data in all_data], axis=0
-                )
+                [np.atleast_1d(data[key]) for data in all_data],
+                axis=0,
+            )
 
-        return collated_data, count, last_file
+        return collated_data, collation_count, last_collated_file
 
-    if (file_extension.lower().endswith('txt', -3)
-            or file_extension.lower().endswith('dat', -3)):
-        # Heading columns consistency check.
+    if file_extension.lower().endswith(('txt', 'dat')):
         if headings is None or columns is None:
             raise ValueError(
                 "`headings` or `columns` cannot be None "
                 "when reading from text files. "
-                )
+            )
         if len(headings) != len(columns):
             raise ValueError(
                 "Lengths of `headings` and `columns` must agree. "
-                )
+            )
 
-        # Aggregate data.
         collated_data = defaultdict(list)
-        count = 0
-        for file in glob(filename_pattern):
-            data = np.loadtxt(file, usecols=columns)
-            for keyidx, key in enumerate(headings):
-                collated_data[key].append(np.atleast_2d(data[:, keyidx]))
-            count += 1
-        last_file = filename(glob(filename_pattern).pop())
+        for keyidx, key in enumerate(headings):
+            collated_data[key] = np.concatenate(
+                [
+                    np.atleast_2d(np.loadtxt(file, usecols=columns)[:, keyidx])
+                    for file in all_files
+                ],
+                axis=0,
+            )
 
-        for key in headings:
-            collated_data[key] = np.concatenate(collated_data[key], axis=0)
+        return collated_data, collation_count, last_collated_file
 
-        return collated_data, count, last_file
+    raise NotImplementedError(
+        f"File extension currently unsupported: {file_extension}. "
+    )
 
-    raise NotImplementedError("File extension currently unsupported. ")
 
-
-def allocate_tasks(ntask, nproc):
+def allocate_tasks(tot_task, tot_proc):
     r"""Allocate tasks to processes for parallel computation.
 
-    If `nproc` processes share `ntask` tasks, then :func:`allocate_task`
+    If `tot_proc` processes share `tot_task` tasks, then :func:`allocate_tasks`
     decides the numbers of tasks, :const:`tasks`, different processes receive:
     the rank-:math:`i` process receives ``tasks[i]`` many tasks.
 
     Parameters
     ----------
-    ntask : int
-        Number of tasks.
-    nproc : int
-        Number of processes.
+    tot_task : int
+        Total number of tasks.
+    tot_proc : int
+        Total number of processes.
 
     Returns
     -------
@@ -199,43 +193,43 @@ def allocate_tasks(ntask, nproc):
         Number of tasks for each process.
 
     """
-    ntask_remain, nproc_remain, tasks = ntask, nproc, []
+    num_task_remaining, num_proc_remaining, tasks = tot_task, tot_proc, []
 
-    while ntask_remain > 0:
-        ntask_assign = ntask_remain // nproc_remain
-        tasks.append(ntask_assign)
-        ntask_remain -= ntask_assign
-        nproc_remain -= 1
+    while num_task_remaining > 0:
+        num_task_assigned = num_task_remaining // num_proc_remaining
+        tasks.append(num_task_assigned)
+        num_task_remaining -= num_task_assigned
+        num_proc_remaining -= 1
 
     return tasks
 
 
-def allocate_segments(tasks=None, ntask=None, nproc=None):
+def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
     r"""Allocate segments of tasks to each process by the number of tasks it
     receives and its rank.
 
     For instance, if the rank-:math:`i` process receives ``tasks[i]`` tasks
-    (e.g. assigned by :func:`allocate_task`), then this function assigns a
+    (e.g. assigned by :func:`allocate_tasks`), then this function assigns a
     slice of the indexed tasks it should receive, with the indices ordered in
-    ascending correspondence with the ranks of the processes.
+    ascension in correspondence with ranks of the processes.
 
     Parameters
     ----------
     tasks : list of int or None, optional
-        The number of tasks each process receives.  This cannot be `None` if
-        `ntask` or `nproc` is `None`.  If this is not `None`, `ntask` and
-        `nproc` values are both ignored.
-    ntask : int or None
-        Number of tasks.  This is ignored if `tasks` is not `None`, otherwise
-        this cannot be `None`.
-    nproc : int or None
-        Number of processes.  This is ignored if `tasks` is not `None`,
+        Number of tasks each process receives.  This cannot be `None` if
+        either `tot_task` or `tot_proc` is `None`.  If this is not `None`,
+        `tot_task` and `tot_proc` are both ignored.
+    tot_task : int or None, optional
+        Total number of tasks.  This is ignored if `tasks` is not `None`,
+        otherwise this cannot be `None`.
+    tot_proc : int or None, optional
+        Total number of processes.  This is ignored if `tasks` is not `None`,
         otherwise this cannot be `None`.
 
     Returns
     -------
     segments : list of slice
-        The index slice of the segment of tasks that each process should
+        Index slice of the segment of tasks that each process should
         receive.
 
     Raises
@@ -245,19 +239,20 @@ def allocate_segments(tasks=None, ntask=None, nproc=None):
 
     """
     if tasks is None:
-        if ntask is None or nproc is None:
+        if tot_task is None or tot_proc is None:
             raise ValueError(
-                "`ntask` and `nproc` cannot be None "
+                "`tot_task` and `tot_proc` cannot be None "
                 "while `tasks` is None. "
-                )
-        tasks = allocate_tasks(ntask, nproc)
-    if nproc is None:
-        nproc = len(tasks)
+            )
+        tasks = allocate_tasks(tot_task, tot_proc)
+    if tot_proc is None:
+        tot_proc = len(tasks)
 
-    breakpoints = np.insert(np.cumsum(tasks), 0, 0)
+    breakpoints = np.insert(np.cumsum(tasks), 0, values=0)
     segments = [
-        slice(breakpoints[rank], breakpoints[rank+1]) for rank in range(nproc)
-        ]
+        slice(breakpoints[rank], breakpoints[rank+1])
+        for rank in range(tot_proc)
+    ]
 
     return segments
 
@@ -271,9 +266,9 @@ def format_float(x, case):
         Number to be formatted.
     case : {'latex', 'sci', 'intdot', 'decdot'}
         Format case, one of LaTeX (``'latex'``), scientific (``'sci'``),
-        rounded integer ending with a decimal dot (``'intdot'``), or
-        a float whose first decimal place is 0 represented as a rounded integer
-        ending with a decimal dot (``'decdot'``).
+        rounded integer ending with a decimal dot (``'intdot'``), or a float
+        whose first decimal place is 0 represented as a rounded integer ending
+        with a decimal dot (``'decdot'``).
 
     Returns
     -------
@@ -295,21 +290,16 @@ def format_float(x, case):
             base, exponent = x_str.split("e")
             x_str = r"{0} \times 10^{{{1}}}".format(base, int(exponent))
     elif case.lower() == 'sci':
-        x_str = "{:g}".format(x)
-        if "e" in x_str:
-            x_str = x_str.replace("e+0", "e+").replace("e-0", "e-")
+        x_str = "{:g}".format(x).replace("e+0", "e+").replace("e-0", "e-")
     elif case.lower() == 'intdot':
-        x_str = "{}".format(np.around(x)).strip("0")
+        x_str = "{}".format(np.around(x)).rstrip("0")
     elif case.lower() == 'decdot':
-        x_to1dp = "{:.1f}".format(x)
-        if x_to1dp[-1] == '0':
-            x_str = x_to1dp.strip("0")
-        else:
-            x_str = x_to1dp
+        x_str = "{:.1f}".format(x).rstrip("0")
     else:
         raise ValueError(
+            f"Unknown case: {case}. "
             "Supported formats are 'latex', 'sci', 'intdot', 'decdot' only. "
-            )
+        )
 
     return x_str
 
@@ -327,7 +317,8 @@ def zero_const(*args):
 
     Returns
     -------
-    0.
+    float
+        0.
 
     """
     return 0.
@@ -343,7 +334,8 @@ def unit_const(*args):
 
     Returns
     -------
-    1.
+    float
+        1.
 
     """
     return 1.
@@ -375,7 +367,7 @@ def covar_to_corr(cov):
     return corr
 
 
-def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
+def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
     """Binary seach for all roots of a function in an interval.
 
     Parameters
@@ -426,7 +418,7 @@ def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
 
         return x0, x1
 
-    def _find_root(func, x0, x1, convergence=1.e-9):
+    def _find_single_root(func, x0, x1, convergence=1.e-9):
         """Bisection method for root finding.
 
         Parameters
@@ -436,7 +428,7 @@ def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         x0, x1: float
             Starting interval end points.
         convergence : float, optional
-            Precision control for convergence through maximum iteration
+            Precision control for convergence through maximum iteration number
             (default is 1.0e-9).
 
         Returns
@@ -456,9 +448,11 @@ def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
             return None
 
         # Determine maximum iteration given convergence precision.
-        niter = int(np.ceil(
-            np.log(np.abs(x1 - x0)/convergence) / np.log(2.0)
-            ))
+        niter = int(
+            np.ceil(
+                np.log(np.abs(x1 - x0) / convergence) / np.log(2.0)
+            )
+        )
 
         for _ in range(niter):
             x2 = (x0 + x1) / 2
@@ -478,7 +472,7 @@ def bisect_roots(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
     while len(roots) < maxnum:
         x0, x1 = _scan_interval(func, a, b, precision)
         if x0 is not None:  # valid sign change interval
-            root = _find_root(func, x0, x1)
+            root = _find_single_root(func, x0, x1)
             if root is not None:
                 roots.append(round(root, -int(np.log10(precision))))
             a = x1  # reset interval for next root
@@ -505,7 +499,7 @@ def normalise_vector(vec, axis=-1):
         Unit vector.
 
     """
-    return vec / norm(vec, axis=axis, keepdims=True)
+    return vec / np.linalg.norm(vec, axis=axis, keepdims=True)
 
 
 def cartesian_to_spherical(cartesian_coords):
@@ -519,8 +513,8 @@ def cartesian_to_spherical(cartesian_coords):
         \theta = \arccos(z/r) \,, \quad
         \phi = \arctan(y/x) \,,
 
-    where the image :math:`\arccos` is :math:`[0, \pi]`, and :math:`\arctan`
-    has an extended image set :math:`[0, 2\pi)`.
+    where the image of :math:`\arccos` is :math:`[0, \pi]`, and :math:`\arctan`
+    has an extended image set :math:`[0, 2\pi]`.
 
     Parameters
     ----------
@@ -542,12 +536,12 @@ def cartesian_to_spherical(cartesian_coords):
     if np.size(c_coords, axis=-1) != 3:
         raise ValueError(
             "`cartesian_coords` is not of the correct dimensions. "
-            )
+        )
 
     spherical_coords = np.empty(c_coords.shape)
-    spherical_coords[:, 0] = norm(c_coords, axis=1)
-    spherical_coords[:, 1] = arccos(c_coords[:, 2] / spherical_coords[:, 0])
-    spherical_coords[:, 2] = arctan2(c_coords[:, 1], c_coords[:, 0])
+    spherical_coords[:, 0] = np.linalg.norm(c_coords, axis=1)
+    spherical_coords[:, 1] = np.arccos(c_coords[:, 2] / spherical_coords[:, 0])
+    spherical_coords[:, 2] = np.arctan2(c_coords[:, 1], c_coords[:, 0]) + np.pi
 
     return spherical_coords
 
@@ -583,7 +577,7 @@ def spherical_to_cartesian(spherical_coords):
     if np.size(s_coords, axis=-1) != 3:
         raise ValueError(
             "`spherical_coords` is not of the correct dimensions. "
-            )
+        )
 
     cartesian_coords = np.empty(s_coords.shape)
     cartesian_coords[:, 0] = np.sin(s_coords[:, 1]) * np.cos(s_coords[:, 2])
@@ -622,8 +616,10 @@ def bin_edges_from_centres(centres, extremes, align='low'):
 
     nbins = len(centres)
     edges = np.concatenate(
-        ([np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)])
+        (
+            [np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)],
         )
+    )
     if align.lower().startswith('l'):
         for bin_idx in range(nbins-1):
             edges[bin_idx+1] = 2*centres[bin_idx] - edges[bin_idx]
@@ -655,7 +651,7 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     smoothed_data : dict
         Smoothed quantities correspond to dictionary keys `x_coarse`,
         `y_coarse`, `dx_coarse` and `dy_coarse` if the keys are not `None`.
-    count_in_bins : int, array_like
+    bin_counts : int, array_like
         Number of data points in each bin.
 
     Raises
@@ -667,7 +663,7 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     if not isinstance(data, dict):
         raise NotImplementedError(
             "Data types other than `dict` are currently unsupported. "
-            )
+        )
     else:
         nbins = len(bin_edges) - 1
         x_coarse_lab, y_coarse_lab = x_coarse, y_coarse
@@ -683,25 +679,25 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
             which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
 
         # Average in bins and count.
-        x_smooth, y_smooth, count_in_bins = np.empty((3, nbins))
+        x_smooth, y_smooth, bin_counts = np.empty((3, nbins))
         for bin_idx in range(nbins):
             x_smooth[bin_idx] = np.average(x_coarse[which_bins == bin_idx])
             y_smooth[bin_idx] = np.average(y_coarse[which_bins == bin_idx])
-            count_in_bins[bin_idx] = np.sum(which_bins == bin_idx)
+            bin_counts[bin_idx] = np.sum(which_bins == bin_idx)
 
         # Add uncertainties in quadrature in each bin if requested.
         smoothed_data = {
             x_coarse_lab: x_smooth,
             y_coarse_lab: y_smooth,
-            }
+        }
         for key in [dx_coarse, dy_coarse]:
             if key is not None:
                 coarse = data[key][order]
                 smooth = np.empty(nbins)
                 for bin_idx in range(nbins):
-                    smooth[bin_idx] = np.sqrt(np.sum(
-                        coarse[which_bins == bin_idx]**2
-                        ))
+                    smooth[bin_idx] = np.sqrt(
+                        np.sum(coarse[which_bins == bin_idx]**2)
+                    )
                 smoothed_data.update({key: smooth})
 
-        return smoothed_data, count_in_bins
+        return smoothed_data, bin_counts

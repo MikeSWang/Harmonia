@@ -22,7 +22,7 @@ TEST_PARAMS = dict(
         ellmax=None,
         ellmin=0,
     ),
-    ell=2
+    ell=2,
 )
 
 
@@ -36,32 +36,34 @@ def test_init(discrete_spectrum, caplog):
     with caplog.at_level(logging.INFO):
         DiscreteSpectrum(**TEST_PARAMS['spectrum'])
         assert (
-            caplog.records[-1].message.startswith("Spectrum") and
-            caplog.records[-1].message.endswith("modes in total. ")
+            caplog.records[-1].message.startswith("Spectrum")
+            and caplog.records[-1].message.endswith("modes in total. ")
         )
 
     assert discrete_spectrum.degrees == [0, 1, 2, 3, 4, 5]
     assert discrete_spectrum.depths == [3, 2, 2, 1, 1, 1]
-    assert discrete_spectrum.num_mode == sum(
+    assert discrete_spectrum.mode_count == sum(
         [
             (2*ell + 1) * nmax
             for ell, nmax in zip(
                 discrete_spectrum.degrees,
-                discrete_spectrum.depths
+                discrete_spectrum.depths,
             )
         ]
     )
     assert discrete_spectrum.roots[TEST_PARAMS['ell']] == approx(
         [
-         5.7634591969,
-         9.0950113305,
+            5.7634591969,
+            9.0950113305,
         ]
     )
 
     assert hasattr(discrete_spectrum, 'attrs')
-    assert discrete_spectrum._wavenumbers is None
-    assert discrete_spectrum._wavetuples is None
-    assert discrete_spectrum._normcoeff is None
+    assert (
+        discrete_spectrum._wavenumbers is None
+        and discrete_spectrum._wave_tuples is None
+        and discrete_spectrum._norm_coeff is None
+    )
 
 
 def test_discretise(caplog):
@@ -80,28 +82,34 @@ def test_discretise(caplog):
 
 
 def test_wavenumbers(discrete_spectrum):
+
     assert discrete_spectrum.wavenumbers[TEST_PARAMS['ell']] == approx(
         [
             0.0576345919689455,
             0.0909501133047636,
         ]
     )
+
     assert discrete_spectrum._wavenumbers is not None
 
 
+def test_dbl_indices(discrete_spectrum):
+
+    assert discrete_spectrum.dbl_indices[TEST_PARAMS['ell']] == [
+        (TEST_PARAMS['ell'], n)
+        for n in range(1, discrete_spectrum.depths[TEST_PARAMS['ell']]+1)
+    ]
+
+    assert discrete_spectrum._wave_tuples is not None
+
+
 def test_normalisation(discrete_spectrum):
+
     assert discrete_spectrum.normalisation[TEST_PARAMS['ell']] == approx(
         [
             0.00007297680749341,
             0.00017165606577,
         ]
     )
-    assert discrete_spectrum._normcoeff is not None
 
-
-def test_waveindices(discrete_spectrum):
-    assert discrete_spectrum.waveindices[TEST_PARAMS['ell']] == [
-        (TEST_PARAMS['ell'], n)
-        for n in range(1, discrete_spectrum.depths[TEST_PARAMS['ell']]+1)
-    ]
-    assert discrete_spectrum._wavetuples is not None
+    assert discrete_spectrum._norm_coeff is not None

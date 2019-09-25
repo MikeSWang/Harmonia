@@ -43,7 +43,7 @@ def spherical_array(discrete_spectrum):
     return SphericalArray(
         discrete_spectrum.degrees,
         discrete_spectrum.depths,
-        filling=TEST_DATA_ARRAY
+        filling=TEST_DATA_ARRAY,
     )
 
 
@@ -52,14 +52,14 @@ def test_init(discrete_spectrum, spherical_array):
         SphericalArray(
             discrete_spectrum.degrees,
             discrete_spectrum.depths,
-            filling=TEST_INVALID_DATA_ARRAY
+            filling=TEST_INVALID_DATA_ARRAY,
         )
     assert all(
         [
             np.all(block == alternative_block)
             for block, alternative_block in zip(
                 spherical_array.data_array,
-                TEST_DATA_ARRAY
+                TEST_DATA_ARRAY,
             )
         ]
     )
@@ -68,14 +68,14 @@ def test_init(discrete_spectrum, spherical_array):
 def test_build(discrete_spectrum, spherical_array):
     alternative_spherical_array = SphericalArray.build(
         disc=discrete_spectrum,
-        filling=TEST_DATA_ARRAY
+        filling=TEST_DATA_ARRAY,
     )
     assert all(
         [
             np.all(block == alternative_block)
             for block, alternative_block in zip(
                 spherical_array.data_array,
-                alternative_spherical_array.data_array
+                alternative_spherical_array.data_array,
             )
         ]
     )
@@ -83,8 +83,8 @@ def test_build(discrete_spectrum, spherical_array):
         [
             np.all(block == alternative_block)
             for block, alternative_block in zip(
-                spherical_array.data_indices,
-                alternative_spherical_array.data_indices
+                spherical_array.index_array,
+                alternative_spherical_array.index_array,
             )
         ]
     )
@@ -122,7 +122,7 @@ def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
 
 @pytest.mark.parametrize(
     'in_struct',
-    ['natural', 'lmn', 'lnm', 'ln', 'k', 'scale']
+    ['natural', 'lmn', 'lnm', 'ln', 'k', 'scale'],
 )
 def test_refold(spherical_array, in_struct):
     assert all(
@@ -133,8 +133,8 @@ def test_refold(spherical_array, in_struct):
                  spherical_array.refold(
                      spherical_array.unfold(axis_order=in_struct)[0],
                      in_struct,
-                     'data'
-                 )
+                     'data',
+                 ),
              )
         ]
     )
@@ -142,12 +142,12 @@ def test_refold(spherical_array, in_struct):
         [
             init_subarr == refolded_subarr
             for init_subarr, refolded_subarr in zip(
-                 spherical_array.data_indices,
+                 spherical_array.index_array,
                  spherical_array.refold(
                      spherical_array.unfold(axis_order=in_struct)[1],
                      in_struct,
-                     'index'
-                 )
+                     'index',
+                 ),
              )
          ]
     )
@@ -163,7 +163,7 @@ def test_morph(spherical_array, in_struct, out_struct):
             out_subarr == morphed_subarr
             for out_subarr, morphed_subarr in zip(
                 out_array,
-                spherical_array.morph(in_array, in_struct, out_struct, 'data')
+                spherical_array.morph(in_array, in_struct, out_struct, 'data'),
             )
         ]
     )
@@ -176,8 +176,8 @@ def test_morph(spherical_array, in_struct, out_struct):
                     in_indices,
                     in_struct,
                     out_struct,
-                    'index'
-                )
+                    'index',
+                ),
             )
         ]
     )

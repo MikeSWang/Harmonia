@@ -5,8 +5,6 @@ Spherical Fourier transform (:mod:`~harmonia.mapper.spherical_transform`)
 Transform discrete catalogues to discretised Fourier-space maps in spherical
 coordinates.
 
-.. todo:: Under development.
-
 """
 import logging
 import warnings
@@ -14,19 +12,36 @@ import warnings
 import numpy as np
 from nbodykit.lab import FKPCatalog
 
+from .catalogue_maker import spherical_indicator as spherical_cut
+from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.algorithms.discretisation import DiscreteSpectrum
-from harmonia.algorithms.morph import SphericalArray
-from harmonia.algorithms.bases import sph_besselj, sph_harmonic
 from harmonia.algorithms.integration import (
-    angular_sphint_harmonic as aint_harmonic,
-    radial_sphint_besselj as rint_besselj,
-    )
-from harmonia.collections.utils import unitconst, cartesian_to_spherical as c2s
-from .catalogue_maker import spherical_indicator as sphind
+    angular_harmonic_integral as aint_harmonic,
+    radial_besselj_integral as rint_besselj,
+)
+from harmonia.algorithms.morph import SphericalArray
+from harmonia.collections.utils import (
+    unit_const,
+    cartesian_to_spherical as c2s,
+)
 
 
 class SphericalMap:
-    """Discretised spherical Fourier map.
+    """Discretised spherical Fourier map from catalogue sources.
+
+    Parameters
+    ----------
+    disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+        Discrete spectrum.
+    data : :class:`nbodykit.base.catalog.CatalogSource`
+        Data catalogue of particles.
+    rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
+        Random catalogue of particles (default is `None`).
+    source : {'mock', 'survey'}, optional
+        Catalogue source, either ``'mock'`` simulations or ``'survey'`` data.
+    mean_density_data, mean_density_rand : float or None, optional
+        Input mean particle number density (in cubic h/Mpc) of the data and/or
+        random catalogue (default is `None`).
 
     Attributes
     ----------
@@ -36,136 +51,138 @@ class SphericalMap:
         Data catalogue of particles.
     rand : :class:`nbodykit.base.catalog.CatalogSource` or None
         Random catalogue of particles.
-    FKP : :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog` or None
-        FKP catalogue of both data and random particles.
-    nmean : float
-        Mean particle number density (lenght unit Mpc/h) for the data
-        catalogue.
+    pair : :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog` or None
+        FKP pair of data and random catalogues.
+    mean_density : float
+        Mean particle number density (in cubic h/Mpc) for the data catalogue.
     alpha_ratio : float or None
         Ratio of weighted mean particle number densities of the data catalogue
-        to the random catalogue.
+        to that of the random catalogue.
 
     """
 
     _logger = logging.getLogger('SphericalMap')
+    _msg = {
+        'boxsizes': (
+            "Data and random catalogues have different box sizes: "
+            "%.1f and %.1f. "
+        ),
+        'centering': (
+            "Mock %s simulation box centred. "
+            "Centred positions stored in 'Location' column. "
+        ),
+        'inscribing': (
+            "Bounding sphere is not inscribed in %s catalogue: "
+            "boxsize %.1f; diameter %.1f. "
+        ),
+        'integral_constraint': "Integral constraint imposed. ",
+        'method': "Default method for computing expectation set to %s. ",
+        'spherical_cut': "Mock %s simulation box cut to sphere. ",
+    }
 
-    def __init__(self, disc, data, rand=None, source='mock', nmean_data=None,
-                 nmean_rand=None):
-        """
-        Parameters
-        ----------
-        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
-            Discrete spectrum.
-        data : :class:`nbodykit.base.catalog.CatalogSource`
-            Data catalogue of particles.
-        rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
-            Random catalogue of particles (default is `None`).
-        source : {'mock', 'survey'}, optional
-            Catalogue source, either mock simulations (``'mock'``) or survey
-            data (``'survey'``).
-        nbar_data, nbar_rand : float or None, optional
-            Input mean particle number density (lenght unit Mpc/h) used to
-            generate the data or the random catalogue (default is `None`).
+    def __init__(self, disc, data, rand=None, source='mock',
+                 mean_density_data=None, mean_density_rand=None):
 
+        radius = disc.attrs['boundary_radius']
+        volume = disc.attrs['bounded_volume']
 
-        .. todo::
+        self.disc = disc
 
-            * Implement for survey catalogue source.
-            * Allow non-uniform redshift distribution in the FKP catalogue.
-
-        """
-        if np.min(disc.degrees) > 0:
+        if np.min(disc.degrees) != 0:
             warnings.warn(
                 "Angular modes up to degree {0} are missing. "
                 "It is recommnded they be removed in post-processing instead. "
                 .format(np.min(disc.degrees) - 1)
-                )
-
-        R, V = disc.attrs['boundary_radius'], disc.attrs['bounded_volume']
+            )
 
         if source == 'mock':
-            centred_msg = (
-                "Mock %s simulation box centred. "
-                "Centred positions in 'Location' data column. "
+            data_boxsize = data.attrs['BoxSize']
+            if not np.allclose(data_boxsize/2, radius):
+                self._logger.info(
+                    self._msg['inscribing'],
+                    "data",
+                    data_boxsize,
+                    2*radius,
                 )
-            inscribed_msg = (
-                "Bounding sphere is not inscribed in %s catalogue: "
-                f"boxsize %s; diameter {2*R}. "
-                )
-            sphericalised_msg = "Mock %s simulation box sphericalised. "
-            boxsize_msg = (
-                "Data and random catalogues have different "
-                f"box sizes: %s and %s. "
-                )
-            intgrconstr_msg = "Integral constraint imposed. "
 
-            # Compare Cartesian and spherical volumes.
-            L_data = data.attrs['BoxSize']
-            if not np.allclose(L_data/2, R):
-                self._logger.info(inscribed_msg, "data", L_data)
+            data['Location'] = data['Position'] - data_boxsize/2
+            self._logger.debug(self._msg['centering'], "data")
 
-            # Modify data catalogue.
-            data['Location'] = data['Position'] - L_data/2
-            self._logger.debug(centred_msg, "data")
+            data['Selection'] *= spherical_cut(data['Location'], radius)
+            self._logger.debug(self._msg['spherical_cut'], "data")
 
-            data['Selection'] *= sphind(data['Location'], R)
-            self._logger.debug(sphericalised_msg, "data")
-
-            # Modify random catalogue and/or compute `nmean` and `alpha_ratio`.
             if rand is None:
-                if nmean_data is None:
-                    nmean_data = np.sum(data['Selection'] * data['Weight']) / V
-                    self._logger.warning(intgrconstr_msg)
+                if mean_density_data is None:
+                    mean_density_data = np.sum(
+                        data['Selection'] * data['Weight']
+                    ) / volume
+                    self._logger.warning(self._msg['integral_constraint'])
+                mean_density = float(mean_density_data)
 
-                FKP = None
-                nmean = float(nmean_data)
+                pair = None
                 alpha_ratio = None
             else:
-                # Compare data and random catalogue box sizes.
-                L_rand = rand.attrs['BoxSize']
-                if not np.allclose(L_data, L_rand):
-                    warnings.warn(boxsize_msg, L_data, L_rand)
-                if not np.allclose(L_rand/2, R):
-                    self._logger.info(inscribed_msg, "random", L_rand)
+                rand_boxsize = rand.attrs['BoxSize']
+                if not np.allclose(data_boxsize, rand_boxsize):
+                    warnings.warn(
+                        self._msg['boxsizes'],
+                        data_boxsize,
+                        rand_boxsize,
+                    )
+                if not np.allclose(rand_boxsize/2, radius):
+                    self._logger.info(
+                        self._msg['inscribing'],
+                        "random",
+                        rand_boxsize,
+                        2*radius,
+                    )
 
-                rand['Location'] = rand['Position'] - L_rand/2
-                self._logger.debug(centred_msg, "random")
+                rand['Location'] = rand['Position'] - rand_boxsize/2
+                self._logger.debug(self._msg['centering'], "random")
 
-                rand['Selection'] *= sphind(rand['Location'], R)
-                self._logger.debug(sphericalised_msg, "random")
+                rand['Selection'] *= spherical_cut(rand['Location'], radius)
+                self._logger.debug(self._msg['spherical_cut'], "random")
 
-                if (nmean_data is None) or (nmean_rand is None):
-                    nmean_data = np.sum(data['Selection'] * data['Weight']) / V
-                    nmean_rand = np.sum(rand['Selection'] * rand['Weight']) / V
-                    self._logger.warning(intgrconstr_msg)
+                if mean_density_data is None or mean_density_rand is None:
+                    mean_density_data = np.sum(
+                        data['Selection'] * data['Weight'],
+                    ) / volume
+                    mean_density_rand = np.sum(
+                        rand['Selection'] * rand['Weight'],
+                    ) / volume
+                    self._logger.warning(self._msg['integral_constraint'])
+                mean_density = float(mean_density_data)
 
                 # FIXME: Correctly implement 'NZ' columns.
-                data['NZ'] = nmean_data * data['Weight']
-                rand['NZ'] = nmean_data * rand['Weight']
+                data['NZ'] = mean_density_data * data['Weight']
+                rand['NZ'] = mean_density_data * rand['Weight']
 
-                FKP = FKPCatalog(data, rand)
-                nmean = float(nmean_data)
-                alpha_ratio = float(nmean_data/nmean_rand)
+                pair = FKPCatalog(data, rand)
+                alpha_ratio = float(mean_density_data/mean_density_rand)
+        # FIXME: Implement for survey input data.
+        elif source == 'survey':
+            raise NotImplementedError
 
-        self._n_ellmn = None
-        self._nbar_ellmn = None
-
-        self.disc = disc
         self.data = data
         self.rand = rand
-        self.FKP = FKP
-        self.nmean = nmean
+        self.mean_density = mean_density
+        self.pair = pair
         self.alpha_ratio = alpha_ratio
 
-    def __repre__(self):
-        return "SphericalMap(maxdeg={}, nmode={})".format(
-            max(self.disc.degrees), self.disc.nmode
-            )
+        self._n_coeff = None
+        self._nbar_coeff = None
+
+    def __str__(self):
+        return "SphericalMap(maxdegree={}, modecount={})".format(
+            max(self.disc.degrees),
+            self.disc.mode_count,
+        )
 
     @classmethod
     def discretise_catalogue(cls, data, rand=None, source='mock',
-                             nmean_data=None, nmean_rand=None, **disc_params):
-        """Instantiate the class from discretised spectrum.
+                             mean_density_data=None, mean_density_rand=None,
+                             **disc_params):
+        """Instantiate a spherical map from discretised spectrum parameters.
 
         Parameters
         ----------
@@ -176,21 +193,23 @@ class SphericalMap:
         rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
             Random catalogue of particles (default is `None`).
         source : {'mock', 'survey'}, optional
-            Catalogue source, either mock simulations (``'mock'``) or survey
-            data (``'survey'``).
-        nmean_data, nmean_rand : float or None, optional
-            Input mean particle number density (lenght unit Mpc/h) used to
-            generate the data or the random catalogue (default is `None`).
+            Catalogue source, either ``'mock'`` simulations or ``'survey'``
+            data.
+        mean_density_data, mean_density_rand : float or None, optional
+            Input mean particle number density (in cubic h/Mpc) of the data or
+            random catalogue (default is `None`).
         **disc_params
             Parameters as keyword arguments to be passed to
             :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.
 
         """
-        disc = DiscreteSpectrum(**disc_params)
-
         return cls(
-            disc, data, rand=rand, source=source, nmean_data=nmean_data,
-            nmean_rand=nmean_rand
+            DiscreteSpectrum(**disc_params),
+            data,
+            rand=rand,
+            source=source,
+            mean_density_data=mean_density_data,
+            mean_density_rand=mean_density_rand,
             )
 
     def transform(self, method=None):
@@ -200,16 +219,16 @@ class SphericalMap:
         ----------
         method : {'sum', 'integrate'} or None, optional
             Computation method, either Monte Carlo (``'sum'``) or numerical
-            integration (``'integrate'``) (default is `None`, but if not
-            provided, this is subsequently overriden to ``'sum'`` if the random
-            catalogue is not `None`, else set to ``'integrate'``).
+            integration (``'integrate'``) (default is `None`; if not provided,
+            this is subsequently overriden to ``'sum'`` if the random catalogue
+            is not `None`, else set to ``'integrate'``).
 
         Returns
         -------
-        n_ellmn, nbar_ellmn : nested list of complex, array_like
+        n_coeff, nbar_coeff : nested list of complex, array_like
             Spherical Fourier coefficients for the observed and expected
             particle number densities, normalised to the homogeneous mean
-            particle number density :attr:`nmean`.
+            particle number density :attr:`mean_density`.
 
         Raises
         ------
@@ -217,125 +236,129 @@ class SphericalMap:
             If `method` is set to ``'sum'`` but :attr:`rand` is `None`.
 
         """
-        # Get map information.
         data, rand = self.data, self.rand
-        nbar, alpha = self.nmean, self.alpha_ratio
-        R = self.disc.attrs['boundary_radius']
-        ells, k_elln = self.disc.degrees, self.disc.wavenumbers
+        nbar, alpha = self.mean_density, self.alpha_ratio
+        radius = self.disc.attrs['boundary_radius']
 
-        # Fall to default method.
-        method_msg = "Default method for computing expectation set to %s. "
         if method is None:
             if rand is None:
                 method = 'integrate'
             else:
                 method = 'sum'
-            self._logger.info(method_msg, method)
+            self._logger.info(self._msg['method'], method)
 
-        # Get data catalogue spherical positions, selections and weights.
-        Dloc = c2s(data['Location'])
-        Dsel = data['Selection']
-        Dwgt = data['Weight']
+        loc_data = c2s(data['Location'])
+        sel_data = data['Selection']
+        wgt_data = data['Weight']
 
-        # Perform transforms.
-        n_ellmn, nbar_ellmn = [], []
-        for ell, k_ell in zip(ells, k_elln):
-            n_l, nbar_l = [], []
-            # Only compute for half the range thanks to parity.
-            for m_l in range(-ell, 1):
-                n_lm, nbar_lm = [], []
-                for k_ln in k_ell:
-                    # Evalute observed `n_lmn` by direct summation.
-                    n_lmn = np.sum(
-                        Dsel[:] * Dwgt[:]
-                        * sph_besselj(ell, k_ln*Dloc[:, 0])
+        n_coeff, nbar_coeff = [], []
+        for ell, k_ell in zip(self.disc.degrees, self.disc.wavenumbers):
+            n_ell, nbar_ell = [], []
+            for m_ell in range(-ell, 1):  # half of computation using parity
+                n_ellm, nbar_ellm = [], []
+                for k_elln in k_ell:
+                    n_ellmn = np.sum(
+                        sel_data[:] * wgt_data[:]
+                        * spherical_besselj(ell, k_elln*loc_data[:, 0])
                         * np.conj(
-                            sph_harmonic(ell, m_l, Dloc[:, 1], Dloc[:, 2])
+                            spherical_harmonic(
+                                ell,
+                                m_ell,
+                                loc_data[:, 1],
+                                loc_data[:, 2],
                             )
                         )
+                    )
 
-                    # Evaluate expected `nbar_lmn` using `method`.
                     if method.lower() == 'sum':
                         if rand is None:
                             raise ValueError("Random catalogue missing. ")
 
-                        # Get random catalogue spherical positions, selections
-                        # and weights.
-                        Rloc = c2s(rand['Location'])
-                        Rsel = rand['Selection']
-                        Rwgt = rand['Weight']
+                        loc_rand = c2s(rand['Location'])
+                        sel_rand = rand['Selection']
+                        wgt_rand = rand['Weight']
 
-                        nbar_lmn = alpha * np.sum(
-                            Rsel[:] * Rwgt[:]
-                            * sph_besselj(ell, k_ln*Rloc[:, 0])
+                        nbar_ellmn = alpha * np.sum(
+                            sel_rand[:] * wgt_rand[:]
+                            * spherical_besselj(ell, k_elln*loc_rand[:, 0])
                             * np.conj(
-                                sph_harmonic(ell, m_l, Rloc[:, 1], Rloc[:, 2])
+                                spherical_harmonic(
+                                    ell,
+                                    m_ell,
+                                    loc_rand[:, 1],
+                                    loc_rand[:, 2],
                                 )
                             )
+                        )
                     elif method == 'integrate':
-                        # FIXME: Only applies in the simplest scenario.
-                        nbar_lmn = nbar \
-                            * aint_harmonic(unitconst, ell, m_l) \
-                            * rint_besselj(unitconst, ell, k_ln, R)
+                        # FIXME: Only applies without selection function.
+                        nbar_ellmn = nbar \
+                            * aint_harmonic(unit_const, ell, m_ell) \
+                            * rint_besselj(unit_const, ell, k_elln, radius)
 
-                    # `n_lmn`, `nbar_lmn` may be dask arrays.
-                    n_lm.append(complex(n_lmn/nbar))
-                    nbar_lm.append(complex(nbar_lmn/nbar))
-                n_l.append(n_lm)
-                nbar_l.append(nbar_lm)
+                    # `n_ellmn`, `nbar_ellmn` may be dask arrays.
+                    n_ellm.append(complex(n_ellmn/nbar))
+                    nbar_ellm.append(complex(nbar_ellmn/nbar))
+                n_ell.append(n_ellm)
+                nbar_ell.append(nbar_ellm)
 
-            # Reflect and extend using parity.
-            if ell != 0:
-                n_l_ud = np.multiply(
-                    (-1)**np.arange(1, ell+1)[:, None], np.flipud(n_l[:-1])
-                    )
-                nbar_l_ud = np.multiply(
-                    (-1)**np.arange(1, ell+1)[:, None], np.flipud(nbar_l[:-1])
-                    )
-                n_l = np.concatenate((n_l, np.conj(n_l_ud)))
-                nbar_l = np.concatenate((nbar_l, np.conj(nbar_l_ud)))
+            if ell != 0:  # reflect and extend using parity
+                n_ell_flip = np.multiply(
+                    (-1)**np.arange(1, ell+1)[:, None],
+                    np.flipud(n_ell[:-1]),
+                )
+                nbar_ell_flip = np.multiply(
+                    (-1)**np.arange(1, ell+1)[:, None],
+                    np.flipud(nbar_ell[:-1]),
+                )
+                n_ell = np.concatenate((n_ell, np.conj(n_ell_flip)))
+                nbar_ell = np.concatenate((nbar_ell, np.conj(nbar_ell_flip)))
 
-            n_ellmn.append(np.asarray(n_l))
-            nbar_ellmn.append(np.asarray(nbar_l))
+            n_coeff.append(np.asarray(n_ell))
+            nbar_coeff.append(np.asarray(nbar_ell))
 
-        self._n_ellmn, self._nbar_ellmn = n_ellmn, nbar_ellmn
+        self._n_coeff, self._nbar_coeff = n_coeff, nbar_coeff
 
-        return n_ellmn, nbar_ellmn
+        return n_coeff, nbar_coeff
 
-    def twopoint(self, method=None, pivot='natural', ord_collapse=False):
+    def two_point(self, method=None, pivot='natural', order_collapse=False):
         r"""Comptute 2-point statistics.
+
+        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
+        structure.
 
         Parameters
         ----------
         method : str, optional
             Expectation computation method (default is `None`).
         pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}, optional
-            Axis order for array flattening (default is ``'natural'``).  See
-            also :class:`~harmonia.algorithms.morphing.SphericalArray`.
-        ord_collapse : bool, optional
-            If `True`, spherical Fourier coefficients are first averaged over
-            spherical orders.  See also
-            :class:`~harmonia.algorithms.morphing.SphericalArray`.
+            Axis order for array flattening (default is ``'natural'``).
+        order_collapse : bool, optional
+            If `True` (default is `False`), spherical Fourier coefficients are
+            first averaged over spherical orders.
 
         Returns
         -------
         list of complex, array_like
             2-point statistics as 2-d array.
 
-        Warnings
-        --------
+        Notes
+        -----
         For this method, the spherical degrees are assumed to start at
-        :math:`\ell = 0`.  See :ref:`this note <ellidx-warning>` for
+        :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
         :mod:`~harmonia.reader.spherical_model`.
 
         """
-        if (self._n_ellmn is None) or (self._nbar_ellmn is None):
-            self._n_ellmn, self._nbar_ellmn = self.transform(method=method)
+        if self._n_coeff is None or self._nbar_coeff is None:
+            self._n_coeff, self._nbar_coeff = self.transform(method=method)
 
-        return self.compute_stat2pt_from_coeff(
-            self._n_ellmn, self._nbar_ellmn, self.disc, pivot=pivot,
-            ord_collapse=ord_collapse
-            )
+        return self.compute_two_point_from_coeff(
+            self._n_coeff,
+            self._nbar_coeff,
+            self.disc,
+            pivot=pivot,
+            order_collapse=order_collapse,
+        )
 
     def spherical_power(self, method=None):
         """Compute spherically recovered power spectrum.
@@ -347,39 +370,42 @@ class SphericalMap:
 
         Returns
         -------
-        sph_power : float, array_like
+        spherical_power : float, array_like
             Spherically recovered power.
 
         """
-        if (self._n_ellmn is None) or (self._nbar_ellmn is None):
-            self._n_ellmn, self._nbar_ellmn = self.transform(method=method)
+        if self._n_coeff is None or self._nbar_coeff is None:
+            self._n_coeff, self._nbar_coeff = self.transform(method=method)
 
-        sph_power = self.square_amplitude(
-            self._n_ellmn, self._nbar_ellmn, normcoeff=self.disc.normcoeff
-            )
+        spherical_power = self.square_amplitude(
+            self._n_coeff,
+            self._nbar_coeff,
+            normalisation=self.disc.normalisation,
+        )
 
-        return sph_power
+        return spherical_power
 
     @staticmethod
-    def compute_stat2pt_from_coeff(n_coeff, nbar_coeff, disc, pivot='natural',
-                                   ord_collapse=False):
+    def compute_two_point_from_coeff(n_coeff, nbar_coeff, disc,
+                                     pivot='natural', order_collapse=False):
         r"""Compute 2-point statistics from spherical Fourier coefficients.
+
+        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
+        structure.
 
         Parameters
         ----------
         n_coeff, nbar_coeff : nested list of complex, array_like
             Observed and expected pherical Fourier coefficients of the field
             normalised to the homogeneous particle number density
-            :attr:`nmean`.
+            :attr:`mean_density`.
         disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
             Discrete spectrum.
         pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}, optional
-            Axis order for array flattening (default is ``'natural'``).  See
-            also :class:`~harmonia.algorithms.morphing.SphericalArray`.
-        ord_collapse : bool, optional
+            Axis order for array flattening (default is ``'natural'``).
+        order_collapse : bool, optional
             If `True`, coefficients `n_coeff` , `nbar_coeff` are first averaged
-            over spherical orders.  See also
-            :class:`~harmonia.algorithms.morphing.SphericalArray`.
+            over spherical orders.
 
         Returns
         -------
@@ -389,20 +415,24 @@ class SphericalMap:
         Warnings
         --------
         For this method, the spherical degrees are assumed to start at
-        :math:`\ell = 0`.  See :ref:`this note <ellidx-warning>` for
+        :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
         :mod:`~harmonia.reader.spherical_model`.
 
         """
         fill = [n - nbar for n, nbar in zip(n_coeff, nbar_coeff)]
 
-        d_ellmn = SphericalArray.build(disc=disc, filling=fill)
-        dvec, _ = d_ellmn.unfold(pivot, collapse=ord_collapse)
+        delta_ellmn = SphericalArray.build(disc=disc, filling=fill)
+        delta_ellmn_flat = delta_ellmn.unfold(
+            pivot,
+            collapse=order_collapse,
+            return_only='data',
+        )
 
-        return np.outer(dvec, np.conj(dvec))
+        return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))
 
     @staticmethod
-    def square_amplitude(n_coeff, nbar_coeff, normcoeff=None):
-        """Compute normalised square_amplitude from spherical Fourier
+    def square_amplitude(n_coeff, nbar_coeff, normalisation=None):
+        """Compute normalised square amplitude from spherical Fourier
         coefficients of the field.
 
         Parameters
@@ -410,8 +440,8 @@ class SphericalMap:
         n_coeff, nbar_coeff : nested list of complex, array_like
             Observed and expected spherical Fourier coefficients for the field
             normalised to the homogeneous particle number density
-            :attr:`nmean`.
-        normcoeff : list of float, array_like, optional
+            :attr:`mean_density`.
+        normalisation : list of float, array_like, optional
             Normalisation coefficients (default is `None`).
 
         Returns
@@ -421,14 +451,18 @@ class SphericalMap:
 
         Notes
         -----
-        If `normcoeff` is `None`, all normalisation coefficients are set to
+        If `normalisation` is `None`, all normalisation coefficients are set to
         unity.
 
         """
-        if normcoeff is None:
-            normcoeff = np.ones(len(n_coeff))
+        if normalisation is None:
+            normalisation = np.ones(len(n_coeff))
 
         return [
-            norm * np.average(np.abs(n - nbar)**2, axis=0)
-            for norm, n, nbar in zip(normcoeff, n_coeff, nbar_coeff)
-            ]
+            kappa * np.average(np.abs(n_ellmn - nbar_ellmn)**2, axis=0)
+            for kappa, n_ellmn, nbar_ellmn in zip(
+                normalisation,
+                n_coeff,
+                nbar_coeff,
+            )
+        ]

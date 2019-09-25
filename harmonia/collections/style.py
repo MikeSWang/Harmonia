@@ -1,5 +1,5 @@
 """
-Style sheet (:mod:`~concordia.collections.style`)
+Visual style (:mod:`~concordia.collections.style`)
 ===============================================================================
 
 :mod:`matplotlib` stylesheet.
@@ -14,5 +14,5 @@ _mplstyle_path = os.path.join(_cwd, 'harmony.mplstyle')
 
 harmony = matplotlib.rc_params_from_file(
     _mplstyle_path,
-    use_default_template=False
+    use_default_template=False,
 )

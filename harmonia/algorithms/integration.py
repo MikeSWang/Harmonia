@@ -18,13 +18,10 @@ Numerical integration against Fourier basis functions.
     radial_besselj_integral
     angular_harmonic_integral
 
-|
-
 .. topic:: Caution
 
     Quadrature integration of spherical Bessel functions may converge slowly.
 
-|
 
 """
 import numpy as np
@@ -121,8 +118,8 @@ def angular_spherical_integral(angular_func):
     complex
         Full angular integral value.
 
-    Warnings
-    --------
+    Notes
+    -----
     Arguments of `angular_func` must be in radians in the following order and
     range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
@@ -131,14 +128,14 @@ def angular_spherical_integral(angular_func):
         _angular_integrand,
         0, np.pi,
         0, 2*np.pi,
-        args=(angular_func, 'real')
-        )
+        args=(angular_func, 'real'),
+    )
     integral_imag, _ = dblquad(
         _angular_integrand,
         0, np.pi,
         0, 2*np.pi,
-        args=(angular_func, 'imag')
-        )
+        args=(angular_func, 'imag'),
+    )
 
     return integral_real + 1j*integral_imag
 
@@ -170,7 +167,7 @@ def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
     return radial_spherical_integral(
         lambda r: radial_func(r, *args, **kwargs) \
             * spherical_besselj(ell, k*r),
-        rmax
+        rmax,
     )
 
 
@@ -197,8 +194,8 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
     complex
         Integral value.
 
-    Warnings
-    --------
+    Notes
+    -----
     Arguments of `angular_func` must be in radians in the following order and
     range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 

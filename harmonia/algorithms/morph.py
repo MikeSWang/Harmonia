@@ -24,7 +24,7 @@ class SphericalArray:
 
     The array is initialised in the natural structure together with an index
     array of the same structure.  A natural structure array is a
-    length-:math:`\ell` list of :math:`m_\ell \times n_\ell` rectangular arrays
+    length-:math:`\ell` list of :math:`m_\ell \times n_\ell`-rectangular arrays
     whose entries are indexed by a triplet :math:`\{(\ell, m_\ell, n_\ell)\}`,
     which are respectively the spherical degree, order and depth.
 
@@ -137,7 +137,7 @@ class SphericalArray:
 
         If `disc` is not provided, the natural structure is inferred from
         `filling`; if only `disc` is provided, a natural structue index array
-        is returned with NoneType :attr:`data_array`.
+        is returned with :attr:`data_array` being `None`.
 
         Parameters
         ----------
@@ -218,7 +218,7 @@ class SphericalArray:
             data_flat = None
             warnings.warn(
                 "`data_array` is None and thus not flattened. ",
-                RuntimeWarning
+                RuntimeWarning,
             )
 
         # Spherical order collapse (`collapse` overriden if appropriate).
@@ -238,12 +238,12 @@ class SphericalArray:
 
         if not empty_flag:
             data_flat = np.array(
-                self._flatten(data_arr, 'data', subarray_transpose=transpose)
+                self._flatten(data_arr, 'data', subarray_transpose=transpose),
             )
         index_flat = self._flatten(
             indx_arr,
             'index',
-            subarray_transpose=transpose
+            subarray_transpose=transpose,
         )
 
         if axis_order == 'k':
@@ -252,7 +252,7 @@ class SphericalArray:
                 roots = self.repeat_subarray(
                     roots,
                     'data',
-                    degrees=self.degrees
+                    degrees=self.degrees,
                 )
 
             order = np.argsort(self._flatten(roots, 'data'))
@@ -363,13 +363,13 @@ class SphericalArray:
         if out_structure == 'lnm':
             morph_array = self.transpose_subarray(
                 array,
-                subarray_type=subarray_type
-                )
+                subarray_type=subarray_type,
+            )
         if out_structure == 'ln':
             morph_array = self.collapse_subarray(
                 array,
-                subarray_type=subarray_type
-                )
+                subarray_type=subarray_type,
+            )
         if out_structure == 'k':
             morph_array = self._flatten(natarr, subarray_type)
             order = np.argsort(
@@ -377,9 +377,9 @@ class SphericalArray:
                     self.repeat_subarray(
                         self.roots,
                         'data',
-                        degrees=self.degrees
+                        degrees=self.degrees,
                     ),
-                    'data'
+                    'data',
                 )
             )
             if subarray_type == 'data':
@@ -389,7 +389,7 @@ class SphericalArray:
         if out_structure == 'scale':
             morph_array = self._flatten(
                 self.collapse_subarray(natarr, subarray_type),
-                subarray_type
+                subarray_type,
             )
             order = np.argsort(self._flatten(self.roots, 'data'))
             if subarray_type == 'data':
@@ -426,7 +426,7 @@ class SphericalArray:
             return [np.array(ellblock).T for ellblock in arr]
         if subarray_type == 'index':
             return [list(map(list, zip(*ellblock))) for ellblock in arr]
-        raise ValueError("Invalid `subarray_type` value. ")
+        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
     @staticmethod
     def collapse_subarray(array, subarray_type):
@@ -463,7 +463,7 @@ class SphericalArray:
                 ]
                 for ellblock in array
             ]
-        raise ValueError("Invalid `subarray_type` value. ")
+        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
     @staticmethod
     def repeat_subarray(array, subarray_type, degrees=None):
@@ -498,7 +498,10 @@ class SphericalArray:
         if degrees is None:
             degrees = np.arange(len(array))
         elif len(degrees) != len(array):
-            raise ValueError("`array` length and `degrees` disagree. ")
+            raise ValueError(
+                "Lengths of `degrees` and `array` disagree: "
+                f"{len(degrees)} and {len(array)}. "
+            )
 
         if subarray_type == 'data':
             return [
@@ -513,7 +516,7 @@ class SphericalArray:
                 ]
                 for lineblock, ell in zip(array, degrees)
             ]
-        raise ValueError("Invalid `subarray_type` value. ")
+        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
     @staticmethod
     def _alias(structure_name):
@@ -564,11 +567,10 @@ class SphericalArray:
 
         if subarray_type == 'data':
             return np.concatenate(
-                [np.array(arrblock).flatten() for arrblock in array]
+                [np.array(array_block).flatten() for array_block in array]
             )
         if subarray_type == 'index':
             return [
                 entry for block in array for line in block for entry in line
             ]
-
-        raise ValueError("Invalid `subarray_type` value. ")
+        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")

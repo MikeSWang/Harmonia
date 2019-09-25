@@ -9,4 +9,8 @@ cosmological parameter inference.
 """
 from .cartesian_model import *
 from .hybrid import *
-from .spherical_model import coupling_list, twopoint_signal, twopoint_shotnoise
+from .spherical_model import (
+    coupling_list,
+    two_point_signal,
+    two_point_shot_noise,
+)

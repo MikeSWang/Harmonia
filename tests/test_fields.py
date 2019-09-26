@@ -21,7 +21,7 @@ power_spectrum = cosmo.LinearPower(cosmo.Planck15, redshift=0.)
     [
         (1., 32),
         (0.1, 64),
-    ]
+    ],
 )
 def test_generate_regular_grid(cell_size, num_mesh):
     grid_norm = generate_regular_grid(cell_size, num_mesh, variable='norm')
@@ -38,7 +38,7 @@ def test_generate_regular_grid(cell_size, num_mesh):
     [
         (100, 32),
         (200, 64),
-    ]
+    ],
 )
 def test_generate_gaussian_random_field(boxsize, num_mesh):
     field, vec_field = generate_gaussian_random_field(
@@ -58,7 +58,7 @@ def test_generate_gaussian_random_field(boxsize, num_mesh):
     [
         (100, 32),
         (200, 128),
-    ]
+    ],
 )
 def test_generate_lognormal_random_field(boxsize, num_mesh):
     field, vec_field = generate_lognormal_random_field(
@@ -92,7 +92,7 @@ def test_lognormal_transform():
     "shape,mean_density,boxsize",
     [
         ((5, 4, 3), 1e-3, 50),
-    ]
+    ],
 )
 def test_poisson_sample(shape, mean_density, boxsize):
     with pytest.raises(ValueError):
@@ -103,7 +103,7 @@ def test_poisson_sample(shape, mean_density, boxsize):
     "num_mesh,mean_density,boxsize",
     [
         (128, 1e-3, 50),
-    ]
+    ],
 )
 def test_populate_particles(num_mesh, mean_density, boxsize):
     fake_sampled_field = np.ones((num_mesh,)*3)

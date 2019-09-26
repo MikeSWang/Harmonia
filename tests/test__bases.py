@@ -1,7 +1,7 @@
 import numpy as np
 
 from testrc import wolfram_alpha_query as query
-from harmonia.algorithms.bases import (
+from harmonia.algorithms._bases import (
     spherical_besselj,
     spherical_besselj_root,
     spherical_harmonic,
@@ -26,7 +26,7 @@ def test_spherical_besselj():
             TEST_PARAMS['x'],
             derivative=False,
         ),
-        -0.0555345116
+        -0.0555345116,
     )
 
     query(
@@ -39,7 +39,7 @@ def test_spherical_besselj():
             TEST_PARAMS['x'],
             derivative=True,
         ),
-        -0.0722685781
+        -0.0722685781,
     )
 
 
@@ -53,7 +53,7 @@ def test_spherical_besselj_root():
             only=True,
             derivative=False,
         ),
-        16.3547096394
+        16.3547096394,
     )
     assert np.allclose(
         spherical_besselj_root(
@@ -66,7 +66,7 @@ def test_spherical_besselj_root():
             9.3558121110,
             12.9665301728,
             16.3547096394,
-        ]
+        ],
     )
 
     query(f"D[SphericalBesselJ[{TEST_PARAMS['ell']}, x], x] == 0")
@@ -77,7 +77,7 @@ def test_spherical_besselj_root():
             only=True,
             derivative=True,
         ),
-        14.5905521631
+        14.5905521631,
     )
     assert np.allclose(
         spherical_besselj_root(
@@ -90,7 +90,7 @@ def test_spherical_besselj_root():
             6.7564563302,
             11.0702068737,
             14.5905521631,
-        ]
+        ],
     )
 
 
@@ -106,5 +106,5 @@ def test_spherical_harmonic():
             TEST_PARAMS['theta'],
             TEST_PARAMS['phi'],
         ),
-        -0.0490981029 - 0.1511084229*1j
+        -0.0490981029 - 0.1511084229*1j,
     )

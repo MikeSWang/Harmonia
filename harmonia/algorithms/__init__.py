@@ -7,10 +7,16 @@ Cosmological field transformation and analysis algorithms employed in
 :mod:`~harmonia.mapper` and :mod:`~harmonia.reader`.
 
 """
-from .bases import (
+from ._bases import (
     spherical_besselj,
     spherical_besselj_root,
     spherical_harmonic,
+)
+from ._integration import (
+    radial_spherical_integral,
+    angular_spherical_integral,
+    radial_besselj_integral,
+    angular_harmonic_integral,
 )
 from .discretisation import DiscreteSpectrum
 from .fields import (
@@ -21,11 +27,5 @@ from .fields import (
     lognormal_transform,
     poisson_sample,
     populate_particles,
-)
-from .integration import (
-    radial_spherical_integral,
-    angular_spherical_integral,
-    radial_besselj_integral,
-    angular_harmonic_integral,
 )
 from .morph import SphericalArray

@@ -1,7 +1,7 @@
 import numpy as np
 
 from testrc import NamedFunction, approx, wolfram_alpha_query as query
-from harmonia.algorithms.integration import (
+from harmonia.algorithms._integration import (
     radial_spherical_integral,
     angular_spherical_integral,
     radial_besselj_integral,
@@ -17,12 +17,12 @@ TEST_PARAMS = dict(
 
 radial_func = NamedFunction(
     f"Sin[r]/{TEST_PARAMS['rmax']}",
-    lambda r: np.sin(r) / TEST_PARAMS['rmax']
+    lambda r: np.sin(r) / TEST_PARAMS['rmax'],
 )
 
 angular_func = NamedFunction(
     f"Sin[theta] Sin[theta + phi]",
-    lambda theta, phi: np.sin(theta + phi)
+    lambda theta, phi: np.sin(theta + phi),
 )
 
 

@@ -53,30 +53,31 @@ TEST_CASE_PROCS = 5
 
 @pytest.mark.parametrize(
     'tasks,ntask,nproc',
-    [([TEST_CASE_INTERVAL]*(TEST_CASE_PROCS-1) + [TEST_CASE_INTERVAL+1],
-      TEST_CASE_INTERVAL*TEST_CASE_PROCS+1, TEST_CASE_PROCS)],
+    [
+        (
+            [TEST_CASE_INTERVAL] * (TEST_CASE_PROCS - 1) \
+                + [TEST_CASE_INTERVAL + 1],
+            TEST_CASE_INTERVAL * TEST_CASE_PROCS + 1,
+            TEST_CASE_PROCS,
+        ),
+    ],
 )
 def test_allocate_segments(tasks, ntask, nproc):
-    assert (
-        utils.allocate_segments(tasks=tasks)
-        == [
-               slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
-               for n in range(nproc-1)
-           ]
-        + [
-              slice(TEST_CASE_INTERVAL*(nproc-1), TEST_CASE_INTERVAL*nproc+1)
-          ]
-    )
-    assert (
-        utils.allocate_segments(tot_task=ntask, tot_proc=nproc)
-        == [
-               slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
-               for n in range(nproc-1)
-           ]
-        + [
-              slice(TEST_CASE_INTERVAL*(nproc-1), TEST_CASE_INTERVAL*nproc+1)
-          ]
-    )
+
+    assert utils.allocate_segments(tasks=tasks) == \
+        [
+            slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
+            for n in range(nproc-1)
+        ] \
+        + [slice(TEST_CASE_INTERVAL*(nproc - 1), TEST_CASE_INTERVAL*nproc + 1)]
+
+    assert utils.allocate_segments(tot_task=ntask, tot_proc=nproc) == \
+        [
+            slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
+            for n in range(nproc-1)
+        ] \
+        + [slice(TEST_CASE_INTERVAL*(nproc - 1), TEST_CASE_INTERVAL*nproc + 1)]
+
     with pytest.raises(ValueError):
         utils.allocate_segments(tot_task=ntask)
 
@@ -136,8 +137,8 @@ def test_cartesian_to_spherical(vec):
     assert np.allclose(
         utils.cartesian_to_spherical(vec),
         [
-            [5.91608, np.pi-math.radians(32.3115), math.radians(71.5651)],
-            [10.0406, np.pi-math.radians(5.15664), math.radians(-77.1957)],
+            [5.916079783, 2.577650012, 1.249045772],
+            [10.04063743, 3.051592333, 4.935866174],
         ],
     )
 
@@ -146,10 +147,10 @@ def test_cartesian_to_spherical(vec):
     'vec',
     [
         [
-            [5.91607978, 2.57765001, 1.24904577],
-            [10.04063743, 3.05159233, -1.34731973],
+            [5.916079783, 2.577650012, 1.249045772],
+            [10.04063743, 3.051592333, 4.935866174],
         ],
-    ]
+    ],
 )
 def test_spherical_to_cartesian(vec):
     assert np.allclose(
@@ -159,14 +160,10 @@ def test_spherical_to_cartesian(vec):
 
 
 def test_bin_edges_from_centres():
-    assert (
-        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='low')
+    assert utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='low') \
         == approx([0, 2, 7, 11])
-    )
-    assert (
-        utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='high')
+    assert utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='high') \
         == approx([0, 3, 6, 11])
-    )
 
 
 TMP_COARSE_DATA = {
@@ -178,8 +175,8 @@ TMP_COARSE_DATA = {
 TMP_SMOOTH_DATA = {
     'x': np.array([0.9, 3.1, 4.8, 7.2, 9.]),
     'y': np.array([1., 2., 3., 4., 5.]),
-    'dx': np.array([0.07071067811865477]*5),
-    'dy': np.array([2*0.07071067811865477]*5),
+    'dx': np.array([0.0707106781]*5),
+    'dy': np.array([2*0.0707106781]*5),
 }
 
 TEST_BIN_EDEGS = [0, 2, 4, 6, 8, 10]
@@ -192,7 +189,7 @@ def test_smooth_by_bin_average():
             [1, 2, 3],
             [0, 0.005, 0.05, 0.1],
             'kln',
-            'Pln'
+            'Pln',
         )
 
     smoothed_data, count_in_bins = utils.smooth_by_bin_average(
@@ -201,7 +198,7 @@ def test_smooth_by_bin_average():
         'x',
         'y',
         dx_coarse='dx',
-        dy_coarse='dy'
+        dy_coarse='dy',
     )
     for key in smoothed_data:
         assert smoothed_data[key] == approx(TMP_SMOOTH_DATA[key])

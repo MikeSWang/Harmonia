@@ -15,7 +15,7 @@ import logging
 
 import numpy as np
 
-from .bases import spherical_besselj, spherical_besselj_root
+from ._bases import spherical_besselj, spherical_besselj_root
 
 
 class DiscreteSpectrum:

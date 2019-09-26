@@ -8,7 +8,7 @@ Make discrete catalogues from observed or simulated realisations.
 
     spherical_indicator
     RandomCatalogue
-    LognormalCatalogue
+    NBKCatalogue
     LogNormalCatalogue
     GaussianCatalogue
 
@@ -20,13 +20,13 @@ from nbodykit import CurrentMPIComm
 from nbodykit.base.catalog import CatalogSource, column
 from nbodykit.lab import LogNormalCatalog, UniformCatalog
 
-from harmonia.algorithms import (
+from harmonia.algorithms.fields import (
     generate_gaussian_random_field as gen_gaussian_field,
     generate_lognormal_random_field as gen_lognormal_field,
     poisson_sample as smp_field,
     populate_particles as pop_field,
 )
-from harmonia.collections import normalise_vector
+from harmonia.collections.utils import normalise_vector
 
 
 def spherical_indicator(cartesian_position, bounding_radius):
@@ -78,9 +78,9 @@ class RandomCatalogue(UniformCatalog):
         )
 
 
-class LognormalCatalogue(LogNormalCatalog):
-    """Log-normal random catalogue of given linear power spectrum with particle
-    velocities predicted by the Zel'dovich approximation.
+class NBKCatalogue(LogNormalCatalog):
+    """``nbodykit`` log-normal random catalogue of given linear power spectrum
+    with particle velocities predicted by the Zel'dovich approximation.
 
     This is the direct implementation by
     :class:`nbodykit.source.catalog.lognormal.LogNormalCatalog`.

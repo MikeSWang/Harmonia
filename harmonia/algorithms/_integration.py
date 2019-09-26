@@ -27,7 +27,7 @@ Numerical integration against Fourier basis functions.
 import numpy as np
 from scipy.integrate import dblquad, quad
 
-from .bases import spherical_besselj, spherical_harmonic
+from ._bases import spherical_besselj, spherical_harmonic
 
 
 def _radial_integrand(r, rfunc):

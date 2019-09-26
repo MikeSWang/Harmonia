@@ -4,7 +4,13 @@ import sys
 from pytest import approx
 
 sys.path.insert(
-    0, os.path.realpath(os.path.join(os.path.dirname(__file__), "../"))
+    0,
+    os.path.realpath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../",
+        ),
+    ),
 )
 
 

@@ -538,10 +538,13 @@ def cartesian_to_spherical(cartesian_coords):
             "`cartesian_coords` is not of the correct dimensions. "
         )
 
-    spherical_coords = np.empty(c_coords.shape)
+    spherical_coords = np.zeros(c_coords.shape)
     spherical_coords[:, 0] = np.linalg.norm(c_coords, axis=1)
     spherical_coords[:, 1] = np.arccos(c_coords[:, 2] / spherical_coords[:, 0])
-    spherical_coords[:, 2] = np.arctan2(c_coords[:, 1], c_coords[:, 0]) + np.pi
+    spherical_coords[:, 2] = np.mod(
+        np.arctan2(c_coords[:, 1], c_coords[:, 0]),
+        2*np.pi,
+    )
 
     return spherical_coords
 
@@ -579,7 +582,7 @@ def spherical_to_cartesian(spherical_coords):
             "`spherical_coords` is not of the correct dimensions. "
         )
 
-    cartesian_coords = np.empty(s_coords.shape)
+    cartesian_coords = np.zeros(s_coords.shape)
     cartesian_coords[:, 0] = np.sin(s_coords[:, 1]) * np.cos(s_coords[:, 2])
     cartesian_coords[:, 1] = np.sin(s_coords[:, 1]) * np.sin(s_coords[:, 2])
     cartesian_coords[:, 2] = np.cos(s_coords[:, 1])
@@ -674,12 +677,12 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
         y_coarse = data[y_coarse][order]
 
         # Decide on which bin.
-        which_bins = np.empty(x_coarse.shape)
+        which_bins = np.zeros(x_coarse.shape)
         for idx, val in enumerate(x_coarse):
             which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
 
         # Average in bins and count.
-        x_smooth, y_smooth, bin_counts = np.empty((3, nbins))
+        x_smooth, y_smooth, bin_counts = np.zeros((3, nbins))
         for bin_idx in range(nbins):
             x_smooth[bin_idx] = np.average(x_coarse[which_bins == bin_idx])
             y_smooth[bin_idx] = np.average(y_coarse[which_bins == bin_idx])
@@ -693,7 +696,7 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
         for key in [dx_coarse, dy_coarse]:
             if key is not None:
                 coarse = data[key][order]
-                smooth = np.empty(nbins)
+                smooth = np.zeros(nbins)
                 for bin_idx in range(nbins):
                     smooth[bin_idx] = np.sqrt(
                         np.sum(coarse[which_bins == bin_idx]**2)

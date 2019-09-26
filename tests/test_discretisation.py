@@ -35,10 +35,8 @@ def test_init(discrete_spectrum, caplog):
 
     with caplog.at_level(logging.INFO):
         DiscreteSpectrum(**TEST_PARAMS['spectrum'])
-        assert (
-            caplog.records[-1].message.startswith("Spectrum")
+        assert caplog.records[-1].message.startswith("Spectrum") \
             and caplog.records[-1].message.endswith("modes in total. ")
-        )
 
     assert discrete_spectrum.degrees == [0, 1, 2, 3, 4, 5]
     assert discrete_spectrum.depths == [3, 2, 2, 1, 1, 1]
@@ -49,21 +47,19 @@ def test_init(discrete_spectrum, caplog):
                 discrete_spectrum.degrees,
                 discrete_spectrum.depths,
             )
-        ]
+        ],
     )
     assert discrete_spectrum.roots[TEST_PARAMS['ell']] == approx(
         [
             5.7634591969,
             9.0950113305,
-        ]
+        ],
     )
 
     assert hasattr(discrete_spectrum, 'attrs')
-    assert (
-        discrete_spectrum._wavenumbers is None
-        and discrete_spectrum._wave_tuples is None
+    assert discrete_spectrum._wavenumbers is None \
+        and discrete_spectrum._wave_tuples is None \
         and discrete_spectrum._norm_coeff is None
-    )
 
 
 def test_discretise(caplog):
@@ -87,7 +83,7 @@ def test_wavenumbers(discrete_spectrum):
         [
             0.0576345919689455,
             0.0909501133047636,
-        ]
+        ],
     )
 
     assert discrete_spectrum._wavenumbers is not None
@@ -109,7 +105,7 @@ def test_normalisation(discrete_spectrum):
         [
             0.00007297680749341,
             0.00017165606577,
-        ]
+        ],
     )
 
     assert discrete_spectrum._norm_coeff is not None

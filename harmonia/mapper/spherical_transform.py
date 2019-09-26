@@ -13,12 +13,12 @@ import numpy as np
 from nbodykit.lab import FKPCatalog
 
 from .catalogue_maker import spherical_indicator as spherical_cut
-from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
-from harmonia.algorithms.discretisation import DiscreteSpectrum
-from harmonia.algorithms.integration import (
+from harmonia.algorithms._bases import spherical_besselj, spherical_harmonic
+from harmonia.algorithms._integration import (
     angular_harmonic_integral as aint_harmonic,
     radial_besselj_integral as rint_besselj,
 )
+from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import (
     unit_const,

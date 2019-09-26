@@ -13,21 +13,20 @@ i.e. ``(mu[0], mu[1], mu[2])``.
     In this module, all variables related to the discretised spectrum
     :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`, such as
     `wavenumbers` and `normalisation`, are assumed to be in the natural
-    structure starting at spherical degree :math:`\ell = 0`, so `ellidx` is
-    equal to `ell` (see :class:`~harmonia.algorithms.morph.SphericalArray`).
-    In the future, these variables may be changed to :obj:`dict` without
-    assuming this correspondence, and relevant :math:`\ell`-modes are accessed
-    through keys.
+    structure starting at spherical degree :math:`\ell = 0` (see
+    :class:`~harmonia.algorithms.morph.SphericalArray`).  In the future, these
+    variables may be changed to :obj:`dict` without assuming this
+    correspondence, and relevant :math:`\ell`-modes are accessed through keys.
 
 Kernels
 -------------------------------------------------------------------------------
 
 Coupling kernels are integrands without the coordinate Jacobian, which may
-include: radial selection :math:`\phi(r)`, weight :math:`w(r)`, and(weighted)
-angular mask :math:`M(\hat{\mathbf{r}})`; linear growth rate normalised to
-linear bias :math:`\beta(z) = f(z)/b(z)`, clustering evolution
-:math:`G(z) = b(z) D(z)` where :math:`D(z)` is the linear growth factor,
-and the Alcock--Paczynski distortion
+include the following factors: radial selection :math:`\phi(r)`, weight
+:math:`w(r)`, and angular mask :math:`M(\hat{\mathbf{r}})`; linear growth rate
+normalised to linear bias :math:`\beta(z) = f(z)/b(z)`, clustering evolution
+:math:`G(z) = b(z) D(z)` where :math:`D(z)` is the linear growth factor, and
+the Alcock--Paczynski distortion
 
 .. math::
 
@@ -37,14 +36,13 @@ and the Alcock--Paczynski distortion
 
 When using integration kernels that is a combination of functions such as
 weight, selection, mask and evolution etc., pass additional parameters not
-being integrated over by redefining these functions with
-:func:`functools.partial` or :obj:`lambda`.
+being integrated over by redefining these functions with :obj:`lambda`.
 
 Couplings
 -------------------------------------------------------------------------------
 
-Coupling coefficients are computed by integrating, over spherical coordinates
-and Jacobians, the angular, radial and RSD coupling kernels
+Coupling coefficients are computed by integrating the angular, radial and RSD
+coupling kernels
 
 .. math::
 
@@ -60,12 +58,10 @@ and Jacobians, the angular, radial and RSD coupling kernels
    \Big[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r}) \Big]
    j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) G(z) \phi(r) \,,
 
-where :math:`\tilde{r}` is the distance converted in a fiducial cosmological
-model rather than from the true comoving distance--redshift correspondence, and
-:math:`\{ k_{\ell n} \}` are the discrete wavenumbers.
-
-Numerical integration is performed with
-:mod:`~harmonia.algorithms.integration`.
+over the spherical Lebesgue measure,  where :math:`\tilde{r}` is the distance
+converted in a fiducial cosmological model rather than from the true comoving
+distance--redshift correspondence, and :math:`\{ k_{\ell n} \}` are the
+discrete wavenumbers.
 
 .. autosummary::
 
@@ -358,12 +354,22 @@ class Couplings:
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
-    mask, selection, weight, weight_derivative : callable or None
-        Angular mask, radial selection, weight and weight derivative functions.
-    r2z, z2chi, evolution, distotion_AP : callable or None
-        Cosmological comoving distance-to-redshift conversion, fiducial
-        comoving redshift-to-distance conversion, clustering evolution and AP
-        distortion functions.
+    mask : callable or None
+        Angular mask function.
+    selection : callable or None
+        Selection function of the radial coordinate.
+    weight : callable or None
+        Weight function of the radial coordinate.
+    weight_derivative : callable or None
+        Weight derivative function of the radial coordinate.
+    r2z : callable or None
+        Cosmological comoving distance-to-redshift conversion.
+    z2chi : callable or None
+        Fiducial comoving redshift-to-distance conversion.
+    evolution : callable or None
+        Clustering evolution function of redshift.
+    distotion_AP : callable or None
+        AP distortion function of redshift.
 
     Raises
     ------
@@ -505,7 +511,7 @@ class Couplings:
 
         ::
 
-            Couplings.vectorise_index(mu, 'angular')
+            Couplings.compile_over_index(mu, 'angular')
 
         returns the quantity
 

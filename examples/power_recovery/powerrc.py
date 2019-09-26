@@ -4,20 +4,22 @@ This sets I/O paths and provides common parameters and functionalities to power
 spectrum recovery scripts.
 
 """
-import os
+import sys
 from argparse import ArgumentParser
-from sys import argv, path
 
 import numpy as np
+from matplotlib import pyplot as plt
 
+sys.path.insert(0, "../../")
 
-def get_filename(*filepath):
-    if not filepath:
-        filepath = [argv[0]]
-    return os.path.splitext(os.path.basename(filepath[0]))[0]
+from harmonia.collections import (
+    confirm_directory_path as confirm_dir,
+    get_filename,
+)
 
 
 def parse_cli_args(cli_parser):
+
     # Physical parameters
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--contrast', type=float, default=None)
@@ -29,24 +31,17 @@ def parse_cli_args(cli_parser):
     cli_parser.add_argument('--dk', type=float, default=1e-2)
 
     # Computing parameters
-    cli_parser.add_argument('--boxside', type=float, default=1000.)
+    cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--meshgen', type=int, default=256)
     cli_parser.add_argument('--meshcal', type=int, default=256)
 
     # Program parameters
-    cli_parser.add_argument('--niter', type=int, default=25)
+    cli_parser.add_argument('--niter', type=int, default=10)
     cli_parser.add_argument('--progid', default="")
-    cli_parser.add_argument('--infile', default="halos-(NG=0.,z=1.)-0L.txt")
+    cli_parser.add_argument('--infile', default="halos-(NG=0.,z=1.)-0")
 
     return cli_parser.parse_args()
-
-
-def confirm_dir(dirpath):
-    if not dirpath.endswith("/"):
-        dirpath += "/"
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
 
 
 def aggregate(result):
@@ -63,18 +58,77 @@ def aggregate(result):
         'dPln': np.std(result['Pln'], axis=0, ddof=1),
         'dof1': np.size(result['k'], axis=-1) - 1,
         'dof2': np.size(result['Pln'], axis=0) - 1,
-        }
+    }
 
 
-path.insert(0, "../../")
+def quick_plot(output):
 
-# I/O paths and files
+    dof1 = np.size(output['k'], axis=0) - 1
+    dof2 = np.size(output['Pln'], axis=0) - 1
+
+    results = {
+        'Nk': np.sum(output['Nk'], axis=0),
+        'k': np.average(output['k'], axis=0),
+        'Pk': np.average(output['Pk'], axis=0),
+        'Pshot': np.average(output['Pshot']),
+        'ln': output['ln'],
+        'kln': output['kln'],
+        'Pln': np.average(output['Pln'], axis=0),
+        'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof1),
+        'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof2),
+        'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof2),
+    }
+
+    cartesian_result = plt.errorbar(
+        results['k'],
+        results['Pk'],
+        xerr=results['dk'],
+        yerr=results['dPk'],
+        color='#0087BD',
+        label='Cartesian',
+    )
+
+    spherical_result = plt.loglog(
+        results['kln'],
+        results['Pln'],
+        color='#C40233',
+        label='spherical',
+    )
+
+    for layer in [1, 2]:
+        plt.fill_between(
+            results['kln'],
+            results['Pln'] - layer * results['dPln'],
+            results['Pln'] + layer * results['dPln'],
+            color=spherical_result[0].get_color(),
+            alpha=(1/4)**layer,
+        )
+
+    for idx, dbl_indices in enumerate(results['ln']):
+        if dbl_indices[0] == 0:
+            plt.annotate(
+                str(dbl_indices),
+                xy=(results['kln'][idx], results['Pln'][idx]),
+                verticalalignment='bottom',
+                fontsize=6,
+            )
+
+    plt.axhline(
+        y=results['Pshot'],
+        linestyle='--',
+        color=cartesian_result[0].get_color(),
+        alpha=.5,
+    )
+
+    plt.xlim(left=0.99*results['kln'].min(), right=1.01*results['kln'].max())
+    plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
+    plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
+    plt.legend()
+
+
 PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
-fname = get_filename()
-fdir = "{}/".format(fname)
+filename = get_filename(sys.argv[0])
 
-# Command-line inputs
-parser = ArgumentParser(description="Power spectrum recovery set-up.")
-params = parse_cli_args(parser)
+params = parse_cli_args(ArgumentParser())

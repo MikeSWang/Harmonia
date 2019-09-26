@@ -7,15 +7,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from powerrc import PATHOUT, fdir, fname, params, confirm_dir
+from powerrc import PATHOUT, confirm_dir, filename, params, quick_plot
 from harmonia.algorithms import DiscreteSpectrum
-from harmonia.collections import harmony, format_float as ff
-from harmonia.mapper import SphericalMap, LognormalCatalogue, RandomCatalogue
+from harmonia.collections import format_float, harmony
+from harmonia.mapper import NBKCatalogue, RandomCatalogue, SphericalMap
 
 
 # == INITIALISATION ===========================================================
-
-# -- Runtime parameters -------------------------------------------------------
 
 nbar = params.nbar
 contrast = params.contrast
@@ -30,158 +28,113 @@ meshcal = params.meshcal
 niter = params.niter
 progid = params.progid
 
-
-# -- Cosmology ----------------------------------------------------------------
-
 cosmo = cosmology.Planck15
 rmax = cosmo.comoving_distance(zmax)
 Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
 
-
-# -- Program identifier -------------------------------------------------------
+boxsize = 2 * expand * rmax
+to_mesh_params = dict(Nmesh=meshcal, resampler='tsc', compensated=True)
 
 try:
-    ratio_tag, is_case_mock = ff(float(contrast), 'decdot'), True
+    ratio_tag = format_float(float(contrast), 'decdot')
+    is_case_mock = True
 except (TypeError, ValueError):
-    ratio_tag, is_case_mock = 'simu', False
+    ratio_tag = "simu"
+    is_case_mock = False
 
 if meshgen == meshcal:
-    mesh_tag = f"cp{meshgen}"
+    mesh_tag = f"gc{meshgen}"
 else:
-    mesh_tag = f"c{meshgen},p{meshcal}"
+    mesh_tag = f"g{meshgen},c{meshcal}"
 
-ftag = (
-    f"-("
-    f"nbar={ff(nbar, 'sci')},ratio={ratio_tag},rmax={ff(rmax, 'intdot')},"
-    f"xpd={ff(expand, 'decdot')},kmax={ff(kmax, 'sci')},"
-    f"nmesh=[{mesh_tag}],niter={niter}"
-    f")-[{progid}]"
-    )
+prog_tag = "-(nbar={},contrast={},rmax={},kmax={},xpd={},mesh=[".format(
+    format_float(nbar, 'sci'),
+    ratio_tag,
+    format_float(rmax, 'intdot'),
+    format_float(kmax, 'sci'),
+    format_float(expand, 'decdot'),
+)
+prog_tag += mesh_tag
+prog_tag += "],iter={})-[".format(niter)
+prog_tag += progid
+prog_tag += "]"
+
+print(prog_tag.lstrip("-"))
 
 
 # == PROCESSING ===============================================================
 
-print(ftag)
-
-# Set up discretisation.
 disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 order = np.concatenate(disc.wavenumbers).argsort()
-modes = np.concatenate(disc.waveindices)[order]
 waves = np.concatenate(disc.wavenumbers)[order]
+modes = np.concatenate(disc.dbl_indices)[order]
 
-suite = defaultdict(list)
+measurements = defaultdict(list)
 for run in range(niter):
-    # Generate data and random catalogues.
-    data = LognormalCatalogue(
-        Plin, nbar, bias=bias, boxsize=2*expand*rmax, nmesh=meshgen
-        )
+    data_catalogue = NBKCatalogue(
+        Plin,
+        nbar,
+        bias=bias,
+        BoxSize=boxsize,
+        Nmesh=meshgen,
+    )
     if is_case_mock:
-        nrand = contrast*nbar
-        rand = RandomCatalogue(nrand, boxsize=2*expand*rmax)
-        data['NZ'] = nbar * data['Weight']
-        rand['NZ'] = nbar * rand['Weight']
-        fkplog = FKPCatalog(data, rand)
+        rand_catalogue = RandomCatalogue(contrast*nbar, boxsize)
+        data_catalogue['NZ'] = nbar * data_catalogue['Weight']
+        rand_catalogue['NZ'] = nbar * rand_catalogue['Weight']
+        pair_catalogue = FKPCatalog(data_catalogue, rand_catalogue)
     else:
-        rand, nrand = None, None
+        rand_catalogue = None
 
-    # Run Cartesian algorithm.
     if is_case_mock:
-        mesh = fkplog.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
-        cpow = ConvolvedFFTPower(
-            mesh, poles=[0], dk=dk, kmax=waves.max()+dk
-            ).poles
+        mesh = pair_catalogue.to_mesh(**to_mesh_params)
+        cartesian_power = ConvolvedFFTPower(
+            mesh,
+            poles=[0],
+            dk=dk,
+            kmax=waves.max()+dk,
+        ).poles
     else:
-        mesh = data.to_mesh(Nmesh=meshcal, resampler='tsc', compensated=True)
-        cpow = FFTPower(mesh, mode='1d', dk=dk, kmax=waves.max()+dk).power
+        mesh = data_catalogue.to_mesh(**to_mesh_params)
+        cartesian_power = FFTPower(
+            mesh,
+            mode='1d',
+            dk=dk,
+            kmax=waves.max()+dk,
+        ).power
 
-    # Run spherical algorithm.
-    mapp = SphericalMap(
-        disc, data, rand=rand, nmean_data=nbar, nmean_rand=nrand
-        )
-    spow = mapp.spherical_power()
+    spherical_map = SphericalMap(
+        disc,
+        data_catalogue,
+        rand=rand_catalogue,
+        mean_density_data=nbar,
+        mean_density_rand=contrast*nbar,
+    )
+    spherical_power = spherical_map.spherical_power()
 
-    # Append reordered results.
-    suite['k'].append([cpow['k']])
-    suite['Nk'].append([cpow['modes']])
-    suite['Pshot'].append([cpow.attrs['shotnoise']])
-    suite['Pln'].append([np.concatenate(spow)[order]])
+    measurements['k'].append([cartesian_power['k']])
+    measurements['Nk'].append([cartesian_power['modes']])
+    measurements['Pshot'].append([cartesian_power.attrs['shotnoise']])
+    measurements['Pln'].append([np.concatenate(spherical_power)[order]])
     if is_case_mock:
-        suite['Pk'].append([cpow['power_0'].real])
+        measurements['Pk'].append([cartesian_power['power_0'].real])
     else:
-        suite['Pk'].append([cpow['power'].real])
+        measurements['Pk'].append([cartesian_power['power'].real])
 
 
 # == FINALISATION =============================================================
 
-fpathful, fnameful = f"{PATHOUT}{fdir}", f"{fname}{ftag}"
-confirm_dir(fpathful)
+base_path, root_name = f"{PATHOUT}{filename}", f"{filename}{prog_tag}"
+assert confirm_dir(base_path)
 
-
-# -- Export -------------------------------------------------------------------
-
-output = {var: np.concatenate(val_list) for var, val_list in suite.items()}
+output = {var: np.concatenate(vals) for var, vals in measurements.items()}
 output.update({'ln': [modes], 'kln': [waves]})
-
-np.save("".join([fpathful, fnameful, ".npy"]), output)
-
-
-# -- Visualise ----------------------------------------------------------------
-
-results = {
-    'Nk': np.sum(output['Nk'], axis=0),
-    'k': np.average(output['k'], axis=0),
-    'Pk': np.average(output['Pk'], axis=0),
-    'Pshot': np.average(output['Pshot']),
-    'ln': output['ln'],
-    'kln': output['kln'],
-    'Pln': np.average(output['Pln'], axis=0),
-    }
-results.update({
-    'dk': np.std(output['k'], axis=0, ddof=1),
-    'dPk': np.std(output['Pk'], axis=0, ddof=1),
-    'dPln': np.std(output['Pln'], axis=0, ddof=1),
-    'dof1': np.size(output['k'], axis=0) - 1,
-    'dof2': np.size(output['Pln'], axis=0) - 1,
-    })
+np.save("".join([base_path, "/", root_name, ".npy"]), output)
 
 try:
     plt.style.use(harmony)
     plt.close('all')
-
-    c = plt.errorbar(
-            results['k'], results['Pk'],
-            xerr=results['dk']/np.sqrt(results['dof1']),
-            yerr=results['dPk']/np.sqrt(results['dof2']),
-            elinewidth=.8, color='#0087BD', label='Cartesian'
-            )
-
-    s = plt.loglog(
-            results['kln'], results['Pln'], color='#C40233', label='spherical'
-            )
-    plt.fill_between(
-            results['kln'],
-            results['Pln']-results['dPln']/np.sqrt(results['dof2']),
-            results['Pln']+results['dPln']/np.sqrt(results['dof2']),
-            color=s[0].get_color(), alpha=1/4
-            )
-    plt.fill_between(
-            results['kln'],
-            results['Pln']-2*results['dPln']/np.sqrt(results['dof2']),
-            results['Pln']+2*results['dPln']/np.sqrt(results['dof2']),
-            color=s[0].get_color(), alpha=1/20
-            )
-    for idx, ind_lab in enumerate(results['ln']):
-        if ind_lab[0] == 0:
-            plt.annotate(
-                r'$({:d},{:d})$'.format(ind_lab[0], ind_lab[1]),
-                xy=(results['kln'][idx], results['Pln'][idx]),
-                verticalalignment='bottom', fontsize=6
-                )
-
-    plt.xlim(left=0.99*results['kln'].min(), right=1.01*results['kln'].max())
-    plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
-    plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
-    plt.legend()
-    plt.savefig("".join([fpathful, fnameful, ".pdf"]))
+    quick_plot(output)
+    plt.savefig("".join([base_path, "/", root_name, ".pdf"]))
 except Exception as e:
     print(e)

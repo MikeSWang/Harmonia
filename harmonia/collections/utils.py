@@ -58,7 +58,7 @@ Computational utilities
 
 """
 import warnings
-import os.path
+import os
 from collections import defaultdict
 from glob import glob
 
@@ -67,6 +67,27 @@ import numpy as np
 
 # SYSTEM UTILITIES
 # -----------------------------------------------------------------------------
+
+def confirm_directory_path(dir_path):
+    """Confirm directoy exists at given path.
+
+    Parameters
+    ----------
+    dir_path : str
+        Directory path.
+
+    Returns
+    -------
+    bool
+        `True` is `dir_path` exists or has been created.
+
+    """
+    if not dir_path.endswith("/"):
+        dir_path += "/"
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    return os.path.exists(dir_path)
+
 
 def get_filename(file_path):
     """Return file name without directory path or file extension.

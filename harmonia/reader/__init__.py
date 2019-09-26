@@ -10,7 +10,7 @@ cosmological parameter inference.
 from .cartesian_model import *
 from .hybrid import *
 from .spherical_model import (
-    coupling_vector,
+    Couplings,
     two_point_signal,
     two_point_shot_noise,
 )

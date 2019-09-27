@@ -1,10 +1,8 @@
-import math
 import os
 
 import numpy as np
 import pytest
 
-from unit_tests_rc import approx
 import harmonia.collections.utils as utils
 
 
@@ -66,10 +64,15 @@ def test_allocate_segments(tasks, ntask, nproc):
 
     assert utils.allocate_segments(tasks=tasks) == \
         [
-            slice(TEST_CASE_INTERVAL*n, TEST_CASE_INTERVAL*(n+1))
+            slice(TEST_CASE_INTERVAL * n, TEST_CASE_INTERVAL * (n + 1))
             for n in range(nproc-1)
-        ] \
-        + [slice(TEST_CASE_INTERVAL*(nproc - 1), TEST_CASE_INTERVAL*nproc + 1)]
+        ] + \
+        [
+            slice(
+                TEST_CASE_INTERVAL * (nproc - 1),
+                TEST_CASE_INTERVAL * nproc + 1,
+            )
+        hmn
 
     assert utils.allocate_segments(tot_task=ntask, tot_proc=nproc) == \
         [
@@ -83,7 +86,7 @@ def test_allocate_segments(tasks, ntask, nproc):
 
 
 @pytest.mark.parametrize(
-    'x,case,ff_str',
+    'x,case,float_str',
     [
         (0.000001, 'latex', r'1 \times 10^{-6}'),
         (0.000001, 'sci', '1e-6'),
@@ -91,18 +94,18 @@ def test_allocate_segments(tasks, ntask, nproc):
         (1.02, 'decdot', '1.'),
     ],
 )
-def test_format_float(x, case, ff_str):
-    assert utils.format_float(x, case) == ff_str
+def test_format_float(x, case, float_str):
+    assert utils.format_float(x, case) == float_str
     with pytest.raises(ValueError):
         utils.format_float(x, 'invalid_case')
 
 
 def test_zeroconst():
-    assert utils.zero_const() == approx(0.)
+    assert utils.zero_const() == pytest.approx(0.)
 
 
 def test_unitconst():
-    assert utils.unit_const() == approx(1.)
+    assert utils.unit_const() == pytest.approx(1.)
 
 
 @pytest.mark.parametrize('ndim,nsize', [(3, 10), (5, 8)])
@@ -161,9 +164,9 @@ def test_spherical_to_cartesian(vec):
 
 def test_bin_edges_from_centres():
     assert utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='low') \
-        == approx([0, 2, 7, 11])
+        == pytest.approx([0, 2, 7, 11])
     assert utils.bin_edges_from_centres([1, 4.5, 8.5], [0, 11], align='high') \
-        == approx([0, 3, 6, 11])
+        == pytest.approx([0, 3, 6, 11])
 
 
 TMP_COARSE_DATA = {
@@ -201,5 +204,5 @@ def test_smooth_by_bin_average():
         dy_coarse='dy',
     )
     for key in smoothed_data:
-        assert smoothed_data[key] == approx(TMP_SMOOTH_DATA[key])
-    assert count_in_bins == approx(TEST_BIN_COUNTS)
+        assert smoothed_data[key] == pytest.approx(TMP_SMOOTH_DATA[key])
+    assert count_in_bins == pytest.approx(TEST_BIN_COUNTS)

@@ -1,6 +1,4 @@
-import unit_tests_rc
-
+from harmonia.collections import style
 
 def test_style():
-    from harmonia.collections.style import harmony
-    assert harmony['text.usetex']
+    assert style.harmony['text.usetex']

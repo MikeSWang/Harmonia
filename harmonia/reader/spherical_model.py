@@ -371,6 +371,10 @@ class Couplings:
     distotion_AP : callable or None
         AP distortion function of redshift.
 
+    Methods
+    -------
+
+
     Raises
     ------
     KeyError

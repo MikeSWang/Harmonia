@@ -1,6 +1,6 @@
 import numpy as np
 
-from unit_tests_rc import wolfram_alpha_query as query
+from . import wolfram_alpha_query as query
 from harmonia.algorithms.bases import (
     spherical_besselj,
     spherical_besselj_root,

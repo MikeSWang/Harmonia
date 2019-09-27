@@ -2,7 +2,6 @@ import logging
 
 import pytest
 
-from unit_tests_rc import approx
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 
 TEST_PARAMS = dict(
@@ -11,8 +10,8 @@ TEST_PARAMS = dict(
         condition='Dirichlet',
         cutoff=0.1,
         cuton=0.,
-        degmax=None,
-        degmin=0,
+        maxdeg=None,
+        mindeg=0,
     ),
     discretisation=dict(
         radius=100.,
@@ -49,7 +48,7 @@ def test_init(discrete_spectrum, caplog):
             )
         ],
     )
-    assert discrete_spectrum.roots[TEST_PARAMS['ell']] == approx(
+    assert discrete_spectrum.roots[TEST_PARAMS['ell']] == pytest.approx(
         [
             5.7634591969,
             9.0950113305,
@@ -58,8 +57,8 @@ def test_init(discrete_spectrum, caplog):
 
     assert hasattr(discrete_spectrum, 'attrs')
     assert discrete_spectrum._wavenumbers is None \
-        and discrete_spectrum._wave_tuples is None \
-        and discrete_spectrum._norm_coeff is None
+        and discrete_spectrum._tuples is None \
+        and discrete_spectrum._normalisations is None
 
 
 def test_discretise(caplog):
@@ -79,10 +78,10 @@ def test_discretise(caplog):
 
 def test_wavenumbers(discrete_spectrum):
 
-    assert discrete_spectrum.wavenumbers[TEST_PARAMS['ell']] == approx(
+    assert discrete_spectrum.wavenumbers[TEST_PARAMS['ell']] == pytest.approx(
         [
-            0.0576345919689455,
-            0.0909501133047636,
+            0.0576345920,
+            0.0909501133,
         ],
     )
 
@@ -96,16 +95,17 @@ def test_dbl_indices(discrete_spectrum):
         for n in range(1, discrete_spectrum.depths[TEST_PARAMS['ell']]+1)
     ]
 
-    assert discrete_spectrum._wave_tuples is not None
+    assert discrete_spectrum._tuples is not None
 
 
-def test_normalisation(discrete_spectrum):
+def test_normalisations(discrete_spectrum):
 
-    assert discrete_spectrum.normalisation[TEST_PARAMS['ell']] == approx(
-        [
-            0.00007297680749341,
-            0.00017165606577,
-        ],
-    )
+    assert discrete_spectrum.normalisations[TEST_PARAMS['ell']] \
+        == pytest.approx(
+            [
+                0.0000729768,
+                0.0001716561,
+            ],
+        )
 
-    assert discrete_spectrum._norm_coeff is not None
+    assert discrete_spectrum._normalisations is not None

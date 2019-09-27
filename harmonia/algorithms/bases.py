@@ -27,7 +27,7 @@ from harmonia.collections.utils import binary_search
 
 
 def spherical_harmonic(ell, m, theta, phi):
-    r"""Spherical harmonic function.
+    r"""Spherical harmonic function :math:`Y_{\ell m}(\theta, \phi)`.
 
     Parameters
     ----------
@@ -44,21 +44,22 @@ def spherical_harmonic(ell, m, theta, phi):
     Returns
     -------
     complex, array_like
-        Function value :math:`Y_{\ell m}(\theta, \phi)`.
+        Function value.
 
     """
     return sph_harm(m, ell, phi, theta)
 
 
 def spherical_besselj(ell, x, derivative=False):
-    r"""Spherical Bessel function of the first kind or its derivative.
+    r"""Spherical Bessel function of the first kind :math:`j_{\ell}(x)`, or its
+    derivative  :math:`j'_{\ell}(x)`.
 
     Parameters
     ----------
     ell : int, array_like
         Degree :math:`\ell \geqslant 0` of the spherical harmonic function.
     x : float, array_like
-        Positive argument :math:`x > 0`.
+        Non-negative argument :math:`x \geqslant 0`.
     derivative : bool, optional
         If `True` (default is `False`), evaluate the derivative instead.
 
@@ -72,19 +73,20 @@ def spherical_besselj(ell, x, derivative=False):
 
 
 def spherical_besselj_root(ell, n, only=True, derivative=False):
-    r"""Compute positive zeros, up to a maximum number :math:`n`, of spherical
-    Bessel functions of the first kind or their derivatives.
+    r"""Compute positive zeros :math:`u_{\ell n}`, up to a maximum number
+    :math:`n`, of spherical Bessel functions of the first kind or their
+    derivatives.
 
     Solving for roots of the spherical Bessel function :math:`j_\ell(x)` relies
     on the identity
 
-    .. math:: j_\ell(x) = \sqrt{\frac{\pi}{2x}} J_{\ell+1/2}(x)
+    .. math:: j_\ell(x) = \sqrt{\frac{\pi}{2x}} J_{\ell + 1/2}(x)
 
     where :math:`J_\ell(x)` is the Bessel funcion of the first kind.
 
     Solving for roots of the derivative function :math:`j'_\ell(x)` employs the
     bisection method, with the initial interval ansatz :math:`\ell + 1
-    \leqslant x \leqslant n \mathrm{max}\{4, \ell\}`.
+    \leqslant x \leqslant n \cdot \mathrm{max}\{4, \ell\}`.
 
     Parameters
     ----------
@@ -117,8 +119,8 @@ def spherical_besselj_root(ell, n, only=True, derivative=False):
     else:
         u_ell = binary_search(
             lambda x: spherical_besselj(ell, x, derivative=True),
-            ell+1,
-            n*max(4, ell),
+            ell + 1,
+            n * max(4, ell),
             maxnum=n,
         )
         if only:

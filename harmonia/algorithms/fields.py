@@ -64,7 +64,7 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
 
     """
     indices = np.indices((num_mesh,)*3)
-    origin = np.array([(num_mesh - 1)/2]*3)
+    origin = np.array([(num_mesh-1)/2]*3)
 
     grid_coords = [
         cell_size * (index - centre) for index, centre in zip(indices, origin)
@@ -132,7 +132,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     """
     vol, num_cell = boxsize**3, num_mesh**3
     k_norm, k_vec = generate_regular_grid(
-        2*np.pi/boxsize,
+        2*np.pi / boxsize,
         num_mesh,
         variable='both',
     )
@@ -196,7 +196,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     """
     vol, num_cell = boxsize**3, num_mesh**3
     k_norm, k_vec = generate_regular_grid(
-        2*np.pi/boxsize,
+        2*np.pi / boxsize,
         num_mesh,
         variable='both',
     )
@@ -484,14 +484,12 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
     k_norm = generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')
     power_arr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / num_cell**2
 
+    binning_args = (k_norm, power_arr, num_bin, bin_scale)
     powers, wavenumbers, mode_count = _radial_binning(
-        k_norm,
-        power_arr,
-        num_bin,
-        bin_scale,
+        *binning_args,
         low_edge=0.,
         high_edge=kmax,
-        )
+    )
 
     return wavenumbers, powers, mode_count
 

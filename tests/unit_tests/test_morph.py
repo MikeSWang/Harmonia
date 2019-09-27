@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from unit_tests_rc import approx
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.morph import SphericalArray
 
@@ -10,8 +9,8 @@ TEST_PARAMS = dict(
     condition='Dirichlet',
     cutoff=0.1,
     cuton=0.,
-    degmax=None,
-    degmin=0,
+    maxdeg=None,
+    mindeg=0,
 )
 
 TEST_DATA_ARRAY = [
@@ -141,7 +140,7 @@ MAX_ENTRY = 9
 def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
     unfolded_array, unfolded_indices = \
         spherical_array.unfold(axis_order=axis_order)
-    assert unfolded_array[:MAX_ENTRY] == approx(flat_array)
+    assert unfolded_array[:MAX_ENTRY] == pytest.approx(flat_array)
     assert unfolded_indices[:MAX_ENTRY] == flat_indices
 
 

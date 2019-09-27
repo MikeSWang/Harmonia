@@ -24,9 +24,9 @@ class SphericalArray:
 
     The array is initialised in the natural structure together with an index
     array of the same structure.  A natural structure array is a
-    length-:math:`\ell` list of :math:`m_\ell \times n_\ell`-rectangular arrays
-    whose entries are indexed by a triplet :math:`\{(\ell, m_\ell, n_\ell)\}`,
-    which are respectively the spherical degree, order and depth.
+    length-:math:`\ell` list of :math:`(m_\ell \times n_\ell)`-rectangular
+    arrays whose entries are indexed by a triplet :math:`(\ell, m_\ell,
+    n_\ell)`, which are respectively the spherical degree, order and depth.
 
     Spherical degrees :math:`\ell` and orders :math:`m` are associated with the
     spherical Bessel and harmonic functions, and spherical depths :math:`n` are
@@ -94,7 +94,7 @@ class SphericalArray:
         self._wavetuples = [
             [
                 [
-                    (ell, nidx+1) for nidx in range(nmax)
+                    (ell, n_idx + 1) for n_idx in range(nmax)
                 ]
             ]
             for ell, nmax in zip(degrees, depths)
@@ -103,9 +103,9 @@ class SphericalArray:
         self.index_array = [
             [
                 [
-                    (ell, m, nidx+1) for nidx in range(nmax)
+                    (ell, m, n_idx + 1) for n_idx in range(nmax)
                 ]
-                for midx, m in enumerate(range(-ell, ell+1))
+                for m in range(-ell, ell+1)
             ]
             for ell, nmax in zip(degrees, depths)
         ]
@@ -113,7 +113,7 @@ class SphericalArray:
         if filling is not None:
             if len(filling) == len(degrees):
                 for ell, nmax, fillblock in zip(degrees, depths, filling):
-                    if np.shape(fillblock) != (2*ell+1, nmax):
+                    if np.shape(fillblock) != (2*ell + 1, nmax):
                         raise ValueError(
                             f"Element of spherical degree {ell} in `filling` "
                             "is not a rectangular array whose shape "
@@ -195,7 +195,7 @@ class SphericalArray:
         ----------
         axis_order : {'natural', 'scale', 'lmn', 'lnm', 'ln', k'}
             Axis order for array flattening.  If this is set to ``'ln'`` or
-            ``'scale'``, `ord_collapse` is overriden to `True`.
+            ``'scale'``, `collapse` is overriden to `True`.
         collapse : bool, optional
             If `True` (default is `False`), the arrays are collapsed over
             spherical orders before flattening.  This is overriden to `True`
@@ -211,7 +211,7 @@ class SphericalArray:
             Flattend 1-d index array.
 
         """
-        data_arr, indx_arr = self.data_array, self.index_array
+        data_arr, index_arr = self.data_array, self.index_array
 
         empty_flag = (data_arr is None)
         if empty_flag:
@@ -231,7 +231,7 @@ class SphericalArray:
         if collapse:
             if not empty_flag:
                 data_arr = self.collapse_subarray(data_arr, 'data')
-            indx_arr = self.collapse_subarray(indx_arr, 'index')
+            index_arr = self.collapse_subarray(index_arr, 'index')
 
         # Vectorisation.
         transpose = (axis_order == 'lnm')
@@ -241,7 +241,7 @@ class SphericalArray:
                 self._flatten(data_arr, 'data', subarray_transpose=transpose),
             )
         index_flat = self._flatten(
-            indx_arr,
+            index_arr,
             'index',
             subarray_transpose=transpose,
         )
@@ -258,7 +258,7 @@ class SphericalArray:
             order = np.argsort(self._flatten(roots, 'data'))
             if not empty_flag:
                 data_flat = data_flat[order]
-            index_flat = [index_flat[iord] for iord in order]
+            index_flat = [index_flat[ord_idx] for ord_idx in order]
 
         if return_only == 'data':
             return data_flat
@@ -294,7 +294,7 @@ class SphericalArray:
         if subarray_type == 'index':
             return self.index_array
 
-        ordered_indx = self.unfold(in_structure, return_only='index')
+        ordered_index = self.unfold(in_structure, return_only='index')
 
         if in_structure in ['natural', 'lmn', 'lnm', 'k']:
             retarr = [
@@ -305,9 +305,10 @@ class SphericalArray:
                     for m in range(-ell, ell+1)]
                 for ell, nmax in zip(self.degrees, self.depths)
             ]
-            for indx, entry in zip(ordered_indx, flat_array):
-                ellidx, midx, nidx = indx[0], indx[1] + indx[0], indx[-1] - 1
-                retarr[ellidx][midx][nidx] = entry
+            for index, entry in zip(ordered_index, flat_array):
+                ell_idx, m_idx, n_idx = \
+                    index[0], index[1] + index[0], index[-1] - 1
+                retarr[ell_idx][m_idx][n_idx] = entry
         elif in_structure in ['ln', 'scale']:
             retarr = [
                 [
@@ -315,9 +316,9 @@ class SphericalArray:
                 ]
                 for ell, nmax in zip(self.degrees, self.depths)
             ]
-            for indx, entry in zip(ordered_indx, flat_array):
-                ellidx, nidx = indx[0], indx[-1] - 1
-                retarr[ellidx][nidx] = entry
+            for index, entry in zip(ordered_index, flat_array):
+                ell_idx, n_idx = index[0], index[-1] - 1
+                retarr[ell_idx][n_idx] = entry
             retarr = self.repeat_subarray(retarr, 'data', degrees=self.degrees)
         else:
             raise ValueError("`in_structure` is invalid. ")
@@ -385,7 +386,7 @@ class SphericalArray:
             if subarray_type == 'data':
                 morph_array = morph_array[order]
             elif subarray_type == 'index':
-                morph_array = [morph_array[iord] for iord in order]
+                morph_array = [morph_array[ord_idx] for ord_idx in order]
         if out_structure == 'scale':
             morph_array = self._flatten(
                 self.collapse_subarray(natarr, subarray_type),
@@ -395,17 +396,17 @@ class SphericalArray:
             if subarray_type == 'data':
                 morph_array = morph_array[order]
             elif subarray_type == 'index':
-                morph_array = [morph_array[iord] for iord in order]
+                morph_array = [morph_array[ord_idx] for ord_idx in order]
 
         return morph_array
 
     @staticmethod
-    def transpose_subarray(arr, subarray_type):
+    def transpose_subarray(array, subarray_type):
         """Transpose array elements in a list.
 
         Parameters
         ----------
-        arr : list of float or tuple, array_like
+        array : list of float or tuple, array_like
             List of subarrays.
         subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'`` for
@@ -423,9 +424,9 @@ class SphericalArray:
 
         """
         if subarray_type == 'data':
-            return [np.array(ellblock).T for ellblock in arr]
+            return [np.array(ellblock).T for ellblock in array]
         if subarray_type == 'index':
-            return [list(map(list, zip(*ellblock))) for ellblock in arr]
+            return [list(map(list, zip(*ellblock))) for ellblock in array]
         raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
     @staticmethod

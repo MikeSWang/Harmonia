@@ -1,19 +1,16 @@
 import numpy as np
 
-from unit_tests_rc import NamedFunction, approx, wolfram_alpha_query as query
+import pytest
+
+from . import NamedFunction, wolfram_alpha_query as query
 from harmonia.algorithms.integration import (
-    radial_spherical_integral,
+    angular_harmonic_integral,
     angular_spherical_integral,
     radial_besselj_integral,
-    angular_harmonic_integral,
+    radial_spherical_integral,
 )
 
-TEST_PARAMS = dict(
-    rmax=100.,
-    ell=5,
-    m=2,
-    k=0.05,
-)
+TEST_PARAMS = dict(rmax=100., ell=5, m=2, k=0.05)
 
 radial_func = NamedFunction(
     f"Sin[r]/{TEST_PARAMS['rmax']}",
@@ -31,14 +28,14 @@ def test_radial_spherical_integral():
         f"Integrate[r^2 {repr(radial_func)}, {{r, 0, {TEST_PARAMS['rmax']}}}]"
     )
     assert radial_spherical_integral(radial_func, TEST_PARAMS['rmax']) \
-        == approx(-87.2473721335)
+        == pytest.approx(-87.2473721335)
 
 
 def test_angular_spherical_integral():
     query(
         f"Integrate[{repr(angular_func)}, {{theta, 0, Pi}}, {{phi, 0, 2 Pi}}]"
     )
-    assert angular_spherical_integral(angular_func) == approx(0.)
+    assert angular_spherical_integral(angular_func) == pytest.approx(0.)
 
 
 def test_radial_besselj_integral():

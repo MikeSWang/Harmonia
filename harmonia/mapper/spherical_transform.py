@@ -5,6 +5,12 @@ Spherical Fourier transform (:mod:`~harmonia.mapper.spherical_transform`)
 Transform discrete catalogues to discretised Fourier-space maps in spherical
 coordinates.
 
+.. autosummary::
+
+    SphericalMap
+
+|
+
 """
 import logging
 import warnings
@@ -13,8 +19,8 @@ import numpy as np
 from nbodykit.lab import FKPCatalog
 
 from .catalogue_maker import spherical_indicator as spherical_cut
-from harmonia.algorithms._bases import spherical_besselj, spherical_harmonic
-from harmonia.algorithms._integration import (
+from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
+from harmonia.algorithms.integration import (
     angular_harmonic_integral as aint_harmonic,
     radial_besselj_integral as rint_besselj,
 )
@@ -179,10 +185,11 @@ class SphericalMap:
         )
 
     @classmethod
-    def discretise_catalogue(cls, data, rand=None, source='mock',
-                             mean_density_data=None, mean_density_rand=None,
-                             **disc_params):
-        """Instantiate a spherical map from discretised spectrum parameters.
+    def direct_discretisation(cls, data, rand=None, source='mock',
+                              mean_density_data=None, mean_density_rand=None,
+                              **disc_params):
+        """Instantiate a spherical map directly from discrete spectrum
+        parameters.
 
         Parameters
         ----------

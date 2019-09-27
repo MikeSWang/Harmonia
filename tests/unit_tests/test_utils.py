@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pytest
 
-from testrc import approx
+from unit_tests_rc import approx
 import harmonia.collections.utils as utils
 
 

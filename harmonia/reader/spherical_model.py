@@ -104,8 +104,8 @@ import warnings
 
 import numpy as np
 
-from harmonia.algorithms._bases import spherical_besselj, spherical_harmonic
-from harmonia.algorithms._integration import (
+from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
+from harmonia.algorithms.integration import (
     angular_spherical_integral as ang_int,
     radial_spherical_integral as rad_int,
 )
@@ -504,6 +504,25 @@ class Couplings:
     def compile_over_index(self, mu, coupling_type):
         r"""Compile coupling coefficients with the first triplet index fixed.
 
+        Parameters
+        ----------
+        mu : tuple or list [of length 3] of int
+            Fixed triplet index.
+        coupling_type : {'angular', 'radial', 'RSD'}
+            Coupling type.
+
+        Returns
+        -------
+        couplings_vector : complex or float, array_like
+            Vector of coupling coefficients with first triplet index fixed.
+
+        Raises
+        ------
+        ValueError
+            If `coupling_type` does not correspond to a valid kernel.
+
+        Notes
+        -----
         This function computes coupling coefficients of the form
         :math:`C_{a_\mu b_\mu a_\sigma b_\sigma}` where the triplet index
         :math:`\mu` is fixed, and compiles their values as a vector by
@@ -524,23 +543,6 @@ class Couplings:
                    m_\sigma = -\ell_\sigma, \dots, \ell_\sigma
                 \right\rbrace
             }_{\sigma} \,.
-
-        Parameters
-        ----------
-        mu : tuple or list [of length 3] of int
-            Fixed triplet index.
-        coupling_type : {'angular', 'radial', 'RSD'}
-            Coupling type.
-
-        Returns
-        -------
-        couplings_vector : complex or float, array_like
-            Vector of coupling coefficients with first triplet index fixed.
-
-        Raises
-        ------
-        ValueError
-            If `coupling_type` does not correspond to a valid kernel.
 
         """
         if coupling_type.lower().startswith('a'):
@@ -594,6 +596,7 @@ def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta0, disc):
 
     Notes
     -----
+
     The input coupling vectors have a nested-list structure may be called from:
 
     ::

@@ -20,7 +20,7 @@ STRUCT = 'k'
 
 BETA = 'none'  # float
 KMAX = 0.04
-REBIAS2 = 1.0270  # 1.1057, 1.
+REBIAS2 = 1.0270407441078366
 
 TAG_REF = (
     "-(NG=0.,z=1.)-"
@@ -41,13 +41,13 @@ DISC = DiscreteSpectrum(500, 'Dirichlet', KMAX)
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=RuntimeWarning)
-    indx_vec = SphericalArray.build(disc=DISC).unfold(STRUCT, retonly='index')
+    indx_vec = SphericalArray.build(disc=DISC).unfold(STRUCT, return_only='index')
 order = np.concatenate(DISC.wavenumbers).argsort()
-norms = np.concatenate(DISC.normcoeff)[order]
+norms = np.concatenate(DISC.normalisation)[order]
 
-kappa = np.zeros(DISC.nmode)
-coord = np.zeros(DISC.nmode)
-sp2pt = np.zeros(DISC.nmode)
+kappa = np.zeros(DISC.mode_count)
+coord = np.zeros(DISC.mode_count)
+sp2pt = np.zeros(DISC.mode_count)
 for idx, greek in enumerate(indx_vec):
     condition = np.logical_and(
         ref['ln'][:,0] == greek[0],
@@ -60,7 +60,7 @@ for idx, greek in enumerate(indx_vec):
 
 # Post-process imported data.
 Covar = np.abs(sp2pt)
-covar = np.abs(np.diag(REBIAS2*mod['signal']))
+covar = np.abs(np.diag(REBIAS2**2*mod['signal']))
 
 rough_data = {
     'measurements': kappa * Covar,
@@ -68,10 +68,10 @@ rough_data = {
     }
 smooth_data = {}
 bins = np.concatenate([
-    np.array([k_ell[0] for k_ell in DISC.wavenumbers])[[0, 4, 6, 9, 12,]],
+    np.array([k_ell[0] for k_ell in DISC.wavenumbers])[[0, 4, 7, 9, 12,]],
     [0.04,]
     ])
-# bins = np.linspace(6e-3, 4e-2, 8), logspace(-2.2, -1.4, 5)
+# bins = np.linspace(6e-3, 4e-2, 6), logspace(-2.2, -1.4, 5)
 
 counts, _ = np.histogram(coord, bins=bins)
 bincoord = np.histogram(coord, bins=bins, weights=coord)[0] / counts
@@ -80,7 +80,7 @@ for key, val in rough_data.items():
     smooth_data[key] = bindat / counts
 
 ratio = np.average(
-    smooth_data['measurements'][1:] / smooth_data['predictions'][1:]  # [0:]
+    smooth_data['measurements'] / smooth_data['predictions']
     )
 if np.isclose(ratio, 1, atol=1.e-2):
     corrct_tag = ''

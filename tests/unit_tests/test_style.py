@@ -1,4 +1,4 @@
-import testrc
+import unit_tests_rc
 
 
 def test_style():

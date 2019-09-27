@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from nbodykit.lab import cosmology as cosmo
 
-from testrc import approx
+from unit_tests_rc import approx
 from harmonia.algorithms.fields import (
     generate_regular_grid,
     generate_gaussian_random_field,

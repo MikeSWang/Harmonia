@@ -362,6 +362,7 @@ def unit_const(*args):
     return 1.
 
 
+# TODO: Implement conversion for more genertic covariance matrices.
 def covar_to_corr(cov):
     """Convert a real-valued covariance matrix to a correlation matrix.
 
@@ -374,12 +375,6 @@ def covar_to_corr(cov):
     -------
     corr : float, array_like
         Correlation matrix.
-
-
-    .. todo::
-
-        Implement other types of conversion for more genertic covariance
-        matrices.
 
     """
     inv_diag = np.diag(1 / np.sqrt(np.diag(cov)))
@@ -439,7 +434,7 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
 
         return x0, x1
 
-    def _find_single_root(func, x0, x1, convergence=1.e-9):
+    def _find_root(func, x0, x1, convergence=1.e-9):
         """Bisection method for root finding.
 
         Parameters
@@ -493,7 +488,7 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
     while len(roots) < maxnum:
         x0, x1 = _scan_interval(func, a, b, precision)
         if x0 is not None:  # valid sign change interval
-            root = _find_single_root(func, x0, x1)
+            root = _find_root(func, x0, x1)
             if root is not None:
                 roots.append(round(root, -int(np.log10(precision))))
             a = x1  # reset interval for next root

@@ -1,5 +1,5 @@
 """
-Visual style (:mod:`~concordia.collections.style`)
+Visual style (:mod:`~harmonia.collections.style`)
 ===============================================================================
 
 :mod:`matplotlib` stylesheet.

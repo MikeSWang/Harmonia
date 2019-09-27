@@ -1,14 +1,14 @@
-"""Two-point recovery runtime configuration.
+"""Likelihood inference runtime configuration.
 
 This sets I/O paths and provides common parameters and functionalities to
-2-point function recovery scripts.
+likelihood inference scripts.
 
 """
 import os
+import sys
 import warnings
 from argparse import ArgumentParser
 from collections import defaultdict
-from sys import argv, path
 
 import numpy as np
 
@@ -18,7 +18,7 @@ PATHOUT = "./data/output/"
 
 def get_filename(*filepath):
     if not filepath:
-        filepath = [argv[0]]
+        filepath = [sys.argv[0]]
     return os.path.splitext(os.path.basename(filepath[0]))[0]
 
 
@@ -36,7 +36,7 @@ def parse_cli_args(cli_parser):
 
     # Computing parameters
     cli_parser.add_argument('--struct')
-    cli_parser.add_argument('--boxside', type=float, default=1000.)
+    cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--meshgen', type=int, default=256)
     cli_parser.add_argument('--meshcal', type=int, default=256)
@@ -87,13 +87,9 @@ def mpicomp(data_arr, mappings, comm, root=0):
     return result
 
 
-path.insert(0, "../../")
+sys.path.insert(0, "../../")
 warnings.formatwarning = clean_warnings
 
-# I/O paths and files
-fname = get_filename()
-fdir = "{}/".format(fname)
+filename = get_filename()
 
-# Command-line inputs
-parser = ArgumentParser(description="Two-point function recovery set-up.")
-params = parse_cli_args(parser)
+params = parse_cli_args(ArgumentParser())

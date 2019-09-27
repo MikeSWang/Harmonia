@@ -1,7 +1,7 @@
 import numpy as np
 
-from testrc import NamedFunction, approx, wolfram_alpha_query as query
-from harmonia.algorithms._integration import (
+from unit_tests_rc import NamedFunction, approx, wolfram_alpha_query as query
+from harmonia.algorithms.integration import (
     radial_spherical_integral,
     angular_spherical_integral,
     radial_besselj_integral,

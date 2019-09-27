@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from testrc import approx
+from unit_tests_rc import approx
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 
 TEST_PARAMS = dict(

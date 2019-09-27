@@ -15,7 +15,7 @@ import warnings
 
 import numpy as np
 
-from ._bases import spherical_besselj_root
+from .bases import spherical_besselj_root
 
 
 class SphericalArray:

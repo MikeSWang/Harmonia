@@ -7,12 +7,12 @@ Cosmological field transformation and analysis algorithms employed in
 :mod:`~harmonia.mapper` and :mod:`~harmonia.reader`.
 
 """
-from ._bases import (
+from .bases import (
     spherical_besselj,
     spherical_besselj_root,
     spherical_harmonic,
 )
-from ._integration import (
+from .integration import (
     radial_spherical_integral,
     angular_spherical_integral,
     radial_besselj_integral,

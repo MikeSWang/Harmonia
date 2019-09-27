@@ -1,6 +1,6 @@
 import pytest
 
-from testrc import approx
+from unit_tests_rc import approx
 from harmonia.cosmology.geometry import (
     fiducial_cosmology,
     fiducial_distance,

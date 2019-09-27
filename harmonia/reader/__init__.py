@@ -1,6 +1,6 @@
 """
 *******************************************************************************
-Fourier-space reader (:mod:`~concordia.reader`)
+Fourier-space reader (:mod:`~harmonia.reader`)
 *******************************************************************************
 
 Calculate Fourier-space map models and build hybrid likelihoods for

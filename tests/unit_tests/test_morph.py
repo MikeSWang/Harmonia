@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from testrc import approx
+from unit_tests_rc import approx
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.morph import SphericalArray
 

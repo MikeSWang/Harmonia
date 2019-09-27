@@ -420,6 +420,82 @@ def populate_particles(sampled_field, mean_density, boxsize,
     return position
 
 
+def _gen_circsym_whitenoise(num_mesh, seed=None):
+    """Generate white noise samples drawn from the circularly-symmetric complex
+    normal distribution on a 3-d regular grid.
+
+    Both the real and imaginary parts follow the standard normal distribution,
+    so the complex samples have variance 2.
+
+    Parameters
+    ----------
+    num_mesh : int
+        Mesh number per dimension.
+    seed : int or None, optional
+        Random seed (default is `None`).
+
+    Returns
+    -------
+    whitenoise : (N, N, N) :class:`numpy.ndarray` of complex
+        Circularly-symmetric Gaussian noise with double unit variance.
+
+    """
+    size = (2,) + (num_mesh,)*3
+    samples = np.random.RandomState(seed=seed).normal(size=size)
+
+    whitenoise = samples[0] + 1j*samples[1]
+
+    return whitenoise
+
+
+def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
+                                  bin_scale='linear'):
+    """Calculate the isotropic power spectrum of a random field in
+    configuration space.
+
+    Parameters
+    ----------
+    field : (N, N, N) :class:`numpy.ndarray` of float
+        Random field.
+    boxsize : float
+        Box size per dimension (in Mpc/h).
+    kmax : float or None, optional
+        Maximum wave number.  If `None` (default), this is set to largest wave
+        number the field supports.
+    num_bin : int or None, optional
+        Number of bins each corresponding to a wave number (default is 12).
+    bin_scale : {'linear', 'log'}, optional
+        Binning in 'linear' (default) or 'log' scale.
+
+    Returns
+    -------
+    wavenumbers : float, array_like
+        Bin-averaged wave numbers.
+    powers : float, array_like
+        Radially averaged power spectrum at bin wave numbers.
+    mode_count : int, array_like
+        Number of modes in bins corresponding to each wave number (double
+        counting for wave vector parity).
+
+    """
+    num_mesh = max(np.array(field).shape)
+    vol, num_cell = boxsize**3, num_mesh**3
+
+    k_norm = generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')
+    power_arr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / num_cell**2
+
+    powers, wavenumbers, mode_count = _radial_binning(
+        k_norm,
+        power_arr,
+        num_bin,
+        bin_scale,
+        low_edge=0.,
+        high_edge=kmax,
+        )
+
+    return wavenumbers, powers, mode_count
+
+
 def _radial_binning(norm3d, data3d, num_bin, bin_scale, low_edge=None,
                     high_edge=None):
     """Radial binning by coordinate vector norm for 3-d data over a regular
@@ -475,79 +551,3 @@ def _radial_binning(norm3d, data3d, num_bin, bin_scale, low_edge=None,
     bin_data /= bin_count
 
     return bin_data, bin_coord, bin_count
-
-
-def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
-                                  bin_scale='linear'):
-    """Calculate the isotropic power spectrum of a random field in
-    configuration space.
-
-    Parameters
-    ----------
-    field : (N, N, N) :class:`numpy.ndarray` of float
-        Random field.
-    boxsize : float
-        Box size per dimension (in Mpc/h).
-    kmax : float or None, optional
-        Maximum wave number.  If `None` (default), this is set to largest wave
-        number the field supports.
-    num_bin : int or None, optional
-        Number of bins each corresponding to a wave number (default is 12).
-    bin_scale : {'linear', 'log'}, optional
-        Binning in 'linear' (default) or 'log' scale.
-
-    Returns
-    -------
-    wavenumbers : float, array_like
-        Bin-averaged wave numbers.
-    powers : float, array_like
-        Radially averaged power spectrum at bin wave numbers.
-    mode_count : int, array_like
-        Number of modes in bins corresponding to each wave number (double
-        counting for wave vector parity).
-
-    """
-    num_mesh = max(np.array(field).shape)
-    vol, num_cell = boxsize**3, num_mesh**3
-
-    k_norm = generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')
-    power_arr = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / num_cell**2
-
-    powers, wavenumbers, mode_count = _radial_binning(
-        k_norm,
-        power_arr,
-        num_bin,
-        bin_scale,
-        low_edge=0.,
-        high_edge=kmax,
-        )
-
-    return wavenumbers, powers, mode_count
-
-
-def _gen_circsym_whitenoise(num_mesh, seed=None):
-    """Generate white noise samples drawn from the circularly-symmetric complex
-    normal distribution on a 3-d regular grid.
-
-    Both the real and imaginary parts follow the standard normal distribution,
-    so the complex samples have variance 2.
-
-    Parameters
-    ----------
-    num_mesh : int
-        Mesh number per dimension.
-    seed : int or None, optional
-        Random seed (default is `None`).
-
-    Returns
-    -------
-    whitenoise : (N, N, N) :class:`numpy.ndarray` of complex
-        Circularly-symmetric Gaussian noise with double unit variance.
-
-    """
-    size = (2,) + (num_mesh,)*3
-    samples = np.random.RandomState(seed=seed).normal(size=size)
-
-    whitenoise = samples[0] + 1j*samples[1]
-
-    return whitenoise

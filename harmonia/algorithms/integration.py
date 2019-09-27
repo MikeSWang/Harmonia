@@ -4,6 +4,10 @@ Numerical integration (:mod:`~harmonia.algorithms.integration`)
 
 Numerical integration against Fourier basis functions.
 
+.. topic:: Caution
+
+    Quadrature integration of spherical Bessel functions may converge slowly.
+
 **Generic spherical integrals**
 
 .. autosummary::
@@ -18,16 +22,13 @@ Numerical integration against Fourier basis functions.
     radial_besselj_integral
     angular_harmonic_integral
 
-.. topic:: Caution
-
-    Quadrature integration of spherical Bessel functions may converge slowly.
-
+|
 
 """
 import numpy as np
 from scipy.integrate import dblquad, quad
 
-from ._bases import spherical_besselj, spherical_harmonic
+from .bases import spherical_besselj, spherical_harmonic
 
 
 def _radial_integrand(r, rfunc):

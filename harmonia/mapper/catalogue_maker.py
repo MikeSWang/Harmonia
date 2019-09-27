@@ -12,6 +12,8 @@ Make discrete catalogues from observed or simulated realisations.
     LogNormalCatalogue
     GaussianCatalogue
 
+|
+
 """
 import logging
 

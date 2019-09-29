@@ -3,7 +3,7 @@
 Fourier-space reader (:mod:`~harmonia.reader`)
 *******************************************************************************
 
-Calculate Fourier-space map models and build hybrid likelihoods for
+Compute Fourier-space map models and construct hybrid likelihoods for
 cosmological parameter inference.
 
 """

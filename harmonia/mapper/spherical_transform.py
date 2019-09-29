@@ -18,17 +18,17 @@ import warnings
 import numpy as np
 from nbodykit.lab import FKPCatalog
 
-from .catalogue_maker import spherical_indicator as spherical_cut
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.algorithms.integration import (
-    angular_harmonic_integral as aint_harmonic,
-    radial_besselj_integral as rint_besselj,
+    angular_harmonic_integral as ang_int_harmonic,
+    radial_besselj_integral as rad_int_besselj,
 )
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import (
-    unit_const,
     cartesian_to_spherical as c2s,
+    spherical_indicator as spherical_cut,
+    unit_const,
 )
 
 
@@ -179,7 +179,7 @@ class SphericalMap:
         self._nbar_coeff = None
 
     def __str__(self):
-        return "SphericalMap(maxdegree={}, modecount={})".format(
+        return "SphericalMap(degmax={}, modecount={})".format(
             max(self.disc.degrees),
             self.disc.mode_count,
         )
@@ -217,7 +217,7 @@ class SphericalMap:
             source=source,
             mean_density_data=mean_density_data,
             mean_density_rand=mean_density_rand,
-            )
+        )
 
     def transform(self, method=None):
         """Perform discrete spherical Fourier transform.
@@ -300,8 +300,8 @@ class SphericalMap:
                     elif method == 'integrate':
                         # FIXME: Only applies without selection function.
                         nbar_ellmn = nbar \
-                            * aint_harmonic(unit_const, ell, m_ell) \
-                            * rint_besselj(unit_const, ell, k_elln, radius)
+                            * ang_int_harmonic(unit_const, ell, m_ell) \
+                            * rad_int_besselj(unit_const, ell, k_elln, radius)
 
                     # `n_ellmn`, `nbar_ellmn` may be dask arrays.
                     n_ellm.append(complex(n_ellmn/nbar))
@@ -311,11 +311,11 @@ class SphericalMap:
 
             if ell != 0:  # reflect and extend using parity
                 n_ell_flip = np.multiply(
-                    (-1)**np.arange(1, ell+1)[:, None],
+                    np.power(-1, np.arange(1, ell+1)[:, None]),
                     np.flipud(n_ell[:-1]),
                 )
                 nbar_ell_flip = np.multiply(
-                    (-1)**np.arange(1, ell+1)[:, None],
+                    np.power(-1, np.arange(1, ell+1)[:, None]),
                     np.flipud(nbar_ell[:-1]),
                 )
                 n_ell = np.concatenate((n_ell, np.conj(n_ell_flip)))
@@ -328,11 +328,15 @@ class SphericalMap:
 
         return n_coeff, nbar_coeff
 
-    def two_point(self, method=None, pivot='natural', order_collapse=False):
+    def two_points(self, method=None, pivot='natural', order_collapse=False):
         r"""Comptute 2-point statistics.
 
+        Note
+        ----
         See :class:`~harmonia.algorithms.morph.SphericalArray` for array
-        structure.
+        structure.  For this method, the spherical degrees are assumed to start
+        at :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
+        :mod:`~harmonia.reader.spherical_model`.
 
         Parameters
         ----------
@@ -349,17 +353,11 @@ class SphericalMap:
         list of complex, array_like
             2-point statistics as 2-d array.
 
-        Notes
-        -----
-        For this method, the spherical degrees are assumed to start at
-        :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
-        :mod:`~harmonia.reader.spherical_model`.
-
         """
         if self._n_coeff is None or self._nbar_coeff is None:
             self._n_coeff, self._nbar_coeff = self.transform(method=method)
 
-        return self.compute_two_point_from_coeff(
+        return self.compute_two_points_from_coeff(
             self._n_coeff,
             self._nbar_coeff,
             self.disc,
@@ -387,18 +385,25 @@ class SphericalMap:
         spherical_power = self.square_amplitude(
             self._n_coeff,
             self._nbar_coeff,
-            normalisation=self.disc.normalisation,
+            normalisation=self.disc.normalisations,
         )
 
         return spherical_power
 
     @staticmethod
-    def compute_two_point_from_coeff(n_coeff, nbar_coeff, disc,
+    def compute_two_points_from_coeff(n_coeff, nbar_coeff, disc,
                                      pivot='natural', order_collapse=False):
         r"""Compute 2-point statistics from spherical Fourier coefficients.
 
         See :class:`~harmonia.algorithms.morph.SphericalArray` for array
         structure.
+
+        Note
+        ----
+        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
+        structure.  For this method, the spherical degrees are assumed to start
+        at :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
+        :mod:`~harmonia.reader.spherical_model`.
 
         Parameters
         ----------
@@ -418,12 +423,6 @@ class SphericalMap:
         -------
         list of complex, array_like
             2-point statistics as 2-d array.
-
-        Warnings
-        --------
-        For this method, the spherical degrees are assumed to start at
-        :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
-        :mod:`~harmonia.reader.spherical_model`.
 
         """
         fill = [n - nbar for n, nbar in zip(n_coeff, nbar_coeff)]
@@ -449,17 +448,13 @@ class SphericalMap:
             normalised to the homogeneous particle number density
             :attr:`mean_density`.
         normalisation : list of float, array_like, optional
-            Normalisation coefficients (default is `None`).
+            Normalisation coefficients.  If `None`, all normalisation
+            coefficients are set to unity.
 
         Returns
         -------
         float, array_like
             Spherically recovered power with given normalisation.
-
-        Notes
-        -----
-        If `normalisation` is `None`, all normalisation coefficients are set to
-        unity.
 
         """
         if normalisation is None:

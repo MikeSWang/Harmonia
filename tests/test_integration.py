@@ -2,7 +2,7 @@ import numpy as np
 
 import pytest
 
-from . import NamedFunction, wolfram_alpha_query as query
+from . import NamedFunction, mathematica_query as query
 from harmonia.algorithms.integration import (
     angular_harmonic_integral,
     angular_spherical_integral,

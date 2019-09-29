@@ -8,4 +8,8 @@ Compute cosmological quantities for a specified model with
 results [`arXiv:1502.01589 <https://arxiv.org/abs/1502.01589>`_].
 
 """
-from .geometry import *
+from .geometry import (
+    fiducial_cosmology,
+    fiducial_distance,
+    redshift_to_distance,
+)

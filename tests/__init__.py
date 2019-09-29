@@ -1,22 +1,23 @@
-"""
-###############################################################################
-Unit tests (:mod:`unit_tests`)
-###############################################################################
-
-Unit testing of ``Harmonia``.
+"""Unit tests of ``Harmonia``.
 
 """
 import os
 import sys
 
 
-def import_local_package():
+def import_test_package():
+    """Add package to Python module path for testing.
+
+    """
     _cwd = os.path.dirname(__file__)
-    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 
-def wolfram_alpha_query(message):
-    print("WolframAlpha query: \n{}\n".format(message))
+def mathematica_query(message):
+    """Print our strings to be used as Mathematica/WolframAlpha queries.
+
+    """
+    print("Mathematica query: \n{}\n".format(message))
 
 
 class NamedFunction:
@@ -50,4 +51,4 @@ class NamedFunction:
 
 
 if not __name__ == '__main__':
-    import_local_package()
+    import_test_package()

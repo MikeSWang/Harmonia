@@ -15,7 +15,7 @@ from harmonia.algorithms.fields import (
 power_spectrum = cosmo.LinearPower(cosmo.Planck15, redshift=0.)
 
 
-@pytest.mark.parametrize("cell_size,num_mesh", [(1., 32), (0.1, 64)])
+@pytest.mark.parametrize("cell_size,num_mesh", [(1., 32), (2., 64)])
 def test_generate_regular_grid(cell_size, num_mesh):
     grid_norm = generate_regular_grid(cell_size, num_mesh, variable='norm')
     assert np.min(grid_norm) == pytest.approx(
@@ -40,7 +40,7 @@ def test_generate_gaussian_random_field(boxsize, num_mesh):
     assert all([np.shape(vfield) == (num_mesh,) * 3 for vfield in vec_field])
 
 
-@pytest.mark.parametrize("boxsize,num_mesh", [(100, 32), (200, 128)])
+@pytest.mark.parametrize("boxsize,num_mesh", [(100, 32), (200, 64)])
 def test_generate_lognormal_random_field(boxsize, num_mesh):
     field, vec_field = generate_lognormal_random_field(
         boxsize,
@@ -53,7 +53,7 @@ def test_generate_lognormal_random_field(boxsize, num_mesh):
     assert all([np.shape(vfield) == (num_mesh,) * 3 for vfield in vec_field])
 
 
-@pytest.mark.parametrize("num_mesh", [128, 64])
+@pytest.mark.parametrize("num_mesh", [32, 64])
 def test_threshold_clip(num_mesh):
     density_contrast = 10*np.random.randn(num_mesh, num_mesh)
     with pytest.warns(RuntimeWarning, match=".* field values are clipped."):
@@ -72,7 +72,7 @@ def test_poisson_sample(shape, mean_density, boxsize):
         poisson_sample(np.ones(shape), mean_density, boxsize)
 
 
-@pytest.mark.parametrize("num_mesh,mean_density,boxsize", [(128, 1e-3, 50)])
+@pytest.mark.parametrize("num_mesh,mean_density,boxsize", [(32, 1e-3, 50)])
 def test_populate_particles(num_mesh, mean_density, boxsize):
     fake_sampled_field = np.ones((num_mesh,) * 3)
     fake_vel_offset_fields = [fake_sampled_field] * 3

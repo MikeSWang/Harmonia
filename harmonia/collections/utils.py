@@ -11,6 +11,7 @@ System utilities
 
 .. autosummary::
 
+    confirm_directory_path
     get_filename
     collate
 
@@ -44,6 +45,7 @@ Computational utilities
 .. autosummary::
 
     normalise_vector
+    spherical_indicator
     cartesian_to_spherical
     spherical_to_cartesian
 
@@ -195,11 +197,11 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
 
 
 def allocate_tasks(tot_task, tot_proc):
-    r"""Allocate tasks to processes for parallel computation.
+    """Allocate tasks to processes for parallel computation.
 
     If `tot_proc` processes share `tot_task` tasks, then :func:`allocate_tasks`
     decides the numbers of tasks, :const:`tasks`, different processes receive:
-    the rank-:math:`i` process receives ``tasks[i]`` many tasks.
+    the rank-``i`` process receives ``tasks[i]`` many tasks.
 
     Parameters
     ----------
@@ -226,13 +228,13 @@ def allocate_tasks(tot_task, tot_proc):
 
 
 def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
-    r"""Allocate segments of tasks to each process by the number of tasks it
+    """Allocate segments of tasks to each process by the number of tasks it
     receives and its rank.
 
-    For instance, if the rank-:math:`i` process receives ``tasks[i]`` tasks
-    (e.g. assigned by :func:`allocate_tasks`), then this function assigns a
-    slice of the indexed tasks it should receive, with the indices ordered in
-    ascension in correspondence with ranks of the processes.
+    For instance, if the rank-``i`` process receives ``tasks[i]`` tasks (r.g.
+    assigned by :func:`allocate_tasks`), then this function assigns a slice of
+    the indexed tasks it should receive, with the indices ordered in ascenscion
+    in correspondence with ranks of the processes.
 
     Parameters
     ----------
@@ -394,7 +396,7 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         Interval end points.
     maxnum : int, optional
         Maximum number of roots needed from below (default is
-        :const:`numpy.iinfo(np.int64).max`).
+        ``numpy.iinfo(np.int64).max``).
     precision : float
         Precision required (default is 1.0e-5).
 
@@ -518,6 +520,25 @@ def normalise_vector(vec, axis=-1):
     return vec / np.linalg.norm(vec, axis=axis, keepdims=True)
 
 
+def spherical_indicator(cartesian_position, bounding_radius):
+    """Indicate whether an object lies within a spherical domain.
+
+    Parameters
+    ----------
+    cartesian_position : float, array_like
+        Object position in Cartesian coordinates.
+    bounding_radius : float
+        Radius of the bounding sphere.
+
+    Returns
+    -------
+    bool, array_like
+        `True` if the object lies within the spherical domain.
+
+    """
+    return np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
+
+
 def cartesian_to_spherical(cartesian_coords):
     r"""Convert 3-d Cartesian coordinate arrays to spherical coordinate arrays.
 
@@ -635,9 +656,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
 
     nbins = len(centres)
     edges = np.concatenate(
-        (
-            [np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)],
-        )
+        ([np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)]),
     )
     if align.lower().startswith('l'):
         for bin_idx in range(nbins-1):
@@ -670,7 +689,7 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     smoothed_data : dict
         Smoothed quantities correspond to dictionary keys `x_coarse`,
         `y_coarse`, `dx_coarse` and `dy_coarse` if the keys are not `None`.
-    bin_counts : int, array_like
+    bin_count : int, array_like
         Number of data points in each bin.
 
     Raises
@@ -698,11 +717,11 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
             which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
 
         # Average in bins and count.
-        x_smooth, y_smooth, bin_counts = np.zeros((3, nbins))
+        x_smooth, y_smooth, bin_count = np.zeros((3, nbins))
         for bin_idx in range(nbins):
             x_smooth[bin_idx] = np.average(x_coarse[which_bins == bin_idx])
             y_smooth[bin_idx] = np.average(y_coarse[which_bins == bin_idx])
-            bin_counts[bin_idx] = np.sum(which_bins == bin_idx)
+            bin_count[bin_idx] = np.sum(which_bins == bin_idx)
 
         # Add uncertainties in quadrature in each bin if requested.
         smoothed_data = {
@@ -719,4 +738,4 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
                     )
                 smoothed_data.update({key: smooth})
 
-        return smoothed_data, bin_counts
+        return smoothed_data, bin_count

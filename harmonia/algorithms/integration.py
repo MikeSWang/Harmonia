@@ -2,7 +2,7 @@
 Numerical integration (:mod:`~harmonia.algorithms.integration`)
 ===============================================================================
 
-Numerical integration against Fourier basis functions.
+Numerically integrate against Fourier basis functions.
 
 .. topic:: Caution
 
@@ -34,8 +34,8 @@ from .bases import spherical_besselj, spherical_harmonic
 def _angular_integrand(phi, theta, afunc, complex_part):
     """Complex angular integrand with Jacobian.
 
-    Notes
-    -----
+    Note
+    ----
     Angular arguments are in reverse order for outward double integration.
 
     Parameters

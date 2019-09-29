@@ -6,7 +6,6 @@ Make discrete catalogues from observed or simulated realisations.
 
 .. autosummary::
 
-    spherical_indicator
     RandomCatalogue
     NBKCatalogue
     LogNormalCatalogue
@@ -29,25 +28,6 @@ from harmonia.algorithms.fields import (
     populate_particles as pop_field,
 )
 from harmonia.collections.utils import normalise_vector
-
-
-def spherical_indicator(cartesian_position, bounding_radius):
-    """Indicate whether an object lies within a spherical domain.
-
-    Parameters
-    ----------
-    cartesian_position : float, array_like
-        Object position in Cartesian coordinates.
-    bounding_radius : float
-        Radius of the bounding sphere.
-
-    Returns
-    -------
-    bool, array_like
-        `True` if the object lies within the spherical domain.
-
-    """
-    return np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
 
 
 class RandomCatalogue(UniformCatalog):
@@ -111,12 +91,10 @@ class NBKCatalogue(LogNormalCatalog):
 
     def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., add_RSD=False,
                  seed=None):
+        ini_args = (Plin, nbar, BoxSize, Nmesh)
         super().__init__(
             self,
-            Plin,
-            nbar,
-            BoxSize,
-            Nmesh,
+            *ini_args,
             bias=bias,
             seed=seed,
         )

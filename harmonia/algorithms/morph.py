@@ -68,7 +68,7 @@ class SphericalArray:
         Spherical depths associated with each spherical degree.
     roots : float, array_like
         Roots of spherical Bessel functions or their derivatives corresponding
-        to :attr:`degrees` and :attr:`depths`.
+        to `degrees` and `depths`.
     index_array : list of (int, int, int), array_like
         Triplet indices stored in the natural structure.
     data_array : list of float, array_like or None
@@ -92,23 +92,19 @@ class SphericalArray:
         self.degrees, self.depths, self.roots = degrees, depths, roots
 
         self._wavetuples = [
-            [
-                [
-                    (ell, n_idx + 1) for n_idx in range(nmax)
-                ]
-            ]
+            [[(ell, n_idx + 1) for n_idx in range(nmax)]]
             for ell, nmax in zip(degrees, depths)
         ]
 
-        self.index_array = [
-            [
-                [
-                    (ell, m, n_idx + 1) for n_idx in range(nmax)
-                ]
-                for m in range(-ell, ell+1)
-            ]
-            for ell, nmax in zip(degrees, depths)
-        ]
+        self.index_array = []
+        for ell, nmax in zip(degrees, depths):
+            ell_block = []
+            for m in range(-ell, ell+1):
+                m_line = []
+                for n_idx in range(nmax):
+                    m_line.append((ell, m, n_idx + 1))
+                ell_block.append(m_line)
+            self.index_array.append(ell_block)
 
         if filling is not None:
             if len(filling) == len(degrees):
@@ -128,7 +124,7 @@ class SphericalArray:
             self.data_array = None
 
     def __repr__(self):
-        return f"SphericalArray(ndegrees={len(self.degrees)},id={id(self)})"
+        return f"SphericalArray(degnum={len(self.degrees)},id={id(self)})"
 
     @classmethod
     def build(cls, filling=None, disc=None):
@@ -175,8 +171,8 @@ class SphericalArray:
 
         if sorted(degrees) != degrees:
             raise ValueError(
-                "Block elements of `filling` are not ordered in ascension "
-                "by block lenths. "
+                "Block elements of `filling` are not ordered by ascending "
+                "block lengths. "
             )
 
         depths = [np.size(fillblock, axis=-1) for fillblock in filling]
@@ -189,7 +185,7 @@ class SphericalArray:
         If the arrays are collapsed amongst equivalent spherical orders, each
         block element in :attr:`data_array` is first averaged over the rows and
         the triplet index tuple elements in :attr:`index_array` are stripped
-        of their middle :math:`m`-index before flattening.
+        of their middle order-index before flattening.
 
         Parameters
         ----------
@@ -288,7 +284,7 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            If `in_structure` is not a valid string.
+            If `in_structure` is not a valid structure name.
 
         """
         if subarray_type == 'index':
@@ -297,33 +293,36 @@ class SphericalArray:
         ordered_index = self.unfold(in_structure, return_only='index')
 
         if in_structure in ['natural', 'lmn', 'lnm', 'k']:
-            retarr = [
-                [
-                    [
-                        None for n in range(nmax)
-                    ]
-                    for m in range(-ell, ell+1)]
-                for ell, nmax in zip(self.degrees, self.depths)
-            ]
+            return_arr = []
+            for ell, nmax in zip(self.degrees, self.depths):
+                ell_block = []
+                for m in range(-ell, ell+1):
+                    m_line = []
+                    for n in range(nmax):
+                        m_line.append(None)
+                    ell_block.append(m_line)
+                return_arr.append(ell_block)
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, m_idx, n_idx = \
                     index[0], index[1] + index[0], index[-1] - 1
-                retarr[ell_idx][m_idx][n_idx] = entry
+                return_arr[ell_idx][m_idx][n_idx] = entry
         elif in_structure in ['ln', 'scale']:
-            retarr = [
-                [
-                    None for n in range(nmax)
-                ]
+            return_arr = [
+                [None for n in range(nmax)]
                 for ell, nmax in zip(self.degrees, self.depths)
             ]
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, n_idx = index[0], index[-1] - 1
-                retarr[ell_idx][n_idx] = entry
-            retarr = self.repeat_subarray(retarr, 'data', degrees=self.degrees)
+                return_arr[ell_idx][n_idx] = entry
+            return_arr = self.repeat_subarray(
+                return_arr,
+                'data',
+                degrees=self.degrees
+            )
         else:
             raise ValueError("`in_structure` is invalid. ")
 
-        return retarr
+        return return_arr
 
     def morph(self, array, in_structure, out_structure, subarray_type):
         """Morph an array from one structure to another structure.
@@ -352,7 +351,7 @@ class SphericalArray:
         Returns
         -------
         morph_array : array_like
-            Reshaped array.
+            Morphed array.
 
         """
         in_structure = self._alias(in_structure)
@@ -424,9 +423,9 @@ class SphericalArray:
 
         """
         if subarray_type == 'data':
-            return [np.array(ellblock).T for ellblock in array]
+            return [np.array(ell_block).T for ell_block in array]
         if subarray_type == 'index':
-            return [list(map(list, zip(*ellblock))) for ellblock in array]
+            return [list(map(list, zip(*ell_block))) for ell_block in array]
         raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
     @staticmethod
@@ -455,14 +454,15 @@ class SphericalArray:
         """
         if subarray_type == 'data':
             return [
-                np.mean(ellblock, axis=0, keepdims=True) for ellblock in array
+                np.mean(ell_block, axis=0, keepdims=True)
+                for ell_block in array
             ]
         if subarray_type == 'index':
             return [
                 [
-                    list(map(lambda tup: (tup[0], tup[-1]), ellblock[0]))
+                    list(map(lambda tup: (tup[0], tup[-1]), ell_block[0]))
                 ]
-                for ellblock in array
+                for ell_block in array
             ]
         raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
 
@@ -481,7 +481,7 @@ class SphericalArray:
         degrees : list of int, array_like or None
             Spherical degrees for which equivalent spherical order arrays are
             repeated (default is `None`).  If it is `None`, the degrees are
-            inferred from the length of `arr` assuming the first degree is 0.
+            inferred from the length of `array` assuming the first degree is 0.
 
         Returns
         -------

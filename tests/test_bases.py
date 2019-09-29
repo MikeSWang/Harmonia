@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import wolfram_alpha_query as query
+from . import mathematica_query as query
 from harmonia.algorithms.bases import (
     spherical_besselj,
     spherical_besselj_root,
@@ -106,5 +106,5 @@ def test_spherical_harmonic():
             TEST_PARAMS['theta'],
             TEST_PARAMS['phi'],
         ),
-        -0.0490981029 - 0.1511084229*1j,
+        - 0.0490981029 - 0.1511084229*1j,
     )

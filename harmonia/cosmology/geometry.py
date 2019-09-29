@@ -15,6 +15,9 @@ Perform geometrical calculations.
 from nbodykit import cosmology
 
 fiducial_cosmology = cosmology.Planck15
+""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default Planck15 cosmology.
+
+"""
 
 
 def fiducial_distance(z):

@@ -3,8 +3,8 @@ Random fields (:mod:`~harmonia.algorithms.fields`)
 ===============================================================================
 
 Generate random fields on 3-d regular grids from input power spectrum in a
-cubic box.  Perform biasing, threshold clipping, log-normal transformation and
-discrete Poisson sampling of fields.
+cubic box, and perform biasing, threshold clipping, log-normal transformation
+and discrete Poisson sampling of fields.
 
 **Generation**
 
@@ -49,10 +49,10 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
 
     Returns
     -------
-    grid_norm : (N, N, N) :class:`numpy.ndarray` of float, optional
+    grid_norm : (N, N, N) float :class:`numpy.ndarray`
         Grid coordinate norm array.  Returned if `variable` is ``'norm'`` or
         ``'both'``.
-    grid_coords : list [of length 3] of (N, N, N) array_like, optional
+    grid_coords : list [of length 3] of (N, N, N) float :class:`numpy.ndarray`
         Grid coordinate arrays for each dimension.  Returned if `variable` is
         ``'coords'`` or ``'both'``.
 
@@ -77,7 +77,6 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
         return grid_coords
     if variable.lower().startswith('b'):
         return grid_norm, grid_coords
-
     raise ValueError(f"Unknown grid `variable`: {variable}. ")
 
 
@@ -123,9 +122,9 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     Returns
     -------
-    overdensity : (N, N, N) :class:`numpy.ndarray` of float
+    overdensity : (N, N, N) float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of (N, N, N) array_like or None
+    displacement : list [of length 3] of float :class:`numpy.ndarray` or None
         Gaussian random fields of velocity displacement in configuration space
         for each dimension.  Returned as `None` unless `return_disp` is `True`.
 
@@ -139,16 +138,14 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
     amplitude = power_spectrum(k_norm) / vol
-    fourier_field = np.sqrt(amplitude) * whitenoise
+    fourier_field = bias * np.sqrt(amplitude) * whitenoise
 
     overdensity = num_cell * np.real(fftp.ifftn(fftp.fftshift(fourier_field)))
-    overdensity *= bias
-
     if clip:
         overdensity = threshold_clip(overdensity)
 
     if return_disp:
-        fourier_disp = [1j * ki/k_norm**2 * fourier_field for ki in k_vec]
+        fourier_disp = [1j * ki / k_norm**2 * fourier_field for ki in k_vec]
         displacement = [
             num_cell * np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))
             for fourier_disp_i in fourier_disp
@@ -187,9 +184,9 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     Returns
     -------
-    overdensity : (N, N, N) :class:`numpy.ndarray` of float
+    overdensity : (N, N, N) float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of (N, N, N) array_like or None
+    displacement : list [of length 3] of float :class:`numpy.ndarray` or None
         Gaussian random fields of velocity displacement in configuration space
         for each dimension.  Returned as `None` unless `return_disp` is `True`.
 
@@ -220,7 +217,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     if return_disp:
         fourier_field_target = fftp.fftshift(fftp.fftn(field_target))
         fourier_disp = [
-            1j * ki/k_norm**2 * fourier_field_target for ki in k_vec
+            1j * ki / k_norm**2 * fourier_field_target for ki in k_vec
         ]
         displacement = [
             np.real(fftp.ifftn(fftp.fftshift(fourier_disp_i)))
@@ -238,14 +235,14 @@ def threshold_clip(density_contrast, threshold=-1.):
 
     Parameters
     ----------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+    density_contrast : float, array_like
         Density contrast field.
     threshold : float, optional
         Threshold below which the field values is clipped (default is -1.).
 
     Returns
     -------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+    density_contrast : float :class:`numpy.ndarray`
         Clipped density contrast field.
 
     """
@@ -253,7 +250,7 @@ def threshold_clip(density_contrast, threshold=-1.):
     density_contrast[clip_mask] = -1.
 
     clip_ratio = np.sum(clip_mask) / np.size(clip_mask)
-    if clip_ratio > 5e-3:
+    if clip_ratio > 0.005:
         warnings.warn(
             "{:.2g}% of field values are clipped. ".format(100*clip_ratio),
             RuntimeWarning,
@@ -269,7 +266,7 @@ def lognormal_transform(obj, obj_type):
 
     Parameters
     ----------
-    obj : :class:`numpy.ndarray` of float or callable
+    obj : float :class:`numpy.ndarray` or callable
         The object to be transformed.
     obj_type : {'delta', 'xi', 'pk'}
         Type of the object to be transformed: field (``'delta'``), correlation
@@ -277,7 +274,7 @@ def lognormal_transform(obj, obj_type):
 
     Returns
     -------
-    :class:`numpy.ndarray` of float or callable
+    float :class:`numpy.ndarray` or callable
         Log-normal transformed object.
 
     Raises
@@ -302,13 +299,13 @@ def lognormal_transform(obj, obj_type):
         return transformed_field
 
     if obj_type.lower().startswith('x'):
-        if hasattr(obj, '__call__'):
+        if callable(obj):
             return lambda r: np.log(1 + obj(r))
         return np.log(1 + obj)
 
     if obj_type.lower().startswith('p'):
-        if not hasattr(obj, '__call__'):
-            raise TypeError("Input 2-point function is not of callable type. ")
+        if not callable(obj):
+            raise TypeError("Input 2-point function is not callable. ")
 
         Pk_target_samples = obj(k_samples)
         xi_target = pk_to_xi(k_samples, Pk_target_samples)
@@ -333,7 +330,7 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
 
     Parameters
     ----------
-    density_contrast : (N, N, N) :class:`numpy.ndarray` of float
+    density_contrast : (N, N, N) float, array_like
         Density contrast field being sampled.
     mean_density : float
         Overall mean number density of particles.
@@ -344,7 +341,7 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
 
     Returns
     -------
-    sampled_field : :class:`numpy.ndarray` of float
+    sampled_field : float :class:`numpy.ndarray`
         Poisson sampled density contrast field.
 
     """
@@ -369,7 +366,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
     Parameters
     ----------
-    sampled_field : (N, N, N) :class:`numpy.ndarray` of float
+    sampled_field : (N, N, N) array_like
         Discretely sampled density contrast field.
     mean_density : float
         Overall mean number density of particles.
@@ -382,9 +379,9 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
     Returns
     -------
-    position : (N, 3) :class:`numpy.ndarray` of float
+    position : (N, 3) float :class:`numpy.ndarray`
         Position of particles generated from the sampled field.
-    displacement : (N, 3) :class:`numpy.ndarray` of float
+    displacement : (N, 3) float :class:`numpy.ndarray`
         displacement of particles from their `position`.
 
     """
@@ -436,7 +433,7 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     Returns
     -------
-    whitenoise : (N, N, N) :class:`numpy.ndarray` of complex
+    whitenoise : (N, N, N) complex :class:`numpy.ndarray`
         Circularly-symmetric Gaussian noise with double unit variance.
 
     """
@@ -455,26 +452,26 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
 
     Parameters
     ----------
-    field : (N, N, N) :class:`numpy.ndarray` of float
+    field : (N, N, N) float, array_like
         Random field.
     boxsize : float
         Box size per dimension (in Mpc/h).
     kmax : float or None, optional
-        Maximum wave number.  If `None` (default), this is set to largest wave
+        Maximum wavenumber.  If `None` (default), this is set to largest wave
         number the field supports.
     num_bin : int or None, optional
-        Number of bins each corresponding to a wave number (default is 12).
+        Number of bins each corresponding to a wavenumber (default is 12).
     bin_scale : {'linear', 'log'}, optional
         Binning in 'linear' (default) or 'log' scale.
 
     Returns
     -------
     wavenumbers : float, array_like
-        Bin-averaged wave numbers.
+        Bin wavenumbers.
     powers : float, array_like
-        Radially averaged power spectrum at bin wave numbers.
+        Radially averaged power spectrum at bin wavenumbers.
     mode_count : int, array_like
-        Number of modes in bins corresponding to each wave number (double
+        Number of modes in bins corresponding to each wavenumber (double
         counting for wave vector parity).
 
     """

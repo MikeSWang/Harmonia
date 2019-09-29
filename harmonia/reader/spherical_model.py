@@ -12,7 +12,7 @@ i.e. ``(mu[0], mu[1], mu[2])``.
 
     In this module, all variables related to the discretised spectrum
     :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`, such as
-    `wavenumbers` and `normalisation`, are assumed to be in the natural
+    `wavenumbers` and `normalisations`, are assumed to be in the natural
     structure starting at spherical degree :math:`\ell = 0` (see
     :class:`~harmonia.algorithms.morph.SphericalArray`).  In the future, these
     variables may be changed to :obj:`dict` without assuming this
@@ -23,20 +23,24 @@ Kernels
 
 Coupling kernels are integrands without the coordinate Jacobian, which may
 include the following factors: radial selection :math:`\phi(r)`, weight
-:math:`w(r)`, and angular mask :math:`M(\hat{\mathbf{r}})`; linear growth rate
-normalised to linear bias :math:`\beta(z) = f(z)/b(z)`, clustering evolution
-:math:`G(z) = b(z) D(z)` where :math:`D(z)` is the linear growth factor, and
-the Alcock--Paczynski distortion
+:math:`w(r)` or its derivative, and angular mask :math:`M(\hat{\mathbf{r}})`;
+linear growth rate normalised to linear bias :math:`\beta(z) = f(z)/b(z)`,
+clustering evolution :math:`G(z) = b(z) D(z)` where :math:`D(z)` is the linear
+growth factor, and the Alcock--Paczynski distortion
 
 .. math::
 
     \gamma(z) = \frac{\beta(z)}{\beta_0}
     \frac{\mathrm{d}\tilde{r}}{\mathrm{d}r} \,, \quad
-    \text{with} \quad \beta_0 \equiv \beta(0) \,.
+    \text{with} \quad \beta_0 \equiv \beta(0) \,,
 
-When using integration kernels that is a combination of functions such as
-weight, selection, mask and evolution etc., pass additional parameters not
-being integrated over by redefining these functions with :obj:`lambda`.
+where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted from
+redshift rather than from the true comoving distance--redshift correspondence
+:math:`z = z(r)`,
+
+When using integration kernels that is a combination of functions of the above,
+pass additional parameters not being directly integrated over by redefining
+these functions with ``lambda``.
 
 Couplings
 -------------------------------------------------------------------------------
@@ -58,9 +62,7 @@ coupling kernels
    \Big[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r}) \Big]
    j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) G(z) \phi(r) \,,
 
-over the spherical Lebesgue measure,  where :math:`\tilde{r}` is the distance
-converted in a fiducial cosmological model rather than from the true comoving
-distance--redshift correspondence, and :math:`\{ k_{\ell n} \}` are the
+over the spherical Lebesgue measure, where :math:`\{ k_{\ell n} \}` are the
 discrete wavenumbers.
 
 .. autosummary::
@@ -124,18 +126,15 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
     mu, nu : tuple or list [of length 3] of int
         Coefficient triplet index.
     mask : callable or None, optional
-        Mask as a function of angular coordinates (default is `None`).
+        Mask as a function of angular coordinates (default is `None`).  The
+        arguments must be in the following order and range:
+        :math:`0 \leqslant \theta \leqslant \pi`, :math:`0 \leqslant \phi
+        \leqslant 2\pi`.
 
     Returns
     -------
     kernel : complex, array_like
         Angular coupling kernel value.
-
-    Notes
-    -----
-    The first two positional arguments of `mask` must be in radians and in
-    the following order and range: ``0 <= theta <= np.pi``,
-    ``0 <= phi <= 2*np.pi``.
 
     """
     kernel = np.conj(spherical_harmonic(mu[0], mu[1], theta, phi)) \
@@ -186,10 +185,10 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         If `r2z` is not callable when either `evolution` or `z2chi` is.
 
     """
-    if not hasattr(z2chi, '__call__'):
+    if not callable(z2chi):
         r_tilde = r
     else:
-        if hasattr(r2z, '__call__'):
+        if callable(r2z):
             r_tilde = z2chi(r2z(r))
         else:
             raise ValueError("`r2z` must be callable if `z2chi` is. ")
@@ -197,12 +196,12 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     kernel = spherical_besselj(mu[0], k_mu*r_tilde) \
         * spherical_besselj(nu[0], k_nu*r)
 
-    if hasattr(selection, '__call__'):
+    if callable(selection):
         kernel *= selection(r)
-    if hasattr(weight, '__call__'):
+    if callable(weight):
         kernel *= weight(r_tilde)
-    if hasattr(evolution, '__call__'):
-        if not hasattr(r2z, '__call__'):
+    if callable(evolution):
+        if not callable(r2z):
             raise ValueError("`r2z` must be callable if `evolution` is. ")
         kernel *= evolution(r2z(r))
 
@@ -251,23 +250,23 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         `AP_distortion` is,
 
     """
-    if not hasattr(z2chi, '__call__'):
+    if not callable(z2chi):
         r_tilde = r
     else:
-        if hasattr(r2z, '__call__'):
+        if callable(r2z):
             r_tilde = z2chi(r2z(r))
         else:
             raise ValueError("`r2z` must be callable if `z2chi` is. ")
 
     kernel = spherical_besselj(nu[0], k_nu*r, derivative=True)
 
-    if hasattr(selection, '__call__'):
+    if callable(selection):
         kernel *= selection(r)
 
-    if not hasattr(weight, '__call__'):
+    if not callable(weight):
         kernel *= k_mu * spherical_besselj(mu[0], k_mu*r, derivative=True)
     else:
-        if not hasattr(weight_derivative, '__call__'):
+        if not callable(weight_derivative):
             raise ValueError(
                 "`weight_derivative` must be callable if `weight` is. "
             )
@@ -276,13 +275,13 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
             + k_mu * weight(r_tilde) \
             * spherical_besselj(mu[0], k_mu*r_tilde, derivative=True)
 
-    if hasattr(evolution, '__call__'):
-        if not hasattr(r2z, '__call__'):
+    if callable(evolution):
+        if not callable(r2z):
             raise ValueError("`r2z` must be callable if `evolution` is. ")
         kernel *= evolution(r2z(r))
 
-    if hasattr(AP_distortion, '__call__'):
-        if not hasattr(r2z, '__call__'):
+    if callable(AP_distortion):
+        if not callable(r2z):
             raise ValueError("`r2z` must be callable if `AP_distortion` is. ")
         kernel *= AP_distortion(r2z(r))
 
@@ -318,9 +317,9 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
 
     kernel = spherical_besselj(mu[0], k_mu*r) \
         * spherical_besselj(nu[0], k_nu*r)
-    if hasattr(selection, '__call__'):
+    if callable(selection):
         kernel *= selection(r)
-    if hasattr(weight, '__call__'):
+    if callable(weight):
         kernel *= weight(r)**2
 
     return kernel
@@ -330,7 +329,7 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
 # -----------------------------------------------------------------------------
 
 class Couplings:
-    r"""Compute angular, radial and RSD coupling coefficients for given survey
+    """Compute angular, radial and RSD coupling coefficients for given survey
     and cosmological specifications.
 
     Parameters
@@ -371,10 +370,6 @@ class Couplings:
     distotion_AP : callable or None
         AP distortion function of redshift.
 
-    Methods
-    -------
-
-
     Raises
     ------
     KeyError
@@ -405,7 +400,7 @@ class Couplings:
                     for attr in specs_attrs:
                         setattr(self, attr, specs[attr])
                         attr_val = getattr(self, attr)
-                        if not hasattr(attr_val, '__call__') \
+                        if not callable(attr_val) \
                                 and attr_val is not None:
                             raise TypeError(
                                 specs_var_str +
@@ -417,7 +412,17 @@ class Couplings:
                     )
 
     def __call__(self, mu, nu, coupling_type):
-        """Evaluate couplings at specified indices.
+        r"""Evaluate couplings at specified indices.
+
+        Note
+        ----
+        When there is no angular masking (i.e. `mask` is `None`), the coupling
+        coefficients reduce to :math:`M_{\mu\nu} = \delta_{\mu\nu}`.  When
+        there is no angular masking or clustering evolution, if radial
+        selection and weight are both absent and the distance--redshift
+        conversion is the cosmological one (i.e. none of `mask`, `selection`,
+        `weight`, `evolution`, `r2z` and `z2chi` is set), the coupling
+        coefficients reduce to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
 
         Paramaters
         ----------
@@ -435,16 +440,6 @@ class Couplings:
         ------
         ValueError
             If `coupling_type` does not correspond to a valid kernel.
-
-        Notes
-        -----
-        When there is no angular masking (i.e. `mask` is `None`), the coupling
-        coefficients reduce to :math:`M_{\mu\nu} = \delta_{\mu\nu}`.  When
-        there is no angular masking or clustering evolution, if radial
-        selection and weight are both absent and the distance--redshift
-        conversion is the cosmological one (i.e. none of `mask`, `selection`,
-        `weight`, `evolution`, `r2z` and `z2chi` is set), the coupling
-        coefficients reduce to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
 
         """
         if coupling_type.lower.startswith('a'):
@@ -466,14 +461,14 @@ class Couplings:
 
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
         k_nu = self.disc.wavenumbers[ell_nu][n_nu-1]
-        kappa_nu = self.disc.normalisation[ell_nu][n_nu-1]
+        kappa_nu = self.disc.normalisations[ell_nu][n_nu-1]
 
         if coupling_type.lower.startswith('rad'):
             attrs = ['selection', 'weight', 'evolution', 'r2z', 'z2chi']
             funcs = {attr: getattr(self, attr) for attr in attrs}
 
             trivial_case = not any(
-                [hasattr(func, '__call__') for attr, func in funcs.items()],
+                [callable(func) for attr, func in funcs.items()],
             )
             if trivial_case:
                 if mu[0] == nu[0]:
@@ -508,25 +503,8 @@ class Couplings:
     def compile_over_index(self, mu, coupling_type):
         r"""Compile coupling coefficients with the first triplet index fixed.
 
-        Parameters
-        ----------
-        mu : tuple or list [of length 3] of int
-            Fixed triplet index.
-        coupling_type : {'angular', 'radial', 'RSD'}
-            Coupling type.
-
-        Returns
-        -------
-        couplings_vector : complex or float, array_like
-            Vector of coupling coefficients with first triplet index fixed.
-
-        Raises
-        ------
-        ValueError
-            If `coupling_type` does not correspond to a valid kernel.
-
-        Notes
-        -----
+        Note
+        ----
         This function computes coupling coefficients of the form
         :math:`C_{a_\mu b_\mu a_\sigma b_\sigma}` where the triplet index
         :math:`\mu` is fixed, and compiles their values as a vector by
@@ -548,13 +526,30 @@ class Couplings:
                 \right\rbrace
             }_{\sigma} \,.
 
+        Parameters
+        ----------
+        mu : tuple or list [of length 3] of int
+            Fixed triplet index.
+        coupling_type : {'angular', 'radial', 'RSD'}
+            Coupling type.
+
+        Returns
+        -------
+        couplings_vector : complex or float, array_like
+            Vector of coupling coefficients with first triplet index fixed.
+
+        Raises
+        ------
+        ValueError
+            If `coupling_type` does not correspond to a valid kernel.
+
         """
         if coupling_type.lower().startswith('a'):
-            _sigma_gen = lambda deg_idx, ell: [
+            sigma_gen = lambda deg_idx, ell: [
                 (ell, m, None) for m in range(-ell, ell+1)
             ]
         elif coupling_type.lower().startswith(('rad', 'rsd')):
-            _sigma_gen = lambda deg_idx, ell: [
+            sigma_gen = lambda deg_idx, ell: [
                 (ell, None, n) for n in range(1, self.disc.depths[deg_idx]+1)
             ]
         else:
@@ -564,7 +559,7 @@ class Couplings:
 
         couplings_vector = []
         for ell_idx, ell in enumerate(self.disc.degrees):
-            sigma_ell = _sigma_gen(ell_idx, ell)
+            sigma_ell = sigma_gen(ell_idx, ell)
             sigma_component = [
                 self.__call__(mu, sigma, 'angular') for sigma in sigma_ell
             ]
@@ -577,30 +572,12 @@ class Couplings:
 # -----------------------------------------------------------------------------
 
 # TODO: Generalise for all indices as a class derived from ``disc``.
-def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta0, disc):
+def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta_0, disc):
     r"""Compute the 2-point function signal from linear power spectrum model
     for given indices specified by the coupling vectors.
 
-    Parameters
-    ----------
-    mu_couplings, nu_couplings : dict
-        Compiled coupling coefficients for each of the coupling types for
-        ``mu`` or ``nu``, the implicitly specified indices.
-    power_spectrum : callable
-        Linear galaxy-clustering power spectrum model (length unit Mpc/h).
-    beta0 : float
-        Linear growth rate over bias :math:`\beta_0` at the current epoch.
-    disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
-        Discrete spectrum for which the 2-point function is evaluated.
-
-    Returns
-    -------
-    signal : complex
-        Cosmological signal 2-point function value for given triple indices.
-
-    Notes
-    -----
-
+    Note
+    ----
     The input coupling vectors have a nested-list structure may be called from:
 
     ::
@@ -613,11 +590,28 @@ def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta0, disc):
     See :class:`Couplings` for details.  If :class:`Couplings` is instantiated
     with a nontrivial `cosmo_specs`, the cosmology associated with
     `cosmo_specs` must agree with that associated with `power_spectrum` and
-    `beta0`.  Similarly, `mu_couplings` and `nu_couplings` must be compatible
+    `beta_0`.  Similarly, `mu_couplings` and `nu_couplings` must be compatible
     with the discretisation `disc`.
 
+    Parameters
+    ----------
+    mu_couplings, nu_couplings : dict
+        Compiled coupling coefficients for each of the coupling types for
+        ``mu`` or ``nu``, the implicitly specified indices.
+    power_spectrum : callable
+        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
+    beta_0 : float
+        Linear growth rate over bias :math:`\beta_0` at the current epoch.
+    disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+        Discrete spectrum for which the 2-point function is evaluated.
+
+    Returns
+    -------
+    signal : complex
+        Cosmological signal 2-point function value for given triple indices.
+
     """
-    k, kappa = disc.wavenumbers, disc.normalisation
+    k, kappa = disc.wavenumbers, disc.normalisations
 
     M_mu, M_nu = mu_couplings['angular'], nu_couplings['angular']
     Phi_mu, Phi_nu = mu_couplings['radial'], nu_couplings['radial']
@@ -637,9 +631,9 @@ def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta0, disc):
         )
         radial_sum = np.sum(
             [
-                (Phi_mu_[n_idx] + beta0 * Upsilon_mu_[n_idx])
-                    * (Phi_nu_[n_idx] + beta0 * Upsilon_nu_[n_idx])
-                    * power_spectrum(k_ell[n_idx]) / kappa_ell[n_idx]
+                (Phi_mu_[n_idx] + beta_0 * Upsilon_mu_[n_idx])
+                * (Phi_nu_[n_idx] + beta_0 * Upsilon_nu_[n_idx])
+                * power_spectrum(k_ell[n_idx]) / kappa_ell[n_idx]
                 for n_idx in range(disc.depths[ell_idx])
             ]
         )
@@ -684,7 +678,7 @@ def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
     k_mu = disc.wavenumbers[ell_mu][n_mu-1]
     k_nu = disc.wavenumbers[ell_nu][n_nu-1]
 
-    if not hasattr(selection, '__call__') and not hasattr(weight, '__call__') \
+    if not callable(selection) and not callable(weight) \
             and ell_mu == ell_nu:
         if n_mu == n_nu:
             shot_noise = rmax**3 * spherical_besselj(ell_mu+1, u_mu)**2 / 2

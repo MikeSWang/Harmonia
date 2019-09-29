@@ -1,5 +1,5 @@
 """
-Spectrum discretisation (:mod:`~harmonia.algorithms.discretisation`)
+Discrete Fourier spectrum (:mod:`~harmonia.algorithms.discretisation`)
 ===============================================================================
 
 Discretise Fourier spectrum of cosmological fields.
@@ -19,7 +19,9 @@ from .bases import spherical_besselj, spherical_besselj_root
 
 
 class DiscreteSpectrum:
-    r"""Discrete Fourier spectrum for given radial boundary conditions.
+    r"""Discrete Fourier spectrum for given radial boundary conditions, indexed
+    by spherical degree :math:`\ell` associated with spherical harmonic and
+    Bessel functions.
 
     When a boundary condition is prescribed at some maximum radius
     :math:`r = R`, the allowed wave numbers for the discretised spectrum are
@@ -29,12 +31,12 @@ class DiscreteSpectrum:
         k_{\ell n} = \frac{u_{\ell n}}{R}, \quad \text{where} \quad
         \{ u_{\ell n}: n = 1, \dots, n_{\mathrm{max},\ell} \}_{\ell}
 
-    are roots of the spherical Bessel functions of degree :math:`\ell` if the
+    are roots of the spherical Bessel functions of order :math:`\ell` if the
     boundary condition is Dirichlet, or their derivatives if the boundary
     condition is Neumann.  The spherical depths :math:`\{ n_{\mathrm{max},\ell}
     \}` are the maximal number of radial wave numbers allowed in the specified
-    range, and are indexed by :math:`(\ell, n)` tuples.  The normalisation
-    coefficients derived from completeness relations are
+    range, and are indexed by :math:`(\ell, n)` doublet tuples.  The
+    normalisation coefficients derived from completeness relations are
 
     .. math::
 
@@ -78,9 +80,9 @@ class DiscreteSpectrum:
     attrs : dict
         Discrete spectrum information, which contains the following keys:
         ``'min_wavenumber'``, ``'max_wavenumber'`` for minimum and maximum wave
-        numbers :math:`k_\mathrm{min}` and :math:`k_\mathrm{max}`;
-        ``'boundary_radius'``, ``'bounded_volume'`` for the bounding radius and
-        volume; ``'boundary_condition'`` for the boundary condition type.
+        numbers; ``'boundary_radius'``, ``'bounded_volume'`` for the bounding
+        radius and volume; ``'boundary_condition'`` for the boundary condition
+        type.
 
     """
 
@@ -121,12 +123,12 @@ class DiscreteSpectrum:
 
     @property
     def wavenumbers(self):
-        r"""Discrete wave numbers :math:`k_{\ell, n}`.
+        r"""Discrete wavenumbers :math:`k_{\ell n}`.
 
         Returns
         -------
         float, array_like
-            Wave numbers.
+            Wavenumbers.
 
         """
         if self._wavenumbers is not None:
@@ -135,13 +137,13 @@ class DiscreteSpectrum:
         self._wavenumbers = [
             u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
         ]
-        self._logger.info("Spectral wave numbers computed. ")
+        self._logger.info("Spectral wavenumbers computed. ")
 
         return self._wavenumbers
 
     @property
     def dbl_indices(self):
-        r"""Doublet index :math:`(\ell, n)` for each discrete wave number.
+        r"""Doublet indices :math:`(\ell, n)`.
 
         Returns
         -------
@@ -159,15 +161,14 @@ class DiscreteSpectrum:
             for deg_idx, ell in enumerate(self.degrees)
         ]
         self._logger.info(
-            "Doublet indices compiled for spectral wave numbers. ",
+            "Doublet indices compiled for spectral wavenumbers. ",
         )
 
         return self._tuples
 
     @property
     def normalisations(self):
-        r"""Normalisation coefficient :math:`\kappa_{\ell n}` for each discrete
-        wave number.
+        r"""Normalisation coefficients :math:`\kappa_{\ell n}`.
 
         Returns
         -------
@@ -193,7 +194,7 @@ class DiscreteSpectrum:
                 for ell, u_ell in zip(self.degrees, self.roots)
             ]
         self._logger.info(
-            "Normalisations computed for spectral wave numbers. ",
+            "Normalisations computed for spectral wavenumbers. ",
         )
 
         return self._normalisations
@@ -208,7 +209,7 @@ class DiscreteSpectrum:
         condition : {'Dirichlet', 'Neumann'}
             Either Dirichlet or Neumann boundary condition.
         kmin, kmax : float
-            Minimum and maximum wave numbers.
+            Minimum and maximum wavenumbers.
         ellmin, ellmax : int or None
             Minimum and maximum spherical degrees.
 
@@ -217,7 +218,7 @@ class DiscreteSpectrum:
         degrees : int, array_like
             Spherical function degrees.
         depths : int, array_like
-            Maximum radial numbers, i.e. the number of allowed radial modes for
+            Maximal radial numbers, i.e. the number of allowed radial modes for
             each degree.
         roots : float, array_like
             Spherical Bessel roots.

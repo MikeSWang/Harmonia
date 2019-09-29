@@ -72,7 +72,7 @@ def test_allocate_segments(tasks, ntask, nproc):
                 TEST_CASE_INTERVAL * (nproc - 1),
                 TEST_CASE_INTERVAL * nproc + 1,
             )
-        hmn
+        ]
 
     assert utils.allocate_segments(tot_task=ntask, tot_proc=nproc) == \
         [
@@ -133,6 +133,11 @@ def test_normalise_vector(vec):
         np.array(vec) / np.linalg.norm(vec, axis=-1, keepdims=True),
         utils.normalise_vector(vec),
     )
+
+
+@pytest.mark.parametrize('vec,r', [([1, 0, -1], 1)])
+def test_spherical_indicator(vec,r):
+    assert not utils.spherical_indicator(vec, r)
 
 
 @pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])

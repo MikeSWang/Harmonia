@@ -1,31 +1,30 @@
 """Visualise recovered power spectrum.
 
 """
-import numpy as np
 from matplotlib import pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline as IUSpline
 
-from harmonia.collections import harmony
-
-CLOSE_ALL = True
-
-MARKER = '+'
 ANNO_SIZE = 6
-
-TRANSPARENCY_1, TRANSPARENCY_2 = 1/4, 1/16
-ERROR_CANVAS_GRID, ERROR_ROW_SPAN = (4, 8), 3
-
-COLOUR = {'ref': '#C40233', 'def': '#0087BD', 'add': '#009F6B'}
-LABEL = {'ref': 'Cartesian', 'def': 'spherical', 'add': 'spherical'}
-TITLE = {'def': None, 'add': None}
+COLOUR = {'reference': '#C40233', 'default': '#0087BD'}
+ERROR_CANVAS_GRID = (4, 8)
+ERROR_ROW_SPAN = 3
+LABEL = {'reference': 'Cartesian', 'default': 'spherical'}
+MARKER = '+'
+TRANSPARENCY = 1/4
 
 
 def view_spectrum(data, case='error'):
+    """Plot power spectra.
 
-    plt.style.use(harmony)
-    if CLOSE_ALL:
-        plt.close('all')
+    Parameters
+    ----------
+    data : dict
+        Power spectrum data.
+    case : {'single', 'error'}, optional
+        Plotting case, either a single plot (``'single'``) or with error panel
+        (``'error'``).
 
+    """
     if case == 'single':
 
         fig = plt.figure()
@@ -33,31 +32,27 @@ def view_spectrum(data, case='error'):
         plt.errorbar(
             data['k'],
             data['Pk'],
-            xerr=data['dk']/np.sqrt(data['dof1']),
-            yerr=data['dPk']/np.sqrt(data['dof2']),
-            color=COLOUR['ref'],
-            label=LABEL['ref'],
+            xerr=data['dk'],
+            yerr=data['dPk'],
+            color=COLOUR['reference'],
+            label=LABEL['reference'],
         )
+
         plt.loglog(
             data['kln'],
             data['Pln'],
-            color=COLOUR['def'],
-            label=LABEL['def']
+            color=COLOUR['default'],
+            label=LABEL['default']
         )
-        plt.fill_between(
-            data['kln'],
-            data['Pln'] - data['dPln'] / np.sqrt(data['dof2']),
-            data['Pln'] + data['dPln'] / np.sqrt(data['dof2']),
-            facecolor=COLOUR['def'],
-            alpha=TRANSPARENCY_1,
-        )
-        plt.fill_between(
-            data['kln'],
-            data['Pln'] - 2 * data['dPln'] / np.sqrt(data['dof2']),
-            data['Pln'] + 2 * data['dPln'] / np.sqrt(data['dof2']),
-            facecolor=COLOUR['def'],
-            alpha=TRANSPARENCY_2,
-        )
+
+        for layer in [1, 2]:
+            plt.fill_between(
+                data['kln'],
+                data['Pln'] - layer * data['dPln'],
+                data['Pln'] + layer * data['dPln'],
+                facecolor=COLOUR['default'],
+                alpha=TRANSPARENCY**layer,
+            )
 
         for idx, dbl_indices in enumerate(data['ln']):
             if dbl_indices[0] == 0:
@@ -65,7 +60,7 @@ def view_spectrum(data, case='error'):
                     data['kln'][idx],
                     data['Pln'][idx],
                     marker=MARKER,
-                    color=COLOUR['def'],
+                    color=COLOUR['default'],
                 )
                 plt.annotate(
                     str(dbl_indices),
@@ -93,31 +88,27 @@ def view_spectrum(data, case='error'):
         plt.errorbar(
             data['k'],
             data['Pk'],
-            xerr=data['dk']/np.sqrt(data['dof1']),
-            yerr=data['dPk']/np.sqrt(data['dof2']),
-            color=COLOUR['ref'],
-            label=LABEL['ref'],
+            xerr=data['dk'],
+            yerr=data['dPk'],
+            color=COLOUR['reference'],
+            label=LABEL['reference'],
         )
+
         plt.loglog(
             data['kln'],
             data['Pln'],
-            color=COLOUR['def'],
-            label=LABEL['def'],
+            color=COLOUR['default'],
+            label=LABEL['default'],
         )
-        plt.fill_between(
-            data['kln'],
-            data['Pln'] - data['dPln'] / np.sqrt(data['dof2']),
-            data['Pln'] + data['dPln'] / np.sqrt(data['dof2']),
-            facecolor=COLOUR['def'],
-            alpha=TRANSPARENCY_1,
-        )
-        plt.fill_between(
-            data['kln'],
-            data['Pln'] - 2 * data['dPln'] / np.sqrt(data['dof2']),
-            data['Pln'] + 2 * data['dPln'] / np.sqrt(data['dof2']),
-            facecolor=COLOUR['def'],
-            alpha=TRANSPARENCY_2,
-        )
+
+        for layer in [1, 2]:
+            plt.fill_between(
+                data['kln'],
+                data['Pln'] - layer * data['dPln'],
+                data['Pln'] + layer * data['dPln'],
+                facecolor=COLOUR['default'],
+                alpha=TRANSPARENCY**layer,
+            )
 
         for idx, dbl_indices in enumerate(data['ln']):
             if dbl_indices[0] == 0:
@@ -125,7 +116,7 @@ def view_spectrum(data, case='error'):
                     data['kln'][idx],
                     data['Pln'][idx],
                     marker=MARKER,
-                    color=COLOUR['def'],
+                    color=COLOUR['default'],
                     )
                 plt.annotate(
                     str(dbl_indices),
@@ -156,6 +147,6 @@ def view_spectrum(data, case='error'):
         plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
         plt.ylabel(r'$\Delta P(k)/P_\textrm{Cart}(k)$')
 
-    plt.subplots_adjust(hspace=0, wspace=0)
+        plt.subplots_adjust(hspace=0, wspace=0)
 
     return fig

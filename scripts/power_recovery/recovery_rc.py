@@ -145,5 +145,5 @@ if not __name__ == '__main__':
 
     from harmonia.collections import get_filename
 
-    filename_root = get_filename(sys.argv[0])
+    script = get_filename(sys.argv[0])
     params = parse_cli_args()

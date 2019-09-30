@@ -7,12 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from recovery_rc import (
-    PATHOUT,
-    filename_root,
-    params,
-    quick_plot,
-)
+from recovery_rc import PATHOUT, params, quick_plot, script_name
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
@@ -22,8 +17,8 @@ from harmonia.collections import (
 from harmonia.mapper import RandomCatalogue, SphericalMap
 
 
-def broadcast_parameters():
-    """Broadcast input parameters.
+def read_parameters():
+    """Read input parameters.
 
     """
     global nbar, rmax, kmax, mesh_cal, niter, prog_id
@@ -109,11 +104,18 @@ def process():
 def finalise(save=True, plot=True):
     """Program finalisation.
 
+    Parameters
+    ----------
+    save : bool, optional
+        If `True`, aggregate data over all iterations is saved as a dictionary.
+    plot : bool, optional
+        If `True`, plot the aggregate data and save as a .pdf file.
+
     """
-    base_path = f"{PATHOUT}{filename_root}",
+    base_path = f"{PATHOUT}{script_name}",
     assert confirm_dir(base_path)
 
-    filename = f"{filename_root}{prog_tag}"
+    filename = f"{script_name}{prog_tag}"
     if save:
         np.save("".join([base_path, "/", filename, ".npy"]), output)
     if plot:
@@ -127,7 +129,7 @@ def finalise(save=True, plot=True):
 
 
 if __name__ == '__main__':
-    broadcast_parameters()
+    read_parameters()
     prog_tag = program_tag()
     output = process()
     finalise()

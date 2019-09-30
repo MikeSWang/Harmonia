@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import cosmology, FFTPower, ConvolvedFFTPower, FKPCatalog
 
-from recovery_rc import PATHOUT, params, quick_plot, script_name
+from recovery_rc import PATHOUT, params, _view, script_name
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
@@ -17,11 +17,17 @@ from harmonia.collections import (
 from harmonia.mapper import NBKCatalogue, RandomCatalogue, SphericalMap
 
 
-def read_parameters():
-    """Read input parameters.
+def initialise():
+    """Initialise from input parameters, set up cosmology and return runtime
+    information.
+
+    Returns
+    -------
+    runtime_info : str
+        Runtime information.
 
     """
-    global nbar, contrast, bias, redshift, zmax, rmax, kmax, dk, expand, \
+    global nbar, contrast, bias, redshift, zmax, kmax, dk, expand, \
         mesh_gen, mesh_cal, niter, prog_id
 
     try:
@@ -30,7 +36,6 @@ def read_parameters():
         bias = params.bias
         redshift = params.redshift
         zmax = params.zmax
-        rmax = params.rmax
         kmax = params.kmax
         dk = params.dk
         expand = params.expand
@@ -41,27 +46,12 @@ def read_parameters():
     except AttributeError as attr_err:
         print(attr_err)
 
-
-def setup_cosmology():
-    """Set up cosmological variables.
-
-    """
     global cosmo, Plin, rmax
 
     cosmo = cosmology.Planck15
     Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
     rmax = cosmo.comoving_distance(zmax)
 
-
-def program_tag():
-    """Return program tag.
-
-    Returns
-    -------
-    str
-        Program tag.
-
-    """
     global case_is_mock
 
     try:
@@ -83,27 +73,32 @@ def program_tag():
         format_float(kmax, 'sci'),
         format_float(expand, 'decdot'),
     )
+
     iter_tag = "iter={}".format(niter)
 
     part_tags = ["-(", param_tag, mesh_tag, iter_tag, ")-", "[", prog_id, "]"]
+    runtime_info = "".join(part_tags)
+    return runtime_info
 
-    return "".join(part_tags)
 
-
-def process():
+def process(runtime_info):
     """Program process.
+
+    Parameters
+    ----------
+    runtime_info : str
+        Program runtime information.
 
     Returns
     -------
-    output : dict
+    output_data : dict
         Program output.
 
     """
-    print(prog_tag.strip("-"))
+    print(runtime_info.strip("-"))
 
     boxsize = 2 * expand * rmax
     to_mesh_params = dict(Nmesh=mesh_cal, resampler='tsc', compensated=True)
-
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
     flat_order = np.concatenate(disc.wavenumbers).argsort()
@@ -117,16 +112,18 @@ def process():
             Plin,
             nbar,
             bias=bias,
-            BoxSize=boxsize,
-            Nmesh=mesh_gen,
+            boxsize=boxsize,
+            num_mesh=mesh_gen,
         )
         if case_is_mock:
             rand_catalogue = RandomCatalogue(contrast*nbar, boxsize)
             data_catalogue['NZ'] = nbar * data_catalogue['Weight']
             rand_catalogue['NZ'] = nbar * rand_catalogue['Weight']
             pair_catalogue = FKPCatalog(data_catalogue, rand_catalogue)
+            contrast_nbar = contrast * nbar
         else:
             rand_catalogue = None
+            contrast_nbar = None
 
         if case_is_mock:
             mesh = pair_catalogue.to_mesh(**to_mesh_params)
@@ -150,7 +147,7 @@ def process():
             data_catalogue,
             rand=rand_catalogue,
             mean_density_data=nbar,
-            mean_density_rand=contrast*nbar,
+            mean_density_rand=contrast_nbar,
         )
         spherical_power = spherical_map.spherical_power()
 
@@ -165,41 +162,45 @@ def process():
         else:
             measurements['Pk'].append([cartesian_power['power'].real])
 
-    output = {var: np.concatenate(vals) for var, vals in measurements.items()}
-    output.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    output_data = {
+        var: np.concatenate(vals)
+        for var, vals in measurements.items()
+    }
+    output_data.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    return output_data
 
-    return output
 
-
-def finalise(save=True, plot=True):
-    """Program finalisation.
+def finalise(output_data, save=True, plot=True):
+    """Program finalisation with optional data and figure saving.
 
     Parameters
     ----------
+    output_data : dict
+        Program output.
     save : bool, optional
         If `True`, aggregate data over all iterations is saved as a dictionary.
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
 
     """
-    base_path = f"{PATHOUT}{script_name}",
+    base_path = f"{PATHOUT}{script_name}"
     assert confirm_dir(base_path)
 
-    filename = f"{script_name}{prog_tag}"
+    filename = f"{script_name}{program_tag}"
     if save:
-        np.save("".join([base_path, "/", filename, ".npy"]), output)
+        np.save("".join([base_path, "/", filename, ".npy"]), output_data)
     if plot:
         try:
             plt.style.use(harmony)
             plt.close('all')
-            quick_plot(output)
+            _view(output_data)
             plt.savefig("".join([base_path, "/", filename, ".pdf"]))
         except Exception as e:
             print(e)
 
 
 if __name__ == '__main__':
-    read_parameters()
-    prog_tag = program_tag()
-    output = process()
-    finalise()
+
+    program_tag = initialise()
+    output_data = process(program_tag)
+    finalise(output_data)

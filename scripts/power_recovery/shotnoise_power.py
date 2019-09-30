@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import FFTPower
 
-from recovery_rc import PATHOUT, params, quick_plot, script_name
+from recovery_rc import PATHOUT, params, _view, script_name
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
@@ -17,8 +17,13 @@ from harmonia.collections import (
 from harmonia.mapper import RandomCatalogue, SphericalMap
 
 
-def read_parameters():
-    """Read input parameters.
+def initialise():
+    """Initialise from input parameters and return runtime information.
+
+    Returns
+    -------
+    runtime_info : str
+        Runtime information.
 
     """
     global nbar, rmax, kmax, mesh_cal, niter, prog_id
@@ -33,16 +38,6 @@ def read_parameters():
     except AttributeError as attr_err:
         print(attr_err)
 
-
-def program_tag():
-    """Return program tag.
-
-    Returns
-    -------
-    str
-        Program tag.
-
-    """
     param_tag = "nbar={},rmax={},kmax={},mesh=c{},iter={}".format(
         format_float(nbar, 'sci'),
         format_float(rmax, 'intdot'),
@@ -50,19 +45,25 @@ def program_tag():
         mesh_cal,
         niter,
     )
-    return "".join(["-(", param_tag, ")-", "[", prog_id, "]"])
+    runtime_info = "".join(["-(", param_tag, ")-", "[", prog_id, "]"])
+    return runtime_info
 
 
-def process():
+def process(runtime_info):
     """Program process.
+
+    Parameters
+    ----------
+    runtime_info : str
+        Program runtime information.
 
     Returns
     -------
-    output : dict
+    output_data : dict
         Program output.
 
     """
-    print(prog_tag.strip("-"))
+    print(runtime_info.strip("-"))
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
     flat_order = np.concatenate(disc.wavenumbers).argsort()
@@ -95,41 +96,45 @@ def process():
             [np.concatenate(spherical_power)[flat_order]],
         )
 
-    output = {var: np.concatenate(vals) for var, vals in measurements.items()}
-    output.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    output_data = {
+        var: np.concatenate(vals)
+        for var, vals in measurements.items()
+    }
+    output_data.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    return output_data
 
-    return output
 
-
-def finalise(save=True, plot=True):
-    """Program finalisation.
+def finalise(output_data, save=True, plot=True):
+    """Program finalisation with optional data and figure saving.
 
     Parameters
     ----------
+    output_data : dict
+        Program output.
     save : bool, optional
         If `True`, aggregate data over all iterations is saved as a dictionary.
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
 
     """
-    base_path = f"{PATHOUT}{script_name}",
+    base_path = f"{PATHOUT}{script_name}"
     assert confirm_dir(base_path)
 
-    filename = f"{script_name}{prog_tag}"
+    filename = f"{script_name}{program_tag}"
     if save:
-        np.save("".join([base_path, "/", filename, ".npy"]), output)
+        np.save("".join([base_path, "/", filename, ".npy"]), output_data)
     if plot:
         try:
             plt.style.use(harmony)
             plt.close('all')
-            quick_plot(output)
+            _view(output_data)
             plt.savefig("".join([base_path, "/", filename, ".pdf"]))
         except Exception as e:
             print(e)
 
 
 if __name__ == '__main__':
-    read_parameters()
-    prog_tag = program_tag()
-    output = process()
-    finalise()
+
+    program_tag = initialise()
+    output_data = process(program_tag)
+    finalise(output_data)

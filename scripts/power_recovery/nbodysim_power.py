@@ -19,8 +19,13 @@ from harmonia.mapper import SphericalMap
 HEADINGS = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
 
 
-def read_parameters():
-    """Read input parameters.
+def initialise():
+    """Initialise from input parameters and return runtime information.
+
+    Returns
+    -------
+    runtime_info : str
+        Runtime information.
 
     """
     global input_file, kmax, boxsize, mesh_cal, niter, prog_id
@@ -31,38 +36,32 @@ def read_parameters():
         boxsize = params.boxsize
         mesh_cal = params.mesh_cal
         niter = params.niter
-        prog_id = params.prog_id
     except AttributeError as attr_err:
         print(attr_err)
 
-
-def program_tag():
-    """Return program tag.
-
-    Returns
-    -------
-    str
-        Program tag.
-
-    """
-    param_tag = "rmax={},kmax={},mesh=c{},".format(
+    runtime_info = "-(rmax={},kmax={},mesh=c{})".format(
         format_float(boxsize/2, 'intdot'),
         format_float(kmax, 'sci'),
         mesh_cal,
     )
-    return "".join(["-(", param_tag, ")-", "[", prog_id, "]"])
+    return runtime_info
 
 
-def process():
+def process(runtime_info):
     """Program process.
+
+    Parameters
+    ----------
+    runtime_info : str
+        Program runtime information.
 
     Returns
     -------
-    output : dict
+    output_data : dict
         Program output.
 
     """
-    print(prog_tag.strip("-"))
+    print(runtime_info.strip("-"))
 
     disc = DiscreteSpectrum(boxsize/2, 'Dirichlet', kmax)
     flat_order = np.concatenate(disc.wavenumbers).argsort()
@@ -102,38 +101,42 @@ def process():
             [np.concatenate(spherical_power)[flat_order]]
         )
 
-    output = {var: np.concatenate(vals) for var, vals in measurements.items()}
-    output.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    output_data = {
+        var: np.concatenate(vals)
+        for var, vals in measurements.items()
+    }
+    output_data.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    return output_data
 
-    return output
 
-
-def finalise(save=True, plot=True):
-    """Program finalisation.
+def finalise(output_data, save=True, plot=True):
+    """Program finalisation with optional data and figure saving.
 
     Parameters
     ----------
+    output_data : dict
+        Program output.
     save : bool, optional
         If `True`, aggregate data over all iterations is saved as a dictionary.
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
 
     """
-    base_path = f"{PATHOUT}{script_name}",
+    base_path = f"{PATHOUT}{script_name}"
     assert confirm_dir(base_path)
 
-    filename = f"{input_file}{prog_tag}"
+    filename = f"{input_file}{program_tag}"
     if save:
-        np.save("".join([base_path, "/", filename, ".npy"]), output)
+        np.save("".join([base_path, "/", filename, ".npy"]), output_data)
     if plot:
         results = {
-            'Nk': np.sum(output['Nk'], axis=0),
-            'k': np.average(output['k'], axis=0),
-            'Pk': np.average(output['Pk'], axis=0),
-            'Pshot': np.average(output['Pshot']),
-            'ln': output['ln'],
-            'kln': output['kln'],
-            'Pln': np.average(output['Pln'], axis=0),
+            'Nk': np.sum(output_data['Nk'], axis=0),
+            'k': np.average(output_data['k'], axis=0),
+            'Pk': np.average(output_data['Pk'], axis=0),
+            'Pshot': np.average(output_data['Pshot']),
+            'ln': output_data['ln'][-1],
+            'kln': output_data['kln'][-1],
+            'Pln': np.average(output_data['Pln'], axis=0),
         }
         try:
             plt.style.use(harmony)
@@ -175,7 +178,7 @@ def finalise(save=True, plot=True):
 
 
 if __name__ == '__main__':
-    read_parameters()
-    prog_tag = program_tag()
-    output = process()
-    finalise()
+
+    program_tag = initialise()
+    output_data = process(program_tag)
+    finalise(output_data)

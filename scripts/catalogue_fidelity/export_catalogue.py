@@ -13,7 +13,7 @@ def aggregate(result):
         'Pshot': np.average(result['Pshot']),
         'dPk': np.std(result['Pk'], axis=0, ddof=1),
         'dof': np.size(result['k'], axis=0) - 1,
-        }
+    }
 
 
 # == CONFIGURATION ============================================================

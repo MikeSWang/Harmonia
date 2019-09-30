@@ -1,4 +1,4 @@
-"""Recover power spectrum in spherical basis.
+"""Runtime configuration for power spectrum recovery in spherical basis.
 
 """
 import os
@@ -56,26 +56,50 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def aggregate(result):
+def overwrite_protection(outpath, outname, save=True):
+    """Inspect and modify overwrite protection.
 
-    dof_k = np.size(result['k'], axis=-1) - 1
-    dof_P = np.size(result['Pln'], axis=0) - 1
+    Parameters
+    ----------
+    outpath : str
+        Write-out directory path.
+    outname : str
+        Write-out filename.
 
-    return {
-        'Nk': np.sum(result['Nk'], axis=0),
-        'k': np.average(result['k'], axis=0),
-        'Pk': np.average(result['Pk'], axis=0),
-        'Pshot': np.average(result['Pshot']),
-        'ln': np.atleast_2d(result['ln'])[-1],
-        'kln': np.atleast_2d(result['kln'])[-1],
-        'Pln': np.average(result['Pln'], axis=0),
-        'dk': np.std(result['k'], axis=0, ddof=1) / np.sqrt(dof_k),
-        'dPk': np.std(result['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
-        'dPln': np.std(result['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
-    }
+    Returns
+    -------
+    overwrite_permission : bool
+        Overwrite permission.
+
+    """
+    overwrite_permission = False
+    while save:
+        try:
+            if not os.path.exists(outpath):
+                raise FileNotFoundError(f"{outpath} does not exist. ")
+            if not overwrite_permission:
+                if os.path.exists(outpath + outname):
+                    raise FileExistsError
+            overwrite_permission = True
+            break
+        except FileExistsError:
+            grant_permission = input(
+                "Saving would overwrite existing file at destination. "
+                "Do you want to continue? [y/n] "
+            )
+            if grant_permission.lower().startswith('y'):
+                overwrite_permission = True
+                break
+            else:
+                overwrite_permission = False
+                raise FileExistsError(
+                    "Overwrite permission denied. File not saved. "
+                    )
+
+    return overwrite_permission
 
 
-def quick_plot(output):
+def _view(output):
 
     dof_k = np.size(output['k'], axis=0) - 1
     dof_P= np.size(output['Pln'], axis=0) - 1
@@ -85,15 +109,15 @@ def quick_plot(output):
         'k': np.average(output['k'], axis=0),
         'Pk': np.average(output['Pk'], axis=0),
         'Pshot': np.average(output['Pshot']),
-        'ln': output['ln'],
-        'kln': output['kln'],
+        'ln': output['ln'][-1],
+        'kln': output['kln'][-1],
         'Pln': np.average(output['Pln'], axis=0),
         'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof_k),
         'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
         'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
     }
 
-    cartesian_result = plt.errorbar(
+    plt.errorbar(
         results['k'],
         results['Pk'],
         xerr=results['dk'],
@@ -127,17 +151,11 @@ def quick_plot(output):
                 fontsize=6,
             )
 
-    plt.axhline(
-        y=results['Pshot'],
-        linestyle='--',
-        color=cartesian_result[0].get_color(),
-        alpha=.5,
-    )
-
     plt.xlim(left=0.99*results['kln'].min(), right=1.01*results['kln'].max())
     plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
+
 
 if not __name__ == '__main__':
 
@@ -145,5 +163,5 @@ if not __name__ == '__main__':
 
     from harmonia.collections import get_filename
 
-    script = get_filename(sys.argv[0])
+    script_name = get_filename(sys.argv[0])
     params = parse_cli_args()

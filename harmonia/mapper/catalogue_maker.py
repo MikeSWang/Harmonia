@@ -89,17 +89,15 @@ class NBKCatalogue(LogNormalCatalog):
 
     _logger = logging.getLogger('LognormalCatalogue')
 
-    def __init__(self, Plin, nbar, BoxSize, Nmesh, bias=2., add_RSD=False,
-                 seed=None):
-        ini_args = (Plin, nbar, BoxSize, Nmesh)
-        super().__init__(
-            self,
-            *ini_args,
-            bias=bias,
-            seed=seed,
-        )
+    def __init__(self, Plin, mean_density, boxsize, num_mesh, bias=2.,
+                 add_RSD=False, seed=None):
+
+        ini_args = (Plin, mean_density, boxsize, num_mesh)
+        super().__init__(*ini_args, bias=bias, seed=seed)
+
         self.attrs['RSD_flag'] = add_RSD
         self._logger.info("%s generated. ", self.__str__())
+
         if add_RSD:
             self['Position'] += self['VelocityOffset'] \
                 * normalise_vector(self['Position'])

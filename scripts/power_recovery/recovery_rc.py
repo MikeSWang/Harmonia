@@ -1,50 +1,66 @@
-"""Power spectrum recovery runtime configuration.
-
-This sets I/O paths and provides common parameters and functionalities to power
-spectrum recovery scripts.
+"""Recover power spectrum in spherical basis.
 
 """
+import os
 import sys
 from argparse import ArgumentParser
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-sys.path.insert(0, "../../")
-
-from harmonia.collections import (
-    confirm_directory_path as confirm_dir,
-    get_filename,
-)
+PATHIN = "./data/input/"
+PATHOUT = "./data/output/"
 
 
-def parse_cli_args(cli_parser):
+def import_local_package():
+    """Add package to Python module path.
 
-    # Physical parameters
+    """
+    _cwd = os.path.dirname(__file__)
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
+
+
+def parse_cli_args():
+    """Parse command line arguments.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        Parsed parameters.
+
+    """
+    cli_parser = ArgumentParser()
+
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--contrast', type=float, default=None)
+
     cli_parser.add_argument('--bias', type=float, default=2.)
     cli_parser.add_argument('--redshift', type=float, default=0.)
+
     cli_parser.add_argument('--zmax', type=float, default=0.05)
     cli_parser.add_argument('--rmax', type=float, default=150.)
+
     cli_parser.add_argument('--kmax', type=float, default=0.1)
     cli_parser.add_argument('--dk', type=float, default=1e-2)
 
-    # Computing parameters
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
-    cli_parser.add_argument('--meshgen', type=int, default=256)
-    cli_parser.add_argument('--meshcal', type=int, default=256)
 
-    # Program parameters
+    cli_parser.add_argument('--mesh-gen', type=int, default=256)
+    cli_parser.add_argument('--mesh-cal', type=int, default=256)
+
     cli_parser.add_argument('--niter', type=int, default=10)
-    cli_parser.add_argument('--progid', default="")
-    cli_parser.add_argument('--infile', default="halos-(NG=0.,z=1.)-0")
+    cli_parser.add_argument('--prog-id', default="")
+    cli_parser.add_argument('--input-file', default="halos-(NG=0.,z=1.)-0")
 
     return cli_parser.parse_args()
 
 
 def aggregate(result):
+
+    dof_k = np.size(result['k'], axis=-1) - 1
+    dof_P = np.size(result['Pln'], axis=0) - 1
+
     return {
         'Nk': np.sum(result['Nk'], axis=0),
         'k': np.average(result['k'], axis=0),
@@ -53,18 +69,16 @@ def aggregate(result):
         'ln': np.atleast_2d(result['ln'])[-1],
         'kln': np.atleast_2d(result['kln'])[-1],
         'Pln': np.average(result['Pln'], axis=0),
-        'dk': np.std(result['k'], axis=0, ddof=1),
-        'dPk': np.std(result['Pk'], axis=0, ddof=1),
-        'dPln': np.std(result['Pln'], axis=0, ddof=1),
-        'dof1': np.size(result['k'], axis=-1) - 1,
-        'dof2': np.size(result['Pln'], axis=0) - 1,
+        'dk': np.std(result['k'], axis=0, ddof=1) / np.sqrt(dof_k),
+        'dPk': np.std(result['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
+        'dPln': np.std(result['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
     }
 
 
 def quick_plot(output):
 
-    dof1 = np.size(output['k'], axis=0) - 1
-    dof2 = np.size(output['Pln'], axis=0) - 1
+    dof_k = np.size(output['k'], axis=0) - 1
+    dof_P= np.size(output['Pln'], axis=0) - 1
 
     results = {
         'Nk': np.sum(output['Nk'], axis=0),
@@ -74,9 +88,9 @@ def quick_plot(output):
         'ln': output['ln'],
         'kln': output['kln'],
         'Pln': np.average(output['Pln'], axis=0),
-        'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof1),
-        'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof2),
-        'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof2),
+        'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof_k),
+        'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
+        'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
     }
 
     cartesian_result = plt.errorbar(
@@ -125,10 +139,11 @@ def quick_plot(output):
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
 
+if not __name__ == '__main__':
 
-PATHIN = "./data/input/"
-PATHOUT = "./data/output/"
+    import_local_package()
 
-filename = get_filename(sys.argv[0])
+    from harmonia.collections import get_filename
 
-params = parse_cli_args(ArgumentParser())
+    filename_root = get_filename(sys.argv[0])
+    params = parse_cli_args()

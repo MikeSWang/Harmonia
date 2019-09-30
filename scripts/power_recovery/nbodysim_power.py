@@ -7,20 +7,38 @@ import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit.lab import CSVCatalog, FFTPower
 
-from powerrc import (
+from recovery_rc import (
     PATHIN,
     PATHOUT,
-    confirm_dir,
-    filename,
-    get_filename,
-    params
+    filename_root,
+    params,
 )
 from harmonia.algorithms import DiscreteSpectrum
-from harmonia.collections import format_float, harmony
+from harmonia.collections import (
+    confirm_directory_path as confirm_dir,
+    format_float,
+    harmony,
+)
 from harmonia.mapper import SphericalMap
 
 
-# == INITIALISATION ===========================================================
+def broadcast_parameters():
+    """Broadcast input parameters.
+
+    """
+    global nbar, contrast, bias, redshift, zmax, rmax, kmax, dk, expand, \
+        mesh_gen, mesh_cal, niter, prog_id
+
+    try:
+        input_file = params.input_file
+        kmax = params.kmax
+        dk = params.dk
+        boxsize = params.boxsize
+        mesh_cal = params.mesh_cal
+        niter = params.niter
+        prog_id = params.prog_id
+    except AttributeError as attr_err:
+        print(attr_err)
 
 in_file = params.infile
 kmax = params.kmax

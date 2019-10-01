@@ -101,8 +101,7 @@ def overwrite_protection(outpath, outname, save=True):
 
 def _view(output):
 
-    dof_k = np.size(output['k'], axis=0) - 1
-    dof_P= np.size(output['Pln'], axis=0) - 1
+    dof = np.size(output['Pln'], axis=0) - 1
 
     results = {
         'Nk': np.sum(output['Nk'], axis=0),
@@ -112,9 +111,9 @@ def _view(output):
         'ln': output['ln'][-1],
         'kln': output['kln'][-1],
         'Pln': np.average(output['Pln'], axis=0),
-        'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof_k),
-        'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
-        'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
+        'dk': np.std(output['k'], axis=0, ddof=1) / np.sqrt(dof),
+        'dPk': np.std(output['Pk'], axis=0, ddof=1) / np.sqrt(dof),
+        'dPln': np.std(output['Pln'], axis=0, ddof=1) / np.sqrt(dof),
     }
 
     plt.errorbar(

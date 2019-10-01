@@ -26,9 +26,7 @@ def aggregate_data(output_data):
         Aggregated results.
 
     """
-    dof_k = np.size(output_data['k'], axis=-1) - 1
-    dof_P = np.size(output_data['Pln'], axis=0) - 1
-
+    dof = np.size(output_data['Pln'], axis=0) - 1
     results = {
         'Nk': np.sum(output_data['Nk'], axis=0),
         'k': np.average(output_data['k'], axis=0),
@@ -37,9 +35,9 @@ def aggregate_data(output_data):
         'ln': np.atleast_2d(output_data['ln'])[-1],
         'kln': np.atleast_2d(output_data['kln'])[-1],
         'Pln': np.average(output_data['Pln'], axis=0),
-        'dk': np.std(output_data['k'], axis=0, ddof=1) / np.sqrt(dof_k),
-        'dPk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
-        'dPln': np.std(output_data['Pln'], axis=0, ddof=1) / np.sqrt(dof_P),
+        'dk': np.std(output_data['k'], axis=0, ddof=1) / np.sqrt(dof),
+        'dPk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof),
+        'dPln': np.std(output_data['Pln'], axis=0, ddof=1) / np.sqrt(dof),
     }
     return results
 
@@ -51,39 +49,48 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
     Parameters
     ----------
     collate, load, export, aggregate, save, savefig : bool, optional
-        If `True`, collated, load, export, aggregate or save data, and/or save
-        the plotted figure.
+        If `True`, collate, load, export, aggregate or save data, and/or save
+        the plotted figure.  Default is `True` for exporting, aggregating and
+        saving data, and `False` for collating and loading data or saving
+        figure.
+
+    Raises
+    ------
+    AssertionError
+        If output path does not exist.
+    AssertionError
+        If overwrite permission is denied at the output path.
 
     """
-    outpath = f"{PATHOUT}{script_name}/"
+    outpath = f"{PATHOUT}{SCRIPT_NAME}/"
     assert confirm_dir(outpath)
 
     if collate:
-        output, count, _ = collate_data(f"{outpath}{file_prefix}*.npy", 'npy')
+        output, count, _ = collate_data(f"{outpath}{FILE_PREFIX}*.npy", 'npy')
         if save:
-            assert overwrite_protection(outpath + "collated/")
-            np.save(f"{outpath}collated/{file_prefix}{file_tag}.npy", output)
+            assert overwrite_protection(f"{outpath}collated/")
+            np.save(f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy", output)
         if aggregate: results = aggregate_data(output)
 
     if load:
         output = np.load(
-            f"{outpath}collated/{file_prefix}{file_tag}.npy",
+            f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy",
         ).item()
         if aggregate: results = aggregate_data(output)
 
     if export:
         view_spectrum(results, case='error')
-        if savefig: plt.savefig(f"{outpath}{file_prefix}{file_tag}.pdf")
+        if savefig: plt.savefig(f"{outpath}{FILE_PREFIX}{FILE_TAG}.pdf")
 
 
 if __name__ == '__main__':
 
-    script_name = "nbodysim_power"
-    file_prefix = "halos-(NG=0.,z=1.)"
-    file_tag = "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=256)"
+    SCRIPT_NAME = "nbodysim_power"
+    FILE_PREFIX = "halos-(NG=0.,z=1.)"
+    FILE_TAG = "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=256)"
 
-    collate = True
-    load = False
-    savefig = False
+    COLLATE = True
+    LOAD = False
+    SAVEFIG = False
 
-    main(collate=collate, load=load, savefig=savefig)
+    main(collate=COLLATE, load=LOAD, savefig=SAVEFIG)

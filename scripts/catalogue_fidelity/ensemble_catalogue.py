@@ -204,32 +204,32 @@ def finalise(output_data, save=True, plot=True):
     if save:
         np.save("".join([basepath, "/", filename, ".npy"]), output_data)
     if plot:
+        dof_k = np.size(output_data['k'], axis=-1) - 1
+        dof_P = np.size(output_data['Pk'], axis=0) - 1
 
         results = {
-            'Nk': np.sum(output['Nk'], axis=0),
-            'k': np.average(output['k'], axis=0),
-            'Pk': np.average(output['Pk'], axis=0),
-            'Pshot': np.average(output['Pshot']),
-            }
-        results.update({
-            'Pkmod': b**2 * Plin(results['k']) + results['Pshot'],
-            'dk': np.std(output['k'], axis=0, ddof=1),
-            'dPk': np.std(output['Pk'], axis=0, ddof=1),
-            'dof1': np.size(output['k'], axis=0) - 1,
-            'dof2': np.size(output['Pk'], axis=0) - 1,
-            })
+            'Nk': np.sum(output_data['Nk'], axis=0),
+            'k': np.average(output_data['k'], axis=0),
+            'Pk': np.average(output_data['Pk'], axis=0),
+            'Pshot': np.average(output_data['Pshot']),
+            'dk': np.std(output_data['k'], axis=0, ddof=1) / np.sqrt(dof_k),
+            'dPk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof_P),
+        }
+
+        Pk_model = bias**2 * Plin(results['k']) + 1 / nbar
 
         try:
             plt.style.use(harmony)
             plt.close('all')
 
-            plt.loglog(results['k'], results['Pkmod'], label='model')
+            plt.loglog(results['k'], Pk_model, label='model')
             plt.errorbar(
-                results['k'], results['Pk'],
-                xerr=results['dk']/np.sqrt(results['dof1']),
-                yerr=results['dPk']/np.sqrt(results['dof2']),
-                elinewidth=.8, label='catalogue'
-                )
+                results['k'],
+                results['Pk'],
+                xerr=results['dk'],
+                yerr=results['dPk'],
+                label='catalogue',
+            )
 
             plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
             plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
@@ -237,3 +237,10 @@ def finalise(output_data, save=True, plot=True):
             plt.savefig("".join([basepath, "/", filename, ".pdf"]))
         except Exception as e:
             print(e)
+
+
+if __name__ == '__main__':
+
+    program_tag = initialise()
+    output_data = process(program_tag)
+    finalise(output_data)

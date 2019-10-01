@@ -382,7 +382,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
     position : (N, 3) float :class:`numpy.ndarray`
         Position of particles generated from the sampled field.
     displacement : (N, 3) float :class:`numpy.ndarray`
-        displacement of particles from their `position`.
+        Displacement of particles from their `position`.
 
     """
     if len(set(sampled_field.shape)) > 1:
@@ -411,10 +411,10 @@ def populate_particles(sampled_field, mean_density, boxsize,
             [np.ravel(psi_i) for psi_i in vel_offset_fields]
         )
         displacement = np.repeat(cell_disp, np.ravel(number_field), axis=0)
+    else:
+        displacement = None
 
-        return position, displacement
-
-    return position
+    return position, displacement
 
 
 def _gen_circsym_whitenoise(num_mesh, seed=None):

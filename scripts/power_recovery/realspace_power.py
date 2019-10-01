@@ -26,6 +26,11 @@ def initialise():
     runtime_info : str
         Runtime information.
 
+    Raises
+    ------
+    AttributeError
+        If a required input arameter is missing.
+
     """
     global nbar, contrast, bias, redshift, zmax, kmax, dk, expand, \
         mesh_gen, mesh_cal, niter, prog_id
@@ -44,7 +49,7 @@ def initialise():
         niter = params.niter
         prog_id = params.prog_id
     except AttributeError as attr_err:
-        print(attr_err)
+        raise AttributeError(attr_err)
 
     global cosmo, Plin, rmax
 
@@ -181,6 +186,13 @@ def finalise(output_data, save=True, plot=True):
         If `True`, aggregate data over all iterations is saved as a dictionary.
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
+
+    Raises
+    ------
+    AssertionError
+        If the output path does not exist.
+    Exception
+        If plotting fails.
 
     """
     base_path = f"{PATHOUT}{script_name}"

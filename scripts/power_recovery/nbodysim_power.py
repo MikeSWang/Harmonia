@@ -27,6 +27,11 @@ def initialise():
     runtime_info : str
         Runtime information.
 
+    Raises
+    ------
+    AttributeError
+        If a required input arameter is missing.
+
     """
     global input_file, kmax, boxsize, mesh_cal, niter, prog_id
 
@@ -37,7 +42,7 @@ def initialise():
         mesh_cal = params.mesh_cal
         niter = params.niter
     except AttributeError as attr_err:
-        print(attr_err)
+        raise AttributeError(attr_err)
 
     runtime_info = "-(rmax={},kmax={},mesh=c{})".format(
         format_float(boxsize/2, 'intdot'),
@@ -121,6 +126,13 @@ def finalise(output_data, save=True, plot=True):
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
 
+    Raises
+    ------
+    AssertionError
+        If the output path does not exist.
+    Exception
+        If plotting fails.
+
     """
     base_path = f"{PATHOUT}{script_name}"
     assert confirm_dir(base_path)
@@ -174,7 +186,7 @@ def finalise(output_data, save=True, plot=True):
 
             plt.savefig("".join([base_path, "/", filename, ".pdf"]))
         except Exception as e:
-            print(e)
+            raise Exception(e)
 
 
 if __name__ == '__main__':

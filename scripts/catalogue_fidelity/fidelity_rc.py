@@ -114,9 +114,6 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def _view
-
-
 if not __name__ == '__main__':
 
     warnings.formatwarning = clean_warnings

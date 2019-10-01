@@ -41,7 +41,7 @@ def parse_cli_args():
     cli_parser.add_argument('--rmax', type=float, default=150.)
 
     cli_parser.add_argument('--kmax', type=float, default=0.1)
-    cli_parser.add_argument('--dk', type=float, default=1e-2)
+    cli_parser.add_argument('--dk', type=float, default=None)
 
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
@@ -54,49 +54,6 @@ def parse_cli_args():
     cli_parser.add_argument('--input-file', default="halos-(NG=0.,z=1.)-0")
 
     return cli_parser.parse_args()
-
-
-def overwrite_protection(outpath, outname, save=True):
-    """Inspect and modify overwrite protection.
-
-    Parameters
-    ----------
-    outpath : str
-        Write-out directory path.
-    outname : str
-        Write-out filename.
-
-    Returns
-    -------
-    overwrite_permission : bool
-        Overwrite permission.
-
-    """
-    overwrite_permission = False
-    while save:
-        try:
-            if not os.path.exists(outpath):
-                raise FileNotFoundError(f"{outpath} does not exist. ")
-            if not overwrite_permission:
-                if os.path.exists(outpath + outname):
-                    raise FileExistsError
-            overwrite_permission = True
-            break
-        except FileExistsError:
-            grant_permission = input(
-                "Saving would overwrite existing file at destination. "
-                "Do you want to continue? [y/n] "
-            )
-            if grant_permission.lower().startswith('y'):
-                overwrite_permission = True
-                break
-            else:
-                overwrite_permission = False
-                raise FileExistsError(
-                    "Overwrite permission denied. File not saved. "
-                    )
-
-    return overwrite_permission
 
 
 def _view(output):

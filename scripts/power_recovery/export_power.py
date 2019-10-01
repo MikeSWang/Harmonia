@@ -4,11 +4,13 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from recovery_rc import PATHOUT, overwrite_protection
+from recovery_rc import PATHOUT
 from view_power import view_spectrum
 from harmonia.collections import (
     collate as collate_data,
     confirm_directory_path as confirm_dir,
+    harmony,
+    overwrite_protection,
 )
 
 
@@ -63,14 +65,22 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
 
     """
     outpath = f"{PATHOUT}{SCRIPT_NAME}/"
+    collate_path = f"{outpath}collated/"
     assert confirm_dir(outpath)
+
+    global output
 
     if collate:
         output, count, _ = collate_data(f"{outpath}{FILE_PREFIX}*.npy", 'npy')
         if save:
-            assert overwrite_protection(f"{outpath}collated/")
+            assert confirm_dir(collate_path)
+            assert overwrite_protection(
+                f"{outpath}collated/",
+                f"{FILE_PREFIX}{FILE_TAG}.npy",
+            )
             np.save(f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy", output)
-        if aggregate: results = aggregate_data(output)
+        if aggregate:
+            results = aggregate_data(output)
 
     if load:
         output = np.load(
@@ -79,15 +89,18 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
         if aggregate: results = aggregate_data(output)
 
     if export:
+        plt.style.use(harmony)
+        plt.close('all')
         view_spectrum(results, case='error')
         if savefig: plt.savefig(f"{outpath}{FILE_PREFIX}{FILE_TAG}.pdf")
 
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "nbodysim_power"
-    FILE_PREFIX = "halos-(NG=0.,z=1.)"
-    FILE_TAG = "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=256)"
+    SCRIPT_NAME = "realspace_power"
+    FILE_PREFIX = "realspace_power"
+    FILE_TAG = \
+        "-(nbar=0.001,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=1200)"
 
     COLLATE = True
     LOAD = False

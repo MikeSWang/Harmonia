@@ -107,9 +107,9 @@ def initialise():
         obj_name = "realisation"
 
     if mesh_gen == mesh_cal:
-        mesh_tag = f"gc{mesh_gen}"
+        mesh_tag = f"mesh=gc{mesh_gen}"
     else:
-        mesh_tag = f"g{mesh_gen},c{mesh_cal}"
+        mesh_tag = f"mesh=[g{mesh_gen},c{mesh_cal}]"
 
     filename_root = "-".join([obj_name, gen_name])
 

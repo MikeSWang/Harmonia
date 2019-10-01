@@ -8,40 +8,76 @@ import numpy as np
 from mpi4py import MPI
 from scipy.interpolate import interp1d
 
-from twoptrc import PATHIN, PATHOUT, fname, fdir, params, confirm_dir, mpicomp
+from agreement_rc import PATHIN, PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import format_float as ff
+from harmonia.collections import (
+    confirm_directory_path as confirm_dir,
+    format_float,
+    mpi_compute as mpicomp,
+)
 from harmonia.reader import coupling_list, twopoint_signal, twopoint_shotnoise
 
+PK_FILE_ROOT = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
-# == INITIALISATION ===========================================================
+
+def initialise():
+    """Initialise from input parameters, set up cosmology and return runtime
+    information.
+
+    Returns
+    -------
+    runtime_info : str
+        Runtime information.
+
+    Raises
+    ------
+    AttributeError
+        If a required input arameter is missing.
+
+    """
+    global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax
+
+    try:
+        pivots = params.structure.split(",")
+        nbar = params.nbar
+        bias = params.bias
+        rmax = params.boxside / 2
+        kmax = params.kmax
+    except AttributeError as attr_err:
+        raise AttributeError(attr_err)
+
+    global Plin, beta
+
+    k_points, Pk_points = np.loadtxt("".join(
+        [PATHIN, script_name, "/", PK_FILE_ROOT, ".txt"]
+    )).T
+
+    Plin = interp1d(k_points, Pk_points, assume_sorted=True)
+    beta = 0.
+
+    if len(pivots) > 1:
+        pivot_tag = "{}".format(pivots).replace("'", "")
+    else:
+        pivot_tag = "{}".format(params.structure).replace("'", "")
+
+    param_tag = "pivots={},nbar={},bias={},beta={},rmax={},kmax={},".format(
+        pivot_tag,
+        format_float(nbar, 'sci'),
+        format_float(bias, 'decdot'),
+        format_float(beta, 'decdot'),
+        format_float(rmax, 'intdot'),
+        format_float(kmax, 'sci'),
+    )
+    runtime_info = "-({})".format(param_tag)
+    return runtime_info
 
 # -- Runtime parameters -------------------------------------------------------
 
-struct = params.struct
-nbar = params.nbar
-bias = params.bias
-kmax = params.kmax
-rmax = params.boxside/2
+
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
-
-FILE = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
-
-# -- Cosmology ----------------------------------------------------------------
-
-k_samp, Pk_samp = np.loadtxt("".join([PATHIN, fdir, FILE, ".txt"])).T
-Plin = interp1d(k_samp, Pk_samp, assume_sorted=True)
-beta = 0.
-
-# -- Program identifier -------------------------------------------------------
-
-if beta:
-    subdir, rsd_tag = "wrsd/", "{:.2f}".format(beta)
-else:
-    subdir, rsd_tag = "nrsd/", 'none'
 
 
 # == PROCESSING ===============================================================

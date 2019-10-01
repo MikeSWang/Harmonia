@@ -6,7 +6,12 @@ from matplotlib import pyplot as plt
 from nbodykit import cosmology
 
 from fidelity_rc import PATHOUT
-from harmonia.collections import collate as collate_data, harmony
+from harmonia.collections import (
+    collate as collate_data,
+    confirm_directory_path as confirm_dir,
+    harmony,
+    overwrite_protection,
+)
 
 
 def aggregate_data(output_data):
@@ -55,11 +60,11 @@ def export_data(collate=False, load=False, save=False):
         continue.
 
     """
-    mismatch = any(
+    mismatch = not all(
         [
-            f"nbar={NBAR}" not in param_tag,
-            f"bias={BIAS}" not in param_tag,
-            f"mesh={NUM_MESH}" not in param_tag,
+            f"nbar={NBAR}" in param_tag,
+            f"bias={BIAS}".rstrip("0") in param_tag,
+            f"mesh={NUM_MESH}" in param_tag.replace("g", "").replace("c", ""),
         ]
     )
     if mismatch:
@@ -72,6 +77,7 @@ def export_data(collate=False, load=False, save=False):
     filename_root = "-".join([obj_name, gen_name])
     outpath = "".join([PATHOUT, filename_root, "/"])
     outname = "".join([filename_root, "-(", param_tag, ")"])
+    collate_path = f"{outpath}collated/"
 
     if collate:
         output, count, _ = collate_data(
@@ -79,11 +85,13 @@ def export_data(collate=False, load=False, save=False):
             'npy',
         )
         if save:
-            np.save(f"{outpath}collated/outname.npy", output)
+            assert confirm_dir(collate_path)
+            assert overwrite_protection(f"{collate_path}", f"{outname}.npy")
+            np.save(f"{outpath}collated/{outname}.npy", output)
         results = aggregate_data(output)
 
     if load:
-        output = np.load(f"{outpath}collated/outname.npy").item()
+        output = np.load(f"{outpath}collated/{outname}.npy").item()
         results = aggregate_data(output)
 
     return results
@@ -104,6 +112,8 @@ def view(results, savefig=False):
     YLIM = (22000, 120000)
     ERROR_PANEL_CEILING = 0.05
     ERROR_PATCH_HEIGHT = 0.01
+
+    global k, Nk, Pk, dPk, Pk_model
 
     if np.isclose(results['k'][0], 0.):
         sel = slice(1, None)
@@ -149,7 +159,7 @@ def view(results, savefig=False):
     main_ax = plt.subplot2grid((5,6), (0,0), rowspan=4, colspan=6)
 
     plt.errorbar(k, Pk_model, dPk_model, ls='--', label="power spectrum input")
-    plt.errorbar(k, Pk, dPk, label=f"{gen_name} {obj_name} output")
+    main = plt.errorbar(k, Pk, dPk, label=f"{gen_name} {obj_name} output")
 
     plt.tick_params(axis='x', which='both', labelbottom=False)
     plt.xscale('log')
@@ -160,14 +170,21 @@ def view(results, savefig=False):
 
     plt.subplot2grid((5,6), (4,0), colspan=6, sharex=main_ax)
 
-    plt.plot(k, deviation, ls='--')
-    plt.axhline(y=0., lw=1., ls='--')
+    plt.plot(k, deviation, color=main[0].get_color(), ls='--')
+    plt.fill_between(
+        k,
+        (Pk + dPk)/Pk_model - 1,
+        (Pk - dPk)/Pk_model - 1,
+        color=main[0].get_color(),
+        alpha=1/4,
+    )
     plt.fill_between(
         xlim,
         [ERROR_PATCH_HEIGHT]*2,
         [-ERROR_PATCH_HEIGHT]*2,
-        alpha=0.2,
+        alpha=1/5,
     )
+    plt.axhline(y=0., lw=1., ls='--')
 
     plt.xlim(xlim)
     plt.ylim(-ERROR_PANEL_CEILING, ERROR_PANEL_CEILING)
@@ -181,17 +198,18 @@ def view(results, savefig=False):
 
 if __name__ == '__main__':
 
-    NBAR = 0.0005
+    NBAR = 0.001
     BIAS = 2.
     NUM_MESH = 256
 
     obj_name = "catalogue"
     gen_name = "lognormal"
     param_tag = \
-        "nbar=0.0005,bias=2.,boxsize=1000.,kmax=0.1,mesh=gc256,iter=1000"
+        "nbar=0.001,bias=2.,boxsize=1000.,kmax=0.1,mesh=gc256,iter=1000"
 
     COLLATE = True
     LOAD = False
     SAVE = True
 
     results = export_data(collate=COLLATE, load=LOAD, save=SAVE)
+    view(results, savefig=False)

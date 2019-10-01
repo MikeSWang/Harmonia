@@ -69,13 +69,13 @@ class NBKCatalogue(LogNormalCatalog):
 
     Parameters
     ----------
-    Plin : callable
+    power_spectrum : :class:`nbodykit.cosmology.power.linear.LinearPower`
         Linear matter power spectrum with specified cosmology and redshift.
     nbar : float
         Input mean particle number density (lenght unit Mpc/h).
-    BoxSize : float, array_like
+    boxsize : float, array_like
         Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
-    Nmesh : int
+    num_mesh : int
         Mesh grid number for FFT generation.
     bias : float, optional
         Particle bias relative to the matter distribution (default is 2.).
@@ -89,10 +89,10 @@ class NBKCatalogue(LogNormalCatalog):
 
     _logger = logging.getLogger('LognormalCatalogue')
 
-    def __init__(self, Plin, mean_density, boxsize, num_mesh, bias=2.,
-                 add_RSD=False, seed=None):
+    def __init__(self, power_spectrum, mean_density, boxsize, num_mesh,
+                 bias=2., add_RSD=False, seed=None):
 
-        ini_args = (Plin, mean_density, boxsize, num_mesh)
+        ini_args = (power_spectrum, mean_density, boxsize, num_mesh)
         super().__init__(*ini_args, bias=bias, seed=seed)
 
         self.attrs['RSD_flag'] = add_RSD

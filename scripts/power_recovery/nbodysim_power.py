@@ -33,19 +33,18 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global input_file, kmax, boxsize, mesh_cal, niter, prog_id
+    global input_file, kmax, boxsize, mesh_cal, prog_id
 
     try:
         input_file = params.input_file
         kmax = params.kmax
         boxsize = params.boxsize
         mesh_cal = params.mesh_cal
-        niter = params.niter
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    runtime_info = "-(rmax={},kmax={},mesh=c{})".format(
-        format_float(boxsize/2, 'intdot'),
+    runtime_info = "-(boxsize={},kmax={},mesh=c{})".format(
+        format_float(boxsize, 'intdot'),
         format_float(kmax, 'sci'),
         mesh_cal,
     )

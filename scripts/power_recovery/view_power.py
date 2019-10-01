@@ -139,8 +139,12 @@ def view_spectrum(data, case='error'):
 
         cartesian_spline = IUSpline(data['k'], data['Pk'])(data['kln'])
 
-        plt.plot(data['kln'], data['Pln'] / cartesian_spline - 1, '--k')
-        plt.axhline(y=0., color='k', alpha=.5)
+        plt.plot(
+            data['kln'],
+            data['Pln'] / cartesian_spline - 1,
+            c=COLOUR['default'],
+        )
+        plt.axhline(y=0., ls='--', lw=1., c='k')
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
         plt.xscale('log')

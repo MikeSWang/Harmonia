@@ -14,6 +14,7 @@ System utilities
     confirm_directory_path
     get_filename
     collate
+    overwrite_protection
 
 **Multi-processing**
 
@@ -21,11 +22,13 @@ System utilities
 
     allocate_tasks
     allocate_segments
+    mpi_compute
 
 **Formatting**
 
 .. autosummary::
 
+    clean_warnings
     format_float
 
 Computational utilities
@@ -196,6 +199,49 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
     )
 
 
+def overwrite_protection(outpath, outname, save=True):
+    """Inspect and modify overwrite permission.
+
+    Parameters
+    ----------
+    outpath : str
+        Write-out directory path.
+    outname : str
+        Write-out filename.
+
+    Returns
+    -------
+    overwrite_permission : bool
+        Overwrite permission.
+
+    """
+    overwrite_permission = False
+    while save:
+        try:
+            if not os.path.exists(outpath):
+                raise FileNotFoundError(f"{outpath} does not exist. ")
+            if not overwrite_permission:
+                if os.path.exists(outpath + outname):
+                    raise FileExistsError
+            overwrite_permission = True
+            break
+        except FileExistsError:
+            grant_permission = input(
+                "Saving would overwrite existing file at destination. "
+                "Do you want to continue? [y/n] "
+            )
+            if grant_permission.lower().startswith('y'):
+                overwrite_permission = True
+                break
+            else:
+                overwrite_permission = False
+                raise FileExistsError(
+                    "Overwrite permission denied. File not saved. "
+                )
+
+    return overwrite_permission
+
+
 def allocate_tasks(tot_task, tot_proc):
     """Allocate tasks to processes for parallel computation.
 
@@ -278,6 +324,70 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
     ]
 
     return segments
+
+
+def mpi_compute(data_array, maps, comm, root=0):
+    """Multiprocess mapping of data.
+
+    Parameters
+    ----------
+    data_array : list
+        Data array.
+    maps : dict of callable
+        Maps to be applied.
+    comm : :class:`MPI.Comm`
+        MPI communicator.
+    root : int, optional
+        Rank of the process taken as the root process (default is 0).
+
+    Returns
+    -------
+    out_data_arrays : dict of list
+        Output data stored as :obj:`dict` corresponding to the `maps`
+        :obj:`dict`.
+
+
+    """
+    from harmonia.collections import allocate_segments
+
+    segment = allocate_segments(ntask=len(data_array), nproc=comm.size)
+    data_chunk = data_array[segment[comm.rank]]
+
+    outputs = defaultdict(list)
+    for var, comp in maps.items():
+        for data_element in data_chunk:
+            outputs[var].append(comp(data_element))
+
+    comm.Barrier()
+
+    result = {var: comm.gather(val, root=root) for var, val in outputs.items()}
+
+    if comm.rank == root:
+        result = {
+            var: np.concatenate(val, axis=0) for var, val in result.items()
+            }
+
+    return result
+
+
+def clean_warnings(message, category, filename, lineno, line=None):
+    """Clean warning message format.
+
+    Parameters
+    ----------
+    message, category, filename, lineno : str
+        Warning message, warning catagory, origin file name, line number.
+    line : str or None, optional
+        Source code line to be included in the warning message (default is
+        `None`).
+
+    Returns
+    -------
+    str
+        Warning message format.
+
+    """
+    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
 
 
 def format_float(x, case):

@@ -1,9 +1,9 @@
 """
 Spherical Fourier transform (:mod:`~harmonia.mapper.spherical_transform`)
-===============================================================================
+===========================================================================
 
-Transform discrete catalogues to discretised Fourier-space maps in spherical
-coordinates.
+Transform discrete catalogues to discretised Fourier-space maps in
+spherical coordinates.
 
 .. autosummary::
 
@@ -23,7 +23,6 @@ from harmonia.algorithms.integration import (
     angular_harmonic_integral as ang_int_harmonic,
     radial_besselj_integral as rad_int_besselj,
 )
-from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import (
     cartesian_to_spherical as c2s,
@@ -35,6 +34,9 @@ from harmonia.collections.utils import (
 class SphericalMap:
     """Discretised spherical Fourier map from catalogue sources.
 
+    The spherical degrees of the map is usually assumed to start at
+    :math:`\ell = 0` (see :ref:`this note <degree-index-warning>`).
+
     Parameters
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
@@ -44,10 +46,11 @@ class SphericalMap:
     rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
         Random catalogue of particles (default is `None`).
     source : {'mock', 'survey'}, optional
-        Catalogue source, either ``'mock'`` simulations or ``'survey'`` data.
+        Catalogue source, either ``'mock'`` simulations or ``'survey'``
+        data.
     mean_density_data, mean_density_rand : float or None, optional
-        Input mean particle number density (in cubic h/Mpc) of the data and/or
-        random catalogue (default is `None`).
+        Input mean particle number density (in cubic h/Mpc) of the data
+        and/or random catalogue (default is `None`).
 
     Attributes
     ----------
@@ -57,13 +60,19 @@ class SphericalMap:
         Data catalogue of particles.
     rand : :class:`nbodykit.base.catalog.CatalogSource` or None
         Random catalogue of particles.
-    pair : :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog` or None
+    pair : |FKPCatalog| or None
         FKP pair of data and random catalogues.
     mean_density : float
-        Mean particle number density (in cubic h/Mpc) for the data catalogue.
+        Mean particle number density (in cubic h/Mpc) for the data
+        catalogue.
     alpha_ratio : float or None
-        Ratio of weighted mean particle number densities of the data catalogue
-        to that of the random catalogue.
+        Ratio of weighted mean particle number densities of the data
+        catalogue to that of the random catalogue.
+
+
+    .. |FKPCatalog| replace::
+
+        :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog`
 
     """
 
@@ -184,58 +193,31 @@ class SphericalMap:
             self.disc.mode_count,
         )
 
-    @classmethod
-    def direct_discretisation(cls, data, rand=None, source='mock',
-                              mean_density_data=None, mean_density_rand=None,
-                              **disc_params):
-        """Instantiate a spherical map directly from discrete spectrum
-        parameters.
-
-        Parameters
-        ----------
-        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
-            Discrete spectrum.
-        data : :class:`nbodykit.base.catalog.CatalogSource`
-            Data catalogue of particles.
-        rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
-            Random catalogue of particles (default is `None`).
-        source : {'mock', 'survey'}, optional
-            Catalogue source, either ``'mock'`` simulations or ``'survey'``
-            data.
-        mean_density_data, mean_density_rand : float or None, optional
-            Input mean particle number density (in cubic h/Mpc) of the data or
-            random catalogue (default is `None`).
-        **disc_params
-            Parameters as keyword arguments to be passed to
-            :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.
-
-        """
-        return cls(
-            DiscreteSpectrum(**disc_params),
-            data,
-            rand=rand,
-            source=source,
-            mean_density_data=mean_density_data,
-            mean_density_rand=mean_density_rand,
-        )
-
     def transform(self, method=None):
         """Perform discrete spherical Fourier transform.
+
+        Parity relations between spherical harmonics of opposite orders but
+        the same degree are employed to reduce computational effort.
 
         Parameters
         ----------
         method : {'sum', 'integrate'} or None, optional
             Computation method, either Monte Carlo (``'sum'``) or numerical
-            integration (``'integrate'``) (default is `None`; if not provided,
-            this is subsequently overriden to ``'sum'`` if the random catalogue
-            is not `None`, else set to ``'integrate'``).
+            integration (``'integrate'``) (default is `None`; if not
+            provided, this is subsequently overriden to ``'sum'`` if the
+            random catalogue is not `None`, else set to ``'integrate'``).
 
         Returns
         -------
-        n_coeff, nbar_coeff : nested list of complex, array_like
+        n_coeff, nbar_coeff : :obj:`dict` of |dict_array|
             Spherical Fourier coefficients for the observed and expected
             particle number densities, normalised to the homogeneous mean
             particle number density :attr:`mean_density`.
+
+
+        .. |dict_array| replace::
+
+            {int: complex :class:`numpy.ndarray`}
 
         Raises
         ------
@@ -258,12 +240,12 @@ class SphericalMap:
         sel_data = data['Selection']
         wgt_data = data['Weight']
 
-        n_coeff, nbar_coeff = [], []
-        for ell, k_ell in zip(self.disc.degrees, self.disc.wavenumbers):
+        n_coeff, nbar_coeff = {}, {}
+        for ell in self.disc.degrees:
             n_ell, nbar_ell = [], []
-            for m_ell in range(-ell, 1):  # half of computation using parity
+            for m_ell in range(-ell, 1):
                 n_ellm, nbar_ellm = [], []
-                for k_elln in k_ell:
+                for k_elln in self.disc.wavenumbers[ell]:
                     n_ellmn = np.sum(
                         sel_data[:] * wgt_data[:]
                         * spherical_besselj(ell, k_elln*loc_data[:, 0])
@@ -303,13 +285,13 @@ class SphericalMap:
                             * ang_int_harmonic(unit_const, ell, m_ell) \
                             * rad_int_besselj(unit_const, ell, k_elln, radius)
 
-                    # `n_ellmn`, `nbar_ellmn` may be dask arrays.
+                    # CAVEAT: `n_ellmn`, `nbar_ellmn` may be dask arrays.
                     n_ellm.append(complex(n_ellmn/nbar))
                     nbar_ellm.append(complex(nbar_ellmn/nbar))
                 n_ell.append(n_ellm)
                 nbar_ell.append(nbar_ellm)
 
-            if ell != 0:  # reflect and extend using parity
+            if ell != 0:
                 n_ell_flip = np.multiply(
                     np.power(-1, np.arange(1, ell+1)[:, None]),
                     np.flipud(n_ell[:-1]),
@@ -321,8 +303,8 @@ class SphericalMap:
                 n_ell = np.concatenate((n_ell, np.conj(n_ell_flip)))
                 nbar_ell = np.concatenate((nbar_ell, np.conj(nbar_ell_flip)))
 
-            n_coeff.append(np.asarray(n_ell))
-            nbar_coeff.append(np.asarray(nbar_ell))
+            n_coeff[ell] = np.array(n_ell)
+            nbar_coeff[ell] = np.array(nbar_ell)
 
         self._n_coeff, self._nbar_coeff = n_coeff, nbar_coeff
 
@@ -331,33 +313,38 @@ class SphericalMap:
     def two_points(self, method=None, pivot='natural', order_collapse=False):
         r"""Comptute 2-point statistics.
 
-        Note
-        ----
-        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
-        structure.  For this method, the spherical degrees are assumed to start
-        at :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
-        :mod:`~harmonia.reader.spherical_model`.
+        The spherical degrees are assumed to start at :math:`\ell = 0` (see
+        :ref:`this note <degree-index-warning>`).
 
         Parameters
         ----------
         method : str, optional
             Expectation computation method (default is `None`).
-        pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}, optional
+        pivot : |set|, optional
             Axis order for array flattening (default is ``'natural'``).
         order_collapse : bool, optional
-            If `True` (default is `False`), spherical Fourier coefficients are
-            first averaged over spherical orders.
+            If `True` (default is `False`), spherical Fourier coefficients
+            are first averaged over spherical orders.
+
+
+        .. |set| replace::
+
+            {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
 
         Returns
         -------
-        list of complex, array_like
+        :obj:`list` of complex, array_like
             2-point statistics as 2-d array.
+
+        See Also
+        --------
+        :class:`~harmonia.algorithms.morph.SphericalArray`
 
         """
         if self._n_coeff is None or self._nbar_coeff is None:
             self._n_coeff, self._nbar_coeff = self.transform(method=method)
 
-        return self.compute_two_points_from_coeff(
+        return self._compute_two_points_from_coeff(
             self._n_coeff,
             self._nbar_coeff,
             self.disc,
@@ -382,7 +369,7 @@ class SphericalMap:
         if self._n_coeff is None or self._nbar_coeff is None:
             self._n_coeff, self._nbar_coeff = self.transform(method=method)
 
-        spherical_power = self.square_amplitude(
+        spherical_power = self._square_amplitude(
             self._n_coeff,
             self._nbar_coeff,
             normalisation=self.disc.normalisations,
@@ -391,41 +378,48 @@ class SphericalMap:
         return spherical_power
 
     @staticmethod
-    def compute_two_points_from_coeff(n_coeff, nbar_coeff, disc,
-                                     pivot='natural', order_collapse=False):
+    def _compute_two_points_from_coeff(n_coeff, nbar_coeff, disc,
+                                       pivot='natural', order_collapse=False):
         r"""Compute 2-point statistics from spherical Fourier coefficients.
-
-        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
-        structure.
-
-        Note
-        ----
-        See :class:`~harmonia.algorithms.morph.SphericalArray` for array
-        structure.  For this method, the spherical degrees are assumed to start
-        at :math:`\ell = 0`.  See :ref:`this note <degree-index-warning>` for
-        :mod:`~harmonia.reader.spherical_model`.
 
         Parameters
         ----------
-        n_coeff, nbar_coeff : nested list of complex, array_like
-            Observed and expected pherical Fourier coefficients of the field
-            normalised to the homogeneous particle number density
-            :attr:`mean_density`.
-        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+        n_coeff, nbar_coeff : :obj:`dict` of |dict_array|
+            Spherical Fourier coefficients for the observed and expected
+            particle number densities, normalised to the homogeneous mean
+            particle number density :attr:`mean_density`.
+        disc : :class:`.DiscreteSpectrum`
             Discrete spectrum.
-        pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}, optional
+        pivot : |set|, optional
             Axis order for array flattening (default is ``'natural'``).
         order_collapse : bool, optional
-            If `True`, coefficients `n_coeff` , `nbar_coeff` are first averaged
-            over spherical orders.
+            If `True`, coefficients `n_coeff` , `nbar_coeff` are first
+            averaged over spherical orders.
+
+
+        .. |dict_array| replace::
+
+            {int: complex :class:`numpy.ndarray`}
+
+        .. |set| replace::
+
+            {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
 
         Returns
         -------
-        list of complex, array_like
+        :obj:`list` of complex, array_like
             2-point statistics as 2-d array.
 
+        See Also
+        --------
+        :class:`~harmonia.algorithms.morph.SphericalArray`
+
         """
-        fill = [n - nbar for n, nbar in zip(n_coeff, nbar_coeff)]
+        sorted_degrees = np.sort(list(n_coeff.keys()))
+        fill = [
+            n_coeff[ell] - nbar_coeff[ell]
+            for ell in sorted_degrees
+        ]
 
         delta_ellmn = SphericalArray.build(disc=disc, filling=fill)
         delta_ellmn_flat = delta_ellmn.unfold(
@@ -437,19 +431,23 @@ class SphericalMap:
         return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))
 
     @staticmethod
-    def square_amplitude(n_coeff, nbar_coeff, normalisation=None):
+    def _square_amplitude(n_coeff, nbar_coeff, normalisation=None):
         """Compute normalised square amplitude from spherical Fourier
         coefficients of the field.
 
         Parameters
         ----------
-        n_coeff, nbar_coeff : nested list of complex, array_like
-            Observed and expected spherical Fourier coefficients for the field
-            normalised to the homogeneous particle number density
+        n_coeff, nbar_coeff : list of complex, array_like
+            Observed and expected spherical Fourier coefficients for the
+            field normalised to the homogeneous particle number density
             :attr:`mean_density`.
-        normalisation : list of float, array_like, optional
+        normalisation : :obj:`dict` of |dict_array|, optional
             Normalisation coefficients.  If `None`, all normalisation
             coefficients are set to unity.
+
+        .. |dict_array| replace::
+
+            {int: :class:`numpy.ndarray`}
 
         Returns
         -------
@@ -457,14 +455,15 @@ class SphericalMap:
             Spherically recovered power with given normalisation.
 
         """
+        sorted_degrees = np.sort(list(n_coeff.keys()))
+
         if normalisation is None:
-            normalisation = np.ones(len(n_coeff))
+            normalisation = dict.fromkeys(sorted_degrees, 1)
 
         return [
-            kappa * np.average(np.abs(n_ellmn - nbar_ellmn)**2, axis=0)
-            for kappa, n_ellmn, nbar_ellmn in zip(
-                normalisation,
-                n_coeff,
-                nbar_coeff,
+            normalisation[ell] * np.average(
+                np.abs(n_coeff[ell] - nbar_coeff[ell])**2,
+                axis=0
             )
+            for ell in sorted_degrees
         ]

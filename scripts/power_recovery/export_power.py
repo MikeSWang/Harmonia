@@ -51,10 +51,10 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
     Parameters
     ----------
     collate, load, export, aggregate, save, savefig : bool, optional
-        If `True`, collate, load, export, aggregate or save data, and/or save
-        the plotted figure.  Default is `True` for exporting, aggregating and
-        saving data, and `False` for collating and loading data or saving
-        figure.
+        If `True`, collate, load, export, aggregate or save data, and/or
+        save the plotted figure.  Default is `True` for exporting,
+        aggregating and saving data, and `False` for collating and loading
+        data or saving figure.
 
     Raises
     ------

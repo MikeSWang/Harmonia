@@ -1,6 +1,6 @@
 """
 Geometrical calculations (:mod:`~harmonia.cosmology.geometry`)
-===============================================================================
+===========================================================================
 
 Perform geometrical calculations.
 
@@ -15,7 +15,8 @@ Perform geometrical calculations.
 from nbodykit import cosmology
 
 fiducial_cosmology = cosmology.Planck15
-""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default Planck15 cosmology.
+""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default Planck15
+cosmology.
 
 """
 
@@ -40,8 +41,8 @@ def fiducial_distance(z):
 
 def redshift_to_distance(z, h0, O0_b, O0_cdm):
     """Compute comoving distance (in Mpc/h) from redshift for a given
-    spatially-flat cosmological model with negligible radiation energy density
-    and implicit dark energy density.
+    spatially-flat cosmological model with negligible radiation energy
+    density and implicit dark energy density.
 
     Parameters
     ----------

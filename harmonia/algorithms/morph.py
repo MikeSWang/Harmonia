@@ -1,6 +1,6 @@
 """
 Array morphing (:mod:`~harmonia.algorithms.morph`)
-===============================================================================
+===========================================================================
 
 Manipulate cosmological data array structures.
 
@@ -16,22 +16,23 @@ import warnings
 import numpy as np
 
 from .bases import spherical_besselj_root
+from harmonia.collections.utils import sort_dict_to_list
 
 
 class SphericalArray:
-    r"""Morphable spherical arrays with specified spherical degrees, orders and
-    depths.
+    r"""Morphable spherical arrays with specified spherical degrees, orders
+    and depths.
 
-    The array is initialised in the natural structure together with an index
-    array of the same structure.  A natural structure array is a
+    The array is initialised in the natural structure together with an
+    index array of the same structure.  A natural structure array is a
     length-:math:`\ell` list of :math:`(m_\ell \times n_\ell)`-rectangular
     arrays whose entries are indexed by a triplet :math:`(\ell, m_\ell,
     n_\ell)`, which are respectively the spherical degree, order and depth.
 
-    Spherical degrees :math:`\ell` and orders :math:`m` are associated with the
-    spherical Bessel and harmonic functions, and spherical depths :math:`n` are
-    the number of allowed radial wave numbers for each degree of a discrete
-    Fourier spectrum, implemented by
+    Spherical degrees :math:`\ell` and orders :math:`m` are associated with
+    the spherical Bessel and harmonic functions, and spherical depths
+    :math:`n` are the number of allowed radial wave numbers for each degree
+    of a discrete Fourier spectrum, implemented by
     :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.
 
     The supported array structures include the following:
@@ -39,12 +40,12 @@ class SphericalArray:
         * 'natural' or equivalently :math:`(\ell, m, n)`;
         * :math:`(\ell, n, m)`, where ordering by spherical depths takes
           precedence over that by spherical orders;
-        * :math:`(\ell, n)`, as above but values for equivalent :math:`m` have
-          been averaged/collapsed in the corresponding axis;
-        * :math:`k`, where a flattened array is sorted in ascending order by
-          wave numbers;
-        * 'scale', as above but values for equivalent :math:`m` have first been
-          averaged/collapsed in the corresponding axis.
+        * :math:`(\ell, n)`, as above but values for equivalent :math:`m`
+          have been averaged/collapsed in the corresponding axis;
+        * :math:`k`, where a flattened array is sorted in ascending order
+          by wave numbers;
+        * 'scale', as above but values for equivalent :math:`m` have first
+          been averaged/collapsed in the corresponding axis.
 
     Parameters
     ----------
@@ -52,13 +53,14 @@ class SphericalArray:
         Spherical degrees.
     depths : int, array_like
         Spherical depths for each degree.
-    roots : float, array_like or None, optional
-        Roots of spherical Bessel functions or their derivatives corresponding
-        to `degrees` and `depths`.  If this is `None` (default), the roots are
-        computed by calling
+    roots : :obj:`dict` of {int: :class:`numpy.ndarray`}, optional
+        Roots of spherical Bessel functions or their derivatives
+        corresponding to `degrees` and `depths`.  If this is `None`
+        (default), the roots are computed by calling
         :func:`~harmonia.algorithms.bases.spherical_besselj_root`.
-    filling : float, array_like or None, optional
-        Data array from which the spherical array is built (default is `None`).
+    filling : float array_like or None, optional
+        Data array from which the spherical array is built (default is
+        `None`).
 
     Attributes
     ----------
@@ -66,12 +68,12 @@ class SphericalArray:
         Spherical degrees.
     depths : int, array_like
         Spherical depths associated with each spherical degree.
-    roots : float, array_like
-        Roots of spherical Bessel functions or their derivatives corresponding
-        to `degrees` and `depths`.
-    index_array : list of (int, int, int), array_like
+    roots : list of float array_like
+        Roots of spherical Bessel functions or their derivatives
+        corresponding to `degrees` and `depths`.
+    index_array : :obj:`list` of (int, int, int) array_like
         Triplet indices stored in the natural structure.
-    data_array : list of float, array_like or None
+    data_array : :obj:`list` of float array_like or None
         Data stored in the natural structure.
 
     Raises
@@ -89,12 +91,9 @@ class SphericalArray:
                 spherical_besselj_root(ell, nmax, only=False)
                 for ell, nmax in zip(degrees, depths)
             ]
+        if isinstance(roots, dict):
+            roots = sort_dict_to_list(roots)
         self.degrees, self.depths, self.roots = degrees, depths, roots
-
-        self._wavetuples = [
-            [[(ell, n_idx + 1) for n_idx in range(nmax)]]
-            for ell, nmax in zip(degrees, depths)
-        ]
 
         self.index_array = []
         for ell, nmax in zip(degrees, depths):
@@ -128,18 +127,18 @@ class SphericalArray:
 
     @classmethod
     def build(cls, filling=None, disc=None):
-        """Alternative build from a natural structure array and/or a discrete
-        spectrum.
+        """Alternative build from a natural structure array and/or a
+        discrete spectrum.
 
         If `disc` is not provided, the natural structure is inferred from
-        `filling`; if only `disc` is provided, a natural structue index array
-        is returned with :attr:`data_array` being `None`.
+        `filling`; if only `disc` is provided, a natural structue index
+        array is returned with :attr:`data_array` being `None`.
 
         Parameters
         ----------
-        filling : array_like
+        filling : array_like or None, optional
             Natural structure data array for filling (default is `None`).
-        disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+        disc : :class:`.DiscreteSpectrum` or None, optional
             Discretisation set-up (default is `None`).
 
         Raises
@@ -147,8 +146,8 @@ class SphericalArray:
         ValueError
             `disc` and `filling` are both `None`.
         ValueError
-            Spherical degrees inferred from `filling` do not respect the odd
-            parity and ascending ordering.
+            Spherical degrees inferred from `filling` do not respect the
+            odd parity and ascending ordering.
 
         """
         if disc is not None:
@@ -182,28 +181,28 @@ class SphericalArray:
     def unfold(self, axis_order, collapse=False, return_only=None):
         r"""Flatten data and index arrays in the specified order.
 
-        If the arrays are collapsed amongst equivalent spherical orders, each
-        block element in :attr:`data_array` is first averaged over the rows and
-        the triplet index tuple elements in :attr:`index_array` are stripped
-        of their middle order-index before flattening.
+        If the arrays are collapsed amongst equivalent spherical orders,
+        each block element in :attr:`data_array` is first averaged over the
+        rows and the triplet index tuple elements in :attr:`index_array`
+        are stripped of their middle order-index before flattening.
 
         Parameters
         ----------
-        axis_order : {'natural', 'scale', 'lmn', 'lnm', 'ln', k'}
+        axis_order : {'natural', 'scale', 'lmn', 'lnm', 'ln', 'k'}
             Axis order for array flattening.  If this is set to ``'ln'`` or
             ``'scale'``, `collapse` is overriden to `True`.
         collapse : bool, optional
             If `True` (default is `False`), the arrays are collapsed over
-            spherical orders before flattening.  This is overriden to `True`
-            if `axis_order` is ``'ln'`` or ``'k'``.
+            spherical orders before flattening.  This is overriden to
+            `True` if `axis_order` is ``'ln'`` or ``'k'``.
         return_only : {'data', 'index'} or None, optional
             Only return the 'data' or 'index' array (default is `None`).
 
         Returns
         -------
-        data_flat : float, array_like or None
+        data_flat : float array_like or None
             Flattend 1-d data array.
-        index_flat : list of tuple
+        index_flat : :obj:`list` of :obj:`tuple`
             Flattend 1-d index array.
 
         """
@@ -217,7 +216,6 @@ class SphericalArray:
                 RuntimeWarning,
             )
 
-        # Spherical order collapse (`collapse` overriden if appropriate).
         axis_order = self._alias(axis_order)
         if axis_order == 'ln':
             axis_order, collapse = 'lmn', True
@@ -229,7 +227,6 @@ class SphericalArray:
                 data_arr = self.collapse_subarray(data_arr, 'data')
             index_arr = self.collapse_subarray(index_arr, 'index')
 
-        # Vectorisation.
         transpose = (axis_order == 'lnm')
 
         if not empty_flag:
@@ -273,12 +270,12 @@ class SphericalArray:
         in_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Input structure.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
 
         Returns
         -------
-        list of tuple or float, array_like
+        :obj:`list` of :obj:`tuple` or float array_like
             Refolded natural array.
 
         Raises
@@ -327,9 +324,9 @@ class SphericalArray:
     def morph(self, array, in_structure, out_structure, subarray_type):
         """Morph an array from one structure to another structure.
 
-        All morphings are performed by returning the array shape to the natural
-        structure first.  The allowed morphings are (any composition of) the
-        following (modulo equivalent structure names):
+        All morphings are performed by returning the array shape to the
+        natural structure first.  The allowed morphings are (any
+        composition of) the following (modulo equivalent structure names):
 
             * 'lmn' to/from 'lnm';
             * 'lmn' to/from 'k';
@@ -345,8 +342,8 @@ class SphericalArray:
         out_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
             Output structure.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
 
         Returns
         -------
@@ -408,12 +405,12 @@ class SphericalArray:
         array : list of float or tuple, array_like
             List of subarrays.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
 
         Returns
         -------
-        list of float or tuple, array_like
+        :obj:`list` of float or :obj:`tuple`, array_like
             List of transposed subarrays.
 
         Raises
@@ -430,20 +427,20 @@ class SphericalArray:
 
     @staticmethod
     def collapse_subarray(array, subarray_type):
-        """Collapse a natural structure array over equivalent spherical orders
-        while preserving array dimensions.
+        """Collapse a natural structure array over equivalent spherical
+        orders while preserving array dimensions.
 
         Parameters
         ----------
         array : list of float or tuple, array_like
             Natural structure array.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
 
         Returns
         -------
-        list of float or tuple, array_like
+        :obj:`list` of float or :obj:`tuple`, array_like
             List of collapsed subarrays along the spherical order axis.
 
         Raises
@@ -476,16 +473,17 @@ class SphericalArray:
         array : list of float or tuple, array_like
             Array collapsed over spherical orders.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
-        degrees : list of int, array_like or None
-            Spherical degrees for which equivalent spherical order arrays are
-            repeated (default is `None`).  If it is `None`, the degrees are
-            inferred from the length of `array` assuming the first degree is 0.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
+        degrees : list of int array_like or None
+            Spherical degrees for which equivalent spherical order arrays
+            are repeated (default is `None`).  If it is `None`, the degrees
+            are inferred from the length of `array` assuming the first
+            degree is 0.
 
         Returns
         -------
-        list of float or tuple, array_like
+        :obj:`list` of float or :obj:`tuple`, array_like
             Uncollapsed natural structure array.
 
         Raises
@@ -546,15 +544,15 @@ class SphericalArray:
         array : list of float or tuple, array_like
             Natural structure array.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'`` for
-            index arrays.
+            Subarray type, either ``'data'`` for data arrays or ``'index'``
+            for index arrays.
         subarray_transpose : bool, optional
-            If `True` (default is `False`), each subarray is flattened along
-            the columns rather than rows by a transposition.
+            If `True` (default is `False`), each subarray is flattened
+            along the columns rather than rows by a transposition.
 
         Returns
         -------
-        float or tuple, array_like
+        float or :obj:`tuple`, array_like
             Flat 1-d array.
 
         Raises

@@ -1,11 +1,11 @@
 """
 Utilities (:mod:`~harmonia.collections.utils`)
-===============================================================================
+===========================================================================
 
 Common system and computational utilities.
 
 System utilities
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 **File handling**
 
@@ -32,7 +32,7 @@ System utilities
     format_float
 
 Computational utilities
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 **Algebraic algorithms**
 
@@ -42,6 +42,7 @@ Computational utilities
     unit_const
     covar_to_corr
     binary_search
+    sort_dict_to_list
 
 **Geometrical algorithms**
 
@@ -69,6 +70,29 @@ from glob import glob
 
 import numpy as np
 
+__all__ = [
+    'allocate_tasks',
+    'allocate_segments',
+    'bin_edges_from_centres',
+    'binary_search',
+    'cartesian_to_spherical',
+    'clean_warnings',  # TODO: testing
+    'collate',
+    'confirm_directory_path',  # TODO: testing
+    'covar_to_corr',
+    'format_float',
+    'get_filename',
+    'mpi_compute',  # TODO: testing
+    'normalise_vector',
+    'overwrite_protection',  # TODO: testing
+    'smooth_by_bin_average',
+    'sort_dict_to_list',  # TODO: testing
+    'spherical_to_cartesian',
+    'spherical_indicator',
+    'zero_const',
+    'unit_const',
+]
+
 
 # SYSTEM UTILITIES
 # -----------------------------------------------------------------------------
@@ -84,7 +108,7 @@ def confirm_directory_path(dir_path):
     Returns
     -------
     bool
-        `True` is `dir_path` exists or has been created.
+        `True` if `dir_path` exists or has been created.
 
     """
     if not dir_path.endswith("/"):
@@ -114,6 +138,10 @@ def get_filename(file_path):
 def collate(file_path_pattern, file_extension, headings=None, columns=None):
     """Collate data files.
 
+    For text files, the data is assumed to be stored as a column-major 2-d
+    array with each column in correspondence with a key in the returned
+    :obj:`dict`.
+
     Parameters
     ----------
     file_path_pattern : str
@@ -121,10 +149,11 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
     file_extension : {'npy', 'txt', 'dat'}
         Data file extension.
     headings : list of str or None, optional
-        Data column headings to be used as dictionary keys (default is `None`).
+        Data column headings to be used as :obj:`dict` keys (default is
+        `None`).
     columns : list of int or None, optional
-        Data column indices (zero-indexed)  corresponding to headings (default
-        is `None`).
+        Data column indices (zero-indexed)  corresponding to headings
+        (default is `None`).
 
     Returns
     -------
@@ -140,16 +169,10 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
     NotImplementedError
         If `file_extension` is not currently supported.
     ValueError
-        If `file_extension` is ``'txt'`` or ``'dat'``, but either `headings` or
-        `columns` is `None`.
+        If `file_extension` is ``'txt'`` or ``'dat'``, but either
+        `headings` or `columns` is `None`.
     ValueError
         If `headings` and `columns` are not in correpondence.
-
-    Notes
-    -----
-    For text files, the data is assumed to be stored as a column-major 2-d
-    array with each column in correspondence with a key in the returned
-    :obj:`dict`.
 
     """
     all_files = glob(file_path_pattern)
@@ -202,6 +225,9 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
 def overwrite_protection(outpath, outname, save=True):
     """Inspect and modify overwrite permission.
 
+    The function may ask for permission from the user to overwrite the file
+    path at runtime.
+
     Parameters
     ----------
     outpath : str
@@ -245,9 +271,10 @@ def overwrite_protection(outpath, outname, save=True):
 def allocate_tasks(tot_task, tot_proc):
     """Allocate tasks to processes for parallel computation.
 
-    If `tot_proc` processes share `tot_task` tasks, then :func:`allocate_tasks`
-    decides the numbers of tasks, :const:`tasks`, different processes receive:
-    the rank-``i`` process receives ``tasks[i]`` many tasks.
+    If `tot_proc` processes share `tot_task` tasks, then
+    :func:`allocate_tasks` decides the numbers of tasks, :const:`tasks`,
+    different processes receive: the rank-``i`` process receives
+    ``tasks[i]`` many tasks.
 
     Parameters
     ----------
@@ -258,7 +285,7 @@ def allocate_tasks(tot_task, tot_proc):
 
     Returns
     -------
-    tasks : list of int
+    tasks : :obj:`list` of int
         Number of tasks for each process.
 
     """
@@ -277,10 +304,10 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
     """Allocate segments of tasks to each process by the number of tasks it
     receives and its rank.
 
-    For instance, if the rank-``i`` process receives ``tasks[i]`` tasks (r.g.
-    assigned by :func:`allocate_tasks`), then this function assigns a slice of
-    the indexed tasks it should receive, with the indices ordered in ascenscion
-    in correspondence with ranks of the processes.
+    For instance, if the rank-``i`` process receives ``tasks[i]`` tasks
+    (e.g. assigned by :func:`allocate_tasks`), then this function assigns a
+    slice of the indexed tasks it should receive, with the indices ordered
+    in ascension in correspondence with ranks of the processes.
 
     Parameters
     ----------
@@ -292,19 +319,20 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
         Total number of tasks.  This is ignored if `tasks` is not `None`,
         otherwise this cannot be `None`.
     tot_proc : int or None, optional
-        Total number of processes.  This is ignored if `tasks` is not `None`,
-        otherwise this cannot be `None`.
+        Total number of processes.  This is ignored if `tasks` is not
+        `None`, otherwise this cannot be `None`.
 
     Returns
     -------
-    segments : list of slice
+    segments : :obj:`list` of :obj:`slice`
         Index slice of the segment of tasks that each process should
         receive.
 
     Raises
     ------
     ValueError
-        If either `ntask` or `nproc` is `None` while `tasks` is also `None`.
+        If either `ntask` or `nproc` is `None` while `tasks` is also
+        `None`.
 
     """
     if tasks is None:
@@ -329,45 +357,51 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
 def mpi_compute(data_array, maps, comm, root=0):
     """Multiprocess mapping of data.
 
+    For each map to be applied, the input data array is scattered over the
+    first axis for computation on difference process, and the computed
+    results are gathered in the exact structure of the input data array.
+
     Parameters
     ----------
     data_array : list
         Data array.
     maps : dict of callable
         Maps to be applied.
-    comm : :class:`MPI.Comm`
+    comm : :class:`mpi4py.MPI.Comm`
         MPI communicator.
     root : int, optional
         Rank of the process taken as the root process (default is 0).
 
     Returns
     -------
-    out_data_arrays : dict of list
+    out_data_arrays : :obj:`dict` of :obj:`list`
         Output data stored as :obj:`dict` corresponding to the `maps`
         :obj:`dict`.
-
 
     """
     from harmonia.collections import allocate_segments
 
-    segment = allocate_segments(ntask=len(data_array), nproc=comm.size)
-    data_chunk = data_array[segment[comm.rank]]
+    segments = allocate_segments(tot_task=len(data_array), tot_proc=comm.size)
+    data_chunk = data_array[segments[comm.rank]]
 
-    outputs = defaultdict(list)
-    for var, comp in maps.items():
-        for data_element in data_chunk:
-            outputs[var].append(comp(data_element))
+    outputs = {}
+    for mapping, process in maps.items():
+        outputs[mapping] = [process(data_piece) for data_piece in data_chunk]
 
     comm.Barrier()
 
-    result = {var: comm.gather(val, root=root) for var, val in outputs.items()}
+    results = {
+        mapping: comm.gather(output, root=root)
+        for mapping, output in outputs.items()
+    }
 
     if comm.rank == root:
-        result = {
-            var: np.concatenate(val, axis=0) for var, val in result.items()
-            }
+        results = {
+            mapping: np.concatenate(result, axis=0)
+            for mapping, result in results.items()
+        }
 
-    return result
+    return results
 
 
 def clean_warnings(message, category, filename, lineno, line=None):
@@ -399,9 +433,9 @@ def format_float(x, case):
         Number to be formatted.
     case : {'latex', 'sci', 'intdot', 'decdot'}
         Format case, one of LaTeX (``'latex'``), scientific (``'sci'``),
-        rounded integer ending with a decimal dot (``'intdot'``), or a float
-        whose first decimal place is 0 represented as a rounded integer ending
-        with a decimal dot (``'decdot'``).
+        rounded integer ending with a decimal dot (``'intdot'``), or a
+        float whose first decimal place is 0 represented as a rounded
+        integer ending with a decimal dot (``'decdot'``).
 
     Returns
     -------
@@ -512,7 +546,7 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
 
     Returns
     -------
-    roots : float, array_like or None
+    roots : float array_like or None
         Possible roots.
 
     """
@@ -532,8 +566,8 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         Returns
         -------
         x0, x1 : float or None
-            End points for an interval with sign change (`None` if the result
-            is null).
+            End points for an interval with sign change (`None` if the
+            result is null).
 
         """
         x0, x1 = a, a + dx
@@ -556,8 +590,8 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         x0, x1: float
             Starting interval end points.
         convergence : float, optional
-            Precision control for convergence through maximum iteration number
-            (default is 1.0e-9).
+            Precision control for convergence through maximum iteration
+            number (default is 1.0e-9).
 
         Returns
         -------
@@ -610,6 +644,38 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
     return np.asarray(roots, dtype=float)
 
 
+def sort_dict_to_list(data):
+    """Sort :obj:`dict` by its integer key values and return a list of its
+    values in ascending order by the keys.
+
+    Parameters
+    ----------
+    data : dict
+        :obj:`dict` with its integer keys.
+
+    Returns
+    -------
+    list of array_like
+
+    Raises
+    ------
+    TypeError
+        If `data` is not a :obj:`dict` instance, or its keys are not
+        integers.
+
+    """
+    if not isinstance(data, dict):
+        raise TypeError("`data` must be a dictionary. ")
+
+    keys = list(data.keys())
+    if not all([isinstance(key, int) for key in keys]):
+        raise TypeError("`data` keys must be integers. ")
+
+    sorted_keys = np.sort(keys)
+
+    return [data[key] for key in sorted_keys]
+
+
 def normalise_vector(vec, axis=-1):
     """Normalise vector arrays to unit vectors.
 
@@ -650,7 +716,8 @@ def spherical_indicator(cartesian_position, bounding_radius):
 
 
 def cartesian_to_spherical(cartesian_coords):
-    r"""Convert 3-d Cartesian coordinate arrays to spherical coordinate arrays.
+    r"""Convert 3-d Cartesian coordinate arrays to spherical coordinate
+    arrays.
 
     The coordinate transformation is given by
 
@@ -660,8 +727,8 @@ def cartesian_to_spherical(cartesian_coords):
         \theta = \arccos(z/r) \,, \quad
         \phi = \arctan(y/x) \,,
 
-    where the image of :math:`\arccos` is :math:`[0, \pi]`, and :math:`\arctan`
-    has an extended image set :math:`[0, 2\pi]`.
+    where the image of :math:`\arccos` is :math:`[0, \pi]`, and
+    :math:`\arctan` has an extended image set :math:`[0, 2\pi]`.
 
     Parameters
     ----------
@@ -697,7 +764,8 @@ def cartesian_to_spherical(cartesian_coords):
 
 
 def spherical_to_cartesian(spherical_coords):
-    r"""Convert 3-d spherical coordinate arrays to Cartesian coordinate arrays.
+    r"""Convert 3-d spherical coordinate arrays to Cartesian coordinate
+    arrays.
 
     The coordinate transformation is given by
 
@@ -740,18 +808,18 @@ def spherical_to_cartesian(spherical_coords):
 
 
 def bin_edges_from_centres(centres, extremes, align='low'):
-    """Convert bin centres to bin edges given extremities of the binning range,
-    assumed to be positive.
+    """Convert bin centres to bin edges given extremities of the binning
+    range, assumed to be positive.
 
     Parameters
     ----------
     centres : float, array_like
         Bin centers (``centres > 0``).
-    extremes : tuple or list [of length 2]
+    extremes : tuple or list
         Binning range extremities (``extremes >= 0``).
     align : {'high', 'low'}, optional
-        Conversion from high end of the binning range for ``'high'``, or from
-        low end for ``'low'`` (default).
+        Conversion from high end of the binning range for ``'high'``, or
+        from low end for ``'low'`` (default).
 
     Returns
     -------
@@ -764,15 +832,15 @@ def bin_edges_from_centres(centres, extremes, align='low'):
     if np.allclose(centres[0], 0):
         centres = np.delete(centres, 0)
 
-    nbins = len(centres)
+    num_bin = len(centres)
     edges = np.concatenate(
-        ([np.min(extremes)], np.zeros(nbins-1), [np.max(extremes)]),
+        ([np.min(extremes)], np.zeros(num_bin-1), [np.max(extremes)]),
     )
     if align.lower().startswith('l'):
-        for bin_idx in range(nbins-1):
+        for bin_idx in range(num_bin-1):
             edges[bin_idx+1] = 2*centres[bin_idx] - edges[bin_idx]
     elif align.lower().startswith('h'):
-        for bin_idx in range(nbins-1):
+        for bin_idx in range(num_bin-1):
             edges[-bin_idx-2] = 2*centres[-bin_idx-1] - edges[-bin_idx-1]
 
     return edges
@@ -789,15 +857,15 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     bin_edges : float, array_like
         Bin edges.
     x_coarse, y_coarse : str
-        Dictionary key holding unsmoothed data coordinates or data points.
+        :obj:`dict` key holding unsmoothed data coordinates or data points.
     dx_coarse, dy_coarse : str or None, optional
-        Dictionary key holding data coordinate or data point uncertainties to
-        be added in quadrature in bin without averaging.
+        :obj:`dict` key holding data coordinate or data point uncertainties
+        to be added in quadrature in bin without averaging.
 
     Returns
     -------
     smoothed_data : dict
-        Smoothed quantities correspond to dictionary keys `x_coarse`,
+        Smoothed quantities correspond to :obj:`dict` keys `x_coarse`,
         `y_coarse`, `dx_coarse` and `dy_coarse` if the keys are not `None`.
     bin_count : int, array_like
         Number of data points in each bin.
@@ -805,44 +873,41 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     Raises
     ------
     NotImplementedError
-        If `data` is not of supported data types.
+        If `data` is not of supported data-types.
 
     """
     if not isinstance(data, dict):
         raise NotImplementedError(
-            "Data types other than `dict` are currently unsupported. "
+            "Data-types other than `dict` are currently unsupported. "
         )
     else:
-        nbins = len(bin_edges) - 1
-        x_coarse_lab, y_coarse_lab = x_coarse, y_coarse
+        num_bin = len(bin_edges) - 1
+        x_coarse_label, y_coarse_label = x_coarse, y_coarse
 
-        # Sort modes by scales.
         order = np.argsort(data[x_coarse])
         x_coarse = data[x_coarse][order]
         y_coarse = data[y_coarse][order]
 
-        # Decide on which bin.
         which_bins = np.zeros(x_coarse.shape)
         for idx, val in enumerate(x_coarse):
             which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
 
-        # Average in bins and count.
-        x_smooth, y_smooth, bin_count = np.zeros((3, nbins))
-        for bin_idx in range(nbins):
+        x_smooth, y_smooth, bin_count = np.zeros((3, num_bin))
+        for bin_idx in range(num_bin):
             x_smooth[bin_idx] = np.average(x_coarse[which_bins == bin_idx])
             y_smooth[bin_idx] = np.average(y_coarse[which_bins == bin_idx])
             bin_count[bin_idx] = np.sum(which_bins == bin_idx)
 
         # Add uncertainties in quadrature in each bin if requested.
         smoothed_data = {
-            x_coarse_lab: x_smooth,
-            y_coarse_lab: y_smooth,
+            x_coarse_label: x_smooth,
+            y_coarse_label: y_smooth,
         }
         for key in [dx_coarse, dy_coarse]:
             if key is not None:
                 coarse = data[key][order]
-                smooth = np.zeros(nbins)
-                for bin_idx in range(nbins):
+                smooth = np.zeros(num_bin)
+                for bin_idx in range(num_bin):
                     smooth[bin_idx] = np.sqrt(
                         np.sum(coarse[which_bins == bin_idx]**2)
                     )

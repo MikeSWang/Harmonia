@@ -104,14 +104,31 @@ def process(runtime_info):
             triplet_index_vector[pivot] = SphericalArray.build(disc=disc)\
                 .unfold(pivot, return_only='index')
 
-    coupling_coefficients
+    compiling_maps = {
+        coupling_type: lambda mu: couplings.compile_over_index(
+            mu,
+            coupling_type=coupling_type,
+        )
+        for coupling_type in ['ang', 'rad', 'rsd']
+    }
+    coupling_coefficients = {
+        {
+            coupling_type: mpicomp(
+                triplet_index_vector[pivot],
+                compiling_maps[coupling_type],
+                comm,
+            )
+            for coupling_type in ['ang', 'rad', 'rsd']
+        }
+        for pivot in pivots
+    }
 
     # Compute couplings with parallel processes.
     in2co = {
         coupletype: partial(coupling_list, coupletype=coupletype, disc=disc)
-        for coupletype in ['ang', 'rad', 'rsd']
+
         }
-    couplings = mpicomp(indx_vec, in2co, comm)
+    couplings =
 
     # Compute 2-pt values.
     if rank == 0:

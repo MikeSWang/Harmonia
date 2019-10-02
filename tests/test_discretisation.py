@@ -53,7 +53,7 @@ def test_init(discrete_spectrum, caplog):
 
     assert hasattr(discrete_spectrum, 'attrs')
     assert discrete_spectrum._wavenumbers is None \
-        and discrete_spectrum._tuples is None \
+        and discrete_spectrum._root_indices is None \
         and discrete_spectrum._normalisations is None
 
 
@@ -76,12 +76,12 @@ def test_wavenumbers(discrete_spectrum):
     assert discrete_spectrum._wavenumbers is not None
 
 
-def test_dbl_indices(discrete_spectrum):
-    assert discrete_spectrum.dbl_indices[TEST_PARAMS['ell']] == [
+def test_root_indices(discrete_spectrum):
+    assert discrete_spectrum.root_indices[TEST_PARAMS['ell']] == [
         (TEST_PARAMS['ell'], n)
         for n in range(1, discrete_spectrum.depths[TEST_PARAMS['ell']]+1)
     ]
-    assert discrete_spectrum._tuples is not None
+    assert discrete_spectrum._root_indices is not None
 
 
 def test_normalisations(discrete_spectrum):

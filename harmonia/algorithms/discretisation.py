@@ -1,6 +1,6 @@
 """
 Discrete Fourier spectrum (:mod:`~harmonia.algorithms.discretisation`)
-===============================================================================
+===========================================================================
 
 Discretise Fourier spectrum of cosmological fields.
 
@@ -19,24 +19,26 @@ from .bases import spherical_besselj, spherical_besselj_root
 
 
 class DiscreteSpectrum:
-    r"""Discrete Fourier spectrum for given radial boundary conditions, indexed
-    by spherical degree :math:`\ell` associated with spherical harmonic and
-    Bessel functions.
+    r"""Discrete Fourier spectrum for given radial boundary conditions,
+    indexed by spherical degree :math:`\ell` associated with spherical
+    harmonic and Bessel functions.
 
     When a boundary condition is prescribed at some maximum radius
-    :math:`r = R`, the allowed wave numbers for the discretised spectrum are
+    :math:`r = R`, the allowed wave numbers for the discretised spectrum
+    are
 
     .. math::
 
         k_{\ell n} = \frac{u_{\ell n}}{R}, \quad \text{where} \quad
         \{ u_{\ell n}: n = 1, \dots, n_{\mathrm{max},\ell} \}_{\ell}
 
-    are roots of the spherical Bessel functions of order :math:`\ell` if the
-    boundary condition is Dirichlet, or their derivatives if the boundary
-    condition is Neumann.  The spherical depths :math:`\{ n_{\mathrm{max},\ell}
-    \}` are the maximal number of radial wave numbers allowed in the specified
-    range, and are indexed by :math:`(\ell, n)` doublet tuples.  The
-    normalisation coefficients derived from completeness relations are
+    are roots of the spherical Bessel functions of order :math:`\ell` if
+    the boundary condition is Dirichlet, or their derivatives if the
+    boundary condition is Neumann.  The spherical depths :math:`\{
+    n_{\mathrm{max},\ell} \}` are the maximal number of radial wave numbers
+    allowed in the specified range, and are indexed by :math:`(\ell, n)`
+    doublet tuples.  The normalisation coefficients derived from
+    completeness relations are
 
     .. math::
 
@@ -55,7 +57,7 @@ class DiscreteSpectrum:
     ----------
     radius : float
         Boundary radius.
-    condition : {'Dirichlet', 'Neumann'}
+    condition : {'dirichlet', 'neumann'}
         Either Dirichlet or Neumann boundary condition.
     cutoff : float
         Fourier scale upper cutoff.
@@ -72,17 +74,20 @@ class DiscreteSpectrum:
         Spherical degrees associated with the discrete spectrum.
     depths : int, array_like
         Spectral depths associated with the discrete spectrum.
-    roots : float, array_like
+    roots : :obj:`dict` of {int: :class:`numpy.ndarray`}
         Spherical Bessel roots associated with the discrete spectrum.
     mode_count : int
         Total number of allowed spectral modes, counting spherical order
         multuplicities.
     attrs : dict
         Discrete spectrum information, which contains the following keys:
-        ``'min_wavenumber'``, ``'max_wavenumber'`` for minimum and maximum wave
-        numbers; ``'boundary_radius'``, ``'bounded_volume'`` for the bounding
-        radius and volume; ``'boundary_condition'`` for the boundary condition
-        type.
+        ``'min_wavenumber'``, ``'max_wavenumber'`` for minimum and maximum
+        wave numbers; ``'boundary_radius'``, ``'bounded_volume'`` for the
+        bounding radius and volume; ``'boundary_condition'`` for the
+        boundary condition type.
+    wavenumbers
+    root_indices
+    normalisations
 
     """
 
@@ -90,6 +95,8 @@ class DiscreteSpectrum:
 
     def __init__(self, radius, condition, cutoff, maxdeg=None, cuton=0.,
                  mindeg=0):
+
+        condition = self._alias(condition)
 
         self.degrees, self.depths, self.roots, self.mode_count = \
             self.discretise(radius, condition, cuton, cutoff, mindeg, maxdeg)
@@ -103,7 +110,7 @@ class DiscreteSpectrum:
         }
 
         self._wavenumbers = None
-        self._tuples = None
+        self._root_indices = None
         self._normalisations = None
 
         self._logger.info(
@@ -127,44 +134,43 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        float, array_like
+        :obj:`dict` of {int: :class:`numpy.ndarray`}
             Wavenumbers.
 
         """
         if self._wavenumbers is not None:
             return self._wavenumbers
 
-        self._wavenumbers = [
-            u_ell / self.attrs['boundary_radius'] for u_ell in self.roots
-        ]
+        self._wavenumbers = {
+            ell : self.roots[ell] / self.attrs['boundary_radius']
+            for ell in self.degrees
+        }
         self._logger.info("Spectral wavenumbers computed. ")
 
         return self._wavenumbers
 
     @property
-    def dbl_indices(self):
-        r"""Doublet indices :math:`(\ell, n)`.
+    def root_indices(self):
+        r"""Root indices :math:`(\ell, n)`.
 
         Returns
         -------
-        (int, int), array_like
-            Doublet indices.
+        :obj:`dict` of {int: (int, int)}
+            Root indices.
 
         """
-        if self._tuples is not None:
-            return self._tuples
+        if self._root_indices is not None:
+            return self._root_indices
 
-        self._tuples = [
-            [
-                (ell, n_idx+1) for n_idx in range(self.depths[deg_idx])
-            ]
-            for deg_idx, ell in enumerate(self.degrees)
-        ]
+        self._root_indices = {
+            ell: [(ell, n) for n in range(1, nmax+1)]
+            for ell, nmax in zip(self.degrees, self.depths)
+        }
         self._logger.info(
             "Doublet indices compiled for spectral wavenumbers. ",
         )
 
-        return self._tuples
+        return self._root_indices
 
     @property
     def normalisations(self):
@@ -172,7 +178,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        float, array_like
+        :obj:`dict` of {int: :class:`numpy.ndarray`}
             Normalisation coefficients.
 
         """
@@ -180,19 +186,21 @@ class DiscreteSpectrum:
             return self._normalisations
 
         radius = self.attrs['boundary_radius']
-        condition = self.attrs['boundary_condition'].lower()
+        condition = self.attrs['boundary_condition']
 
-        if condition.startswith('d'):
-            self._normalisations = [
-                2 / (radius**3 * spherical_besselj(ell+1, u_ell)**2)
-                for ell, u_ell in zip(self.degrees, self.roots)
-            ]
-        elif condition.startswith('n'):
-            self._normalisations = [
-                2 / (radius**3 * spherical_besselj(ell, u_ell)**2) \
-                    / (1 - ell * (ell+1) / np.square(u_ell))
-                for ell, u_ell in zip(self.degrees, self.roots)
-            ]
+        if condition == 'dirichlet':
+            self._normalisations = {
+                ell: 2 / radius**3 \
+                    / spherical_besselj(ell+1, self.roots[ell])**2
+                for ell in self.degrees
+            }
+        elif condition == 'neumann':
+            self._normalisations = {
+                ell: 2 / radius**3 \
+                    / spherical_besselj(ell, self.roots[ell])**2 \
+                    / (1 - ell * (ell+1) / np.square(self.roots[ell]))
+                for ell in self.degrees
+            }
         self._logger.info(
             "Normalisations computed for spectral wavenumbers. ",
         )
@@ -206,7 +214,7 @@ class DiscreteSpectrum:
         ----------
         radius : float
             Boundary radius.
-        condition : {'Dirichlet', 'Neumann'}
+        condition : {'dirichlet', 'neumann'}
             Either Dirichlet or Neumann boundary condition.
         kmin, kmax : float
             Minimum and maximum wavenumbers.
@@ -218,9 +226,9 @@ class DiscreteSpectrum:
         degrees : int, array_like
             Spherical function degrees.
         depths : int, array_like
-            Maximal radial numbers, i.e. the number of allowed radial modes for
-            each degree.
-        roots : float, array_like
+            Maximal radial numbers, i.e. the number of allowed radial modes
+            for each degree.
+        roots : :obj:`dict` of float :class:`numpy.ndarray`
             Spherical Bessel roots.
         mode_count : int
             Total number of spectral modes, counting spherical order
@@ -242,7 +250,8 @@ class DiscreteSpectrum:
         else:
             raise ValueError(f"Invalid boundary `condition`: {condition}. ")
 
-        degrees, roots, depths = [], [], []
+        degrees, depths = [], []
+        roots = {}
         ell, mode_count = ellmin, 0
         while True:
             if ellmax is not None:
@@ -269,7 +278,7 @@ class DiscreteSpectrum:
                 _logger_.info("No more roots found. Last degree is %d. ", ell)
                 break
             else:
-                roots.append(np.asarray(u_ell))
+                roots[ell] = np.array(u_ell)
                 degrees.append(ell)
                 depths.append(n_ell)
                 mode_count += (2*ell + 1) * n_ell
@@ -279,3 +288,15 @@ class DiscreteSpectrum:
                 _logger_.debug("Moving on to next degree: %d. ", ell)
 
         return degrees, depths, roots, mode_count
+
+    @staticmethod
+    def _alias(condition):
+
+        if condition.lower().startswith('d'):
+            alias = 'dirichlet'
+        elif condition.lower().startswith('n'):
+            alias = 'neumann'
+        else:
+            raise ValueError(f"Invalid boundary `condition`: {condition}. ")
+
+        return alias

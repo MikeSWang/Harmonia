@@ -1,10 +1,10 @@
 """
 Random fields (:mod:`~harmonia.algorithms.fields`)
-===============================================================================
+===========================================================================
 
 Generate random fields on 3-d regular grids from input power spectrum in a
-cubic box, and perform biasing, threshold clipping, log-normal transformation
-and discrete Poisson sampling of fields.
+cubic box, and perform biasing, threshold clipping, log-normal
+transformation and discrete Poisson sampling of fields.
 
 **Generation**
 
@@ -34,8 +34,8 @@ from scipy import fftpack as fftp
 
 
 def generate_regular_grid(cell_size, num_mesh, variable='norm'):
-    """Generate 3-d coordinate grids for the given cell size and mesh number
-    per dimension.
+    """Generate 3-d coordinate grids for the given cell size and mesh
+    number per dimension.
 
     Parameters
     ----------
@@ -49,18 +49,18 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
 
     Returns
     -------
-    grid_norm : (N, N, N) float :class:`numpy.ndarray`
-        Grid coordinate norm array.  Returned if `variable` is ``'norm'`` or
-        ``'both'``.
-    grid_coords : list [of length 3] of (N, N, N) float :class:`numpy.ndarray`
-        Grid coordinate arrays for each dimension.  Returned if `variable` is
-        ``'coords'`` or ``'both'``.
+    grid_norm : float :class:`numpy.ndarray`
+        Grid coordinate norm array.  Returned if `variable` is ``'norm'``
+        or ``'both'``.
+    grid_coords : :obj:`list` of float :class:`numpy.ndarray`
+        Grid coordinate arrays for each dimension.  Returned if `variable`
+        is ``'coords'`` or ``'both'``.
 
     Raises
     ------
     ValueError
-        If `variable` is not any of the following: ``'norm'``, ``'coords'`` or
-        ``'both'``.
+        If `variable` is not any of the following: ``'norm'``, ``'coords'``
+        or ``'both'``.
 
     """
     indices = np.indices((num_mesh,)*3)
@@ -82,13 +82,14 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
 
 def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
                                    clip=True, return_disp=False, seed=None):
-    r"""Generate a Gaussian random field corresponding to the density contrast
-    :math:`\delta(\mathbf{r})` in configuration space with matching input power
-    spectrum, and optionally a second derived random vector field corresponding
-    to the velocity displacement :math:`\boldsymbol{\Psi}(\mathbf{r})`.
+    r"""Generate a Gaussian random field corresponding to the density
+    contrast :math:`\delta(\mathbf{r})` in configuration space with
+    matching input power spectrum, and optionally a second derived random
+    vector field corresponding to the velocity displacement
+    :math:`\boldsymbol{\Psi}(\mathbf{r})`.
 
-    In Fourier space, the displacement field is related to the density contrast
-    field by
+    In Fourier space, the displacement field is related to the density
+    contrast field by
 
     .. math::
 
@@ -115,18 +116,19 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         If `True` (default), the configuratuion-space field is clipped at
         threshold -1.
     return_disp : bool, optional
-        If `True` (default is `False`), also return the velocity displacement
-        field for each dimension that is not `None`.
+        If `True` (default is `False`), also return the velocity
+        displacement field for each dimension that is not `None`.
     seed : int or None, optional
         Random seed for the field(s) (default is `None`).
 
     Returns
     -------
-    overdensity : (N, N, N) float :class:`numpy.ndarray`
+    overdensity : float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of float :class:`numpy.ndarray` or None
-        Gaussian random fields of velocity displacement in configuration space
-        for each dimension.  Returned as `None` unless `return_disp` is `True`.
+    displacement : :obj:`list` of float :class:`numpy.ndarray` or None
+        Gaussian random fields of velocity displacement in configuration
+        space for each dimension.  Returned as `None` unless `return_disp`
+        is `True`.
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
@@ -159,12 +161,13 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
                                     return_disp=False, seed=None):
     r"""Generate a log-normal random field corresponding to the density
-    contrast :math:`\delta(\mathbf{r})` in configuration space with matching
-    input power spectrum, and optionally a second derived random vector field
-    corresponding to the velocity displacement
+    contrast :math:`\delta(\mathbf{r})` in configuration space with
+    matching input power spectrum, and optionally a second derived random
+    vector field corresponding to the velocity displacement
     :math:`\boldsymbol{\Psi}(\mathbf{r})`.
 
-    See :func:`generate_gaussian_random_field` for their relations.
+    The velocity displacement field fullfils the continuity equation and
+    no velocity bias is assumed.
 
     Parameters
     ----------
@@ -177,18 +180,23 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     bias : float, optional
         Bias of the density contrast field (default is 1.).
     return_disp : bool, optional
-        If `True` (default is `False`), also return the velocity displacement
-        field for each dimension that is not `None`.
+        If `True` (default is `False`), also return the velocity
+        displacement field for each dimension that is not `None`.
     seed : int or None, optional
         Random seed for the field(s) (default is `None`).
 
     Returns
     -------
-    overdensity : (N, N, N) float :class:`numpy.ndarray`
+    overdensity : float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : list [of length 3] of float :class:`numpy.ndarray` or None
-        Gaussian random fields of velocity displacement in configuration space
-        for each dimension.  Returned as `None` unless `return_disp` is `True`.
+    displacement : :obj:`list` of float :class:`numpy.ndarray` or None
+        Gaussian random fields of velocity displacement in configuration
+        space for each dimension.  Returned as `None` unless `return_disp`
+        is `True`.
+
+    See Also
+    --------
+    :func:`generate_gaussian_random_field`
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
@@ -213,7 +221,6 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     overdensity = field_target
 
-    # Fulfill continuity equation and no velocity bias.
     if return_disp:
         fourier_field_target = fftp.fftshift(fftp.fftn(field_target))
         fourier_disp = [
@@ -261,16 +268,16 @@ def threshold_clip(density_contrast, threshold=-1.):
 
 def lognormal_transform(obj, obj_type):
     r"""Perform log-normal transform of a statistically homogeneous and
-    isotropic field or its 2-point functions in either configuration or Fourier
-    space.
+    isotropic field or its 2-point functions in either configuration or
+    Fourier space.
 
     Parameters
     ----------
-    obj : float :class:`numpy.ndarray` or callable
+    obj : array_like or callable
         The object to be transformed.
     obj_type : {'delta', 'xi', 'pk'}
-        Type of the object to be transformed: field (``'delta'``), correlation
-        function (``'xi'``) or power spectrum (``'pk'``).
+        Type of the object to be transformed: field (``'delta'``),
+        correlation function (``'xi'``) or power spectrum (``'pk'``).
 
     Returns
     -------
@@ -280,7 +287,8 @@ def lognormal_transform(obj, obj_type):
     Raises
     ------
     TypeError
-        If `obj_type` is ``'pk'`` (power spectrum) but `obj` is not callable.
+        If `obj_type` is ``'pk'`` (power spectrum) but `obj` is not
+        callable.
     ValueError
         If `obj_type` is not one of the following: ``'delta'``, ``'xi'`` or
         ``'pk'``.
@@ -330,7 +338,7 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
 
     Parameters
     ----------
-    density_contrast : (N, N, N) float, array_like
+    density_contrast : float, array_like
         Density contrast field being sampled.
     mean_density : float
         Overall mean number density of particles.
@@ -366,22 +374,22 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
     Parameters
     ----------
-    sampled_field : (N, N, N) array_like
+    sampled_field : float, array_like
         Discretely sampled density contrast field.
     mean_density : float
         Overall mean number density of particles.
     boxsize : float
         Box size per dimension.
-    vel_offset_fields : list [of length 3] of (N, N, N) array_like, optional
+    vel_offset_fields : :obj:`list` of float, array_like, optional
         Particle velocity offset field (default is `None`).
     seed : int or None, optional
         Particle placement random seed (default is `None`).
 
     Returns
     -------
-    position : (N, 3) float :class:`numpy.ndarray`
+    position : float :class:`numpy.ndarray`
         Position of particles generated from the sampled field.
-    displacement : (N, 3) float :class:`numpy.ndarray`
+    displacement : float :class:`numpy.ndarray`
         Displacement of particles from their `position`.
 
     """
@@ -418,11 +426,11 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
 
 def _gen_circsym_whitenoise(num_mesh, seed=None):
-    """Generate white noise samples drawn from the circularly-symmetric complex
-    normal distribution on a 3-d regular grid.
+    """Generate white noise samples drawn from the circularly-symmetric
+    complex normal distribution on a 3-d regular grid.
 
-    Both the real and imaginary parts follow the standard normal distribution,
-    so the complex samples have variance 2.
+    Both the real and imaginary parts follow the standard normal
+    distribution, so the complex samples have variance 2.
 
     Parameters
     ----------
@@ -433,7 +441,7 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     Returns
     -------
-    whitenoise : (N, N, N) complex :class:`numpy.ndarray`
+    whitenoise : complex :class:`numpy.ndarray`
         Circularly-symmetric Gaussian noise with double unit variance.
 
     """
@@ -452,13 +460,13 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
 
     Parameters
     ----------
-    field : (N, N, N) float, array_like
+    field : float, array_like
         Random field.
     boxsize : float
         Box size per dimension (in Mpc/h).
     kmax : float or None, optional
-        Maximum wavenumber.  If `None` (default), this is set to largest wave
-        number the field supports.
+        Maximum wavenumber.  If `None` (default), this is set to largest
+        wave number the field supports.
     num_bin : int or None, optional
         Number of bins each corresponding to a wavenumber (default is 12).
     bin_scale : {'linear', 'log'}, optional
@@ -507,8 +515,8 @@ def _radial_binning(norm3d, data3d, num_bin, bin_scale, low_edge=None,
     bin_scale : {'linear', 'log'}
         Binning in 'linear' or 'log' scale.
     low_edge, high_edge : float or None, optional
-        Binning range.  If `None` (default), the values are respectively set to
-        zero and the largest norm value that the grid supports.
+        Binning range.  If `None` (default), the values are respectively
+        set to zero and the largest norm value that the grid supports.
 
     Returns
     -------

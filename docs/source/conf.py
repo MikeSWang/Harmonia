@@ -64,9 +64,9 @@ htmlhelp_basename = 'Harmonia_doc'
 # -- Extension configuration -------------------------------------------------
 
 autodoc_member_order = 'bysource'
-
 autosummary_generate = True
 
+napoleon_include_special_with_doc = True
 napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
@@ -78,6 +78,7 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org', None),
     'mpmath': ('http://mpmath.org/doc/1.1.0/', None),
     'nbodykit': ('https://nbodykit.readthedocs.io/en/latest', None),
+    'mpi4py': ('https://mpi4py.readthedocs.io/en/stable/', None),
 }
 
 todo_include_todos = True

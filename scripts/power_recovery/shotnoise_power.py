@@ -13,6 +13,7 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
     harmony,
+    sort_dict_to_list,
 )
 from harmonia.mapper import RandomCatalogue, SphericalMap
 
@@ -71,10 +72,14 @@ def process(runtime_info):
     print(runtime_info.strip("-"))
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
-    flat_order = np.concatenate(disc.wavenumbers).argsort()
+    flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
 
-    all_wavenumbers = np.concatenate(disc.wavenumbers)[flat_order]
-    all_dbl_indices = np.concatenate(disc.dbl_indices)[flat_order]
+    all_wavenumbers = np.concatenate(
+        sort_dict_to_list(disc.wavenumbers)
+    )[flat_order]
+    all_root_indices = np.concatenate(
+        sort_dict_to_list(disc.root_indices),
+    )[flat_order]
 
     measurements = defaultdict(list)
     for run in range(niter):
@@ -105,7 +110,7 @@ def process(runtime_info):
         var: np.concatenate(vals)
         for var, vals in measurements.items()
     }
-    output_data.update({'ln': [all_dbl_indices], 'kln': [all_wavenumbers]})
+    output_data.update({'ln': [all_root_indices], 'kln': [all_wavenumbers]})
     return output_data
 
 
@@ -117,7 +122,7 @@ def finalise(output_data, save=True, plot=True):
     output_data : dict
         Program output.
     save : bool, optional
-        If `True`, aggregate data over all iterations is saved as a dictionary.
+        If `True`, aggregate data is saved as :obj:`dict`.
     plot : bool, optional
         If `True`, plot the aggregate data and save as a .pdf file.
 

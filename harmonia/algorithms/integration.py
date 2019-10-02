@@ -1,12 +1,13 @@
 """
 Numerical integration (:mod:`~harmonia.algorithms.integration`)
-===============================================================================
+===========================================================================
 
 Numerically integrate against Fourier basis functions.
 
 .. topic:: Caution
 
-    Quadrature integration of spherical Bessel functions may converge slowly.
+    Quadrature integration of spherical Bessel functions may converge
+    slowly.
 
 **Generic spherical integrals**
 
@@ -34,8 +35,6 @@ from .bases import spherical_besselj, spherical_harmonic
 def _angular_integrand(phi, theta, afunc, complex_part):
     """Complex angular integrand with Jacobian.
 
-    Note
-    ----
     Angular arguments are in reverse order for outward double integration.
 
     Parameters
@@ -88,10 +87,8 @@ def _radial_integrand(r, rfunc):
 def angular_spherical_integral(angular_func):
     r"""Full angular integral.
 
-    Note
-    ----
-    Arguments of `angular_func` must be in radians in the following order and
-    range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
+    Arguments of `angular_func` must be in radians in the following order
+    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
     Parameters
     ----------
@@ -148,10 +145,8 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
                               **kwargs):
     r"""Full angular integral against spherical harmonic functions.
 
-    Note
-    ----
-    Arguments of `angular_func` must be in radians in the following order and
-    range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
+    Arguments of `angular_func` must be in radians in the following order
+    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
     Parameters
     ----------
@@ -162,7 +157,8 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
     m : int
         Order of the spherical harmonic function.
     conjugate : bool, optional
-        If `True` (default), use conjugate of the spherical harmonic function.
+        If `True` (default), use conjugate of the spherical harmonic
+        function.
     *args, **kwargs
         Additional positional and keyword arguments to be passed to
         `angular_func`.
@@ -183,8 +179,8 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
 
 
 def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
-    """Radial integral against spherical Bessel functions at the specified wave
-    number up to the given maximal radius.
+    """Radial integral against spherical Bessel functions at the specified
+    wave number up to the given maximal radius.
 
     Parameters
     ----------

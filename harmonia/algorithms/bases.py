@@ -1,12 +1,12 @@
 """
 Fourier basis (:mod:`~harmonia.algorithms.bases`)
-===============================================================================
+===========================================================================
 
 Evaluate quantities related to Fourier basis functions.
 
 Spherical function evaluation relies on :func:`scipy.special.sph_harm`,
-:func:`scipy.special.spherical_jn` and :func:`mpmath.besseljzero`.  Note that
-argument ordering and data-types may differ in this implementation.
+:func:`scipy.special.spherical_jn` and :func:`mpmath.besseljzero`.  Note
+that argument ordering and data-types may differ in this implementation.
 
 **Spherical basis**
 
@@ -27,10 +27,10 @@ from harmonia.collections.utils import binary_search
 
 
 def spherical_harmonic(ell, m, theta, phi):
-    r"""Spherical harmonic function :math:`Y_{\ell m}(\theta, \phi)` of degree
-    :math:`\ell \geqslant 0` and order :math:`-\ell \leqslant m \leqslant
-    \ell`, where the polar angle :math:`\theta \in [0, \pi]` and the azimuthal
-    angle :math:`\phi \in [0, 2\pi]`.
+    r"""Spherical harmonic function :math:`Y_{\ell m}(\theta, \phi)` of
+    degree :math:`\ell \geqslant 0` and order :math:`-\ell \leqslant m
+    \leqslant \ell`, where the polar angle :math:`\theta \in [0, \pi]` and
+    the azimuthal angle :math:`\phi \in [0, 2\pi]`.
 
     Parameters
     ----------
@@ -53,8 +53,8 @@ def spherical_harmonic(ell, m, theta, phi):
 
 
 def spherical_besselj(ell, x, derivative=False):
-    r"""Spherical Bessel function of the first kind :math:`j_{\ell}(x)`, or its
-    derivative :math:`j'_{\ell}(x)`, of order :math:`\ell \geqslant 0`.
+    r"""Spherical Bessel function of the first kind :math:`j_{\ell}(x)`, or
+    its derivative :math:`j'_{\ell}(x)`, of order :math:`\ell \geqslant 0`.
 
     Parameters
     ----------
@@ -75,19 +75,19 @@ def spherical_besselj(ell, x, derivative=False):
 
 
 def spherical_besselj_root(ell, nmax, only=True, derivative=False):
-    r"""Compute positive zeros :math:`u_{\ell n}`, up to some maximal number
-    :math:`n_\mathrm{max}`, of spherical Bessel functions of the first kind or
-    their derivatives.
+    r"""Compute positive zeros :math:`u_{\ell n}`, up to some maximal
+    number :math:`n_\mathrm{max}`, of spherical Bessel functions of the
+    first kind or their derivatives.
 
-    Solving for roots of the spherical Bessel function :math:`j_\ell(x)` relies
-    on the identity
+    Solving for roots of the spherical Bessel function :math:`j_\ell(x)`
+    relies on the identity
 
     .. math:: j_\ell(x) = \sqrt{\frac{\pi}{2x}} J_{\ell + 1/2}(x)
 
     where :math:`J_\ell(x)` is the Bessel funcion of the first kind.
 
-    Solving for roots of the derivative function :math:`j'_\ell(x)` employs the
-    bisection method, with the initial interval ansatz :math:`\ell + 1
+    Solving for roots of the derivative function :math:`j'_\ell(x)` employs
+    the bisection method, with the initial interval ansatz :math:`\ell + 1
     \leqslant x \leqslant n_\mathrm{max} \ \mathrm{max}\{4, \ell\}`.
 
     Parameters

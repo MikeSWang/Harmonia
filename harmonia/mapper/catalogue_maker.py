@@ -1,6 +1,6 @@
 """
 Catalogue maker (:mod:`~harmonia.mapper.catalogue_maker`)
-===============================================================================
+===========================================================================
 
 Make discrete catalogues from observed or simulated realisations.
 
@@ -31,8 +31,8 @@ from harmonia.collections.utils import normalise_vector
 
 
 class RandomCatalogue(UniformCatalog):
-    """Uniform random catalogue of given mean particle number density and box
-    size.
+    """Uniform random catalogue of given mean particle number density and
+    box size.
 
     Parameters
     ----------
@@ -61,8 +61,9 @@ class RandomCatalogue(UniformCatalog):
 
 
 class NBKCatalogue(LogNormalCatalog):
-    """``nbodykit`` log-normal random catalogue of given linear power spectrum
-    with particle velocities predicted by the Zel'dovich approximation.
+    """``nbodykit`` log-normal random catalogue of given linear power
+    spectrum with particle velocities predicted by the Zel'dovich
+    approximation.
 
     This is the direct implementation by
     :class:`nbodykit.source.catalog.lognormal.LogNormalCatalog`.
@@ -118,8 +119,9 @@ class NBKCatalogue(LogNormalCatalog):
 
 
 class LogNormalCatalogue(CatalogSource):
-    """Log-normal random catalogue of given number density and power spectrum
-    with particle velocities predicted by the Zel'dovich approximation.
+    """Log-normal random catalogue of given number density and power
+    spectrum with particle velocities predicted by the Zel'dovich
+    approximation.
 
     Parameters
     ----------
@@ -139,7 +141,7 @@ class LogNormalCatalogue(CatalogSource):
     growth_rate : float or None, optional
         If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
         'redshift' attributes, then this cannot be `None` (default).
-    line_of_sight : tuple or list [of length 3], array_like or None, optional
+    line_of_sight : array_like or None, optional
         Line-of-sight direction vector.  If `None` (default), this is set
         to the radial directions.
     seed : int or None, optional
@@ -156,7 +158,6 @@ class LogNormalCatalogue(CatalogSource):
                  bias=2., add_RSD=False, growth_rate=None, line_of_sight=None,
                  seed=None, comm=None):
 
-        # Get attributes.
         self.power_spectrum = power_spectrum
         self.comm = comm
         if seed is None:
@@ -285,7 +286,7 @@ class GaussianCatalogue(CatalogSource):
     growth_rate : float or None, optional
         If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
         'redshift' attributes, then this cannot be `None` (default).
-    line_of_sight : tuple or list [of length 3], array_like or None, optional
+    line_of_sight : array_like or None, optional
         Line-of-sight direction vector.  If `None` (default), this is set
         to the radial directions.
     seed : int or None, optional
@@ -293,8 +294,8 @@ class GaussianCatalogue(CatalogSource):
     comm : :class:`nbodykit.CurrentMPIComm` or None, optional
         Current MPI communicator.
 
-    Warnings
-    --------
+    Warning
+    -------
     The field statistics may change after Poisson sampling to discrete
     particles as the density contrast is clipped below at -1.
 
@@ -307,7 +308,6 @@ class GaussianCatalogue(CatalogSource):
                  bias=2., add_RSD=False, growth_rate=None, line_of_sight=None,
                  seed=None, comm=None):
 
-        # Get attributes.
         self.power_spectrum = power_spectrum
         self.comm = comm
         if seed is None:
@@ -375,7 +375,6 @@ class GaussianCatalogue(CatalogSource):
         super().__init__(comm=comm)
         self._logger.info("%s generated. ", self.__str__())
 
-        # Add redshift-space distortions,
         if add_RSD:
             self._vel_offset = growth_rate * displacement
             if line_of_sight is None:  # radial distortion only

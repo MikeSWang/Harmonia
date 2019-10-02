@@ -45,7 +45,7 @@ def parse_cli_args():
     cli_parser.add_argument('--mesh-cal', type=int, default=256)
 
     cli_parser.add_argument('--niter', type=int, default=25)
-    cli_parser.add_argument('--progid', default="")
+    cli_parser.add_argument('--prog-id', default="")
 
     return cli_parser.parse_args()
 

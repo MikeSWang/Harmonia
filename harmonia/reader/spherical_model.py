@@ -1,32 +1,30 @@
 r"""
 Spherical Fourier-space model (:mod:`~harmonia.reader.spherical_model`)
-===============================================================================
+===========================================================================
 
-Compute Fourier-space :math:`n`-point functions in spherical basis.  The index
-for each Fourier coefficient is a triplet :math:`(\ell_\mu, m_\mu, n_\mu)`,
-i.e. ``(mu[0], mu[1], mu[2])``.
+Compute Fourier-space :math:`n`-point functions in spherical basis.  The
+index for each Fourier coefficient is a triplet :math:`(\ell_\mu, m_\mu,
+n_\mu)`, i.e. ``(mu[0], mu[1], mu[2])``.
 
 .. _degree-index-warning:
 
-.. topic:: Caution
+.. warning::
 
     In this module, all variables related to the discretised spectrum
     :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`, such as
-    `wavenumbers` and `normalisations`, are assumed to be in the natural
-    structure starting at spherical degree :math:`\ell = 0` (see
-    :class:`~harmonia.algorithms.morph.SphericalArray`).  In the future, these
-    variables may be changed to :obj:`dict` without assuming this
-    correspondence, and relevant :math:`\ell`-modes are accessed through keys.
+    `wavenumbers` and `normalisations`, are assumed to start at spherical
+    degree :math:`\ell = 0`.
 
 Kernels
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 Coupling kernels are integrands without the coordinate Jacobian, which may
 include the following factors: radial selection :math:`\phi(r)`, weight
-:math:`w(r)` or its derivative, and angular mask :math:`M(\hat{\mathbf{r}})`;
-linear growth rate normalised to linear bias :math:`\beta(z) = f(z)/b(z)`,
-clustering evolution :math:`G(z) = b(z) D(z)` where :math:`D(z)` is the linear
-growth factor, and the Alcock--Paczynski distortion
+:math:`w(r)` or its derivative, and angular mask
+:math:`M(\hat{\mathbf{r}})`; linear growth rate normalised to linear bias
+:math:`\beta(z) = f(z)/b(z)`, clustering evolution :math:`G(z) = b(z) D(z)`
+where :math:`D(z)` is the linear growth factor, and the Alcock--Paczynski
+distortion
 
 .. math::
 
@@ -34,19 +32,19 @@ growth factor, and the Alcock--Paczynski distortion
     \frac{\mathrm{d}\tilde{r}}{\mathrm{d}r} \,, \quad
     \text{with} \quad \beta_0 \equiv \beta(0) \,,
 
-where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted from
-redshift rather than from the true comoving distance--redshift correspondence
-:math:`z = z(r)`,
+where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted
+from redshift rather than from the true comoving distance--redshift
+correspondence :math:`z = z(r)`.
 
-When using integration kernels that is a combination of functions of the above,
-pass additional parameters not being directly integrated over by redefining
-these functions with ``lambda``.
+When using integration kernels that is a combination of functions of the
+above, pass additional parameters not being directly integrated over by
+redefining these functions with ``lambda``.
 
 Couplings
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
-Coupling coefficients are computed by integrating the angular, radial and RSD
-coupling kernels
+Coupling coefficients are computed by integrating the angular, radial and
+RSD coupling kernels
 
 .. math::
 
@@ -70,7 +68,7 @@ discrete wavenumbers.
     Couplings
 
 2-point functions
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 2-point functions are computed from couplings as a sum of the signal part
 
@@ -85,18 +83,18 @@ and the shot noise part
 
 .. math::
 
-    \left\langle \epsilon_\mu \epsilon_\nu \right\rangle = \frac{1}{\bar{n}}
-    M_{\mu\nu} \int \mathrm{d}r r^2 (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
+    \left\langle \epsilon_\mu \epsilon_\nu \right\rangle =
+    \frac{1}{\bar{n}} M_{\mu\nu} \int \mathrm{d}r r^2 (w^2\phi)(r)
+    j_\mu(r) j_\nu(r) \,,
 
-where :math:`M, \Phi, \Upsilon` are the angular, radial and RSD couplings and
-:math:`\kappa` the normalisation coefficients (see also
+where :math:`M, \Phi, \Upsilon` are the angular, radial and RSD couplings
+and :math:`\kappa` the normalisation coefficients (see also
 :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`), and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
 .. autosummary::
 
-    two_point_signal
-    two_point_shot_noise
+    TwoPointFunction
 
 |
 
@@ -111,10 +109,12 @@ from harmonia.algorithms.integration import (
     angular_spherical_integral as ang_int,
     radial_spherical_integral as rad_int,
 )
+from harmonia.algorithms.morph import SphericalArray
+from harmonia.collections.utils import mpi_compute
 
 
 # KERNELS
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 def _angular_kernel(theta, phi, mu, nu, mask=None):
     r"""Evaluate the angular coupling kernel.
@@ -123,7 +123,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
     ----------
     theta, phi : float, array_like
         Angular coordinates :math:`(\theta, \phi)`.
-    mu, nu : tuple or list [of length 3] of int
+    mu, nu : tuple or list of int
         Coefficient triplet index.
     mask : callable or None, optional
         Mask as a function of angular coordinates (default is `None`).  The
@@ -159,20 +159,21 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     ----------
     r : float, array_like
         Radial coordinate.
-    mu, nu : tuple or list [of length 3] of int
+    mu, nu : tuple or list of int
         Coefficient triplet index.
     k_mu, k_nu : float
         Discrete wave number corresponding to index `mu` or `nu`.
     selection, weight : callable or None, optional
-        Selection or weight as a function of the radial coordinate (default is
-        `None`).
+        Selection or weight as a function of the radial coordinate (default
+        is `None`).
     evolution : callable or None, optional
         Evolution as a function of redshift (default is `None`).
     r2z : callable or None, optional
         Cosmological comoving distance-to-redshift conversion (default is
         `None`).
     z2chi : callable or None, optional
-        Fiducial comoving redshift-to-distance conversion (default is `None`).
+        Fiducial comoving redshift-to-distance conversion (default is
+        `None`).
 
     Returns
     -------
@@ -217,13 +218,13 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     ----------
     r : float, array_like
         Radial coordinate.
-    mu, nu : tuple or list [of length 3] of int
+    mu, nu : tuple or list of int
         Coefficient triplet index.
     k_mu, k_nu : float
         Discrete wave number corresponding to index `mu` or `nu`.
     selection, weight : callable or None, optional
-        Selection or weight as a function of the radial coordinate (default is
-        `None`).
+        Selection or weight as a function of the radial coordinate (default
+        is `None`).
     weight_derivative : callable or None, optional
         Weight function derivative as a function of the radial coordinate
         (default is `None`).
@@ -234,7 +235,8 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         Cosmological comoving distance-to-redshift conversion (default is
         `None`).
     z2chi : callable or None, optional
-        Fiducial comoving redshift-to-distance conversion (default is `None`).
+        Fiducial comoving redshift-to-distance conversion (default is
+        `None`).
 
     Returns
     -------
@@ -295,13 +297,13 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
     ----------
     r : float, array_like
         Radial coordinate.
-    mu, nu : tuple or list [of length 3] of int
+    mu, nu : tuple or list of int
         Coefficient triplet index.
     k_mu, k_nu : float
         Discrete wave number corresponding to index `mu` or `nu`.
     selection, weight : callable or None, optional
-        Selection or weight as a function of the radial coordinate (default is
-        `None`).
+        Selection or weight as a function of the radial coordinate (default
+        is `None`).
 
     Returns
     -------
@@ -329,18 +331,19 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
 # -----------------------------------------------------------------------------
 
 class Couplings:
-    """Compute angular, radial and RSD coupling coefficients for given survey
-    and cosmological specifications.
+    """Compute angular, radial and RSD coupling coefficients for given
+    survey and cosmological specifications.
 
     Parameters
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
     survey_specs : dict of callable or None, or None, optional
-        Survey specification functions accessed with the following mandatory
-        keys: ``'mask'`` for angular mask, and ``'selection'`` and ``'weight'``
-        for radial selection and weighting, ``'weight_derivative'`` for the
-        derivative function of radial weighting.  Default is `None`.
+        Survey specification functions accessed with the following
+        mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
+        and ``'weight'`` for radial selection and weighting,
+        ``'weight_derivative'`` for the derivative function of radial
+        weighting.  Default is `None`.
     cosmo_specs : dict of callable or None, or None, optional
         Cosmological specification functions accessed with the following
         mandatory keys: ``'r2z'`` for cosmological comoving
@@ -373,11 +376,12 @@ class Couplings:
     Raises
     ------
     KeyError
-        If `survey_specs` and `cosmo_specs` are passed as dictionaries but one
-        of the keys corresponding to a required function is missing.
+        If `survey_specs` and `cosmo_specs` are passed as dictionaries but
+        one of the keys corresponding to a required function is missing.
     TypeError
-        If `survey_specs` and `cosmo_specs` are passed as dictionaries but one
-        of the values as a required function is neither `None` nor callable.
+        If `survey_specs` and `cosmo_specs` are passed as dictionaries but
+        one of the values as a required function is neither `None` nor
+        callable.
 
     """
 
@@ -388,7 +392,7 @@ class Couplings:
         'cosmo_specs': ('r2z', 'z2chi', 'evolution', 'distotion_AP'),
     }
 
-    def __init__(self, disc=None, survey_specs=None, cosmo_specs=None):
+    def __init__(self, disc, survey_specs=None, cosmo_specs=None):
 
         self.disc = disc
 
@@ -411,20 +415,19 @@ class Couplings:
                         specs_var_str + f" key {missing_key} is missing. "
                     )
 
-    def __call__(self, mu, nu, coupling_type):
+    def coupling_coefficient(self, mu, nu, coupling_type):
         r"""Evaluate couplings at specified indices.
 
-        Note
-        ----
-        When there is no angular masking (i.e. `mask` is `None`), the coupling
-        coefficients reduce to :math:`M_{\mu\nu} = \delta_{\mu\nu}`.  When
-        there is no angular masking or clustering evolution, if radial
-        selection and weight are both absent and the distance--redshift
-        conversion is the cosmological one (i.e. none of `mask`, `selection`,
-        `weight`, `evolution`, `r2z` and `z2chi` is set), the coupling
-        coefficients reduce to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
+        When there is no angular masking (i.e. `mask` is `None`), the
+        coupling coefficients reduce to :math:`M_{\mu\nu} =
+        \delta_{\mu\nu}`.  When there is no angular masking or clustering
+        evolution, if radial selection and weight are both absent and the
+        distance--redshift conversion is the cosmological one (i.e. none of
+        `mask`, `selection`, `weight`, `evolution`, `r2z` and `z2chi` is
+        set), the coupling coefficients reduce to :math:`\Phi_{\mu\nu} =
+        \delta_{\mu\nu}`.
 
-        Paramaters
+        Parameters
         ----------
         mu, nu : tuple or list [of length 3] of int
             Coefficient triplet index.
@@ -433,7 +436,7 @@ class Couplings:
 
         Returns
         -------
-        float or complex, array_like
+        coupling_coeff : float or complex, array_like
             Coupling coefficient of given type for specified indices.
 
         Raises
@@ -442,6 +445,13 @@ class Couplings:
             If `coupling_type` does not correspond to a valid kernel.
 
         """
+        _info_msg = "{} coupling for: {} and {}".format(
+            coupling_type.replace("'", ""),
+            str(mu).replace("'", ""),
+            str(nu).replace("'", ""),
+        )
+        self._logger.debug("Computing %s", _info_msg)
+
         if coupling_type.lower.startswith('a'):
             trivial_case = not hasattr(self.mask, '__call__')
             if trivial_case:
@@ -452,7 +462,10 @@ class Couplings:
             def _ang_kernel(theta, phi):
                 return _angular_kernel(theta, phi, mu, nu, mask=self.mask)
 
-            return ang_int(_ang_kernel)
+            coupling_coeff = ang_int(_ang_kernel)
+            self._logger.debug("Computed %s", _info_msg)
+
+            return coupling_coeff
 
         rmax = self.disc.attrs['boundary_radius']
 
@@ -474,10 +487,13 @@ class Couplings:
                 if mu[0] == nu[0]:
                     return float(mu[-1] == nu[-1])
 
-            return kappa_nu * rad_int(
+            coupling_coeff = kappa_nu * rad_int(
                 lambda r: _radial_kernel(r, mu, nu, k_mu, k_nu, **funcs),
                 rmax,
             )
+            self._logger.debug("Computed %s", _info_msg)
+
+            return coupling_coeff
 
         if coupling_type.lower.startswith('rsd'):
             attrs = [
@@ -491,17 +507,21 @@ class Couplings:
                 ]
             funcs = {attr: getattr(self, attr) for attr in attrs}
 
-            return kappa_nu / k_nu * rad_int(
+            coupling_coeff = kappa_nu / k_nu * rad_int(
                 lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **funcs),
                 rmax,
             )
+            self._logger.debug("Computed %s", _info_msg)
+
+            return coupling_coeff
 
         raise ValueError(
             "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
         )
 
-    def compile_over_index(self, mu, coupling_type):
-        r"""Compile coupling coefficients with the first triplet index fixed.
+    def couplings_single_component(self, mu, coupling_type):
+        r"""Compute coupling coefficients with the first triplet index
+        fixed.
 
         Note
         ----
@@ -528,15 +548,15 @@ class Couplings:
 
         Parameters
         ----------
-        mu : tuple or list [of length 3] of int
+        mu : tuple or list of int
             Fixed triplet index.
         coupling_type : {'angular', 'radial', 'RSD'}
             Coupling type.
 
         Returns
         -------
-        couplings_vector : complex or float, array_like
-            Vector of coupling coefficients with first triplet index fixed.
+        couplings_component_array : complex or float, array_like
+            Array of coupling coefficients with first triplet index fixed.
 
         Raises
         ------
@@ -545,102 +565,79 @@ class Couplings:
 
         """
         if coupling_type.lower().startswith('a'):
-            sigma_gen = lambda deg_idx, ell: [
+            sigma_gen = lambda ell: [
                 (ell, m, None) for m in range(-ell, ell+1)
             ]
         elif coupling_type.lower().startswith(('rad', 'rsd')):
-            sigma_gen = lambda deg_idx, ell: [
-                (ell, None, n) for n in range(1, self.disc.depths[deg_idx]+1)
+            sigma_gen = lambda ell: [
+                (ell, None, n) for n in range(1, self.disc.depths[ell]+1)
             ]
         else:
             raise ValueError(
                 "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
             )
 
-        couplings_vector = []
-        for ell_idx, ell in enumerate(self.disc.degrees):
-            sigma_ell = sigma_gen(ell_idx, ell)
+        couplings_component_array = []
+        for ell in enumerate(self.disc.degrees):
             sigma_component = [
-                self.__call__(mu, sigma, 'angular') for sigma in sigma_ell
+                self.coupling_coefficient(mu, sigma, coupling_type)
+                for sigma in sigma_gen(ell)
             ]
-            couplings_vector.append(np.array(sigma_component))
+            couplings_component_array.append(np.array(sigma_component))
 
-        return couplings_vector
+        return couplings_component_array
+
+    def compile_couplings_vector(self, pivot, coupling_type, comm=None):
+        r"""Compile all coupling coefficients of a given type as a vector
+        iterated through the first triplet index ordered as specified.
+
+        This returns a list whose entries, ordered and indexed by ``mu``,
+        are ``Couplings.compile_over_index(mu, coupling_type)``.
+
+        Parameters
+        ----------
+        pivot : {'natural', 'lmn', 'lnm', 'k'}
+            Vectorisation order.
+        coupling_type : {'angular', 'radial', 'RSD'}
+            Coupling type.
+        comm : :class:`mpi4py.MPI.Comm` or None, optional
+            MPI communicator.  If `None` (default), no multiprocessing
+            is invoked.
+
+        Returns
+        -------
+        couplings_vectorised_arrays : complex or float, array_like
+            Vector of coupling coefficients over the first triplet index.
+
+        """
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        index_vector = SphericalArray.build(disc=self.disc)\
+            .unfold(pivot, return_only='index')
+
+        if comm is not None:
+            process_index = lambda mu: self.couplings_single_component(
+                mu,
+                coupling_type=coupling_type,
+            )
+            couplings_vectorised_arrays = mpi_compute(
+                index_vector,
+                process_index,
+                comm
+            )
+        else:
+            couplings_vectorised_arrays = [
+                self.couplings_single_component(
+                    mu,
+                    coupling_type=coupling_type,
+                )
+                for mu in index_vector
+            ]
+
+        return couplings_vectorised_arrays
 
 
 # 2-Point Correlators
 # -----------------------------------------------------------------------------
-
-# TODO: Generalise for all indices as a class derived from ``disc``.
-def two_point_signal(mu_couplings, nu_couplings, power_spectrum, beta_0, disc):
-    r"""Compute the 2-point function signal from linear power spectrum model
-    for given indices specified by the coupling vectors.
-
-    Note
-    ----
-    The input coupling vectors have a nested-list structure may be called from:
-
-    ::
-
-        mu_couplings = {
-            coupling_type: Couplings.compile_over_index(mu, coupling_type)
-            for coupling_type in ['angular', 'radial', 'RSD']
-        }
-
-    See :class:`Couplings` for details.  If :class:`Couplings` is instantiated
-    with a nontrivial `cosmo_specs`, the cosmology associated with
-    `cosmo_specs` must agree with that associated with `power_spectrum` and
-    `beta_0`.  Similarly, `mu_couplings` and `nu_couplings` must be compatible
-    with the discretisation `disc`.
-
-    Parameters
-    ----------
-    mu_couplings, nu_couplings : dict
-        Compiled coupling coefficients for each of the coupling types for
-        ``mu`` or ``nu``, the implicitly specified indices.
-    power_spectrum : callable
-        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
-    beta_0 : float
-        Linear growth rate over bias :math:`\beta_0` at the current epoch.
-    disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
-        Discrete spectrum for which the 2-point function is evaluated.
-
-    Returns
-    -------
-    signal : complex
-        Cosmological signal 2-point function value for given triple indices.
-
-    """
-    k, kappa = disc.wavenumbers, disc.normalisations
-
-    M_mu, M_nu = mu_couplings['angular'], nu_couplings['angular']
-    Phi_mu, Phi_nu = mu_couplings['radial'], nu_couplings['radial']
-    Upsilon_mu, Upsilon_nu = mu_couplings['RSD'], nu_couplings['RSD']
-
-    signal = 0
-    for ell_idx, ell in enumerate(disc.degrees):
-        M_mu_, M_nu_ = M_mu[ell_idx], M_nu[ell_idx]
-        Phi_mu_, Phi_nu_ = Phi_mu[ell_idx], Phi_nu[ell_idx]
-        Upsilon_mu_, Upsilon_nu_ = Upsilon_mu[ell_idx], Upsilon_nu[ell_idx]
-        k_ell, kappa_ell = k[ell_idx], kappa[ell_idx]
-        angular_sum = np.sum(
-            [
-                M_mu_[m_idx] * np.conj(M_nu_[m_idx])
-                for m_idx in range(0, 2*ell+1)
-            ]
-        )
-        radial_sum = np.sum(
-            [
-                (Phi_mu_[n_idx] + beta_0 * Upsilon_mu_[n_idx])
-                * (Phi_nu_[n_idx] + beta_0 * Upsilon_nu_[n_idx])
-                * power_spectrum(k_ell[n_idx]) / kappa_ell[n_idx]
-                for n_idx in range(disc.depths[ell_idx])
-            ]
-        )
-        signal += angular_sum * radial_sum
-
-    return signal
-
 
 def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
                          weight=None):
@@ -657,8 +654,8 @@ def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
     M_mu_nu : complex
         Angular mask coupling coefficients :math:`M_{\mu\nu}`.
     selection, weight : callable or None, optional
-        Selection or weight as a function of the radial coordinate (default is
-        `None`).
+        Selection or weight as a function of the radial coordinate (default
+        is `None`).
 
     Returns
     -------
@@ -678,8 +675,7 @@ def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
     k_mu = disc.wavenumbers[ell_mu][n_mu-1]
     k_nu = disc.wavenumbers[ell_nu][n_nu-1]
 
-    if not callable(selection) and not callable(weight) \
-            and ell_mu == ell_nu:
+    if not callable(selection) and not callable(weight) and ell_mu == ell_nu:
         if n_mu == n_nu:
             shot_noise = rmax**3 * spherical_besselj(ell_mu+1, u_mu)**2 / 2
         else:
@@ -695,3 +691,144 @@ def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
     shot_noise *= M_mu_nu / nbar
 
     return shot_noise
+
+
+class TwoPointFunction(Couplings):
+    """Compute 2-point function values for given survey and cosmological
+    specifications from a power spectrum model and RSD growth rate.
+
+    Parameters
+    ----------
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    power_spectrum : callable
+        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
+    beta_0 : float
+        Linear growth rate over bias :math:`\beta_0` at the current epoch.
+    disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+        Discrete spectrum associated with the couplings.
+    survey_specs : dict of callable or None, or None, optional
+        Survey specification functions accessed with the following
+        mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
+        and ``'weight'`` for radial selection and weighting,
+        ``'weight_derivative'`` for the derivative function of radial
+        weighting.  Default is `None`.
+    cosmo_specs : dict of callable or None, or None, optional
+        Cosmological specification functions accessed with the following
+        mandatory keys: ``'r2z'`` for cosmological comoving
+        distance-to-redshift conversion, ``'z2chi'`` for fiducial
+        redshift-to-comoving distance conversion, ``'evolution'`` for
+        clustering evolution, and ``'distorion_AP'`` for AP distortion.
+        Default is `None`.
+    comm : :class:`mpi4py.MPI.Comm` or None, optional
+        MPI communicator.  If `None` (default), no multiprocessing
+        is invoked.
+
+    Attributes
+    ----------
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    power_spectrum : callable
+        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
+    beta_0 : float
+        Linear growth rate over bias :math:`\beta_0` at the current epoch.
+    comm : :class:`mpi4py.MPI.Comm` or None, optional
+        MPI communicator.  If `None` (default), no multiprocessing
+        is invoked.
+
+    Raises
+    ------
+    KeyError
+        If `survey_specs` and `cosmo_specs` are passed as dictionaries but
+        one of the keys corresponding to a required function is missing.
+    TypeError
+        If `survey_specs` and `cosmo_specs` are passed as dictionaries but
+        one of the values as a required function is neither `None` nor
+        callable.
+
+    """
+
+    _logger = logging.getLogger("TwoPointFunction")
+
+    def __init__(self, nbar, power_spectrum, beta_0, disc, survey_specs=None,
+                 cosmo_specs=None, comm=None):
+
+        self.nbar = nbar
+        self.power_spectrum = power_spectrum
+        self.beta_0 = beta_0
+        self._natural_couplings = None
+
+        super().__init__(
+            disc,
+            survey_specs=survey_specs,
+            cosmo_specs=cosmo_specs,
+        )
+
+    def _compute_natural_couplings(self, comm=None):
+
+        if self._natural_couplings is not None:
+            return self._natural_couplings
+
+        self._natural_couplings = dict.fromkeys(['angular', 'radial', 'RSD'])
+        for coupling_type in self._natural_couplings:
+            self._natural_couplings[coupling_type] = super()\
+                .compile_couplings_vector(
+                    'natural',
+                    coupling_type,
+                    comm=comm,
+                )
+        self._logger.info("Natural coupling coefficients computed. ")
+
+        return self._natural_couplings
+
+    def two_point_signal_value(self, mu, nu, comm=None):
+        r"""Compute the 2-point function signal for given indices.
+
+        Parameters
+        ----------
+        mu, nu :  tuple or list of int
+            Coefficient triplet index.
+
+        Returns
+        -------
+        signal_value : complex
+            Cosmological signal 2-point function value for given triple
+            indices.
+
+        """
+        k, kappa = disc.wavenumbers, disc.normalisations
+
+        M_mu, M_nu = mu_couplings['angular'], nu_couplings['angular']
+        Phi_mu, Phi_nu = mu_couplings['radial'], nu_couplings['radial']
+        Upsilon_mu, Upsilon_nu = mu_couplings['RSD'], nu_couplings['RSD']
+
+        signal = 0
+        for ell_idx, ell in enumerate(disc.degrees):
+            M_mu_, M_nu_ = M_mu[ell_idx], M_nu[ell_idx]
+            Phi_mu_, Phi_nu_ = Phi_mu[ell_idx], Phi_nu[ell_idx]
+            Upsilon_mu_, Upsilon_nu_ = Upsilon_mu[ell_idx], Upsilon_nu[ell_idx]
+            k_ell, kappa_ell = k[ell_idx], kappa[ell_idx]
+            angular_sum = np.sum(
+                [
+                    M_mu_[m_idx] * np.conj(M_nu_[m_idx])
+                    for m_idx in range(0, 2*ell+1)
+                ]
+            )
+            radial_sum = np.sum(
+                [
+                    (Phi_mu_[n_idx] + beta_0 * Upsilon_mu_[n_idx])
+                    * (Phi_nu_[n_idx] + beta_0 * Upsilon_nu_[n_idx])
+                    * power_spectrum(k_ell[n_idx]) / kappa_ell[n_idx]
+                    for n_idx in range(disc.depths[ell_idx])
+                ]
+            )
+            signal += angular_sum * radial_sum
+
+        return signal
+
+    def two_point_shot_noise_value(self, mu, nu, comm=None):
+        """Compute
+
+
+        """
+        pass

@@ -21,8 +21,8 @@ def view_spectrum(data, case='error'):
     data : dict
         Power spectrum data.
     case : {'single', 'error'}, optional
-        Plotting case, either a single plot (``'single'``) or with error panel
-        (``'error'``).
+        Plotting case, either a single plot (``'single'``) or with error
+        panel (``'error'``).
 
     """
     if case == 'single':

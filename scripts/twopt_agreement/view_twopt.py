@@ -17,12 +17,12 @@ def view_covariance(data, model=None, ratio=False, diag=False, select_idx=None,
     model : array_like
         Model 2-point covariance.
     ratio : {False, 'd2m', 'm2d'}, optional
-        If ``'off'`` (default), this has no effect.  If ``'d2m'`` or ``'m2d'``,
-        plot the ratio of `data` to `model` or vice versa.
+        If ``'off'`` (default), this has no effect.  If ``'d2m'`` or
+        ``'m2d'``, plot the ratio of `data` to `model` or vice versa.
     diag : {False, 'off', 'only'}, optional
-        Whether the diagonal elements should masked (``'off'``), or be the only
-        non-masked ones (``'only'``), or no masking is applied (`False`,
-        default).
+        Whether the diagonal elements should masked (``'off'``), or be the
+        only non-masked ones (``'only'``), or no masking is applied
+        (`False`, default).
     select_idx : slice or None, optional
         Index slice selecting relevant data entries (default is `None`).
     tick_labels : list-like, int or None, optional

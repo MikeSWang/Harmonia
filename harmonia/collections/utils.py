@@ -31,6 +31,13 @@ System utilities
     clean_warning_format
     format_float
 
+**Data-type conversion**
+
+.. autosummary::
+
+    sort_dict_to_list
+    sort_list_to_dict
+
 Computational utilities
 ---------------------------------------------------------------------------
 
@@ -42,7 +49,6 @@ Computational utilities
     unit_const
     covar_to_corr
     binary_search
-    sort_dict_to_list
 
 **Geometrical algorithms**
 
@@ -71,28 +77,30 @@ from glob import glob
 import numpy as np
 
 __all__ = [
+    'confirm_directory_path',
+    'get_filename',
+    'collate',
+    'overwrite_protection',
     'allocate_tasks',
     'allocate_segments',
-    'bin_edges_from_centres',
-    'binary_search',
-    'cartesian_to_spherical',
-    'clean_warning_format',
-    'collate',
-    'confirm_directory_path',
-    'covar_to_corr',
-    'format_float',
-    'get_filename',
     'mpi_compute',
-    'normalise_vector',
-    'overwrite_protection',
-    'smooth_by_bin_average',
+    'clean_warning_format',
+    'format_float',
     'sort_dict_to_list',
     'sort_list_to_dict',
-    'spherical_to_cartesian',
-    'spherical_indicator',
     'zero_const',
     'unit_const',
+    'covar_to_corr',
+    'binary_search',
+    'normalise_vector',
+    'spherical_indicator',
+    'cartesian_to_spherical',
+    'spherical_to_cartesian',
+    'bin_edges_from_centres',
+    'smooth_by_bin_average',
 ]
+
+MAX_INT = np.iinfo(np.int64).max
 
 
 # SYSTEM UTILITIES
@@ -190,7 +198,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
         for key in collated_data:
             collated_data[key] = np.concatenate(
                 [np.atleast_1d(data[key]) for data in all_data],
-                axis=0,
+                axis=0
             )
 
         return collated_data, collation_count, last_collated_file
@@ -213,7 +221,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
                     np.atleast_2d(np.loadtxt(file, usecols=columns)[:, keyidx])
                     for file in all_files
                 ],
-                axis=0,
+                axis=0
             )
 
         return collated_data, collation_count, last_collated_file
@@ -471,6 +479,78 @@ def format_float(x, case):
     return x_str
 
 
+def sort_dict_to_list(dict_data):
+    """Sort a dictionary by its integer key values and return a list of its
+    values in ascending order by the keys.
+
+    Parameters
+    ----------
+    dict_data : dict
+        Dictionary with integer keys.
+
+    Returns
+    -------
+    list_data : list of array_like
+        `dict_data` values sorted by `dict_data` keys.
+
+    Raises
+    ------
+    TypeError
+        If `dict_data` is not a dictionary, or its keys are not integers.
+
+    """
+    if not isinstance(dict_data, dict):
+        raise TypeError("`dict_data` must be a dictionary. ")
+
+    keys = list(dict_data.keys())
+    if not all([isinstance(key, int) for key in keys]):
+        raise TypeError("`dict_data` keys must be integers. ")
+
+    sorted_keys = np.sort(keys)
+
+    list_data = [dict_data[key] for key in sorted_keys]
+
+    return list_data
+
+
+def sort_list_to_dict(list_data, int_keys):
+    """Convert an ordered list to a dictionary with integer keys in
+    correpondence with the list index.
+
+    Parameters
+    ----------
+    list_data : list
+        Ordered list-like data.
+    int_keys : list of int, array_like
+        Integer keys in correpondence with the list index.
+
+    Returns
+    -------
+    sorted_dict : dict
+        Dictionary with integer keys in correspondence with list index
+        of `list_data`.
+
+    Raises
+    ------
+    ValueError
+        If the lengths of `list_data` and `int_keys` do not match.
+
+    """
+    if len(list_data) != len(int_keys):
+        raise ValueError(
+            "`list_data` and `int_keys` do not have the same length. "
+        )
+
+    order = np.argsort(int_keys)
+
+    sorted_dict = {
+        int_keys[ord_idx]: list_data[ord_idx]
+        for ord_idx in order
+    }
+
+    return sorted_dict
+
+
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
 
@@ -529,7 +609,7 @@ def covar_to_corr(cov):
     return corr
 
 
-def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
+def binary_search(func, a, b, maxnum=None, precision=1.e-5):
     """Binary seach for all roots of a function in an interval.
 
     Parameters
@@ -538,9 +618,9 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         Function whose zeros are to be found.
     a, b : float
         Interval end points.
-    maxnum : int, optional
-        Maximum number of roots needed from below (default is
-        ``numpy.iinfo(np.int64).max``).
+    maxnum : int or None, optional
+        Maximum number of roots needed from below (default is `None`).
+        If `None`, this is set to ``numpy.iinfo(np.int64).max``.
     precision : float
         Precision required (default is 1.0e-5).
 
@@ -550,6 +630,8 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         Possible roots.
 
     """
+    if maxnum is None:
+        maxnum = MAX_INT
 
     def _scan_interval(func, a, b, dx):
         """Scan interval from lower end to detect sign change.
@@ -639,81 +721,9 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
                 roots.append(round(root, -int(np.log10(precision))))
             a = x1  # reset interval for next root
         else:  # no more sign change interval, terminate
-            return np.asarray(roots)
+            return np.array(roots)
 
-    return np.asarray(roots, dtype=float)
-
-
-def sort_dict_to_list(dict_data):
-    """Sort a dictionary by its integer key values and return a list of its
-    values in ascending order by the keys.
-
-    Parameters
-    ----------
-    dict_data : dict
-        Dictionary with integer keys.
-
-    Returns
-    -------
-    list_data : list of array_like
-        `dict_data` values sorted by `dict_data` keys.
-
-    Raises
-    ------
-    TypeError
-        If `dict_data` is not a dictionary, or its keys are not integers.
-
-    """
-    if not isinstance(dict_data, dict):
-        raise TypeError("`dict_data` must be a dictionary. ")
-
-    keys = list(dict_data.keys())
-    if not all([isinstance(key, int) for key in keys]):
-        raise TypeError("`dict_data` keys must be integers. ")
-
-    sorted_keys = np.sort(keys)
-
-    list_data = [dict_data[key] for key in sorted_keys]
-
-    return list_data
-
-
-def sort_list_to_dict(list_data, int_keys):
-    """Convert an ordered list to a dictionary with integer keys in
-    correpondence with the list index.
-
-    Parameters
-    ----------
-    list_data : list
-        Ordered list-like data.
-    int_keys : list of int, array_like
-        Integer keys.
-
-    Returns
-    -------
-    sorted_dict : dict
-        Dictionary with integer keys in correspondence with list index
-        of `list_data`.
-
-    Raises
-    ------
-    ValueError
-        If the lengths of `list_data` and `int_keys` do not match.
-
-    """
-    if len(list_data) != len(int_keys):
-        raise ValueError(
-            "`list_data` and `int_keys` do not have the same length. "
-        )
-
-    order = np.argsort(int_keys)
-
-    sorted_dict = {
-        int_keys[ord_idx]: list_data[ord_idx]
-        for ord_idx in order
-    }
-
-    return sorted_dict
+    return np.array(roots, dtype=float)
 
 
 def normalise_vector(vec, axis=-1):
@@ -797,7 +807,7 @@ def cartesian_to_spherical(cartesian_coords):
     spherical_coords[:, 1] = np.arccos(c_coords[:, 2] / spherical_coords[:, 0])
     spherical_coords[:, 2] = np.mod(
         np.arctan2(c_coords[:, 1], c_coords[:, 0]),
-        2*np.pi,
+        2*np.pi
     )
 
     return spherical_coords
@@ -874,7 +884,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
 
     num_bin = len(centres)
     edges = np.concatenate(
-        ([np.min(extremes)], np.zeros(num_bin-1), [np.max(extremes)]),
+        ([np.min(extremes)], np.zeros(num_bin-1), [np.max(extremes)])
     )
     if align.lower().startswith('l'):
         for bin_idx in range(num_bin-1):

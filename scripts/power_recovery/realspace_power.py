@@ -1,4 +1,5 @@
-"""Recover real-space power spectrum from log-normal catalogues.
+"""Recover real-space power spectrum from ``nbodykit`` log-normal
+catalogues.
 
 """
 from collections import defaultdict
@@ -113,7 +114,7 @@ def process(runtime_info):
         sort_dict_to_list(disc.wavenumbers)
     )[flat_order]
     all_root_indices = np.concatenate(
-        sort_dict_to_list(disc.root_indices),
+        sort_dict_to_list(disc.root_indices)
     )[flat_order]
 
     measurements = defaultdict(list)
@@ -123,7 +124,7 @@ def process(runtime_info):
             nbar,
             bias=bias,
             boxsize=boxsize,
-            num_mesh=mesh_gen,
+            num_mesh=mesh_gen
         )
         if case_is_mock:
             rand_catalogue = RandomCatalogue(contrast*nbar, boxsize)
@@ -141,7 +142,7 @@ def process(runtime_info):
                 mesh,
                 poles=[0],
                 dk=dk,
-                kmax=all_wavenumbers.max()+dk,
+                kmax=all_wavenumbers.max()+dk
             ).poles
         else:
             mesh = data_catalogue.to_mesh(**to_mesh_params)
@@ -149,7 +150,7 @@ def process(runtime_info):
                 mesh,
                 mode='1d',
                 dk=dk,
-                kmax=all_wavenumbers.max()+dk,
+                kmax=all_wavenumbers.max()+dk
             ).power
 
         spherical_map = SphericalMap(
@@ -157,7 +158,7 @@ def process(runtime_info):
             data_catalogue,
             rand=rand_catalogue,
             mean_density_data=nbar,
-            mean_density_rand=contrast_nbar,
+            mean_density_rand=contrast_nbar
         )
         spherical_power = spherical_map.spherical_power()
 

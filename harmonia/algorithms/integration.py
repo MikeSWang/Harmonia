@@ -35,6 +35,8 @@ from .bases import spherical_besselj, spherical_harmonic
 def _angular_integrand(phi, theta, afunc, complex_part):
     """Complex angular integrand with Jacobian.
 
+    Notes
+    -----
     Angular arguments are in reverse order for outward double integration.
 
     Parameters
@@ -59,6 +61,7 @@ def _angular_integrand(phi, theta, afunc, complex_part):
     """
     if complex_part.lower() == 'real':
         return np.abs(np.sin(theta)) * afunc(theta, phi).real
+
     if complex_part.lower() == 'imag':
         return np.abs(np.sin(theta)) * afunc(theta, phi).imag
 
@@ -110,13 +113,13 @@ def angular_spherical_integral(angular_func):
         _angular_integrand,
         *theta_range,
         *phi_range,
-        args=(angular_func, 'real'),
+        args=(angular_func, 'real')
     )
     integral_imag, _ = dblquad(
         _angular_integrand,
         *theta_range,
         *phi_range,
-        args=(angular_func, 'imag'),
+        args=(angular_func, 'imag')
     )
 
     return integral_real + 1j*integral_imag
@@ -147,6 +150,8 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
                               **kwargs):
     r"""Full angular integral against spherical harmonic functions.
 
+    Notes
+    -----
     Arguments of `angular_func` must be in radians in the following order
     and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
@@ -172,6 +177,7 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
 
     """
     def _int_kernel(theta, phi):
+
         return angular_func(theta, phi, *args, **kwargs) \
             * spherical_harmonic(ell, m, theta, phi)
 
@@ -207,5 +213,5 @@ def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
     return radial_spherical_integral(
         lambda r: radial_func(r, *args, **kwargs) \
             * spherical_besselj(ell, k*r),
-        rmax,
+        rmax
     )

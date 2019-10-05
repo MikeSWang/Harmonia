@@ -77,7 +77,7 @@ def initialise():
     Plin = cosmology.LinearPower(
         cosmology.Planck15,
         redshift=redshift,
-        transfer='CLASS',
+        transfer='CLASS'
     )
 
     global filename_root
@@ -93,7 +93,7 @@ def initialise():
             warnings.warn(
                 "'--generator' flag value 'nbodykit' has "
                 "overriden `cataloguing` to False. ",
-                RuntimeWarning,
+                RuntimeWarning
             )
 
     if cataloguing:
@@ -103,7 +103,7 @@ def initialise():
             warnings.warn(
                 "'--non-catalogue' flag value False has "
                 "overriden `sampling` to False. ",
-                RuntimeWarning,
+                RuntimeWarning
             )
     elif sampling:
         obj_name = "mesh"
@@ -111,9 +111,9 @@ def initialise():
         obj_name = "realisation"
 
     if mesh_gen == mesh_cal:
-        mesh_tag = f"mesh=gc{mesh_gen}"
+        mesh_tag = f"mesh=gc{mesh_gen},"
     else:
-        mesh_tag = f"mesh=[g{mesh_gen},c{mesh_cal}]"
+        mesh_tag = f"mesh=[g{mesh_gen},c{mesh_cal}],"
 
     filename_root = "-".join([obj_name, gen_name])
 
@@ -121,7 +121,7 @@ def initialise():
         format_float(nbar, 'sci'),
         format_float(bias, 'decdot'),
         format_float(boxsize, 'intdot'),
-        format_float(kmax, 'sci'),
+        format_float(kmax, 'sci')
     )
 
     iter_tag = "iter={}".format(niter)
@@ -157,12 +157,12 @@ def process(runtime_info):
                 nbar,
                 bias=bias,
                 boxsize=boxsize,
-                num_mesh=mesh_gen,
+                num_mesh=mesh_gen
             )
             mesh = catalogue.to_mesh(
                 Nmesh=mesh_cal,
                 resampler='tsc',
-                compensated=True,
+                compensated=True
             )
             cartesian_power = FFTPower(mesh, mode='1d', kmax=kmax, dk=dk).power
 
@@ -232,7 +232,7 @@ def finalise(output_data, save=True, plot=True):
                 results['Pk'],
                 xerr=results['dk'],
                 yerr=results['dPk'],
-                label='catalogue',
+                label='catalogue'
             )
 
             plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')

@@ -44,8 +44,9 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     num_mesh : int
         Mesh number per dimension.
     variable : {'norm', 'coords', 'both'}, optional
-        The grid variable to be returned: 'norm' (default) of the grid
-        coordinates, or 'coords' for the grid, or 'both' in that order.
+        The grid variable to be returned: ``'norm'`` (default) of the grid
+        coordinates, or ``'coords'`` for the grid, or ``'both'`` in that
+        order.
 
     Returns
     -------
@@ -59,8 +60,8 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     Raises
     ------
     ValueError
-        If `variable` is not any of the following: ``'norm'``, ``'coords'``
-        or ``'both'``.
+        If `variable` does not correspond to any of the following:
+        ``'norm'``, ``'coords'`` or ``'both'``.
 
     """
     indices = np.indices((num_mesh,)*3)
@@ -135,7 +136,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     k_norm, k_vec = generate_regular_grid(
         2*np.pi / boxsize,
         num_mesh,
-        variable='both',
+        variable='both'
     )
 
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
@@ -167,7 +168,8 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     :math:`\boldsymbol{\Psi}(\mathbf{r})`.
 
     The velocity displacement field fullfils the continuity equation and
-    no velocity bias is assumed.
+    no velocity bias is assumed.  See also
+    :func:`generate_gaussian_random_field` for details.
 
     Parameters
     ----------
@@ -194,16 +196,12 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         space for each dimension.  Returned as `None` unless `return_disp`
         is `True`.
 
-    See Also
-    --------
-    :func:`generate_gaussian_random_field`
-
     """
     vol, num_cell = boxsize**3, num_mesh**3
     k_norm, k_vec = generate_regular_grid(
         2*np.pi / boxsize,
         num_mesh,
-        variable='both',
+        variable='both'
     )
 
     power_spectrum_target = lambda k: bias**2 * power_spectrum(k)
@@ -260,7 +258,7 @@ def threshold_clip(density_contrast, threshold=-1.):
     if clip_ratio > 0.005:
         warnings.warn(
             "{:.2g}% of field values are clipped. ".format(100*clip_ratio),
-            RuntimeWarning,
+            RuntimeWarning
         )
 
     return density_contrast
@@ -290,8 +288,8 @@ def lognormal_transform(obj, obj_type):
         If `obj_type` is ``'pk'`` (power spectrum) but `obj` is not
         callable.
     ValueError
-        If `obj_type` is not one of the following: ``'delta'``, ``'xi'`` or
-        ``'pk'``.
+        If `obj_type` does not correspond to one of the following:
+        ``'delta'``, ``'xi'`` or ``'pk'``.
 
     """
     NUM_POINT = 1024
@@ -314,22 +312,17 @@ def lognormal_transform(obj, obj_type):
     if obj_type.lower().startswith('p'):
         if not callable(obj):
             raise TypeError("Input 2-point function is not callable. ")
-
         Pk_target_samples = obj(k_samples)
         xi_target = pk_to_xi(k_samples, Pk_target_samples)
-
         xi_gen = lambda r: np.log(1 + xi_target(r))
-
         xi_gen_samples = xi_gen(r_samples)
         Pk_gen = xi_to_pk(r_samples, xi_gen_samples)
-
         return Pk_gen
 
     raise ValueError(
         f"Invalid `obj_type`: {obj_type}. This must be "
-        "correlation function 'xi', "
-        "power spectrum 'pk', "
-        "or random field 'delta'. "
+        "'xi' for correlation function, 'pk' for power spectrum, "
+        "or 'delta' for random field. "
     )
 
 
@@ -411,12 +404,12 @@ def populate_particles(sampled_field, mean_density, boxsize,
     position += cell_size * np.random.uniform(
         low=-0.5,
         high=0.5,
-        size=position.shape,
+        size=position.shape
     )
 
     if vel_offset_fields is not None:
         cell_disp = np.transpose(
-            [np.ravel(psi_i) for psi_i in vel_offset_fields]
+            [np.ravel(psi_i) for psi_i in vel_offset_fields],
         )
         displacement = np.repeat(cell_disp, np.ravel(number_field), axis=0)
     else:
@@ -446,6 +439,7 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     """
     size = (2,) + (num_mesh,)*3
+
     samples = np.random.RandomState(seed=seed).normal(size=size)
 
     whitenoise = samples[0] + 1j*samples[1]
@@ -493,7 +487,7 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
     powers, wavenumbers, mode_count = _radial_binning(
         *binning_args,
         low_edge=0.,
-        high_edge=kmax,
+        high_edge=kmax
     )
 
     return wavenumbers, powers, mode_count
@@ -542,12 +536,12 @@ def _radial_binning(norm3d, data3d, num_bin, bin_scale, low_edge=None,
     bin_coord, _ = np.histogram(
         norm3d.flatten(),
         bins=bins,
-        weights=norm3d.flatten(),
+        weights=norm3d.flatten()
     )
     bin_data, _ = np.histogram(
         norm3d.flatten(),
         bins=bins,
-        weights=data3d.flatten(),
+        weights=data3d.flatten()
     )
 
     bin_coord /= bin_count

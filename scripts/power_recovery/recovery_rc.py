@@ -8,8 +8,8 @@ from argparse import ArgumentParser
 import numpy as np
 from matplotlib import pyplot as plt
 
-PATHIN = "./data/input/"
-PATHOUT = "./data/output/"
+PATHIN = "../../data/power_recovery/input/"
+PATHOUT = "../../data/power_recovery/output/"
 
 
 def import_local_package():
@@ -79,14 +79,14 @@ def _view(output):
         xerr=results['dk'],
         yerr=results['dPk'],
         color='#0087BD',
-        label='Cartesian',
+        label='Cartesian'
     )
 
     spherical_result = plt.loglog(
         results['kln'],
         results['Pln'],
         color='#C40233',
-        label='spherical',
+        label='spherical'
     )
 
     for layer in [1, 2]:
@@ -95,7 +95,7 @@ def _view(output):
             results['Pln'] - layer * results['dPln'],
             results['Pln'] + layer * results['dPln'],
             color=spherical_result[0].get_color(),
-            alpha=(1/4)**layer,
+            alpha=(1/4)**layer
         )
 
     for idx, dbl_indices in enumerate(results['ln']):
@@ -104,7 +104,7 @@ def _view(output):
                 str(dbl_indices),
                 xy=(results['kln'][idx], results['Pln'][idx]),
                 verticalalignment='bottom',
-                fontsize=6,
+                fontsize=6
             )
 
     plt.xlim(left=0.99*results['kln'].min(), right=1.01*results['kln'].max())

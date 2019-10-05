@@ -6,8 +6,8 @@ import sys
 import warnings
 from argparse import ArgumentParser
 
-PATHIN = "./data/input/"
-PATHOUT = "./data/output/"
+PATHIN = "../../data/twopt_agreement/input/"
+PATHOUT = "../../data/twopt_agreement/output/"
 
 
 def import_local_package():

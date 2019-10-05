@@ -65,9 +65,6 @@ class NBKCatalogue(LogNormalCatalog):
     spectrum with particle velocities predicted by the Zel'dovich
     approximation.
 
-    This is the direct implementation by
-    :class:`nbodykit.source.catalog.lognormal.LogNormalCatalog`.
-
     Parameters
     ----------
     power_spectrum : :class:`nbodykit.cosmology.power.linear.LinearPower`
@@ -105,6 +102,7 @@ class NBKCatalogue(LogNormalCatalog):
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
+
         return (
             "LognormalCatalogue"
             "(nbar={0}, bias={1}, RSD={2}, BoxSize={3}, Nmesh={4}, seed={5})"
@@ -203,20 +201,20 @@ class LogNormalCatalogue(CatalogSource):
             power_spectrum,
             bias=bias,
             return_disp=add_RSD,
-            seed=field_seed,
+            seed=field_seed
         )
         sampled_field = smp_field(
             field,
             mean_density,
             boxsize,
-            seed=sampling_seed,
+            seed=sampling_seed
             )
         position, displacement = pop_field(
             sampled_field,
             mean_density,
             boxsize,
             vel_offset_fields=vec_field,
-            seed=drift_seed,
+            seed=drift_seed
         )
 
         # Instantiate the base class.
@@ -236,6 +234,7 @@ class LogNormalCatalogue(CatalogSource):
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
+
         return (
             "LogNormalCatalogue"
             "(nbar={0}, bias={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
@@ -294,8 +293,8 @@ class GaussianCatalogue(CatalogSource):
     comm : :class:`nbodykit.CurrentMPIComm` or None, optional
         Current MPI communicator.
 
-    Warning
-    -------
+    Warnings
+    --------
     The field statistics may change after Poisson sampling to discrete
     particles as the density contrast is clipped below at -1.
 
@@ -353,20 +352,20 @@ class GaussianCatalogue(CatalogSource):
             power_spectrum,
             bias=bias,
             return_disp=add_RSD,
-            seed=field_seed,
+            seed=field_seed
         )
         sampled_field = smp_field(
             field,
             mean_density,
             boxsize,
-            seed=sampling_seed,
+            seed=sampling_seed
             )
         position, displacement = pop_field(
             sampled_field,
             mean_density,
             boxsize,
             vel_offset_fields=vec_field,
-            seed=drift_seed,
+            seed=drift_seed
         )
 
         # Initiate the base class.
@@ -386,6 +385,7 @@ class GaussianCatalogue(CatalogSource):
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
+
         return (
             "GaussianCatalogue"
             "(nbar={0}, bias={1}, fRSD={2}, boxsize={3}, Nmesh={4}, seed={5})"

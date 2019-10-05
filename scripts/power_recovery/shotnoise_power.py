@@ -78,7 +78,7 @@ def process(runtime_info):
         sort_dict_to_list(disc.wavenumbers)
     )[flat_order]
     all_root_indices = np.concatenate(
-        sort_dict_to_list(disc.root_indices),
+        sort_dict_to_list(disc.root_indices)
     )[flat_order]
 
     measurements = defaultdict(list)
@@ -87,14 +87,14 @@ def process(runtime_info):
         mesh = data_catalogue.to_mesh(
             Nmesh=mesh_cal,
             resampler='tsc',
-            compensated=True,
+            compensated=True
         )
 
         cartesian_power = FFTPower(mesh, mode='1d', kmax=kmax).power
         spherical_map = SphericalMap(
             disc,
             data_catalogue,
-            mean_density_data=nbar,
+            mean_density_data=nbar
         )
         spherical_power = spherical_map.spherical_power()
 
@@ -103,7 +103,7 @@ def process(runtime_info):
         measurements['Pk'].append([cartesian_power['power'].real])
         measurements['Pshot'].append([cartesian_power.attrs['shotnoise']])
         measurements['Pln'].append(
-            [np.concatenate(spherical_power)[flat_order]],
+            [np.concatenate(spherical_power)[flat_order]]
         )
 
     output_data = {

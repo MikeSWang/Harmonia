@@ -75,6 +75,7 @@ def initialise():
         gen_name = "lognormal"
     elif generator.lower().startswith('n'):
         gen_name = "nbodykit"
+    gen_tag = f"{gen_name},"
 
     if rsd_flag:
         rsd_tag = "{:.2f}".format(beta)
@@ -102,7 +103,7 @@ def initialise():
 
     iter_tag = "iter={}".format(niter)
 
-    tags = (pivot_tag, param_tag, mesh_tag, iter_tag)
+    tags = (gen_tag, pivot_tag, param_tag, mesh_tag, iter_tag)
     runtime_info = "".join(["-(", *tags, ")-", "[", prog_id, "]"])
     return runtime_info
 
@@ -134,7 +135,7 @@ def process(runtime_info):
             bias=bias,
             boxsize=boxsize,
             num_mesh=mesh_gen,
-            add_RSD=rsd_flag,
+            add_RSD=rsd_flag
         )
         spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 

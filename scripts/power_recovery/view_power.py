@@ -35,7 +35,7 @@ def view_spectrum(data, case='error'):
             xerr=data['dk'],
             yerr=data['dPk'],
             color=COLOUR['reference'],
-            label=LABEL['reference'],
+            label=LABEL['reference']
         )
 
         plt.loglog(
@@ -51,7 +51,7 @@ def view_spectrum(data, case='error'):
                 data['Pln'] - layer * data['dPln'],
                 data['Pln'] + layer * data['dPln'],
                 facecolor=COLOUR['default'],
-                alpha=TRANSPARENCY**layer,
+                alpha=TRANSPARENCY**layer
             )
 
         for idx, dbl_indices in enumerate(data['ln']):
@@ -60,7 +60,7 @@ def view_spectrum(data, case='error'):
                     data['kln'][idx],
                     data['Pln'][idx],
                     marker=MARKER,
-                    color=COLOUR['default'],
+                    color=COLOUR['default']
                 )
                 plt.annotate(
                     str(dbl_indices),
@@ -82,7 +82,7 @@ def view_spectrum(data, case='error'):
             ERROR_CANVAS_GRID,
             (0, 0),
             rowspan=ERROR_ROW_SPAN,
-            colspan=ERROR_CANVAS_GRID[1],
+            colspan=ERROR_CANVAS_GRID[1]
         )
 
         plt.errorbar(
@@ -91,14 +91,14 @@ def view_spectrum(data, case='error'):
             xerr=data['dk'],
             yerr=data['dPk'],
             color=COLOUR['reference'],
-            label=LABEL['reference'],
+            label=LABEL['reference']
         )
 
         plt.loglog(
             data['kln'],
             data['Pln'],
             color=COLOUR['default'],
-            label=LABEL['default'],
+            label=LABEL['default']
         )
 
         for layer in [1, 2]:
@@ -107,7 +107,7 @@ def view_spectrum(data, case='error'):
                 data['Pln'] - layer * data['dPln'],
                 data['Pln'] + layer * data['dPln'],
                 facecolor=COLOUR['default'],
-                alpha=TRANSPARENCY**layer,
+                alpha=TRANSPARENCY**layer
             )
 
         for idx, dbl_indices in enumerate(data['ln']):
@@ -116,13 +116,13 @@ def view_spectrum(data, case='error'):
                     data['kln'][idx],
                     data['Pln'][idx],
                     marker=MARKER,
-                    color=COLOUR['default'],
+                    color=COLOUR['default']
                     )
                 plt.annotate(
                     str(dbl_indices),
                     xy=(data['kln'][idx], data['Pln'][idx]),
                     verticalalignment='bottom',
-                    fontsize=ANNO_SIZE,
+                    fontsize=ANNO_SIZE
                 )
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
@@ -134,7 +134,7 @@ def view_spectrum(data, case='error'):
             ERROR_CANVAS_GRID,
             (ERROR_ROW_SPAN, 0),
             rowspan=ERROR_CANVAS_GRID[0]-ERROR_ROW_SPAN,
-            colspan=ERROR_CANVAS_GRID[1],
+            colspan=ERROR_CANVAS_GRID[1]
         )
 
         cartesian_spline = IUSpline(data['k'], data['Pk'])(data['kln'])
@@ -142,7 +142,7 @@ def view_spectrum(data, case='error'):
         plt.plot(
             data['kln'],
             data['Pln'] / cartesian_spline - 1,
-            c=COLOUR['default'],
+            c=COLOUR['default']
         )
         plt.axhline(y=0., ls='--', lw=1., c='k')
 

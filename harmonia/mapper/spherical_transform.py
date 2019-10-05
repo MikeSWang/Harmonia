@@ -114,7 +114,7 @@ class SphericalMap:
 
         if source == 'mock':
             data_boxsize = data.attrs['BoxSize']
-            if not np.allclose(data_boxsize/2, radius):
+            if not np.allclose(data_boxsize, 2*radius):
                 self._logger.info(
                     self._msg['inscribing'],
                     "data",
@@ -122,7 +122,8 @@ class SphericalMap:
                     2*radius,
                 )
 
-            data['Location'] = data['Position'] - data_boxsize/2
+            data['Location'] = data['Position'] \
+                - np.divide(data_boxsize, 2)
             self._logger.debug(self._msg['centering'], "data")
 
             data['Selection'] *= spherical_cut(data['Location'], radius)
@@ -146,7 +147,7 @@ class SphericalMap:
                         data_boxsize,
                         rand_boxsize,
                     )
-                if not np.allclose(rand_boxsize/2, radius):
+                if not np.allclose(rand_boxsize, 2*radius):
                     self._logger.info(
                         self._msg['inscribing'],
                         "random",
@@ -154,7 +155,8 @@ class SphericalMap:
                         2*radius,
                     )
 
-                rand['Location'] = rand['Position'] - rand_boxsize/2
+                rand['Location'] = rand['Position'] \
+                    - np.divide(rand_boxsize, 2)
                 self._logger.debug(self._msg['centering'], "random")
 
                 rand['Selection'] *= spherical_cut(rand['Location'], radius)
@@ -190,6 +192,7 @@ class SphericalMap:
         self._nbar_coeff = None
 
     def __str__(self):
+
         return "SphericalMap(degmax={}, modecount={})".format(
             max(self.disc.degrees),
             self.disc.mode_count,
@@ -257,7 +260,7 @@ class SphericalMap:
                                 ell,
                                 m_ell,
                                 loc_data[:, 1],
-                                loc_data[:, 2],
+                                loc_data[:, 2]
                             )
                         )
                     )
@@ -278,7 +281,7 @@ class SphericalMap:
                                     ell,
                                     m_ell,
                                     loc_rand[:, 1],
-                                    loc_rand[:, 2],
+                                    loc_rand[:, 2]
                                 )
                             )
                         )
@@ -297,11 +300,11 @@ class SphericalMap:
             if ell != 0:
                 n_ell_flip = np.multiply(
                     np.power(-1, np.arange(1, ell+1)[:, None]),
-                    np.flipud(n_ell[:-1]),
+                    np.flipud(n_ell[:-1])
                 )
                 nbar_ell_flip = np.multiply(
                     np.power(-1, np.arange(1, ell+1)[:, None]),
-                    np.flipud(nbar_ell[:-1]),
+                    np.flipud(nbar_ell[:-1])
                 )
                 n_ell = np.concatenate((n_ell, np.conj(n_ell_flip)))
                 nbar_ell = np.concatenate((nbar_ell, np.conj(nbar_ell_flip)))
@@ -328,10 +331,6 @@ class SphericalMap:
             spherical degrees and the minor index to matching spherical
             orders.
 
-        See Also
-        --------
-        :class:`~harmonia.algorithms.morph.SphericalArray`
-
         """
         if self._n_coeff is None or self._nbar_coeff is None:
             self._n_coeff, self._nbar_coeff = self.transform(method=method)
@@ -339,7 +338,7 @@ class SphericalMap:
         spherical_power = self._square_amplitude(
             self._n_coeff,
             self._nbar_coeff,
-            normalisation=self.disc.normalisations,
+            normalisation=self.disc.normalisations
         )
 
         return spherical_power
@@ -372,7 +371,7 @@ class SphericalMap:
 
         See Also
         --------
-        :class:`~harmonia.algorithms.morph.SphericalArray`
+        :class:`~.morph.SphericalArray` : spherical array structure.
 
         """
         if self._n_coeff is None or self._nbar_coeff is None:
@@ -383,7 +382,7 @@ class SphericalMap:
             self._nbar_coeff,
             self.disc,
             pivot=pivot,
-            order_collapse=order_collapse,
+            order_collapse=order_collapse
         )
 
     @staticmethod
@@ -461,7 +460,7 @@ class SphericalMap:
 
         See Also
         --------
-        :class:`~harmonia.algorithms.morph.SphericalArray`
+        :class:`~.morph.SphericalArray` : spherical array structure.
 
         """
         sorted_degrees = np.sort(list(n_coeff.keys()))
@@ -474,7 +473,7 @@ class SphericalMap:
         delta_ellmn_flat = delta_ellmn.unfold(
             pivot,
             collapse=order_collapse,
-            return_only='data',
+            return_only='data'
         )
 
         return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))

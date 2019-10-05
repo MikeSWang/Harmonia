@@ -82,7 +82,7 @@ def export_data(collate=False, load=False, save=False):
     if collate:
         output, count, _ = collate_data(
             f"{outpath}*{NBAR}*{NUM_MESH}*.npy",
-            'npy',
+            'npy'
         )
         if save:
             assert confirm_dir(collate_path)
@@ -127,7 +127,7 @@ def view(results, savefig=False):
     Plin = cosmology.LinearPower(
         cosmology.Planck15,
         redshift=REDSHIFT,
-        transfer='CLASS',
+        transfer='CLASS'
     )
     Pshot = 1 / NBAR
     Pk_model = BIAS**2 * Plin(k) + Pshot
@@ -138,7 +138,7 @@ def view(results, savefig=False):
     deviation = Pk / Pk_model - 1
     if np.abs(np.average(deviation)) > 0.05:
         shot_noise_check = input(
-            "Did you forget to add/subtract shot noise? [y/n] ",
+            "Did you forget to add/subtract shot noise? [y/n] "
         )
         if shot_noise_check.lower().startswith('y'):
             shot_noise_action = input(
@@ -176,13 +176,13 @@ def view(results, savefig=False):
         (Pk + dPk)/Pk_model - 1,
         (Pk - dPk)/Pk_model - 1,
         color=main[0].get_color(),
-        alpha=1/4,
+        alpha=1/4
     )
     plt.fill_between(
         xlim,
         [ERROR_PATCH_HEIGHT]*2,
         [-ERROR_PATCH_HEIGHT]*2,
-        alpha=1/5,
+        alpha=1/5
     )
     plt.axhline(y=0., lw=1., ls='--')
 

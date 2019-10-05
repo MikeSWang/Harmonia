@@ -65,7 +65,7 @@ def view_covariance(data, model=None, ratio=False, diag=False, select_idx=None,
         with np.errstate(invalid='ignore', divide='ignore'):
             safety_mask = np.logical_and(
                 ~np.isclose(model, 0),
-                model/data > 1e-3,
+                model/data > 1e-3
             )
             if ratio == 'd2m':
                 ratio_array = np.where(safety_mask, data/model, np.nan)

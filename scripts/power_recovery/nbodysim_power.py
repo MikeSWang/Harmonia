@@ -76,7 +76,7 @@ def process(runtime_info):
         sort_dict_to_list(disc.wavenumbers)
     )[flat_order]
     all_root_indices = np.concatenate(
-        sort_dict_to_list(disc.root_indices),
+        sort_dict_to_list(disc.root_indices)
     )[flat_order]
 
     measurements = defaultdict(list)
@@ -85,7 +85,7 @@ def process(runtime_info):
             "".join(
                 [PATHIN, script_name, "/", input_file, pair_suffix, ".txt"]
             ),
-            headings,
+            headings
         )
         catalogue.attrs['BoxSize'] = boxsize
         catalogue['Position'] = catalogue['x'][:, None] * [1, 0, 0] \
@@ -96,7 +96,7 @@ def process(runtime_info):
             Nmesh=mesh_cal,
             resampler='tsc',
             compensated=True,
-            interlaced=True,
+            interlaced=True
         )
         cartesian_power = FFTPower(mesh, mode='1d', kmax=kmax).power
 
@@ -165,24 +165,24 @@ def finalise(output_data, save=True, plot=True):
                 results['Pk'],
                 yerr=results['Pk']/np.sqrt(results['Nk']),
                 color='#C40233',
-                label='Cartesian',
+                label='Cartesian'
             )
             plt.loglog(
                 results['kln'],
                 results['Pln'],
                 color='#0087BD',
-                label='spherical',
+                label='spherical'
                 )
 
             POLE_NUM = 2  # number of poles
-            POLE_COLOUR = ['#000000', '#FFD300',]  # colour of poles
+            POLE_COLOUR = ['#000000', '#FFD300']  # colour of poles
             for ell in range(POLE_NUM):
                 idx_sel = (results['ln'][:, 0] == ell)
                 plt.scatter(
                     results['kln'][idx_sel],
                     results['Pln'][idx_sel],
                     color=POLE_COLOUR[ell],
-                    label=r'$\ell={:d}$'.format(ell),
+                    label=r'$\ell={:d}$'.format(ell)
                 )
 
             plt.xlim(0.99*results['kln'].min(), 1.01*results['kln'].max())

@@ -76,7 +76,7 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
             assert confirm_dir(collate_path)
             assert overwrite_protection(
                 f"{outpath}collated/",
-                f"{FILE_PREFIX}{FILE_TAG}.npy",
+                f"{FILE_PREFIX}{FILE_TAG}.npy"
             )
             np.save(f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy", output)
         if aggregate:
@@ -84,7 +84,7 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
 
     if load:
         output = np.load(
-            f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy",
+            f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy"
         ).item()
         if aggregate: results = aggregate_data(output)
 

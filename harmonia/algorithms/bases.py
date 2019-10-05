@@ -21,7 +21,7 @@ that argument ordering and data-types may differ in this implementation.
 """
 import numpy as np
 from mpmath import besseljzero
-from scipy.special import spherical_jn, sph_harm
+from scipy.special import sph_harm, spherical_jn
 
 from harmonia.collections.utils import binary_search
 
@@ -88,13 +88,13 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
 
     Solving for roots of the derivative function :math:`j'_\ell(x)` employs
     the bisection method, with the initial interval ansatz :math:`\ell + 1
-    \leqslant x \leqslant n_\mathrm{max} \ \mathrm{max}\{4, \ell\}`.
+    \leqslant x \leqslant n_\mathrm{max} \operatorname{max}\{4, \ell\}`.
 
     Parameters
     ----------
     ell : int
         Order of the spherical Bessel function.
-    n : int
+    nmax : int
         Maximal number of positive zeros to be found.
     only : bool, optional
         If `True` (default), return the `nmax`-th root only.
@@ -123,7 +123,7 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
             lambda x: spherical_besselj(ell, x, derivative=True),
             ell + 1,
             nmax * max(4, ell),
-            maxnum=nmax,
+            maxnum=nmax
         )
         if only:
             u_ell = u_ell[-1]

@@ -29,7 +29,10 @@ class DiscreteSpectrum:
 
     .. math::
 
-        k_{\ell n} = \frac{u_{\ell n}}{R}, \quad \text{where} \quad
+        k_{\ell n} = \frac{u_{\ell n}}{R},
+
+        \quad \text{where} \quad
+
         \{ u_{\ell n}: n = 1, \dots, n_{\mathrm{max},\ell} \}_{\ell}
 
     are roots of the spherical Bessel functions of order :math:`\ell` if
@@ -74,7 +77,7 @@ class DiscreteSpectrum:
         Spherical degrees associated with the discrete spectrum.
     depths : int, array_like
         Spectral depths associated with the discrete spectrum.
-    roots : dict of int: :class:`numpy.ndarray`
+    roots : *dict of int*: :class:`numpy.ndarray`
         Spherical Bessel roots associated with the discrete spectrum.
     mode_count : int
         Total number of allowed spectral modes, counting spherical order
@@ -118,6 +121,7 @@ class DiscreteSpectrum:
         )
 
     def __str__(self):
+
         return "Spectrum({0}, radius={1}, {2} <= wavenumber <= {3})".format(
             self.attrs['boundary_condition'],
             self.attrs['boundary_radius'],
@@ -247,8 +251,7 @@ class DiscreteSpectrum:
         else:
             raise ValueError(f"Invalid boundary `condition`: {condition}. ")
 
-        degrees, depths = [], []
-        roots = {}
+        degrees, depths, roots = [], [], {}
         ell, mode_count = ellmin, 0
         while True:
             if ellmax is not None:
@@ -260,7 +263,7 @@ class DiscreteSpectrum:
             current_root = spherical_besselj_root(
                 ell,
                 n_ell + 1,
-                derivative=derivative,
+                derivative=derivative
             )
             while kmin * radius <= current_root <= kmax * radius:
                 u_ell.append(current_root)
@@ -268,16 +271,16 @@ class DiscreteSpectrum:
                 current_root = spherical_besselj_root(
                     ell,
                     n_ell + 1,
-                    derivative=derivative,
+                    derivative=derivative
                 )
 
             if n_ell == 0:
                 _logger_.info("No more roots found. Last degree is %d. ", ell)
                 break
             else:
-                roots[ell] = np.array(u_ell)
                 degrees.append(ell)
                 depths.append(n_ell)
+                roots[ell] = np.array(u_ell)
                 mode_count += (2*ell + 1) * n_ell
                 _logger_.debug("Results for degree %d appended. ", ell)
 

@@ -12,7 +12,18 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
 )
-from harmonia.mapper import NBKCatalogue, SphericalMap
+from harmonia.mapper import (
+    GaussianCatalogue,
+    LogNormalCatalogue,
+    NBKCatalogue,
+    SphericalMap,
+)
+
+GEN_CATALOGUE = {
+    'gaussian': GaussianCatalogue,
+    'lognormal': LogNormalCatalogue,
+    'nbodykit': NBKCatalogue,
+}
 
 
 def initialise():
@@ -30,12 +41,13 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global pivots, rsd, nbar, contrast, bias, redshift, zmax, kmax, \
+    global pivots, rsd_flag, nbar, contrast, bias, redshift, zmax, kmax, \
         expand, mesh_gen, mesh_cal, niter, prog_id
 
     try:
         pivots = params.structure.split(",")
         rsd_flag = params.rsd
+        generator = params.generator
 
         nbar = params.nbar
         bias = params.bias
@@ -50,12 +62,19 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, rmax, beta
+    global Plin, rmax, beta, gen_name
 
     cosmo = cosmology.Planck15
     Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
     rmax = cosmo.comoving_distance(zmax)
     beta = cosmo.scale_independent_growth_rate(redshift) / bias
+
+    if generator.lower().startswith('g'):
+        gen_name = "gaussian"
+    elif generator.lower().startswith('l'):
+        gen_name = "lognormal"
+    elif generator.lower().startswith('n'):
+        gen_name = "nbodykit"
 
     if rsd_flag:
         rsd_tag = "{:.2f}".format(beta)
@@ -109,18 +128,20 @@ def process(runtime_info):
 
     output_data = defaultdict(list)
     for run in range(niter):
-        catalogue = NBKCatalogue(
+        catalogue = GEN_CATALOGUE[gen_name](
             Plin,
             nbar,
             bias=bias,
             boxsize=boxsize,
             num_mesh=mesh_gen,
-            add_RSD=rsd,
+            add_RSD=rsd_flag,
         )
         spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 
         for key in pivots:
-            output_data[key].append(spherical_map.two_points(pivot=key))
+            output_data[key].append(
+                spherical_map.two_points_pivoted(pivot=key)
+            )
 
     return output_data
 

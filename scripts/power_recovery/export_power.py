@@ -100,7 +100,7 @@ if __name__ == '__main__':
     SCRIPT_NAME = "realspace_power"
     FILE_PREFIX = "realspace_power"
     FILE_TAG = \
-        "-(nbar=0.001,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=1200)"
+        "-(nbar=0.001,rmax=150.,kmax=0.1,xpd=2.,mesh=gc256,iter=550)"
 
     COLLATE = True
     LOAD = False

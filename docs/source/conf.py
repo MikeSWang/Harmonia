@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
@@ -44,7 +45,7 @@ html_theme = 'alabaster'
 html_theme_options = {
     'page_width': '1150px',
     'sidebar_width': '250px',
-    'fixed_sidebar' : False,
+    'fixed_sidebar' : True,
     'github_user': 'MikeSWang',
     'github_repo': 'Harmonia',
 }
@@ -78,7 +79,7 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org', None),
     'mpmath': ('http://mpmath.org/doc/1.1.0/', None),
     'nbodykit': ('https://nbodykit.readthedocs.io/en/latest', None),
-    'mpi4py': ('https://mpi4py.readthedocs.io/en/stable/', None),
+    'mpi4py': ('https://mpi4py.readthedocs.io/en/latest', None),
 }
 
 todo_include_todos = True

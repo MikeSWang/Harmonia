@@ -25,7 +25,7 @@ def view_covariance(data, model=None, ratio=False, diag=False, select_idx=None,
         (`False`, default).
     select_idx : slice or None, optional
         Index slice selecting relevant data entries (default is `None`).
-    tick_labels : list-like, int or None, optional
+    tick_labels : list_like, int or None, optional
         Tick labels (default is `None`).
 
     Returns

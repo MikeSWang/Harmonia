@@ -52,7 +52,7 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     grid_norm : float :class:`numpy.ndarray`
         Grid coordinate norm array.  Returned if `variable` is ``'norm'``
         or ``'both'``.
-    grid_coords : :obj:`list` of float :class:`numpy.ndarray`
+    grid_coords : list of float :class:`numpy.ndarray`
         Grid coordinate arrays for each dimension.  Returned if `variable`
         is ``'coords'`` or ``'both'``.
 
@@ -125,7 +125,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     -------
     overdensity : float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : :obj:`list` of float :class:`numpy.ndarray` or None
+    displacement : list of float :class:`numpy.ndarray` or None
         Gaussian random fields of velocity displacement in configuration
         space for each dimension.  Returned as `None` unless `return_disp`
         is `True`.
@@ -189,7 +189,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     -------
     overdensity : float :class:`numpy.ndarray`
         Gaussian random field of density contrast in configuration space.
-    displacement : :obj:`list` of float :class:`numpy.ndarray` or None
+    displacement : list of float :class:`numpy.ndarray` or None
         Gaussian random fields of velocity displacement in configuration
         space for each dimension.  Returned as `None` unless `return_disp`
         is `True`.
@@ -380,7 +380,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
         Overall mean number density of particles.
     boxsize : float
         Box size per dimension.
-    vel_offset_fields : :obj:`list` of float, array_like, optional
+    vel_offset_fields : list of float, array_like, optional
         Particle velocity offset field (default is `None`).
     seed : int or None, optional
         Particle placement random seed (default is `None`).

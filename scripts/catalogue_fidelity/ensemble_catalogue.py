@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
-from nbodykit.lab import cosmology, FFTPower, LogNormalCatalog
+from nbodykit.lab import cosmology, FFTPower
 
 from fidelity_rc import PATHOUT, params
 from harmonia.algorithms.fields import (
@@ -20,7 +20,11 @@ from harmonia.collections import (
     format_float,
     harmony,
 )
-from harmonia.mapper import GaussianCatalogue, LogNormalCatalogue
+from harmonia.mapper import (
+    GaussianCatalogue,
+    LogNormalCatalogue,
+    NBKCatalogue,
+)
 
 MECHANISM = {
     'gaussian': generate_gaussian_random_field,
@@ -29,7 +33,7 @@ MECHANISM = {
 CATALOGUE = {
     'gaussian': GaussianCatalogue,
     'lognormal': LogNormalCatalogue,
-    'nbodykit': LogNormalCatalog,
+    'nbodykit': NBKCatalogue,
 }
 
 
@@ -192,9 +196,9 @@ def finalise(output_data, save=True, plot=True):
     output_data : dict
         Program output.
     save : bool, optional
-        If `True`, aggregate data is saved as :obj:`dict`.
+        If `True`, aggregate data is saved as a dictionary.
     plot : bool, optional
-        If `True`, plot the aggregate data and save as a .pdf file.
+        If `True`, plot the aggregate data and save as a '.pdf' file.
 
     """
     basepath = f"{PATHOUT}{filename_root}"

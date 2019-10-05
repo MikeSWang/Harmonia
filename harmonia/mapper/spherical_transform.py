@@ -34,6 +34,8 @@ from harmonia.collections.utils import (
 class SphericalMap:
     """Discretised spherical Fourier map from catalogue sources.
 
+    Notes
+    -----
     The spherical degrees of the map is usually assumed to start at
     :math:`\ell = 0` (see :ref:`this note <degree-index-warning>`).
 
@@ -202,20 +204,21 @@ class SphericalMap:
         Parameters
         ----------
         method : {'sum', 'integrate'} or None, optional
-            Computation method, either Monte Carlo (``'sum'``) or numerical
-            integration (``'integrate'``) (default is `None`; if not
-            provided, this is subsequently overriden to ``'sum'`` if the
-            random catalogue is not `None`, else set to ``'integrate'``).
+            Computation method for expection, either Monte Carlo over
+            the random catalogue (``'sum'``) or numerical integration
+            (``'integrate'``).  If `None` (default), this may be
+            subsequently overriden to ``'sum'`` if the random catalogue
+            is not `None`, else set to ``'integrate'``.
 
         Returns
         -------
-        n_coeff, nbar_coeff : :obj:`dict` of |dict_array|
+        n_coeff, nbar_coeff : dict of |array_dict|
             Spherical Fourier coefficients for the observed and expected
             particle number densities, normalised to the homogeneous mean
             particle number density :attr:`mean_density`.
 
 
-        .. |dict_array| replace::
+        .. |array_dict| replace::
 
             {int: complex :class:`numpy.ndarray`}
 
@@ -310,48 +313,6 @@ class SphericalMap:
 
         return n_coeff, nbar_coeff
 
-    def two_points(self, method=None, pivot='natural', order_collapse=False):
-        r"""Comptute 2-point statistics.
-
-        The spherical degrees are assumed to start at :math:`\ell = 0` (see
-        :ref:`this note <degree-index-warning>`).
-
-        Parameters
-        ----------
-        method : str, optional
-            Expectation computation method (default is `None`).
-        pivot : |set|, optional
-            Axis order for array flattening (default is ``'natural'``).
-        order_collapse : bool, optional
-            If `True` (default is `False`), spherical Fourier coefficients
-            are first averaged over spherical orders.
-
-
-        .. |set| replace::
-
-            {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
-
-        Returns
-        -------
-        :obj:`list` of complex, array_like
-            2-point statistics as 2-d array.
-
-        See Also
-        --------
-        :class:`~harmonia.algorithms.morph.SphericalArray`
-
-        """
-        if self._n_coeff is None or self._nbar_coeff is None:
-            self._n_coeff, self._nbar_coeff = self.transform(method=method)
-
-        return self._compute_two_points_from_coeff(
-            self._n_coeff,
-            self._nbar_coeff,
-            self.disc,
-            pivot=pivot,
-            order_collapse=order_collapse,
-        )
-
     def spherical_power(self, method=None):
         """Compute spherically recovered power spectrum.
 
@@ -363,7 +324,13 @@ class SphericalMap:
         Returns
         -------
         spherical_power : float, array_like
-            Spherically recovered power.
+            Spherically recovered power.  The major index corresponds to
+            spherical degrees and the minor index to matching spherical
+            orders.
+
+        See Also
+        --------
+        :class:`~harmonia.algorithms.morph.SphericalArray`
 
         """
         if self._n_coeff is None or self._nbar_coeff is None:
@@ -377,37 +344,119 @@ class SphericalMap:
 
         return spherical_power
 
-    @staticmethod
-    def _compute_two_points_from_coeff(n_coeff, nbar_coeff, disc,
-                                       pivot='natural', order_collapse=False):
-        r"""Compute 2-point statistics from spherical Fourier coefficients.
+    def two_points_pivoted(self, pivot='natural', method=None,
+                           order_collapse=False):
+        r"""Comptute 2-point statistics given a pivot for unpacking
+        indices to a flat vector.
 
         Parameters
         ----------
-        n_coeff, nbar_coeff : :obj:`dict` of |dict_array|
-            Spherical Fourier coefficients for the observed and expected
-            particle number densities, normalised to the homogeneous mean
-            particle number density :attr:`mean_density`.
-        disc : :class:`.DiscreteSpectrum`
-            Discrete spectrum.
-        pivot : |set|, optional
-            Axis order for array flattening (default is ``'natural'``).
+        pivot : |pivot_set|, optional
+            Axis order for unpacking indices (default is ``'natural'``).
+        method : str, optional
+            Expectation computation method (default is `None`).
         order_collapse : bool, optional
-            If `True`, coefficients `n_coeff` , `nbar_coeff` are first
-            averaged over spherical orders.
+            If `True` (default is `False`), spherical Fourier coefficients
+            are first averaged over spherical orders.
 
 
-        .. |dict_array| replace::
-
-            {int: complex :class:`numpy.ndarray`}
-
-        .. |set| replace::
+        .. |pivot_set| replace::
 
             {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
 
         Returns
         -------
-        :obj:`list` of complex, array_like
+        list of complex, array_like
+            2-point statistics as 2-d array, with the indexing for each
+            index ordered by `pivot`.
+
+        See Also
+        --------
+        :class:`~harmonia.algorithms.morph.SphericalArray`
+
+        """
+        if self._n_coeff is None or self._nbar_coeff is None:
+            self._n_coeff, self._nbar_coeff = self.transform(method=method)
+
+        return self._compute_pivoted_two_points_from_coeff(
+            self._n_coeff,
+            self._nbar_coeff,
+            self.disc,
+            pivot=pivot,
+            order_collapse=order_collapse,
+        )
+
+    @staticmethod
+    def _square_amplitude(n_coeff, nbar_coeff, normalisation=None):
+        """Compute normalised square amplitude from spherical Fourier
+        coefficients of the field.
+
+        Parameters
+        ----------
+        n_coeff, nbar_coeff : list of complex, array_like
+            Observed and expected spherical Fourier coefficients for the
+            field normalised to the homogeneous particle number density
+            :attr:`mean_density`.
+        normalisation : dict of |array_dict|, optional
+            Normalisation coefficients.  If `None`, all normalisation
+            coefficients are set to unity.
+
+
+        .. |array_dict| replace::
+
+            {int: :class:`numpy.ndarray`}
+
+        Returns
+        -------
+        float, array_like
+            Spherically recovered power with given normalisation.
+
+        """
+        sorted_degrees = np.sort(list(n_coeff.keys()))
+
+        if normalisation is None:
+            normalisation = dict.fromkeys(sorted_degrees, 1)
+
+        return [
+            normalisation[ell] * np.average(
+                np.abs(n_coeff[ell] - nbar_coeff[ell])**2,
+                axis=0,
+            )
+            for ell in sorted_degrees
+        ]
+
+    @staticmethod
+    def _compute_pivoted_two_points_from_coeff(n_coeff, nbar_coeff, disc,
+                                               pivot='natural',
+                                               order_collapse=False):
+        r"""Compute 2-point statistics from spherical Fourier coefficients.
+
+        Parameters
+        ----------
+        n_coeff, nbar_coeff : dict of |array_dict|
+            Spherical Fourier coefficients for the observed and expected
+            particle number densities, normalised to the homogeneous mean
+            particle number density :attr:`mean_density`.
+        disc : :class:`.DiscreteSpectrum`
+            Discrete spectrum.
+        pivot : |pivot_set|, optional
+            Axis order for array flattening (default is ``'natural'``).
+        order_collapse : bool, optional
+            If `True`, coefficients `n_coeff`, `nbar_coeff` are first
+            averaged over spherical orders.
+
+
+        .. |array_dict| replace::
+
+            {int: complex :class:`numpy.ndarray`}
+
+        .. |pivot_set| replace::
+
+            {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
+
+        Returns
+        -------
+        list of complex, array_like
             2-point statistics as 2-d array.
 
         See Also
@@ -429,41 +478,3 @@ class SphericalMap:
         )
 
         return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))
-
-    @staticmethod
-    def _square_amplitude(n_coeff, nbar_coeff, normalisation=None):
-        """Compute normalised square amplitude from spherical Fourier
-        coefficients of the field.
-
-        Parameters
-        ----------
-        n_coeff, nbar_coeff : list of complex, array_like
-            Observed and expected spherical Fourier coefficients for the
-            field normalised to the homogeneous particle number density
-            :attr:`mean_density`.
-        normalisation : :obj:`dict` of |dict_array|, optional
-            Normalisation coefficients.  If `None`, all normalisation
-            coefficients are set to unity.
-
-        .. |dict_array| replace::
-
-            {int: :class:`numpy.ndarray`}
-
-        Returns
-        -------
-        float, array_like
-            Spherically recovered power with given normalisation.
-
-        """
-        sorted_degrees = np.sort(list(n_coeff.keys()))
-
-        if normalisation is None:
-            normalisation = dict.fromkeys(sorted_degrees, 1)
-
-        return [
-            normalisation[ell] * np.average(
-                np.abs(n_coeff[ell] - nbar_coeff[ell])**2,
-                axis=0
-            )
-            for ell in sorted_degrees
-        ]

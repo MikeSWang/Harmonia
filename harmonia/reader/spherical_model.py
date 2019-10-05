@@ -519,12 +519,12 @@ class Couplings:
             "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
         )
 
-    def couplings_single_component(self, mu, coupling_type):
+    def couplings_fixed_index(self, mu, coupling_type):
         r"""Compute coupling coefficients with the first triplet index
         fixed.
 
-        Note
-        ----
+        Notes
+        -----
         This function computes coupling coefficients of the form
         :math:`C_{a_\mu b_\mu a_\sigma b_\sigma}` where the triplet index
         :math:`\mu` is fixed, and compiles their values as a vector by
@@ -532,7 +532,7 @@ class Couplings:
 
         ::
 
-            Couplings.compile_over_index(mu, 'angular')
+            Couplings.couplings_fixed_index(mu, 'angular')
 
         returns the quantity
 
@@ -587,12 +587,13 @@ class Couplings:
 
         return couplings_component_array
 
-    def compile_couplings_vector(self, pivot, coupling_type, comm=None):
+    def couplings_vector(self, pivot, coupling_type, comm=None):
         r"""Compile all coupling coefficients of a given type as a vector
         iterated through the first triplet index ordered as specified.
 
-        This returns a list whose entries, ordered and indexed by ``mu``,
-        are ``Couplings.compile_over_index(mu, coupling_type)``.
+        For the given coupling type, this returns a list whose entries,
+        ordered and indexed by one triplet index, are returned by
+        :meth:`~.reader.spherical_model.Couplings.couplings_fixed_index`.
 
         Parameters
         ----------
@@ -615,18 +616,18 @@ class Couplings:
             .unfold(pivot, return_only='index')
 
         if comm is not None:
-            process_index = lambda mu: self.couplings_single_component(
+            process_index = lambda mu: self.couplings_fixed_index(
                 mu,
                 coupling_type=coupling_type,
             )
             couplings_vectorised_arrays = mpi_compute(
                 index_vector,
                 process_index,
-                comm
+                comm,
             )
         else:
             couplings_vectorised_arrays = [
-                self.couplings_single_component(
+                self.couplings_fixed_index(
                     mu,
                     coupling_type=coupling_type,
                 )
@@ -694,7 +695,7 @@ def two_point_shot_noise(mu, nu, nbar, disc, M_mu_nu, selection=None,
 
 
 class TwoPointFunction(Couplings):
-    """Compute 2-point function values for given survey and cosmological
+    r"""Compute 2-point function values for given survey and cosmological
     specifications from a power spectrum model and RSD growth rate.
 
     Parameters

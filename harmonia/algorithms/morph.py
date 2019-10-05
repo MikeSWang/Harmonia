@@ -53,7 +53,7 @@ class SphericalArray:
         Spherical degrees.
     depths : int, array_like
         Spherical depths for each degree.
-    roots : :obj:`dict` of {int: :class:`numpy.ndarray`}, optional
+    roots : dict of int: :class:`numpy.ndarray`, optional
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.  If this is `None`
         (default), the roots are computed by calling
@@ -71,9 +71,9 @@ class SphericalArray:
     roots : list of float array_like
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.
-    index_array : :obj:`list` of (int, int, int) array_like
+    index_array : list of (int, int, int) array_like
         Triplet indices stored in the natural structure.
-    data_array : :obj:`list` of float array_like or None
+    data_array : list of float array_like or None
         Data stored in the natural structure.
 
     Raises
@@ -202,7 +202,7 @@ class SphericalArray:
         -------
         data_flat : float array_like or None
             Flattend 1-d data array.
-        index_flat : :obj:`list` of :obj:`tuple`
+        index_flat : list of tuple
             Flattend 1-d index array.
 
         """
@@ -275,7 +275,7 @@ class SphericalArray:
 
         Returns
         -------
-        :obj:`list` of :obj:`tuple` or float array_like
+        list of tuple or float array_like
             Refolded natural array.
 
         Raises
@@ -410,7 +410,7 @@ class SphericalArray:
 
         Returns
         -------
-        :obj:`list` of float or :obj:`tuple`, array_like
+        list of float or tuple, array_like
             List of transposed subarrays.
 
         Raises
@@ -440,7 +440,7 @@ class SphericalArray:
 
         Returns
         -------
-        :obj:`list` of float or :obj:`tuple`, array_like
+        list of float or tuple, array_like
             List of collapsed subarrays along the spherical order axis.
 
         Raises
@@ -483,7 +483,7 @@ class SphericalArray:
 
         Returns
         -------
-        :obj:`list` of float or :obj:`tuple`, array_like
+        list of float or tuple, array_like
             Uncollapsed natural structure array.
 
         Raises
@@ -552,7 +552,7 @@ class SphericalArray:
 
         Returns
         -------
-        float or :obj:`tuple`, array_like
+        float or tuple, array_like
             Flat 1-d array.
 
         Raises

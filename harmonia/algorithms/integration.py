@@ -87,6 +87,8 @@ def _radial_integrand(r, rfunc):
 def angular_spherical_integral(angular_func):
     r"""Full angular integral.
 
+    Notes
+    -----
     Arguments of `angular_func` must be in radians in the following order
     and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 

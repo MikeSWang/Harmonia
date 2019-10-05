@@ -1,3 +1,3 @@
 # ``Harmonia`` Tutorials
 
-Tutorial examples of possible applications of ``Harmonia``.
+Tutorial examples of ``Harmonia`` applications.

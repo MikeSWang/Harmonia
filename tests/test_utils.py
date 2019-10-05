@@ -6,6 +6,10 @@ import pytest
 import harmonia.collections.utils as utils
 
 
+def test_confirm_directory_path():
+    assert os.path.abspath("./")
+
+
 def test_get_filename():
     assert utils.get_filename(os.path.abspath(__file__)) == 'test_utils'
 
@@ -125,6 +129,32 @@ def test_covar_to_corr(ndim, nsize):
 )
 def test_bisect_roots(func, a, b, maxnum, roots):
     assert np.allclose(utils.binary_search(func, a, b, maxnum=maxnum), roots)
+
+
+@pytest.mark.parametrize(
+    'keys,arrays,sorted_arrays',
+    [
+        ([1, 3, 2], [[1], [2, 3], [4, 5, 6]], [[1], [4, 5, 6], [2, 3]]),
+    ],
+)
+def test_sort_dict_to_list(keys, arrays, sorted_arrays):
+    dict_data = dict(zip(keys, arrays))
+    assert utils.sort_dict_to_list(dict_data) == sorted_arrays
+
+
+@pytest.mark.parametrize(
+    'keys,arrays,sorted_keys,sorted_arrays',
+    [
+        (
+            [1, 3, 2],
+            [[1], [2, 3], [4, 5, 6]],
+            [1, 2, 3],
+            [[1], [4, 5, 6], [2, 3]]),
+    ],
+)
+def test_sort_list_to_dict(keys, arrays, sorted_keys, sorted_arrays):
+    assert utils.sort_list_to_dict(sorted_arrays, sorted_keys) \
+        == dict(zip(keys, arrays))
 
 
 @pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])

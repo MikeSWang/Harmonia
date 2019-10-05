@@ -17,8 +17,6 @@ from harmonia.collections import (
 )
 from harmonia.mapper import SphericalMap
 
-HEADINGS = ['x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
-
 
 def initialise():
     """Initialise from input parameters and return runtime information.
@@ -34,7 +32,7 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global input_file, kmax, boxsize, mesh_cal, prog_id
+    global input_file, kmax, boxsize, mesh_cal, prog_id, headings
 
     try:
         input_file = params.input_file
@@ -43,6 +41,9 @@ def initialise():
         mesh_cal = params.mesh_cal
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
+
+    with open(f"{PATHIN}{script_name}/halos-headings.txt", 'r') as header:
+        headings = header.readline().strip("").split(",")
 
     runtime_info = "-(boxsize={},kmax={},mesh=c{})".format(
         format_float(boxsize, 'intdot'),
@@ -84,7 +85,7 @@ def process(runtime_info):
             "".join(
                 [PATHIN, script_name, "/", input_file, pair_suffix, ".txt"]
             ),
-            HEADINGS,
+            headings,
         )
         catalogue.attrs['BoxSize'] = boxsize
         catalogue['Position'] = catalogue['x'][:, None] * [1, 0, 0] \

@@ -74,7 +74,7 @@ class DiscreteSpectrum:
         Spherical degrees associated with the discrete spectrum.
     depths : int, array_like
         Spectral depths associated with the discrete spectrum.
-    roots : :obj:`dict` of {int: :class:`numpy.ndarray`}
+    roots : dict of int: :class:`numpy.ndarray`
         Spherical Bessel roots associated with the discrete spectrum.
     mode_count : int
         Total number of allowed spectral modes, counting spherical order
@@ -85,9 +85,6 @@ class DiscreteSpectrum:
         wave numbers; ``'boundary_radius'``, ``'bounded_volume'`` for the
         bounding radius and volume; ``'boundary_condition'`` for the
         boundary condition type.
-    wavenumbers
-    root_indices
-    normalisations
 
     """
 
@@ -134,7 +131,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        :obj:`dict` of {int: :class:`numpy.ndarray`}
+        dict of {int; :class:`numpy.ndarray`}
             Wavenumbers.
 
         """
@@ -155,7 +152,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        :obj:`dict` of {int: (int, int)}
+        dict of {int; (int, int)}
             Root indices.
 
         """
@@ -178,7 +175,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        :obj:`dict` of {int: :class:`numpy.ndarray`}
+        dict of {int; :class:`numpy.ndarray`}
             Normalisation coefficients.
 
         """
@@ -228,7 +225,7 @@ class DiscreteSpectrum:
         depths : int, array_like
             Maximal radial numbers, i.e. the number of allowed radial modes
             for each degree.
-        roots : :obj:`dict` of float :class:`numpy.ndarray`
+        roots : *dict of int*: :class:`numpy.ndarray`
             Spherical Bessel roots.
         mode_count : int
             Total number of spectral modes, counting spherical order
@@ -237,8 +234,8 @@ class DiscreteSpectrum:
         Raises
         ------
         ValueError
-            If `condition` does not correpond to either 'Dirichlet' or
-            'Neumann'.
+            If `condition` does not correpond to either the Dirichlet
+            or Neumann boundary condition.
 
         """
         _logger_ = logging.getLogger('discretisation')

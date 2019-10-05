@@ -28,7 +28,7 @@ System utilities
 
 .. autosummary::
 
-    clean_warnings
+    clean_warning_format
     format_float
 
 Computational utilities
@@ -76,17 +76,18 @@ __all__ = [
     'bin_edges_from_centres',
     'binary_search',
     'cartesian_to_spherical',
-    'clean_warnings',  # TODO: testing
+    'clean_warning_format',
     'collate',
-    'confirm_directory_path',  # TODO: testing
+    'confirm_directory_path',
     'covar_to_corr',
     'format_float',
     'get_filename',
-    'mpi_compute',  # TODO: testing
+    'mpi_compute',
     'normalise_vector',
-    'overwrite_protection',  # TODO: testing
+    'overwrite_protection',
     'smooth_by_bin_average',
-    'sort_dict_to_list',  # TODO: testing
+    'sort_dict_to_list',
+    'sort_list_to_dict',
     'spherical_to_cartesian',
     'spherical_indicator',
     'zero_const',
@@ -140,7 +141,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
 
     For text files, the data is assumed to be stored as a column-major 2-d
     array with each column in correspondence with a key in the returned
-    :obj:`dict`.
+    dictionary.
 
     Parameters
     ----------
@@ -149,7 +150,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
     file_extension : {'npy', 'txt', 'dat'}
         Data file extension.
     headings : list of str or None, optional
-        Data column headings to be used as :obj:`dict` keys (default is
+        Data column headings to be used as dictionary keys (default is
         `None`).
     columns : list of int or None, optional
         Data column indices (zero-indexed)  corresponding to headings
@@ -285,7 +286,7 @@ def allocate_tasks(tot_task, tot_proc):
 
     Returns
     -------
-    tasks : :obj:`list` of int
+    tasks : list of int
         Number of tasks for each process.
 
     """
@@ -324,7 +325,7 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
 
     Returns
     -------
-    segments : :obj:`list` of :obj:`slice`
+    segments : list of slice
         Index slice of the segment of tasks that each process should
         receive.
 
@@ -374,9 +375,8 @@ def mpi_compute(data_array, maps, comm, root=0):
 
     Returns
     -------
-    out_data_arrays : :obj:`dict` of :obj:`list`
-        Output data stored as :obj:`dict` corresponding to the `maps`
-        :obj:`dict`.
+    out_data_arrays : dict of list
+        Output data stored as dictionary corresponding to `maps`.
 
     """
     from harmonia.collections import allocate_segments
@@ -404,7 +404,7 @@ def mpi_compute(data_array, maps, comm, root=0):
     return results
 
 
-def clean_warnings(message, category, filename, lineno, line=None):
+def clean_warning_format(message, category, filename, lineno, line=None):
     """Clean warning message format.
 
     Parameters
@@ -596,7 +596,7 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
         Returns
         -------
         float or None
-            A single possible root.
+            Single possible root.
 
         """
         # Simple checks.
@@ -644,36 +644,76 @@ def binary_search(func, a, b, maxnum=np.iinfo(np.int64).max, precision=1.e-5):
     return np.asarray(roots, dtype=float)
 
 
-def sort_dict_to_list(data):
-    """Sort :obj:`dict` by its integer key values and return a list of its
+def sort_dict_to_list(dict_data):
+    """Sort a dictionary by its integer key values and return a list of its
     values in ascending order by the keys.
 
     Parameters
     ----------
-    data : dict
-        :obj:`dict` with its integer keys.
+    dict_data : dict
+        Dictionary with integer keys.
 
     Returns
     -------
-    list of array_like
+    list_data : list of array_like
+        `dict_data` values sorted by `dict_data` keys.
 
     Raises
     ------
     TypeError
-        If `data` is not a :obj:`dict` instance, or its keys are not
-        integers.
+        If `dict_data` is not a dictionary, or its keys are not integers.
 
     """
-    if not isinstance(data, dict):
-        raise TypeError("`data` must be a dictionary. ")
+    if not isinstance(dict_data, dict):
+        raise TypeError("`dict_data` must be a dictionary. ")
 
-    keys = list(data.keys())
+    keys = list(dict_data.keys())
     if not all([isinstance(key, int) for key in keys]):
-        raise TypeError("`data` keys must be integers. ")
+        raise TypeError("`dict_data` keys must be integers. ")
 
     sorted_keys = np.sort(keys)
 
-    return [data[key] for key in sorted_keys]
+    list_data = [dict_data[key] for key in sorted_keys]
+
+    return list_data
+
+
+def sort_list_to_dict(list_data, int_keys):
+    """Convert an ordered list to a dictionary with integer keys in
+    correpondence with the list index.
+
+    Parameters
+    ----------
+    list_data : list
+        Ordered list-like data.
+    int_keys : list of int, array_like
+        Integer keys.
+
+    Returns
+    -------
+    sorted_dict : dict
+        Dictionary with integer keys in correspondence with list index
+        of `list_data`.
+
+    Raises
+    ------
+    ValueError
+        If the lengths of `list_data` and `int_keys` do not match.
+
+    """
+    if len(list_data) != len(int_keys):
+        raise ValueError(
+            "`list_data` and `int_keys` do not have the same length. "
+        )
+
+    order = np.argsort(int_keys)
+
+    sorted_dict = {
+        int_keys[ord_idx]: list_data[ord_idx]
+        for ord_idx in order
+    }
+
+    return sorted_dict
 
 
 def normalise_vector(vec, axis=-1):
@@ -857,15 +897,15 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
     bin_edges : float, array_like
         Bin edges.
     x_coarse, y_coarse : str
-        :obj:`dict` key holding unsmoothed data coordinates or data points.
+        Dictionary key holding unsmoothed data coordinates or data points.
     dx_coarse, dy_coarse : str or None, optional
-        :obj:`dict` key holding data coordinate or data point uncertainties
+        Dictionary key holding data coordinate or data point uncertainties
         to be added in quadrature in bin without averaging.
 
     Returns
     -------
     smoothed_data : dict
-        Smoothed quantities correspond to :obj:`dict` keys `x_coarse`,
+        Smoothed quantities correspond to dictionary keys `x_coarse`,
         `y_coarse`, `dx_coarse` and `dy_coarse` if the keys are not `None`.
     bin_count : int, array_like
         Number of data points in each bin.

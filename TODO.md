@@ -7,7 +7,8 @@
 ## Current items
 
 - [ ] [mapper/spherical_transform.py](./harmonia/mapper/spherical_transform.py):
-      1) fix spherical order collapse; 2) generalise for FKP catalogues;
+      1) fix spherical order collapse; 2) generalise for non-uniform selection,
+      e.g. FKP catalogues;
 - [ ] [reader/spherical_model.py](./harmonia/reader/spherical_model.py):
       fix spherical order collapse.
 

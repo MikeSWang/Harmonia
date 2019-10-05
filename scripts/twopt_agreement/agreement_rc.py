@@ -55,8 +55,8 @@ if not __name__ == '__main__':
 
     import_local_package()
 
-    from harmonia.collections import clean_warnings, get_filename
+    from harmonia.collections import clean_warning_format, get_filename
 
-    warnings.formatwarning = clean_warnings
+    warnings.formatwarning = clean_warning_format
     script_name = get_filename(sys.argv[0])
     params = parse_cli_args()

@@ -373,7 +373,7 @@ class Couplings:
         Fiducial comoving redshift-to-distance conversion.
     evolution : callable or None
         Clustering evolution function of redshift.
-    distotion_AP : callable or None
+    AP_distortion : callable or None
         AP distortion function of redshift.
 
     Raises
@@ -392,7 +392,7 @@ class Couplings:
 
     _all_specs_attr = {
         "survey_specs": ('mask', 'selection', 'weight', 'weight_derivative'),
-        "cosmo_specs": ('r2z', 'z2chi', 'evolution', 'distotion_AP'),
+        "cosmo_specs": ('r2z', 'z2chi', 'evolution', 'AP_distortion'),
     }
 
     def __init__(self, disc, survey_specs=None, cosmo_specs=None):

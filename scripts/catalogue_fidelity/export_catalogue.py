@@ -205,7 +205,7 @@ if __name__ == '__main__':
     obj_name = "catalogue"
     gen_name = "lognormal"
     param_tag = \
-        "nbar=0.001,bias=2.,boxsize=1000.,kmax=0.1,mesh=gc256,iter=1000"
+        "nbar=0.001,bias=2.,boxsize=300.,kmax=0.1,mesh=gc256,iter=1000"
 
     COLLATE = True
     LOAD = False

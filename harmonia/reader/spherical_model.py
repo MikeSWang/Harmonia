@@ -416,6 +416,10 @@ class Couplings:
                     raise KeyError(
                         f"{specs_var_str} key {missing_key} is missing. "
                     )
+            elif specs is None:
+                for attr in specs_attrs:
+                    setattr(self, attr, None)
+
 
     def coupling_coefficient(self, mu, nu, coupling_type):
         r"""Evaluate couplings at specified indices.

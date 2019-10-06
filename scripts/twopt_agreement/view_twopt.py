@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 
 def view_covariance(data, model=None, ratio=False, diag=False, select_idx=None,
-                    tick_labels=None):
+                    tick_labels='auto'):
     """View 2-point covariance matrices.
 
     Parameters
@@ -42,6 +42,7 @@ def view_covariance(data, model=None, ratio=False, diag=False, select_idx=None,
     )
 
     sns.set(style='ticks', font='serif')
+    plt.close('all')
     fig = plt.figure("Two-point covariance")
 
     if tick_labels is None:

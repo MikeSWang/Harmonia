@@ -343,25 +343,19 @@ class SphericalMap:
 
         return spherical_power
 
-    def two_points_pivoted(self, pivot='natural', method=None,
-                           order_collapse=False):
+    def two_points_pivoted(self, pivot, method=None, order_collapse=False):
         r"""Comptute 2-point statistics given a pivot for unpacking
         indices to a flat vector.
 
         Parameters
         ----------
-        pivot : |pivot_set|, optional
+        pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
             Axis order for unpacking indices (default is ``'natural'``).
         method : str, optional
             Expectation computation method (default is `None`).
         order_collapse : bool, optional
             If `True` (default is `False`), spherical Fourier coefficients
             are first averaged over spherical orders.
-
-
-        .. |pivot_set| replace::
-
-            {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
 
         Returns
         -------

@@ -75,7 +75,7 @@ def initialise():
         gen_name = "lognormal"
     elif generator.lower().startswith('n'):
         gen_name = "nbodykit"
-    gen_tag = f"{gen_name},"
+    gen_tag = f"gen={gen_name},"
 
     if rsd_flag:
         rsd_tag = "{:.2f}".format(beta)

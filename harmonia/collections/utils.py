@@ -363,7 +363,7 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
     return segments
 
 
-def mpi_compute(data_array, maps, comm, root=0):
+def mpi_compute(data_array, mapping, comm, root=0):
     """Multiprocess mapping of data.
 
     For each map to be applied, the input data array is scattered over the
@@ -374,8 +374,8 @@ def mpi_compute(data_array, maps, comm, root=0):
     ----------
     data_array : list
         Data array.
-    maps : dict of callable
-        Maps to be applied.
+    mapping : callable
+        Mapping to be applied.
     comm : :class:`mpi4py.MPI.Comm`
         MPI communicator.
     root : int, optional
@@ -383,8 +383,8 @@ def mpi_compute(data_array, maps, comm, root=0):
 
     Returns
     -------
-    out_data_arrays : dict of list
-        Output data stored as dictionary corresponding to `maps`.
+    out_data_arrays : array_like
+        Output data processed from `mapping`.
 
     """
     from harmonia.collections import allocate_segments
@@ -392,24 +392,16 @@ def mpi_compute(data_array, maps, comm, root=0):
     segments = allocate_segments(tot_task=len(data_array), tot_proc=comm.size)
     data_chunk = data_array[segments[comm.rank]]
 
-    outputs = {}
-    for mapping, process in maps.items():
-        outputs[mapping] = [process(data_piece) for data_piece in data_chunk]
+    output = [mapping(data_piece) for data_piece in data_chunk]
 
     comm.Barrier()
 
-    results = {
-        mapping: comm.gather(output, root=root)
-        for mapping, output in outputs.items()
-    }
+    output = comm.gather(output, root=root)
 
     if comm.rank == root:
-        results = {
-            mapping: np.concatenate(result, axis=0)
-            for mapping, result in results.items()
-        }
+        out_data_arrays = np.concatenate(output, axis=0)
 
-    return results
+    return out_data_arrays
 
 
 def clean_warning_format(message, category, filename, lineno, line=None):

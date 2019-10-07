@@ -64,16 +64,16 @@ def setup_cosmology(boxsize, zmax=None):
     )[flat_order]
 
 
-def main(collate_data=False, load_data=False, load_model=False, load_nbody=False,
-         save_fig=False):
+def process_data(collate_data=False, load_data=False, load_model=False,
+                 load_nbody=False):
     """Collate data, load data, model and n-body result files and/or export
     two-point plots.
 
     Parameters
     ----------
-    load_data, load_model, load_nbody, savefig : bool, optional
-        If `True` (default is `False`), load data, load model, load n-body
-        result files or save the plotted figure.
+    collate_data, load_data, load_model, load_nbody : bool, optional
+        If `True` (default is `False`), collate data, load data,
+        load model, or load n-body result files.
 
     Raises
     ------
@@ -92,8 +92,10 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
     collate_path = data_outpath + "collated/"
 
     if collate_data:
-        output, count, _ = \
-            collate(f"{data_outpath}{DATA_NAME_ROOT}-*.npy", 'npy')
+        output, count, _ = collate(
+            f"{data_outpath}{DATA_NAME_ROOT}-{DATA_SEARCH_TAG}.npy",
+            'npy'
+        )
         data = aggregate_data(output)
 
         save_str = "".join(_.split("(")[-1].split(")")[:-1]) + f"*{count}"
@@ -119,7 +121,7 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
     if load_model:
         model = np.load(
             f"{model_outpath}{MODEL_NAME_ROOT}{MODEL_TAG}.npy"
-        ).item()[PIVOT]
+        ).item()
 
     if load_nbody:
         nbody_model = np.load(
@@ -134,8 +136,10 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
     if load_data or collate_data:
         data_covar = data[PIVOT]
     if load_model:
+        model = model[PIVOT]
         model_covar = model['signal'] + model['shotnoise']
     if load_nbody:
+        nbody_model = nbody_model[PIVOT]
         model_covar = nbody_model['signal'] + nbody_model['shotnoise']
 
         data_covar = np.zeros(disc.nmode)
@@ -157,18 +161,20 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
     else:
         model_2pt = None
 
-    global view
 
-    index_range = slice(len(index_vector))  # len(index_vector), None
-    view = view_covariance(
+def view_data():
+    """Visualise output data.
+
+    """
+    view_covariance(
         data_2pt,
         model=model_2pt,
         ratio=RATIO,
-        diag='only',  # False, 'only', 'off'
+        diag=DIAG,
         select_idx=index_range,
-        tick_labels='auto'  # 'auto', index_vector[index_range]
+        tick_labels=tick_labels
     )
-    if save_fig:
+    if SAVE_FIG:
         plt.savefig(
             f"{PATHOUT}twopt-"
             f"(pivot={PIVOT},beta={BETA},kmax={KMAX},diff={str(RATIO)}).png",
@@ -186,22 +192,34 @@ if __name__ == '__main__':
     ZMAX = 0.05
     BOXSIZE = None  # 1000.
 
-    DATA_TAG = ""
-    MODEL_TAG = f"-(pivots=natural,nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
+    DATA_SEARCH_TAG = "*nbodykit*"
+    DATA_TAG = (
+        "-(gen=nbodykit,pivots=natural,"
+        "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
+        "xpd=2.,mesh=gc256,iter=50*52)-agg"
+    )
+    MODEL_TAG = "-(pivots=[natural, k],nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
     NBODY_TAG = ""
     NBODY_REFTAG = (
         "-(NG=0.,z=1.)-"
         "(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,npair=11)"
         )
 
-    EXPORT_OPT = dict(
-        collate_data=True,
-        load_data=False,
+    setup_cosmology(BOXSIZE, zmax=ZMAX)
+
+    PROCESS_OPTS = dict(
+        collate_data=False,
+        load_data=True,
         load_model=True,
         load_nbody=False,
-        save_fig=False,
     )
-    RATIO = False  # False, 'd2m', 'm2d'
 
-    setup_cosmology(BOXSIZE, zmax=ZMAX)
-    main(**EXPORT_OPT)
+    process_data(**PROCESS_OPTS)
+
+    SAVE_FIG = False
+    RATIO = 'd2m'  # False, 'd2m', 'm2d'
+    DIAG = 'only' # None, 'only', 'off'
+    index_range = slice(len(index_vector))  # len(index_vector), None
+    tick_labels = 'auto'  # 'auto', index_vector[index_range]
+
+    view_data()

@@ -7,12 +7,15 @@ import numpy as np
 from astropy import constants
 from nbodykit.lab import cosmology as cosmo
 
-from inference_rc import PATHOUT, confirm_dir, filename, mpicomp, params
+from inference_rc import PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import format_float
+from harmonia.collections import (
+    confirm_directory_path as confirm_dir,
+    format_float,
+)
 from harmonia.cosmology import fiducial_cosmology, fiducial_distance
 from harmonia.mapper import NBKCatalogue, SphericalMap
-from harmonia.reader import Couplings, two_point_signal, two_point_shot_noise
+from harmonia.reader import TwoPointFunction
 
 
 # == INITIALISATION ===========================================================

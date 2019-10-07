@@ -1,95 +1,62 @@
-"""Likelihood inference runtime configuration.
-
-This sets I/O paths and provides common parameters and functionalities to
-likelihood inference scripts.
+"""Runtime configuration for likelihood inference.
 
 """
 import os
 import sys
 import warnings
 from argparse import ArgumentParser
-from collections import defaultdict
-
-import numpy as np
-
-PATHIN = "./data/input/"
-PATHOUT = "./data/output/"
 
 
-def get_filename(*filepath):
-    if not filepath:
-        filepath = [sys.argv[0]]
-    return os.path.splitext(os.path.basename(filepath[0]))[0]
+PATHIN = "./data/input/"  # TODO: "../../inference/input/"
+PATHOUT = "./data/output/"  # TODO: "../../inference/output/"
 
 
-def parse_cli_args(cli_parser):
-    # Physical parameters
+def import_local_package():
+    """Add package to Python module path.
+
+    """
+    _cwd = os.path.dirname(__file__)
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
+
+
+def parse_cli_args():
+    """Parse command line arguments.
+
+    Returns
+    -------
+    :class:`argparse.Namespace`
+        Parsed parameters.
+
+    """
+    cli_parser = ArgumentParser()
+
+    cli_parser.add_argument('--structure')
+    cli_parser.add_argument('--rsd', action='store_true')
+
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
-    cli_parser.add_argument('--contrast', type=float, default=None)
     cli_parser.add_argument('--bias', type=float, default=2.)
     cli_parser.add_argument('--redshift', type=float, default=0.)
-    cli_parser.add_argument('--rsd', action='store_true')
 
     cli_parser.add_argument('--zmax', type=float, default=0.05)
     cli_parser.add_argument('--kmax', type=float, default=0.1)
-    cli_parser.add_argument('--dk', type=float, default=1e-2)
 
-    # Computing parameters
-    cli_parser.add_argument('--struct')
-    cli_parser.add_argument('--boxsize', type=float, default=1000.)
+    cli_parser.add_argument('--boxside', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
-    cli_parser.add_argument('--meshgen', type=int, default=256)
-    cli_parser.add_argument('--meshcal', type=int, default=256)
+    cli_parser.add_argument('--mesh-gen', type=int, default=256)
+    cli_parser.add_argument('--mesh-cal', type=int, default=256)
 
-    # Program parameters
     cli_parser.add_argument('--niter', type=int, default=25)
-    cli_parser.add_argument('--progid', default="")
+    cli_parser.add_argument('--prog-id', default="")
 
     return cli_parser.parse_args()
 
 
-def clean_warnings(message, category, filename, lineno, line=None):
-    return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
+if not __name__ == '__main__':
 
+    import_local_package()
 
-def confirm_dir(dirpath):
-    if not dirpath.endswith("/"):
-        dirpath += "/"
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
+    from harmonia.collections import clean_warning_format, get_filename
 
-
-def aggregate(result):
-    return {var: np.average(val, axis=0) for var, val in result.items()}
-
-
-def mpicomp(data_arr, mappings, comm, root=0):
-
-    from harmonia.collections import allocate_segments
-
-    segment = allocate_segments(ntask=len(data_arr), nproc=comm.size)
-    data_chunk = data_arr[segment[comm.rank]]
-
-    outputs = defaultdict(list)
-    for var, comp in mappings.items():
-        for data_element in data_chunk:
-            outputs[var].append(comp(data_element))
-
-    comm.Barrier()
-
-    result = {var: comm.gather(val, root=root) for var, val in outputs.items()}
-
-    if comm.rank == root:
-        result = {
-            var: np.concatenate(val, axis=0) for var, val in result.items()
-            }
-
-    return result
-
-
-sys.path.insert(0, "../../")
-warnings.formatwarning = clean_warnings
-
-filename = get_filename()
-
-params = parse_cli_args(ArgumentParser())
+    warnings.formatwarning = clean_warning_format
+    script_name = get_filename(sys.argv[0])
+    params = parse_cli_args()

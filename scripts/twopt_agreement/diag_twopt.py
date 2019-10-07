@@ -36,7 +36,7 @@ def setup_cosmology():
     """
     global disc, index_vector, k_ordered_normalisations
 
-    disc = DiscreteSpectrum(BOXSIZE, 'Dirichlet', KMAX)
+    disc = DiscreteSpectrum(RMAX, 'Dirichlet', KMAX)
 
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -50,7 +50,7 @@ def setup_cosmology():
     )[flat_order]
 
 
-def process_data():
+def process_data(upscale_bias=1.):
 
     reference = _aggregate_data(
         np.load(f"{PATHIN}{SCRIPT_NAME}/{REFERENCE_FILE}.npy").item()
@@ -85,7 +85,7 @@ def process_data():
     reference_covar = diagonal_covar
     model_covar = np.abs(
         np.diag(
-            (UPSCALE_BIAS*BIAS)**2 * model['signal'] + model['shotnoise']
+            upscale_bias**2 * model['signal'] + model['shotnoise']
         )
     )
 
@@ -142,7 +142,7 @@ def diagonal_smoothing():
         smooth_data['measurements'] = \
             smooth_data['measurements'] / correction_ratio
         warnings.warn(
-            "2-point measurements downscaled by {:.2g}. "
+            "2-point measurements downscaled by {:.2f}. "
             .format(correction_ratio),
             RuntimeWarning
         )
@@ -220,16 +220,14 @@ if __name__ == '__main__':
     )
     SCRIPT_NAME = "nbodymod_twopt"
     MODEL_TAG = (
-        "-(pivots=natural,nbar=2.49e-4,bias=2.4,beta=0.,rmax=500.,kmax=0.04)"
+        "-(pivots=natural,nbar=2.49e-04,bias=2.40,beta=0.,rmax=500.,kmax=0.04)"
         )
 
     PIVOT = 'natural'
-    BIAS = 2.3415
-    UPSCALE_BIAS = 1.027
+    RMAX = 500.
     KMAX = 0.04
-    BOXSIZE = 500.
 
     setup_cosmology()
-    process_data()
+    process_data()  # upscale_bias = 2.3415 * 1.027
     diagonal_smoothing()
     view_result()

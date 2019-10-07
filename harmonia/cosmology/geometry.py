@@ -14,11 +14,7 @@ Perform geometrical calculations.
 """
 from nbodykit import cosmology
 
-fiducial_cosmology = cosmology.Planck15
-""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default Planck15
-cosmology.
-
-"""
+_fiducial_cosmology = cosmology.Planck15
 
 
 def fiducial_distance(z):
@@ -36,7 +32,7 @@ def fiducial_distance(z):
         Comoving distance.
 
     """
-    return fiducial_cosmology.comoving_distance(z)
+    return _fiducial_cosmology.comoving_distance(z)
 
 
 def redshift_to_distance(z, h0, O0_b, O0_cdm):

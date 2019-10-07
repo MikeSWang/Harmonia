@@ -820,7 +820,7 @@ class TwoPointFunction(Couplings):
                 rmax
             )
 
-        shot_noise *= M_mu_nu / self.nbar
+        shot_noise *= M_mu_nu / self.mean_density
 
         return shot_noise
 

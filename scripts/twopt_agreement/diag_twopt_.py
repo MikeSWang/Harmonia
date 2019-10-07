@@ -1,4 +1,4 @@
-"""Smooth diagonal 2-point function values.
+"""Smooth diagonal 2-point function values for *n*-body simulation pairs.
 
 """
 import warnings
@@ -6,44 +6,104 @@ import warnings
 import numpy as np
 from matplotlib import pyplot as plt
 
-from twoptrc import PATHIN, PATHOUT, aggregate
+from agreement_rc import PATHIN, PATHOUT, aggregate
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import harmony
+from harmonia.collections import harmony, sort_dict_to_list
 
 
-# == CONFIGURATION ============================================================
+def aggregate_data(output):
+    """Aggregate data into a single result.
 
-REFDIR = "nbodymod_twopt/"
-REFNAME = "halos"
-SUBDIR = "nrsd/"
-STRUCT = 'k'
+    Parameters
+    ----------
+    output : dict
+        Output data to be aggregated.
 
-BETA = 'none'  # float
-KMAX = 0.04
-REBIAS2 = 1.0270407441078366
+    Returns
+    -------
+    result : dict
+        Aggregated output data.
 
-TAG_REF = (
-    "-(NG=0.,z=1.)-"
-    "(nbar=2.49e-4,b=2.3415,beta=none,kmax=0.04,side=1000.,nmesh=256,npair=11)"
+    """
+    result = {var: np.average(vals, axis=0) for var, vals in output.items()}
+
+    return result
+
+
+def view_result(result):
+    """Visualise output result.
+
+    """
+    plt.style.use(harmony)
+    plt.close('all')
+
+    plt.subplot2grid((4, 8), (0, 0), rowspan=3, colspan=8)
+
+    plt.loglog(
+        bincoord, smooth_data['measurements'], ls='-', marker='+',
+        label='measurements'
+        )
+    plt.loglog(
+        bincoord, smooth_data['predictions'], ':', marker='+',
+        label=f'{corrct_tag} predictions'
+        )
+    xlim = plt.gca().get_xlim()
+
+    plt.tick_params(axis='x', which='both', labelbottom=False)
+    plt.ylabel(
+        r'$\kappa \left\langle\delta \delta^*\right\rangle$ [$(\textrm{Mpc}/h)^2$]'
+        )
+    plt.legend()
+
+    plt.subplot2grid((4, 8), (3, 0), rowspan=1, colspan=8)
+
+    plt.plot(
+        bincoord, smooth_data['measurements']/smooth_data['predictions']-1, '--'
+        )
+
+    yceil = 0.01
+    plt.fill_between(xlim, [yceil,]*2, [-yceil]*2, alpha=0.2)
+    plt.axhline(y=0, lw=1, ls='--')
+
+    plt.xscale('log')
+    plt.xlim(xlim)
+    plt.ylim(bottom=-0.05,top=0.05)
+    plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
+    plt.ylabel(
+        r'$\langle\delta\delta^*\rangle_\mathrm{{dat}} \big/$'  # \big(
+        + r'{}$\langle\delta\delta^*\rangle_\mathrm{{crt}}$'.format(corrct_tag)
+        + r'$-1$'  # \big)
+        )
+
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+
+def setup_cosmology():
+    """Set up cosmology.
+
+    """
+    global index_vector, norms
+
+    disc = DiscreteSpectrum(BOXSIZE, 'Dirichlet', KMAX)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        index_vector = SphericalArray.build(disc=disc)\
+            .unfold(PIVOT, return_only='index')
+    flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
+    norms = np.concatenate(sort_dict_to_list(disc.normalisations))[flat_order]
+
+
+def main():
+
+    model = np.load(
+        f"{PATHOUT}{SCRIPT_NAME}/{SCRIPT_NAME}{MODEL_TAG}.npy"
+    ).item()
+    reference = aggregate(
+        np.load(f"{PATHIN}{SCRIPT_NAME}/{REFERENCE_FILE}.npy").item()
     )
 
-
-# == OPERATION ================================================================
-
-# Import data.
-mod = np.load(
-    f"{PATHOUT}{REFDIR}{SUBDIR}nbodymod_2pt-(struct={STRUCT}).npy"
-    ).item()
-ref = aggregate(np.load(f"{PATHIN}{REFDIR}{REFNAME}{TAG_REF}.npy").item())
-
 # Set up indexing.
-DISC = DiscreteSpectrum(500, 'Dirichlet', KMAX)
-
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=RuntimeWarning)
-    indx_vec = SphericalArray.build(disc=DISC).unfold(STRUCT, return_only='index')
-order = np.concatenate(DISC.wavenumbers).argsort()
-norms = np.concatenate(DISC.normalisation)[order]
 
 kappa = np.zeros(DISC.mode_count)
 coord = np.zeros(DISC.mode_count)
@@ -93,45 +153,24 @@ else:
         )
 
 # Visualise data product.
-plt.style.use(harmony)
-plt.close('all')
 
-plt.subplot2grid((4, 8), (0, 0), rowspan=3, colspan=8)
 
-plt.loglog(
-    bincoord, smooth_data['measurements'], ls='-', marker='+',
-    label='measurements'
+if __name__ == '__main__':
+
+    REFERENCE_FILE = (
+        "halos-(NG=0.,z=1.)"
+        "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,pair=11)"
     )
-plt.loglog(
-    bincoord, smooth_data['predictions'], ':', marker='+',
-    label=f'{corrct_tag} predictions'
-    )
-xlim = plt.gca().get_xlim()
+    SCRIPT_NAME = "nbodymod_twopt"
+    MODEL_TAG = (
+        "-(NG=0.,z=1.)-"
+        "(nbar=2.49e-4,b=2.3415,beta=none,kmax=0.04,side=1000.,nmesh=256,npair=11)"
+        )
 
-plt.tick_params(axis='x', which='both', labelbottom=False)
-plt.ylabel(
-    r'$\kappa \left\langle\delta \delta^*\right\rangle$ [$(\textrm{Mpc}/h)^2$]'
-    )
-plt.legend()
+    PIVOT = 'natural'
+    BETA = 'none'  # float
+    KMAX = 0.04
+    BOXSIZE = 500.
+    UPSCALE_BIAS = 1.027
 
-plt.subplot2grid((4, 8), (3, 0), rowspan=1, colspan=8)
-
-plt.plot(
-    bincoord, smooth_data['measurements']/smooth_data['predictions']-1, '--'
-    )
-
-yceil = 0.01
-plt.fill_between(xlim, [yceil,]*2, [-yceil]*2, alpha=0.2)
-plt.axhline(y=0, lw=1, ls='--')
-
-plt.xscale('log')
-plt.xlim(xlim)
-plt.ylim(bottom=-0.05,top=0.05)
-plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
-plt.ylabel(
-    r'$\langle\delta\delta^*\rangle_\mathrm{{dat}} \big/$'  # \big(
-    + r'{}$\langle\delta\delta^*\rangle_\mathrm{{crt}}$'.format(corrct_tag)
-    + r'$-1$'  # \big)
-    )
-
-plt.subplots_adjust(wspace=0, hspace=0)
+    main()

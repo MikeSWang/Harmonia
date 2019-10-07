@@ -56,14 +56,15 @@ def initialise():
     else:
         pivot_tag = "{}".format(params.structure).replace("'", "")
 
-    param_tag = "pivots={},nbar={},bias={},beta={},rmax={},kmax={}".format(
-        pivot_tag,
-        format_float(nbar, 'sci'),
-        format_float(bias, 'decdot'),
-        format_float(beta, 'decdot'),
-        format_float(rmax, 'intdot'),
-        format_float(kmax, 'sci'),
-    )
+    param_tag = \
+        "pivots={},nbar={:.2e},bias={:.2f},beta={},rmax={},kmax={}".format(
+            pivot_tag,
+            nbar,
+            bias,
+            format_float(beta, 'decdot'),
+            format_float(rmax, 'intdot'),
+            format_float(kmax, 'sci'),
+        )
     runtime_info = "-({})".format(param_tag)
     return runtime_info
 

@@ -46,7 +46,7 @@ def setup_cosmology(boxsize, zmax=None):
     """Set up cosmology.
 
     """
-    global disc, index_vector, flat_order, norms
+    global disc, index_vector, k_ordered_normalisations
 
     if boxsize is None:
         boxsize = fiducial_distance(zmax)
@@ -56,8 +56,12 @@ def setup_cosmology(boxsize, zmax=None):
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         index_vector = SphericalArray.build(disc=disc)\
             .unfold(PIVOT, return_only='index')
+
     flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
-    norms = np.concatenate(sort_dict_to_list(disc.normalisations))[flat_order]
+
+    k_ordered_normalisations = np.concatenate(
+        sort_dict_to_list(disc.normalisations)
+    )[flat_order]
 
 
 def main(collate_data=False, load_data=False, load_model=False, load_nbody=False,
@@ -135,13 +139,13 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
         model_covar = nbody_model['signal'] + nbody_model['shotnoise']
 
         data_covar = np.zeros(disc.nmode)
-        for vec_idx, greek_idx in enumerate(index_vector):
+        for vec_idx, triplet_idx in enumerate(index_vector):
             condition = np.logical_and(
-                nbody_power['ln'][:, 0] == greek_idx[0],
-                nbody_power['ln'][:, 1] == greek_idx[-1]
+                nbody_power['ln'][:, 0] == triplet_idx[0],
+                nbody_power['ln'][:, 1] == triplet_idx[-1]
             )
             ref_idx = np.where(condition)[0][0]
-            data_covar[vec_idx] = nbody_power['Pln'][ref_idx] / norms[ref_idx]
+            data_covar[vec_idx] = nbody_power['Pln'][ref_idx] / k_ordered_normalisations[ref_idx]
         data_covar = np.diag(data_covar)
 
     global data_2pt, model_2pt

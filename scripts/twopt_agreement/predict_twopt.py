@@ -108,7 +108,7 @@ def process(runtime_info):
 
     output_data = {
         pivot: {
-            two_points.two_point_covariance(pivot, part=part)
+            part: two_points.two_point_covariance(pivot, part=part)
             for part in ['signal', 'shotnoise', 'both']
         }
         for pivot in pivots

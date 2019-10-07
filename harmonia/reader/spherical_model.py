@@ -352,7 +352,7 @@ class Couplings:
         mandatory keys: ``'r2z'`` for cosmological comoving
         distance-to-redshift conversion, ``'z2chi'`` for fiducial
         redshift-to-comoving distance conversion, ``'evolution'`` for
-        clustering evolution, and ``'distorion_AP'`` for AP distortion.
+        clustering evolution, and ``'AP_distortion'`` for AP distortion.
         Default is `None`.
 
     Attributes
@@ -670,7 +670,7 @@ class TwoPointFunction(Couplings):
         mandatory keys: ``'r2z'`` for cosmological comoving
         distance-to-redshift conversion, ``'z2chi'`` for fiducial
         redshift-to-comoving distance conversion, ``'evolution'`` for
-        clustering evolution, and ``'distorion_AP'`` for AP distortion.
+        clustering evolution, and ``'AP_distortion'`` for AP distortion.
         Default is `None`.
     comm : :class:`mpi4py.MPI.Comm` or None, optional
         MPI communicator.  If `None` (default), no multiprocessing

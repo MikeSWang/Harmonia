@@ -94,10 +94,9 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
+    two_point_cosmo = nbar, bias, Plin, beta
     two_points = TwoPointFunction(
-        nbar,
-        Plin,
-        beta,
+        *two_point_cosmo,
         disc,
         survey_specs=SURVEY_SPECS,
         cosmo_specs=None,

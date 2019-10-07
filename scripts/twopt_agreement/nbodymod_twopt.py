@@ -89,7 +89,7 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    two_points = TwoPointFunction(nbar, Plin, beta, disc, comm=COMM)
+    two_points = TwoPointFunction(nbar, bias, Plin, beta, disc, comm=COMM)
 
     couplings = two_points.couplings
 

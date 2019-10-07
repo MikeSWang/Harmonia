@@ -119,12 +119,12 @@ def main(collate_data=False, load_data=False, load_model=False, load_nbody=False
     if load_model:
         model = np.load(
             f"{model_outpath}{MODEL_NAME_ROOT}{MODEL_TAG}.npy"
-        ).item()
+        ).item()[PIVOT]
 
     if load_nbody:
         nbody_model = np.load(
             f"{nbody_outpath}{NBODY_NAME_ROOT}{NBODY_TAG}.npy"
-            ).item()
+        ).item()[PIVOT]
         nbody_power = aggregate_data(
             np.load(
                 f"{nbody_inpath}/{NBODY_REFNAME_ROOT}{NBODY_REFTAG}.npy"
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     BOXSIZE = None  # 1000.
 
     DATA_TAG = ""
-    MODEL_TAG = f"-(ord={PIVOT})"
+    MODEL_TAG = f"-(pivots=natural,nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
     NBODY_TAG = ""
     NBODY_REFTAG = (
         "-(NG=0.,z=1.)-"
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     EXPORT_OPT = dict(
         collate_data=True,
         load_data=False,
-        load_model=False,
+        load_model=True,
         load_nbody=False,
         save_fig=False,
     )

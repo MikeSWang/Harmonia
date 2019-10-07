@@ -57,7 +57,7 @@ def process_data():
     )
     model = np.load(
         f"{PATHOUT}{SCRIPT_NAME}/{SCRIPT_NAME}{MODEL_TAG}.npy"
-    ).item()
+    ).item()[PIVOT]
 
     dim_covar = len(index_vector)
 
@@ -76,13 +76,16 @@ def process_data():
 
         diagonal_normalisations[vec_idx] = k_ordered_normalisations[ref_idx]
         diagonal_k_coords[vec_idx] = reference['kln'][ref_idx]
-        diagonal_covar[vec_idx] = reference['Pln'][ref_idx] \
-            / diagonal_normalisations[ref_idx]
+        this_val = reference['Pln'][ref_idx] \
+            / k_ordered_normalisations[ref_idx]
+        if np.isinf(this_val):
+            print(this_val, vec_idx, ref_idx)
+        diagonal_covar[vec_idx] = this_val
 
-    reference_covar = np.abs(diagonal_covar)
+    reference_covar = diagonal_covar
     model_covar = np.abs(
         np.diag(
-            UPSCALE_BIAS**2 * model['signal'] + model['shotnoise']
+            (UPSCALE_BIAS*BIAS)**2 * model['signal'] + model['shotnoise']
         )
     )
 
@@ -145,7 +148,7 @@ def diagonal_smoothing():
         )
 
 
-def view_result(result):
+def view_result():
     """Visualise output result.
 
     """
@@ -178,6 +181,8 @@ def view_result(result):
         )
     plt.legend()
 
+    xlim = plt.gca().get_xlim()
+
     plt.subplot2grid((4, 8), (3, 0), rowspan=1, colspan=8, sharex=main_ax)
 
     plt.plot(
@@ -187,13 +192,14 @@ def view_result(result):
     )
 
     plt.fill_between(
-        plt.gca().get_xlim(),
+        xlim,
         [ERROR_PATCH_HT,]*2,
         [-ERROR_PATCH_HT]*2,
         alpha=0.2
     )
 
     plt.axhline(y=0, lw=1, ls='--')
+    plt.xlim(xlim)
     plt.ylim(bottom=-ERROR_PANEL_HT,top=ERROR_PANEL_HT)
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
     plt.ylabel(
@@ -218,9 +224,10 @@ if __name__ == '__main__':
         )
 
     PIVOT = 'natural'
+    BIAS = 2.3415
+    UPSCALE_BIAS = 1.027
     KMAX = 0.04
     BOXSIZE = 500.
-    UPSCALE_BIAS = 1.027
 
     setup_cosmology()
     process_data()

@@ -653,6 +653,8 @@ class TwoPointFunction(Couplings):
     ----------
     nbar : float
         Mean particle number density (in cubic h/Mpc).
+    bias : float
+        Bias of the tracer particles.
     pk_linear : callable
         Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
     beta_0 : float
@@ -692,10 +694,11 @@ class TwoPointFunction(Couplings):
 
     _logger = logging.getLogger("TwoPointFunction")
 
-    def __init__(self, nbar, pk_linear, beta_0, disc, survey_specs=None,
+    def __init__(self, nbar, bias, pk_linear, beta_0, disc, survey_specs=None,
                  cosmo_specs=None, comm=None):
 
         self.mean_density = nbar
+        self.bias = bias
         self.linear_power_spectrum = pk_linear
         self.growth_rate_over_bias = beta_0
         self.comm = comm
@@ -773,7 +776,8 @@ class TwoPointFunction(Couplings):
                 [
                     (Phi_mu[ell][n_idx] + beta_0 * Upsilon_mu[ell][n_idx])
                     * (Phi_nu[ell][n_idx] + beta_0 * Upsilon_nu[ell][n_idx])
-                    * pk_linear(k[ell][n_idx]) / kappa[ell][n_idx]
+                    * self.bias**2 * pk_linear(k[ell][n_idx]) \
+                    / kappa[ell][n_idx]
                     for n_idx in range(0, nmax)
                 ]
             )

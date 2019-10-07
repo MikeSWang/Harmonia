@@ -800,7 +800,7 @@ class TwoPointFunction(Couplings):
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        M_mu_nu = self.couplings[mu][ell_nu][m_nu+ell_nu]
+        M_mu_nu = self.couplings['angular'][mu][ell_nu][m_nu+ell_nu]
 
         u_mu = self.disc.roots[ell_mu][n_mu-1]
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]

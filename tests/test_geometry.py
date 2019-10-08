@@ -1,7 +1,7 @@
 import pytest
 
 from harmonia.cosmology.geometry import (
-    fiducial_cosmology,
+    _fiducial_cosmology,
     fiducial_distance,
     redshift_to_distance,
 )
@@ -16,8 +16,8 @@ def test_redshift_to_distance(redshift):
     assert fiducial_distance(redshift) == pytest.approx(
         redshift_to_distance(
             redshift,
-            fiducial_cosmology.h,
-            fiducial_cosmology.Omega0_b,
-            fiducial_cosmology.Omega0_cdm,
+            _fiducial_cosmology.h,
+            _fiducial_cosmology.Omega0_b,
+            _fiducial_cosmology.Omega0_cdm,
         ),
     )

@@ -41,6 +41,13 @@ def aggregate_data(output_data):
         'dPk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof),
         'dPln': np.std(output_data['Pln'], axis=0, ddof=1) / np.sqrt(dof),
     }
+
+    # HACK: For spurious ``nbodykit`` binning only.
+    _SELECT_IDX = slice(2, None)  # slice(None, None)
+    for key in results:
+        if key.endswith('k'):
+            results[key] = results[key][_SELECT_IDX]
+
     return results
 
 
@@ -100,7 +107,7 @@ if __name__ == '__main__':
     SCRIPT_NAME = "realspace_power"
     FILE_PREFIX = "realspace_power"
     FILE_TAG = \
-        "-(nbar=0.001,rmax=150.,kmax=0.1,xpd=2.,mesh=gc256,iter=550)"
+        "-(nbar=0.001,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=1000)"
 
     COLLATE = True
     LOAD = False

@@ -110,7 +110,7 @@ def view(results, savefig=False):
     """
     REDSHIFT = 0.
     YLIM = (22000, 120000)
-    ERROR_PANEL_CEILING = 0.05
+    ERROR_PANEL_CEILING = 0.20
     ERROR_PATCH_HEIGHT = 0.01
 
     global k, Nk, Pk, dPk, Pk_model
@@ -203,9 +203,9 @@ if __name__ == '__main__':
     NUM_MESH = 256
 
     obj_name = "catalogue"
-    gen_name = "lognormal"
+    gen_name = "nbodykit"
     param_tag = \
-        "nbar=0.001,bias=2.,boxsize=300.,kmax=0.1,mesh=gc256,iter=1000"
+        "nbar=0.001,bias=2.,boxsize=593.,kmax=0.1,mesh=gc256,iter=1000"
 
     COLLATE = True
     LOAD = False

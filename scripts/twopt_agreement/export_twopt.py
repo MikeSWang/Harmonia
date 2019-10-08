@@ -49,8 +49,8 @@ def setup_cosmology(boxsize, zmax=None):
     global disc, index_vector, k_ordered_normalisations
 
     if boxsize is None:
-        boxsize = fiducial_distance(zmax)
-    disc = DiscreteSpectrum(boxsize, 'Dirichlet', KMAX)
+        boxsize = 2*fiducial_distance(zmax)
+    disc = DiscreteSpectrum(boxsize/2, 'Dirichlet', KMAX)
 
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -142,7 +142,7 @@ def process_data(collate_data=False, load_data=False, load_model=False,
         nbody_model = nbody_model[PIVOT]
         model_covar = nbody_model['signal'] + nbody_model['shotnoise']
 
-        data_covar = np.zeros(disc.nmode)
+        data_covar = np.zeros(len(index_vector))
         for vec_idx, triplet_idx in enumerate(index_vector):
             condition = np.logical_and(
                 nbody_power['ln'][:, 0] == triplet_idx[0],
@@ -152,6 +152,13 @@ def process_data(collate_data=False, load_data=False, load_model=False,
             data_covar[vec_idx] = nbody_power['Pln'][ref_idx] \
                 / k_ordered_normalisations[ref_idx]
         data_covar = np.diag(data_covar)
+
+    global k
+
+    k = np.zeros(len(index_vector))
+    for vec_idx, triplet_idx in enumerate(index_vector):
+        k[vec_idx] = sort_dict_to_list(disc.wavenumbers)\
+            [triplet_idx[0]][triplet_idx[-1]-1]
 
     global data_2pt, model_2pt
 

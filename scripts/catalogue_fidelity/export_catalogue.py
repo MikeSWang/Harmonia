@@ -207,8 +207,8 @@ if __name__ == '__main__':
     param_tag = \
         "nbar=0.001,bias=2.,boxsize=593.,kmax=0.1,mesh=gc256,iter=1000"
 
-    COLLATE = True
-    LOAD = False
+    COLLATE = False
+    LOAD = True
     SAVE = True
 
     results = export_data(collate=COLLATE, load=LOAD, save=SAVE)

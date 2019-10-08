@@ -17,8 +17,8 @@ PK_FILE_ROOT = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
 
 def initialise():
-    """Initialise from input parameters, set up cosmology and return runtime
-    information.
+    """Initialise from input parameters, set up cosmology and return
+    runtime information.
 
     Returns
     -------
@@ -112,7 +112,8 @@ def finalise(output_data, save=True):
     output_data : dict
         Program output.
     save : bool, optional
-        If `True`, aggregate data over all iterations is saved as a dictionary.
+        If `True`, aggregate data over all iterations is saved as a
+        dictionary.
 
     Raises
     ------

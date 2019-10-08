@@ -17,8 +17,8 @@ from harmonia.reader import TwoPointFunction
 
 
 def initialise():
-    """Initialise from input parameters, set up cosmology and return runtime
-    information.
+    """Initialise from input parameters, set up cosmology and return
+    runtime information.
 
     Returns
     -------
@@ -124,7 +124,8 @@ def finalise(output_data, save=True):
     output_data : dict
         Program output.
     save : bool, optional
-        If `True`, aggregate data over all iterations is saved as a dictionary.
+        If `True`, aggregate data over all iterations is saved as a
+        dictionary.
 
     Raises
     ------

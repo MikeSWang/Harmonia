@@ -177,7 +177,8 @@ def view_result():
 
     plt.tick_params(axis='x', which='both', labelbottom=False)
     plt.ylabel(
-        r'$\kappa \left\langle\delta \delta^*\right\rangle$ [$(\textrm{Mpc}/h)^2$]'
+        r'$\kappa \left\langle\delta \delta^*\right\rangle$ '
+        r'[$(\textrm{Mpc}/h)^2$]'
         )
     plt.legend()
 

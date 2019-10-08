@@ -149,7 +149,8 @@ def process_data(collate_data=False, load_data=False, load_model=False,
                 nbody_power['ln'][:, 1] == triplet_idx[-1]
             )
             ref_idx = np.where(condition)[0][0]
-            data_covar[vec_idx] = nbody_power['Pln'][ref_idx] / k_ordered_normalisations[ref_idx]
+            data_covar[vec_idx] = nbody_power['Pln'][ref_idx] \
+                / k_ordered_normalisations[ref_idx]
         data_covar = np.diag(data_covar)
 
     global data_2pt, model_2pt
@@ -186,7 +187,7 @@ def view_data():
 
 if __name__ == '__main__':
 
-    PIVOT = 'natural'
+    PIVOT = 'k'
     BETA = 'none'
     KMAX = 0.1
     ZMAX = 0.05
@@ -194,11 +195,14 @@ if __name__ == '__main__':
 
     DATA_SEARCH_TAG = "*nbodykit*"
     DATA_TAG = (
-        "-(gen=nbodykit,pivots=natural,"
+        "-(gen=nbodykit,pivots=[natural, k],"
         "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
-        "xpd=2.,mesh=gc256,iter=50*52)-agg"
+        "xpd=2.,mesh=gc256,iter=50*100)-agg"
     )
-    MODEL_TAG = "-(pivots=[natural, k],nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
+    MODEL_TAG = (
+        "-(pivots=[natural, k],"
+        "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
+    )
     NBODY_TAG = ""
     NBODY_REFTAG = (
         "-(NG=0.,z=1.)-"

@@ -56,6 +56,7 @@ def initialise():
         pivot_tag = "{}".format(pivots).replace("'", "")
     else:
         pivot_tag = "{}".format(params.structure).replace("'", "")
+    pivot_tag = pivot_tag.replace(" ", "")
 
     if rsd_flag:
         rsd_tag = "{:.2f}".format(beta)

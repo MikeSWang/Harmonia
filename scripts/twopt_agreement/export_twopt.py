@@ -194,7 +194,7 @@ def view_data():
 
 if __name__ == '__main__':
 
-    PIVOT = 'k'
+    PIVOT = 'natural'
     BETA = 'none'
     KMAX = 0.1
     ZMAX = 0.05
@@ -202,12 +202,12 @@ if __name__ == '__main__':
 
     DATA_SEARCH_TAG = "*nbodykit*"
     DATA_TAG = (
-        "-(gen=nbodykit,pivots=[natural, k],"
+        "-(gen=lognormal,pivots=[natural,k],"
         "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
-        "xpd=2.,mesh=gc256,iter=50*100)-agg"
+        "xpd=2.,mesh=gc256,iter=50*32)-agg"
     )
     MODEL_TAG = (
-        "-(pivots=[natural, k],"
+        "-(pivots=[natural,k],"
         "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
     )
     NBODY_TAG = ""
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     SAVE_FIG = False
     RATIO = 'd2m'  # False, 'd2m', 'm2d'
     DIAG = 'only' # None, 'only', 'off'
-    index_range = slice(len(index_vector))  # len(index_vector), None
+    index_range = slice(5, None)  # len(index_vector), None
     tick_labels = 'auto'  # 'auto', index_vector[index_range]
 
     view_data()

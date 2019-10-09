@@ -4,8 +4,7 @@
 import warnings
 
 import numpy as np
-from astropy import constants
-from nbodykit.lab import cosmology as cosmo
+from nbodykit.lab import cosmology
 
 from inference_rc import PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
@@ -14,134 +13,126 @@ from harmonia.collections import (
     format_float,
 )
 from harmonia.cosmology import fiducial_cosmology, fiducial_distance
-from harmonia.mapper import NBKCatalogue, SphericalMap
+from harmonia.mapper import LogNomalCatalogue, NBKCatalogue, SphericalMap
 from harmonia.reader import TwoPointFunction
 
 
-# == INITIALISATION ===========================================================
+def initialise():
+    """Initialise from input parameters, set up cosmology and return
+    runtime information.
 
-# -- External parameters ------------------------------------------------------
+    Returns
+    -------
+    runtime_info : str
+        Runtime information.
 
-pivot = params.pivot
+    Raises
+    ------
+    AttributeError
+        If a required input arameter is missing.
 
-nbar = params.nbar
-bias = params.bias
-redshift = params.redshift
-zmax = params.zmax
-kmax = params.kmax
+    """
+    global pivots, rsd_flag, nbar, contrast, bias, redshift, zmax, kmax, \
+        expand, mesh_gen, mesh_cal, niter, prog_id
 
-expand = params.expand
-meshgen = params.meshgen
-niter = params.niter
-progid = params.progid
+    try:
+        pivot = params.structure
+        rsd_flag = params.rsd
+        generator = params.generator
 
+        nbar = params.nbar
+        bias = params.bias
+        redshift = params.redshift
+        zmax = params.zmax
+        kmax = params.kmax
+        expand = params.expand
+        mesh_gen = params.mesh_gen
+        mesh_cal = params.mesh_cal
+        niter = params.niter
+        prog_id = params.prog_id
+    except AttributeError as attr_err:
+        raise AttributeError(attr_err)
 
-# -- Internal parameters ------------------------------------------------------
+    global Plin, rmax, beta, gen_name
 
-BETA = 0
-SPHERICAL_COLLAPSE_THRESHOLD = 1.686
+    cosmo = cosmology.Planck15
+    Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
+    rmax = cosmo.comoving_distance(zmax)
+    beta = cosmo.scale_independent_growth_rate(redshift) / bias
 
-SURVEY_SPECIFICATION = {
-    'mask': None,
-    'selection': None,
-    'weight': None,
-    'weight_derivative': None,
-}
+    if generator.lower().startswith('g'):
+        gen_name = "gaussian"
+    elif generator.lower().startswith('l'):
+        gen_name = "lognormal"
+    elif generator.lower().startswith('n'):
+        gen_name = "nbodykit"
 
-COSMOLOGY_SPECIFICATION = {
-    'r2z': None,
-    'z2chi': None,
-    'evolution': None,
-    'AP_distortion': None,
-}
+    if rsd_flag:
+        rsd_tag = "{:.2f}".format(beta)
+    else:
+        rsd_tag = 'none'
 
-
-# -- Derived parameters -------------------------------------------------------
-
-rmax = fiducial_distance(zmax)
-boxsize = 2 * expand * rmax
-
-transfer_func = cosmo.power.transfers.CLASS(fiducial_cosmology, redshift)
-linear_power = cosmo.LinearPower(fiducial_cosmology, redshift=redshift, transfer='CLASS')
-
-disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
-
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=RuntimeWarning)
-    indices_flat = SphericalArray.build(disc=disc).unfold(
+    param_tag = (
+        "gen={},pivot={},"
+        "nbar={},bias={},beta={},rmax={},kmax={},xpd={},"
+    ).format(
+        gen_name,
         pivot,
-        return_only='index',
+        format_float(nbar, 'sci'),
+        format_float(bias, 'decdot'),
+        rsd_tag,
+        format_float(rmax, 'intdot'),
+        format_float(kmax, 'sci'),
+        format_float(expand, 'decdot'),
     )
 
-couplings_kwargs = dict(
-    disc=disc,
-    survey_specs=SURVEY_SPECIFICATION,
-    cosmo_specs=COSMOLOGY_SPECIFICATION,
-)
+    if mesh_gen == mesh_cal:
+        mesh_tag = f"mesh=gc{mesh_gen},"
+    else:
+        mesh_tag = f"mesh=[g{mesh_gen},c{mesh_cal}],"
 
-info = "nbar={},bias={},rmax={},kmax={},xpd={},mesh={},iter={}".format(
-    format_float(nbar, 'sci'),
-    format_float(bias, 'decdot'),
-    format_float(rmax, 'intdot'),
-    format_float(kmax, 'sci'),
-    format_float(expand, 'decdot'),
-    meshgen,
-    niter,
-)
-program_tag = "".join(["-(", info, ")-", "[", progid, "]"])
+    iter_tag = "iter={}".format(niter)
 
-print(program_tag)
+    tags = (param_tag, mesh_tag, iter_tag)
+    runtime_info = "".join(["-(", *tags, ")-", "[", prog_id, "]"])
+    return runtime_info
 
 
-# == PROCESSING ===============================================================
+def process(runtime_info):
+    """Program process.
 
-# -- Data generation ----------------------------------------------------------
+    Parameters
+    ----------
+    runtime_info : str
+        Program runtime information.
 
-catalogue = NBKCatalogue(linear_power, nbar, boxsize, bias=bias, Nmesh=meshgen)
-spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
-two_point_measurements = spherical_map.twopoint(pivot=pivot)
+    Returns
+    -------
+    output_data : dict
+        Program output.
 
+    """
+    print(runtime_info.strip("-"))
 
-# -- Model building -----------------------------------------------------------
+    boxsize = 2 * expand * rmax
+    disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-poisson_kernel = lambda k: 3 \
-    * (100*fiducial_cosmology.h / constants.c.to('km/s'))**2 \
-    * SPHERICAL_COLLAPSE_THRESHOLD * fiducial_cosmology.Omega0_m \
-    / transfer_func(k)
+    output_data = defaultdict(list)
+    for run in range(niter):
+        catalogue = GEN_CATALOGUE[gen_name](
+            Plin,
+            nbar,
+            bias=bias,
+            boxsize=boxsize,
+            num_mesh=mesh_gen,
+            add_RSD=rsd_flag
+        )
+        spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 
-scale_dependent_bias = lambda k, f_NL: bias \
-    + f_NL * (bias - 1) * poisson_kernel(k) / k**2
-
-power_spectrum_model = lambda k, f_NL: scale_dependent_bias(k)**2 \
-    * linear_power(k)
-
-couplings = Couplings(**couplings_kwargs)
-couplings_to_coefficients = {
-    coupling_type: lambda mu: Couplings.compile_over_index(mu, coupling_type)
-    for coupling_type in ['angular', 'radial', 'RSD']
-}
-coefficients = mpicomp(indices_flat, couplings_to_coefficients)
-
-cov_signal = np.zeros((disc.nmode, disc.nmode), dtype=complex)
-cov_shotnoise = np.zeros((disc.nmode, disc.nmode), dtype=complex)
-for rowidx in range(disc.nmode):
-    for colidx in range(rowidx+1):
-        cov_signal[rowidx, colidx] = two_point_signal(
-            power_spectrum_model, BETA, disc,
-            M_mu_all=coefficients['angular'][rowidx],
-            M_nu_all=coefficients['angular'][colidx],
-            Phi_mu_all=coefficients['radial'][rowidx],
-            Phi_nu_all=coefficients['radial'][colidx],
-            Upsilon_mu_all=coefficients['RSD'][rowidx],
-            Upsilon_nu_all=coefficients['RSD'][colidx]
+        for key in pivots:
+            output_data[key].append(
+                spherical_map.two_points_pivoted(pivot=key)
             )
 
-        mu, nu = indices_flat[rowidx], indices_flat[colidx]
-        M_munu = couplings['ang'][rowidx][nu[0]][nu[1]+nu[0]]
-        cov_shotnoise[rowidx, colidx] = two_point_shot_noise(
-            mu, nu, nbar, disc, M_munu
-            )
+    return output_data
 
-idx_upper = np.triu_indices(disc.nmode, k=1)
-cov_signal[idx_upper] = cov_signal.T[idx_upper]
-cov_shotnoise[idx_upper] = cov_shotnoise.T[idx_upper]

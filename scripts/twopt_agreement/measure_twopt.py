@@ -133,9 +133,9 @@ def process(runtime_info):
         catalogue = GEN_CATALOGUE[gen_name](
             Plin,
             nbar,
-            bias=bias,
             boxsize=boxsize,
             num_mesh=mesh_gen,
+            bias=bias,
             add_RSD=rsd_flag
         )
         spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)

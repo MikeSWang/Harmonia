@@ -32,6 +32,7 @@ def parse_cli_args():
 
     cli_parser.add_argument('--structure')
     cli_parser.add_argument('--rsd', action='store_true')
+    cli_parser.add_argument('--generator', default='nbodykit')
 
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--bias', type=float, default=2.)

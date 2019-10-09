@@ -10,10 +10,10 @@ ERROR_CANVAS_GRID = (4, 8)
 ERROR_ROW_SPAN = 3
 LABEL = {'reference': 'Cartesian', 'default': 'spherical'}
 MARKER = '+'
-TRANSPARENCY = 1/4
+TRANSPARENCY = 1/5
 
 
-def view_spectrum(data, case='error'):
+def view_spectrum(data, case='error', smoothed_data=None):
     """Plot power spectra.
 
     Parameters
@@ -125,6 +125,14 @@ def view_spectrum(data, case='error'):
                     fontsize=ANNO_SIZE
                 )
 
+        if smoothed_data is not None:
+            plt.loglog(
+                smoothed_data['kln'],
+                smoothed_data['Pln'],
+                c=COLOUR['default'],
+                ls='--'
+            )
+
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
         plt.tick_params(axis='x', which='both', labelbottom=False)
         plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
@@ -144,7 +152,24 @@ def view_spectrum(data, case='error'):
             data['Pln'] / cartesian_spline - 1,
             c=COLOUR['default']
         )
+
+        if smoothed_data is not None:
+            cartesian_spline_smooth = \
+                IUSpline(data['k'], data['Pk'])(smoothed_data['kln'])
+            plt.plot(
+                smoothed_data['kln'],
+                smoothed_data['Pln'] / cartesian_spline_smooth - 1,
+                c=COLOUR['default'],
+                ls='--'
+            )
+
         plt.axhline(y=0., ls='--', lw=1., c='k')
+        plt.fill_between(
+            (data['kln'].min(), data['kln'].max()),
+            [0.05,]*2, [-0.05]*2,
+            color='k',
+            alpha=0.1
+        )
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
         plt.xscale('log')

@@ -46,7 +46,7 @@ def setup_cosmology(boxsize, zmax=None):
     """Set up cosmology.
 
     """
-    global disc, index_vector, k_ordered_normalisations
+    global disc, index_vector, normalisations
 
     if boxsize is None:
         boxsize = 2*fiducial_distance(zmax)
@@ -59,7 +59,7 @@ def setup_cosmology(boxsize, zmax=None):
 
     flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
 
-    k_ordered_normalisations = np.concatenate(
+    normalisations = np.concatenate(
         sort_dict_to_list(disc.normalisations)
     )[flat_order]
 
@@ -150,14 +150,17 @@ def process_data(collate_data=False, load_data=False, load_model=False,
             )
             ref_idx = np.where(condition)[0][0]
             data_covar[vec_idx] = nbody_power['Pln'][ref_idx] \
-                / k_ordered_normalisations[ref_idx]
+                / normalisations[ref_idx]
         data_covar = np.diag(data_covar)
 
-    global k
+    global k, k_normalisations
 
     k = np.zeros(len(index_vector))
+    k_normalisations = np.zeros(len(index_vector))
     for vec_idx, triplet_idx in enumerate(index_vector):
         k[vec_idx] = sort_dict_to_list(disc.wavenumbers)\
+            [triplet_idx[0]][triplet_idx[-1]-1]
+        k_normalisations[vec_idx] = sort_dict_to_list(disc.normalisations)\
             [triplet_idx[0]][triplet_idx[-1]-1]
 
     global data_2pt, model_2pt
@@ -194,18 +197,18 @@ def view_data():
 
 if __name__ == '__main__':
 
-    PIVOT = 'natural'
+    PIVOT = 'k'
     BETA = 'none'
     KMAX = 0.1
     ZMAX = 0.05
     BOXSIZE = None  # 1000.
 
-    DATA_SEARCH_TAG = "*lognormal*"
+    DATA_SEARCH_TAG = "*nbodykit*"
 
-    GEN_NAME = "lognormal"
+    GEN_NAME = "nbodykit"
     PIVOT_NAMES = "[natural,k]"
-    PARAMS_TAG = "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
-    BOX_TAG = "xpd=2.,mesh=gc256,iter=50*67"
+    PARAMS_TAG = "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1"
+    BOX_TAG = "xpd=2.,mesh=gc256,iter=50*100"
 
     DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
         .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
@@ -220,8 +223,8 @@ if __name__ == '__main__':
     setup_cosmology(BOXSIZE, zmax=ZMAX)
 
     PROCESS_OPTS = dict(
-        collate_data=True,
-        load_data=False,
+        collate_data=False,
+        load_data=True,
         load_model=True,
         load_nbody=False,
     )

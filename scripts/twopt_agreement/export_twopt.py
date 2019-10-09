@@ -20,7 +20,7 @@ from harmonia.cosmology import fiducial_distance
 DATA_NAME_ROOT = "measure_twopt"
 MODEL_NAME_ROOT = "predict_twopt"
 NBODY_NAME_ROOT = "nbodymod_twopt"
-NBODY_REFNAME_ROOT = "halos"
+NBODY_REF_NAME_ROOT = "halos"
 
 
 def aggregate_data(output):
@@ -129,7 +129,7 @@ def process_data(collate_data=False, load_data=False, load_model=False,
         ).item()[PIVOT]
         nbody_power = aggregate_data(
             np.load(
-                f"{nbody_inpath}/{NBODY_REFNAME_ROOT}{NBODY_REFTAG}.npy"
+                f"{nbody_inpath}/{NBODY_REF_NAME_ROOT}{NBODY_REF_TAG}.npy"
             ).item()
         )
 
@@ -200,27 +200,28 @@ if __name__ == '__main__':
     ZMAX = 0.05
     BOXSIZE = None  # 1000.
 
-    DATA_SEARCH_TAG = "*nbodykit*"
-    DATA_TAG = (
-        "-(gen=lognormal,pivots=[natural,k],"
-        "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
-        "xpd=2.,mesh=gc256,iter=50*32)-agg"
-    )
-    MODEL_TAG = (
-        "-(pivots=[natural,k],"
-        "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1)"
-    )
+    DATA_SEARCH_TAG = "*lognormal*"
+
+    GEN_NAME = "lognormal"
+    PIVOT_NAMES = "[natural,k]"
+    PARAMS_TAG = "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1,"
+    BOX_TAG = "xpd=2.,mesh=gc256,iter=50*67"
+
+    DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
+        .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
+    MODEL_TAG = "-(pivots={},{})".format(PIVOT_NAMES, PARAMS_TAG)
+
     NBODY_TAG = ""
-    NBODY_REFTAG = (
-        "-(NG=0.,z=1.)-"
-        "(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,npair=11)"
-        )
+    NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \
+        "nbar=2.49e-4,bias=2.3415,kmax=0.04," + \
+        "boxsize=1000.,mesh=c256,npair=11" + \
+        ")"
 
     setup_cosmology(BOXSIZE, zmax=ZMAX)
 
     PROCESS_OPTS = dict(
-        collate_data=False,
-        load_data=True,
+        collate_data=True,
+        load_data=False,
         load_model=True,
         load_nbody=False,
     )
@@ -230,7 +231,7 @@ if __name__ == '__main__':
     SAVE_FIG = False
     RATIO = 'd2m'  # False, 'd2m', 'm2d'
     DIAG = 'only' # None, 'only', 'off'
-    index_range = slice(5, None)  # len(index_vector), None
+    index_range = slice(None, None)  # None, None
     tick_labels = 'auto'  # 'auto', index_vector[index_range]
 
     view_data()

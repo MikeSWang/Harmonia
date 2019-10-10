@@ -734,14 +734,15 @@ class TwoPointFunction(Couplings):
         self.mean_density = nbar
         self.bias_const = b_1
 
+        self.growth_rate = f_0
         if cosmo is None:
             self.non_gaussianity = None
-            self.growth_rate = f_0
             self.matter_power_spectrum = power_spectrum
         else:
+            if f_0 is not None:  # overide input `f_0` for model consistency
+                self.growth_rate = \
+                    cosmo.scale_independent_growth_rate(self._REDSHIFT_EPOCH)
             self.non_gaussianity = f_nl
-            self.growth_rate = \
-                cosmo.scale_independent_growth_rate(self._REDSHIFT_EPOCH)
             self.matter_power_spectrum = cosmology.LinearPower(
                 cosmo,
                 redshift=self._REDSHIFT_EPOCH,
@@ -808,7 +809,7 @@ class TwoPointFunction(Couplings):
         Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
         Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
 
-        signal = 0
+        signal = 0.
         for ell, nmax in zip(self.disc.degrees, self.disc.depths):
             angular_sum = np.sum(
                 [

@@ -32,11 +32,12 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global input_file, kmax, boxsize, mesh_cal, prog_id, headings
+    global input_file, kmax, dk, boxsize, mesh_cal, prog_id, headings
 
     try:
         input_file = params.input_file
         kmax = params.kmax
+        dk = params.dk,
         boxsize = params.boxsize
         mesh_cal = params.mesh_cal
     except AttributeError as attr_err:
@@ -98,7 +99,7 @@ def process(runtime_info):
             compensated=True,
             interlaced=True
         )
-        cartesian_power = FFTPower(mesh, mode='1d', kmax=kmax).power
+        cartesian_power = FFTPower(mesh, mode='1d', dk=dk, kmax=kmax).power
 
         spherical_map = SphericalMap(disc, catalogue)
         spherical_power = spherical_map.spherical_power()

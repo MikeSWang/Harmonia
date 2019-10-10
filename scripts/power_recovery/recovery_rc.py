@@ -31,6 +31,7 @@ def parse_cli_args():
     """
     cli_parser = ArgumentParser()
 
+    cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--contrast', type=float, default=None)
 
@@ -38,7 +39,7 @@ def parse_cli_args():
     cli_parser.add_argument('--redshift', type=float, default=0.)
 
     cli_parser.add_argument('--zmax', type=float, default=0.05)
-    cli_parser.add_argument('--rmax', type=float, default=150.)
+    cli_parser.add_argument('--rmax', type=float, default=250.)
 
     cli_parser.add_argument('--kmax', type=float, default=0.1)
     cli_parser.add_argument('--dk', type=float, default=None)

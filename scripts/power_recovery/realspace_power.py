@@ -16,7 +16,17 @@ from harmonia.collections import (
     harmony,
     sort_dict_to_list,
 )
-from harmonia.mapper import NBKCatalogue, RandomCatalogue, SphericalMap
+from harmonia.mapper import (
+    LogNormalCatalogue,
+    NBKCatalogue,
+    RandomCatalogue,
+    SphericalMap,
+)
+
+GEN_CATALOGUE = {
+    'lognormal': LogNormalCatalogue,
+    'nbodykit': NBKCatalogue,
+}
 
 
 def initialise():
@@ -38,6 +48,7 @@ def initialise():
         mesh_gen, mesh_cal, niter, prog_id
 
     try:
+        generator = params.generator
         nbar = params.nbar
         contrast = params.contrast
         bias = params.bias
@@ -53,11 +64,19 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global cosmo, Plin, rmax
+    global cosmo, Plin, rmax, gen_name
 
     cosmo = cosmology.Planck15
     Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
     rmax = cosmo.comoving_distance(zmax)
+
+    if generator.lower().startswith('g'):
+        gen_name = "gaussian"
+    elif generator.lower().startswith('l'):
+        gen_name = "lognormal"
+    elif generator.lower().startswith('n'):
+        gen_name = "nbodykit"
+    gen_tag = f"gen={gen_name},"
 
     global case_is_mock
 
@@ -83,7 +102,8 @@ def initialise():
 
     iter_tag = "iter={}".format(niter)
 
-    part_tags = ["-(", param_tag, mesh_tag, iter_tag, ")-", "[", prog_id, "]"]
+    part_tags = ["-(", gen_tag, param_tag, mesh_tag, iter_tag, ")-", "[", \
+         prog_id, "]"]
     runtime_info = "".join(part_tags)
     return runtime_info
 
@@ -119,7 +139,7 @@ def process(runtime_info):
 
     measurements = defaultdict(list)
     for run in range(niter):
-        data_catalogue = NBKCatalogue(
+        data_catalogue = GEN_CATALOGUE[gen_name](
             Plin,
             nbar,
             bias=bias,
@@ -142,7 +162,7 @@ def process(runtime_info):
                 mesh,
                 poles=[0],
                 dk=dk,
-                kmax=all_wavenumbers.max()+dk
+                kmax=kmax
             ).poles
         else:
             mesh = data_catalogue.to_mesh(**to_mesh_params)
@@ -150,7 +170,7 @@ def process(runtime_info):
                 mesh,
                 mode='1d',
                 dk=dk,
-                kmax=all_wavenumbers.max()+dk
+                kmax=kmax
             ).power
 
         spherical_map = SphericalMap(

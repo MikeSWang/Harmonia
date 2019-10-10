@@ -25,8 +25,8 @@ def view_covariance(data, model=None, ratio=False, diag=None, select_idx=None,
         (`None`, default).
     select_idx : slice or None, optional
         Index slice selecting relevant data entries (default is `None`).
-    tick_labels : list_like, int or None, optional
-        Tick labels (default is `None`).
+    tick_labels : list_like, int or str, optional
+        Tick labels (default is ``'auto'``).
 
     Returns
     -------
@@ -42,7 +42,6 @@ def view_covariance(data, model=None, ratio=False, diag=None, select_idx=None,
     )
 
     sns.set(style='ticks', font='serif')
-    plt.close('all')
     fig = plt.figure("Two-point covariance")
 
     if tick_labels is None:

@@ -11,6 +11,7 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,
+    smooth_by_bin_average,
 )
 
 
@@ -99,27 +100,30 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
         plt.style.use(harmony)
         plt.close('all')
         if SMOOTHING:
-            from harmonia.collections import smooth_by_bin_average
             smoothed_data, bin_count = smooth_by_bin_average(
-                results, np.linspace(0., 0.1, 16),
-                'kln', 'Pln', dy_coarse='dPln'
+                results,
+                np.linspace(0., 0.1, 13),  # binning
+                'kln',
+                'Pln',
+                dy_coarse='dPln'
             )
         else:
             smoothed_data = None
         view_spectrum(results, case='error', smoothed_data=smoothed_data)
-        if savefig: plt.savefig(f"{outpath}{FILE_PREFIX}{FILE_TAG}.pdf")
+        if savefig:
+            plt.savefig(f"{outpath}{FILE_PREFIX}{FILE_TAG}.pdf")
 
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "nbodysim_power"
-    FILE_PREFIX = "halos-(NG=0.,z=1.)"
+    SCRIPT_NAME = "nbodysim_power"  # "realspace_power"
+    FILE_PREFIX = "halos-(NG=0.,z=1.)"  # "realspace_power"
     FILE_TAG = \
         "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,pair=21)"
+        # "-(nbar=0.001,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=1000)"
 
-    COLLATE = True
-    LOAD = False
+    COLLATE = False
+    LOAD = True
     SMOOTHING = True
-    SAVEFIG = False
 
-    main(collate=COLLATE, load=LOAD, save=False, savefig=SAVEFIG)
+    main(collate=COLLATE, load=LOAD, save=False, savefig=False)

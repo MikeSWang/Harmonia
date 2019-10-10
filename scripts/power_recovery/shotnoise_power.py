@@ -32,11 +32,12 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global nbar, rmax, kmax, mesh_cal, niter, prog_id
+    global nbar, rmax, kmax, dk, mesh_cal, niter, prog_id
 
     try:
         nbar = params.nbar
         rmax = params.rmax
+        dk = params.dk
         kmax = params.kmax
         mesh_cal = params.mesh_cal
         niter = params.niter
@@ -90,7 +91,7 @@ def process(runtime_info):
             compensated=True
         )
 
-        cartesian_power = FFTPower(mesh, mode='1d', kmax=kmax).power
+        cartesian_power = FFTPower(mesh, mode='1d', dk=dk, kmax=kmax).power
         spherical_map = SphericalMap(
             disc,
             data_catalogue,

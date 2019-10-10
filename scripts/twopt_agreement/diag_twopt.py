@@ -50,7 +50,7 @@ def setup_cosmology():
     )[flat_order]
 
 
-def process_data(upscale_bias=1.):
+def process_data():
 
     reference = _aggregate_data(
         np.load(f"{PATHIN}{SCRIPT_NAME}/{REFERENCE_FILE}.npy").item()
@@ -83,11 +83,7 @@ def process_data(upscale_bias=1.):
         diagonal_covar[vec_idx] = this_val
 
     reference_covar = diagonal_covar
-    model_covar = np.abs(
-        np.diag(
-            upscale_bias**2 * model['signal'] + model['shotnoise']
-        )
-    )
+    model_covar = np.abs(np.diag(model['signal'] + model['shotnoise']))
 
 
 def diagonal_smoothing():
@@ -113,8 +109,7 @@ def diagonal_smoothing():
             [0.04],
         ]
     )
-
-    # HACK
+    # HACK: manual rebinning.
     bins = [0.00675, 0.016, 0.025, 0.032, 0.036, 0.040]
 
     global bin_coords, counts
@@ -197,7 +192,7 @@ def view_result():
 
     plt.fill_between(
         xlim,
-        [ERROR_PATCH_HT,]*2,
+        [ERROR_PATCH_HT]*2,
         [-ERROR_PATCH_HT]*2,
         alpha=0.2
     )
@@ -218,20 +213,19 @@ def view_result():
 
 if __name__ == '__main__':
 
+    SCRIPT_NAME = "nbodymod_twopt"
+    MODEL_TAG = \
+        "-(pivots=natural,nbar=2.49e-04,bias=2.40,beta=0.,rmax=500.,kmax=0.04)"
     REFERENCE_FILE = (
         "halos-(NG=0.,z=1.)"
         "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,pair=21)"
     )
-    SCRIPT_NAME = "nbodymod_twopt"
-    MODEL_TAG = (
-        "-(pivots=natural,nbar=2.49e-04,bias=2.40,beta=0.,rmax=500.,kmax=0.04)"
-        )
 
     PIVOT = 'natural'
     RMAX = 500.
     KMAX = 0.04
 
     setup_cosmology()
-    process_data()  # upscale_bias = 2.3415 * 1.027
+    process_data()  # upscale bias by 1.027
     diagonal_smoothing()
     view_result()

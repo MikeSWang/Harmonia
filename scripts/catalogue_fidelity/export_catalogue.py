@@ -80,10 +80,8 @@ def export_data(collate=False, load=False, save=False):
     collate_path = f"{outpath}collated/"
 
     if collate:
-        output, count, _ = collate_data(
-            f"{outpath}*{NBAR}*{NUM_MESH}*.npy",
-            'npy'
-        )
+        output, count, _ = \
+            collate_data(f"{outpath}*{NBAR}*{NUM_MESH}*.npy", 'npy')
         if save:
             assert confirm_dir(collate_path)
             assert overwrite_protection(f"{collate_path}", f"{outname}.npy")
@@ -110,7 +108,7 @@ def view(results, savefig=False):
     """
     REDSHIFT = 0.
     YLIM = (22000, 120000)
-    ERROR_PANEL_CEILING = 0.20
+    ERROR_PANEL_CEILING = 0.05
     ERROR_PATCH_HEIGHT = 0.01
 
     global k, Nk, Pk, dPk, Pk_model
@@ -176,13 +174,13 @@ def view(results, savefig=False):
         (Pk + dPk)/Pk_model - 1,
         (Pk - dPk)/Pk_model - 1,
         color=main[0].get_color(),
-        alpha=1/4
+        alpha=1/5
     )
     plt.fill_between(
         xlim,
         [ERROR_PATCH_HEIGHT]*2,
         [-ERROR_PATCH_HEIGHT]*2,
-        alpha=1/5
+        alpha=0.2
     )
     plt.axhline(y=0., lw=1., ls='--')
 
@@ -203,7 +201,7 @@ if __name__ == '__main__':
     NUM_MESH = 256
 
     obj_name = "catalogue"
-    gen_name = "nbodykit"
+    gen_name = "lognormal"
     param_tag = \
         "nbar=0.001,bias=2.,boxsize=593.,kmax=0.1,mesh=gc256,iter=1000"
 

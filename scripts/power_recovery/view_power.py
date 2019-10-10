@@ -11,6 +11,8 @@ ERROR_ROW_SPAN = 3
 LABEL = {'reference': 'Cartesian', 'default': 'spherical'}
 MARKER = '+'
 TRANSPARENCY = 1/5
+ERROR_PANEL_HT = 0.50
+ERROR_PATCH_HT = 0.05
 
 
 def view_spectrum(data, case='error', smoothed_data=None):
@@ -23,6 +25,9 @@ def view_spectrum(data, case='error', smoothed_data=None):
     case : {'single', 'error'}, optional
         Plotting case, either a single plot (``'single'``) or with error
         panel (``'error'``).
+    smoothed_data : dict or None, optional
+        Smoothed power spectrum data (default is `None`).  If not `None`,
+        this is plotted on top of plotted `data`.
 
     """
     if case == 'single':
@@ -129,8 +134,8 @@ def view_spectrum(data, case='error', smoothed_data=None):
             plt.loglog(
                 smoothed_data['kln'],
                 smoothed_data['Pln'],
-                c=COLOUR['default'],
-                ls='--'
+                color=COLOUR['default'],
+                linestyle='--'
             )
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
@@ -150,7 +155,7 @@ def view_spectrum(data, case='error', smoothed_data=None):
         plt.plot(
             data['kln'],
             data['Pln'] / cartesian_spline - 1,
-            c=COLOUR['default']
+            color=COLOUR['default']
         )
 
         if smoothed_data is not None:
@@ -159,19 +164,21 @@ def view_spectrum(data, case='error', smoothed_data=None):
             plt.plot(
                 smoothed_data['kln'],
                 smoothed_data['Pln'] / cartesian_spline_smooth - 1,
-                c=COLOUR['default'],
-                ls='--'
+                color=COLOUR['default'],
+                linestyle='--'
             )
 
         plt.axhline(y=0., ls='--', lw=1., c='k')
         plt.fill_between(
             (data['kln'].min(), data['kln'].max()),
-            [0.05,]*2, [-0.05]*2,
+            [ERROR_PATCH_HT]*2,
+            [-ERROR_PATCH_HT]*2,
             color='k',
-            alpha=0.1
+            alpha=0.2
         )
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())
+        plt.ylim(-ERROR_PANEL_HT, ERROR_PANEL_HT)
         plt.xscale('log')
         plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
         plt.ylabel(r'$\Delta P(k)/P_\textrm{Cart}(k)$')

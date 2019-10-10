@@ -12,6 +12,7 @@ from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     collate,
     confirm_directory_path as confirm_dir,
+    harmony,
     overwrite_protection,
     sort_dict_to_list,
 )
@@ -177,13 +178,15 @@ def view_data():
     """Visualise output data.
 
     """
+    plt.close('all')
+    plt.style.use(harmony)
     view_covariance(
         data_2pt,
         model=model_2pt,
         ratio=RATIO,
         diag=DIAG,
-        select_idx=index_range,
-        tick_labels=tick_labels
+        select_idx=INDEX_RANGE,
+        tick_labels=TICK_LABELS
     )
     if SAVE_FIG:
         plt.savefig(
@@ -231,10 +234,10 @@ if __name__ == '__main__':
 
     process_data(**PROCESS_OPTS)
 
-    SAVE_FIG = False
     RATIO = 'd2m'  # False, 'd2m', 'm2d'
     DIAG = 'only' # None, 'only', 'off'
-    index_range = slice(None, None)  # None, None
-    tick_labels = 'auto'  # 'auto', index_vector[index_range]
+    INDEX_RANGE = slice(None, None)  # None, None
+    TICK_LABELS = 'auto'  # 'auto', index_vector[index_range]
+    SAVE_FIG = False
 
     view_data()

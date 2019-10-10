@@ -162,14 +162,15 @@ def finalise(output_data, save=True):
 
 if __name__ == '__main__':
 
-    SURVEY_SPECS = {
-        'mask': unit_const,
-        'selection': unit_const,
-        'weight': unit_const,
-        'weight_derivative': zero_const
-    }
-
     COMM = MPI.COMM_WORLD
+    SURVEY_SPECS = None
+    # Or full integration:
+    # {
+    #     'mask': unit_const,
+    #     'selection': unit_const,
+    #     'weight': unit_const,
+    #     'weight_derivative': zero_const
+    # }
 
     program_tag = initialise()
     output_data = process(program_tag)

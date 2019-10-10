@@ -45,7 +45,7 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, rmax, beta
+    global Plin, rmax, beta, cosmo
 
     cosmo = cosmology.Planck15
     Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
@@ -95,10 +95,11 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    two_point_cosmo = nbar, bias, Plin, beta
+    two_point_cosmo = nbar, bias, cosmo
     two_points = TwoPointFunction(
         *two_point_cosmo,
         disc,
+        f_0=cosmo.scale_independent_growth_rate(redshift),
         survey_specs=SURVEY_SPECS,
         cosmo_specs=None,
         comm=COMM

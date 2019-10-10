@@ -88,7 +88,7 @@ and the shot noise part
     j_\mu(r) j_\nu(r) \,,
 
 where :math:`b_0(k)` is the scale-dependent modification of the constant
-linear bias :math:`b_1(z=0)` at the current epoch,  :math:`M, \Phi,
+linear bias :math:`b_1(z=0)` at the current epoch, :math:`M, \Phi,
 \Upsilon` are the angular, radial and RSD couplings and :math:`\kappa` the
 normalisation coefficients (see also
 :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`), and
@@ -663,9 +663,6 @@ class TwoPointFunction(Couplings):
         Mean particle number density (in cubic h/Mpc).
     b_1 : float
         Constant linear bias of the tracer particles at the current epoch.
-    cosmo : :class:`nbodykit.cosmology.Cosmology`
-        Cosmological model used to produce the power spectrum model and the
-        transfer function for calculating scale-dependent bias.
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
     f_0 : float or None, optional
@@ -674,6 +671,11 @@ class TwoPointFunction(Couplings):
     f_nl : float or None, optional
         Local primordial non-Gaussianity.  If `None` (default), this is set
         to zero and ignored.
+    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+        Cosmological model used to produce the power spectrum model and the
+        transfer function for calculating scale-dependent bias.
+    power_spectrum : callable or None
+        Linear matter power spectrum model.
     survey_specs : dict of {str: callable or None} or None, optional
         Survey specification functions accessed with the following
         mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
@@ -718,8 +720,9 @@ class TwoPointFunction(Couplings):
     _logger = logging.getLogger("TwoPointFunction")
     _REDSHIFT_EPOCH = 0.
 
-    def __init__(self, nbar, b_1, cosmo, disc, f_0=None, f_nl=None,
-                 survey_specs=None, cosmo_specs=None, comm=None):
+    def __init__(self, nbar, b_1, disc, f_0=None, f_nl=None, cosmo=None,
+                 power_spectrum=None, survey_specs=None, cosmo_specs=None,
+                 comm=None):
 
         super().__init__(
             disc,
@@ -731,19 +734,24 @@ class TwoPointFunction(Couplings):
         self.bias_const = b_1
         self.growth_rate = f_0
         self.non_gaussianity = f_nl
-        self.matter_power_spectrum = cosmology.LinearPower(
-            cosmo,
-            redshift=self._REDSHIFT_EPOCH,
-            transfer='CLASS'
-        )
 
         self.comm = comm
+
+        if cosmo is None:
+            self.non_gaussianity = None
+            self.matter_power_spectrum = power_spectrum
 
         self._couplings = None
         if self.non_gaussianity is None:
             self._bias_k = const_function(b_1)
         else:
             self._bias_k = scale_dependent_bias(f_nl, b_1, cosmo)
+
+        self.matter_power_spectrum = cosmology.LinearPower(
+            cosmo,
+            redshift=self._REDSHIFT_EPOCH,
+            transfer='CLASS'
+        )
 
     @property
     def couplings(self):

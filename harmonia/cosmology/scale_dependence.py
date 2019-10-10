@@ -3,7 +3,7 @@ Scale dependence (:mod:`~harmonia.cosmology.scale_dependence`)
 ===========================================================================
 
 Compute scale-dependent modifications due to local primordial
-non-Gausianity :math:`f_\textrm{NL}` *at the current redshift epoch*
+non-Gausianity :math:`f_\textrm{NL}` at the current epoch, i.e. redshift
 :math:`z = 0`.
 
 .. autosummary::
@@ -46,7 +46,7 @@ def scale_dependent_bias(f_nl, b_const, cosmo):
     f_nl : float
         Local primordial non-Gaussnianity.
     b_const : float
-        Constant linear bias.
+        Constant linear bias at the current epoch.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.
@@ -83,7 +83,7 @@ def scale_modified_power_spectrum(f_nl, b_const, cosmo):
     f_nl : float
         Local primordial non-Gaussnianity.
     b_const : float
-        Constant linear bias.
+        Constant linear bias at the current epoch.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.

@@ -90,6 +90,7 @@ __all__ = [
     'sort_list_to_dict',
     'zero_const',
     'unit_const',
+    'const_function',
     'covar_to_corr',
     'binary_search',
     'normalise_vector',
@@ -578,6 +579,23 @@ def unit_const(*args):
 
     """
     return 1.
+
+
+def const_function(const):
+    """Return a constant function.
+
+    Parameters
+    ----------
+    const : float
+        Constant value.
+
+    Returns
+    -------
+    const_func : callable
+        Constant function.
+
+    """
+    return lambda x: const
 
 
 # TODO: Implement conversion for more genertic covariance matrices.

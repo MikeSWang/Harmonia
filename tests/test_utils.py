@@ -112,6 +112,11 @@ def test_unitconst():
     assert utils.unit_const() == pytest.approx(1.)
 
 
+@pytest.mark.parametrize('const,x', [(1j, 5), (100, 1j)])
+def test_const_function(const, x):
+    assert utils.const_function(const)(x) == pytest.approx(const)
+
+
 @pytest.mark.parametrize('ndim,nsize', [(3, 10), (5, 8)])
 def test_covar_to_corr(ndim, nsize):
     randvec = np.random.random(size=(ndim, nsize))

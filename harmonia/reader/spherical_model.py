@@ -106,6 +106,7 @@ import logging
 import warnings
 
 import numpy as np
+from nbodykit.lab import cosmology
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.algorithms.integration import (
@@ -113,7 +114,8 @@ from harmonia.algorithms.integration import (
     radial_spherical_integral as rad_int,
 )
 from harmonia.algorithms.morph import SphericalArray
-from harmonia.collections.utils import mpi_compute
+from harmonia.collections.utils import const_function, mpi_compute
+from harmonia.cosmology.scale_dependence import scale_dependent_bias
 
 
 # KERNELS
@@ -653,20 +655,26 @@ class Couplings:
 
 class TwoPointFunction(Couplings):
     r"""Compute 2-point function values for given survey and cosmological
-    specifications from a power spectrum model and RSD growth rate.
+    specifications from a biased power spectrum model, linear growth rate
+    and local primordial non-Gaussianity.
 
     Parameters
     ----------
     nbar : float
         Mean particle number density (in cubic h/Mpc).
-    bias : float
-        Bias of the tracer particles.
-    pk_linear : callable
-        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
-    beta_0 : float
-        Linear growth rate over bias :math:`\beta_0` at the current epoch.
+    b_1 : float
+        Constant linear bias of the tracer particles at the current epoch.
+    cosmo : :class:`nbodykit.cosmology.Cosmology`
+        Cosmological model used to produce the power spectrum model and the
+        transfer function for calculating scale-dependent bias.
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
+    f_0 : float or None, optional
+        Linear growth rate at the current epoch.  If `None` (default), RSD
+        calculations are neglected.
+    f_nl : float or None, optional
+        Local primordial non-Gaussianity.  If `None` (default), this is set
+        to zero and ignored.
     survey_specs : dict of {str: callable or None} or None, optional
         Survey specification functions accessed with the following
         mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
@@ -688,27 +696,31 @@ class TwoPointFunction(Couplings):
     ----------
     mean_density : float
         Mean particle number density (in cubic h/Mpc).
-    linear_power_spectrum : callable
-        Linear galaxy-clustering power spectrum model (in cubic Mpc/h).
-    growth_rate_over_bias : float
-        Linear growth rate over bias :math:`\beta_0` at the current epoch.
+    bias_const : float
+        Constant linear bias at the current epoch.
+    growth_rate : float or None
+        Linear growth rate at the current epoch.
+    non_gaussianity : float or None
+        Local primordial non-Gaussianity.
+    matter_power_spectrum : |LinearPower|
+        Linear matter power spectrum model at the current epoch (in cubic
+        Mpc/h).
     comm : :class:`mpi4py.MPI.Comm` or None, optional
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
 
+
+    .. |LinearPower| replace::
+
+         :class:`nbodykit.cosmology.power.linear.LinearPower`
+
     """
 
     _logger = logging.getLogger("TwoPointFunction")
+    _REDSHIFT_EPOCH = 0.
 
-    def __init__(self, nbar, bias, pk_linear, beta_0, disc, survey_specs=None,
-                 cosmo_specs=None, comm=None):
-
-        self.mean_density = nbar
-        self.bias = bias
-        self.linear_power_spectrum = pk_linear
-        self.growth_rate_over_bias = beta_0
-        self.comm = comm
-        self._couplings = None
+    def __init__(self, nbar, b_1, cosmo, disc, f_0=None, f_nl=None,
+                 survey_specs=None, cosmo_specs=None, comm=None):
 
         super().__init__(
             disc,
@@ -716,12 +728,23 @@ class TwoPointFunction(Couplings):
             cosmo_specs=cosmo_specs
         )
 
-    def __str__(self):
-
-        return "TwoPointFunction(power_spectrum={}, beta={:.2f})".format(
-            repr(self.linear_power_spectrum),
-            self.growth_rate_over_bias,
+        self.mean_density = nbar
+        self.bias_const = b_1
+        self.growth_rate = f_0
+        self.non_gaussianity = f_nl
+        self.matter_power_spectrum = cosmology.LinearPower(
+            cosmo,
+            redshift=self._REDSHIFT_EPOCH,
+            transfer='CLASS'
         )
+
+        self.comm = comm
+
+        self._couplings = None
+        if self.non_gaussianity is None:
+            self._bias_k = const_function(b_1)
+        else:
+            self._bias_k = scale_dependent_bias(f_nl, b_1, cosmo)
 
     @property
     def couplings(self):
@@ -738,7 +761,10 @@ class TwoPointFunction(Couplings):
         if self._couplings is not None:
             return self._couplings
 
-        self._couplings = dict.fromkeys(['angular', 'radial', 'RSD'])
+        if self.growth_rate is None:
+            self._couplings = dict.fromkeys(['angular', 'radial'])
+        else:
+            self._couplings = dict.fromkeys(['angular', 'radial', 'RSD'])
         for coupling_type in self._couplings:
             self._couplings[coupling_type] = \
                 super().couplings(coupling_type, comm=self.comm)
@@ -751,7 +777,7 @@ class TwoPointFunction(Couplings):
 
         Parameters
         ----------
-        mu, nu :  tuple or list of int
+        mu, nu : tuple or list of int
             Coefficient triplet index.
 
         Returns
@@ -761,9 +787,12 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
+        bias = self._bias_k
+        f_0 = self.growth_rate
+        pk = self.matter_power_spectrum
+
         k, kappa = self.disc.wavenumbers, self.disc.normalisations
-        pk_linear = self.linear_power_spectrum
-        beta_0 = self.growth_rate_over_bias
+
         couplings = self.couplings
 
         M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
@@ -778,15 +807,26 @@ class TwoPointFunction(Couplings):
                     for m_idx in range(0, 2*ell+1)
                 ]
             )
-            radial_sum = np.sum(
-                [
-                    (Phi_mu[ell][n_idx] + beta_0 * Upsilon_mu[ell][n_idx])
-                    * (Phi_nu[ell][n_idx] + beta_0 * Upsilon_nu[ell][n_idx])
-                    * self.bias**2 * pk_linear(k[ell][n_idx]) \
-                    / kappa[ell][n_idx]
-                    for n_idx in range(0, nmax)
-                ]
-            )
+            if self.growth_rate is None:
+                radial_sum = np.sum(
+                    [
+                        Phi_mu[ell][n_idx] * Phi_nu[ell][n_idx]
+                        * bias(k[ell][n_idx])**2
+                        * pk(k[ell][n_idx]) / kappa[ell][n_idx]
+                        for n_idx in range(0, nmax)
+                    ]
+                )
+            else:
+                radial_sum = np.sum(
+                    [
+                        (bias(k[ell][n_idx]) * Phi_mu[ell][n_idx] \
+                             + f_0 * Upsilon_mu[ell][n_idx])
+                        * (bias(k[ell][n_idx]) * Phi_nu[ell][n_idx] \
+                               + f_0 * Upsilon_nu[ell][n_idx])
+                        * pk(k[ell][n_idx]) / kappa[ell][n_idx]
+                        for n_idx in range(0, nmax)
+                    ]
+                )
             signal += angular_sum * radial_sum
 
         return signal

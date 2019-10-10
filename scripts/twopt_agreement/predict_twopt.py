@@ -45,12 +45,11 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, rmax, beta, cosmo
+    global rmax, beta, cosmo
 
     cosmo = cosmology.Planck15
-    Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
     rmax = cosmo.comoving_distance(zmax)
-    beta = rsd_flag * cosmo.scale_independent_growth_rate(redshift) / bias
+    growth_rate = rsd_flag * cosmo.scale_independent_growth_rate(redshift)
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots).replace("'", "")
@@ -59,11 +58,11 @@ def initialise():
     pivot_tag = pivot_tag.replace(" ", "")
 
     if rsd_flag:
-        rsd_tag = "{:.2f}".format(beta)
+        rsd_tag = "{:.2f}".format(growth_rate)
     else:
         rsd_tag = 'none'
 
-    param_tag = "pivots={},nbar={},bias={},beta={},rmax={},kmax={}".format(
+    param_tag = "pivots={},nbar={},b1={},f0={},rmax={},kmax={}".format(
         pivot_tag,
         format_float(nbar, 'sci'),
         format_float(bias, 'decdot'),
@@ -95,11 +94,10 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    two_point_cosmo = nbar, bias, cosmo
+    args = disc, nbar, bias
     two_points = TwoPointFunction(
-        *two_point_cosmo,
-        disc,
-        f_0=cosmo.scale_independent_growth_rate(redshift),
+        *args,
+        cosmo=cosmo,
         survey_specs=SURVEY_SPECS,
         cosmo_specs=None,
         comm=COMM

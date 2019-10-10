@@ -42,14 +42,14 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, beta
+    global Plin, growth_rate
 
     k_points, Pk_points = np.loadtxt(
         "".join([PATHIN, script_name, "/", PK_FILE_ROOT, ".txt"])
     ).T
 
     Plin = interp1d(k_points, Pk_points, assume_sorted=True)
-    beta = 0.
+    growth_rate = 0.
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots).replace("'", "")
@@ -57,11 +57,11 @@ def initialise():
         pivot_tag = "{}".format(params.structure).replace("'", "")
 
     param_tag = \
-        "pivots={},nbar={:.2e},bias={:.2f},beta={},rmax={},kmax={}".format(
+        "pivots={},nbar={:.2e},b1={:.2f},f0={},rmax={},kmax={}".format(
             pivot_tag,
             nbar,
             bias,
-            format_float(beta, 'decdot'),
+            format_float(growth_rate, 'decdot'),
             format_float(rmax, 'intdot'),
             format_float(kmax, 'sci'),
         )
@@ -89,7 +89,13 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    two_points = TwoPointFunction(nbar, bias, Plin, beta, disc, comm=COMM)
+    args = disc, nbar, bias
+    two_points = TwoPointFunction(
+        *args,
+        growth_rate=growth_rate,
+        power_spectrum=Plin,
+        comm=COMM
+    )
 
     couplings = two_points.couplings
 

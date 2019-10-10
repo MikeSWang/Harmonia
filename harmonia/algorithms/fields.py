@@ -434,7 +434,7 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     Returns
     -------
-    whitenoise : complex :class:`numpy.ndarray`
+    white_noise : complex :class:`numpy.ndarray`
         Circularly-symmetric Gaussian noise with double unit variance.
 
     """
@@ -442,9 +442,9 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     samples = np.random.RandomState(seed=seed).normal(size=size)
 
-    whitenoise = samples[0] + 1j*samples[1]
+    white_noise = samples[0] + 1j*samples[1]
 
-    return whitenoise
+    return white_noise
 
 
 def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,

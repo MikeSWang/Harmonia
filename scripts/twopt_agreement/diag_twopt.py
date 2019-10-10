@@ -150,9 +150,6 @@ def view_result():
     """Visualise output result.
 
     """
-    ERROR_PANEL_HT = 0.05
-    ERROR_PATCH_HT = 0.01
-
     plt.style.use(harmony)
     plt.close('all')
 
@@ -224,6 +221,9 @@ if __name__ == '__main__':
     PIVOT = 'natural'
     RMAX = 500.
     KMAX = 0.04
+
+    ERROR_PANEL_HT = 0.05
+    ERROR_PATCH_HT = 0.01
 
     setup_cosmology()
     process_data()  # upscale bias by 1.027

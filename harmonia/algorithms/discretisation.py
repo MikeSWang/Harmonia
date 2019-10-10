@@ -30,9 +30,7 @@ class DiscreteSpectrum:
     .. math::
 
         k_{\ell n} = \frac{u_{\ell n}}{R},
-
         \quad \text{where} \quad
-
         \{ u_{\ell n}: n = 1, \dots, n_{\mathrm{max},\ell} \}_{\ell}
 
     are roots of the spherical Bessel functions of order :math:`\ell` if
@@ -77,7 +75,7 @@ class DiscreteSpectrum:
         Spherical degrees associated with the discrete spectrum.
     depths : int, array_like
         Spectral depths associated with the discrete spectrum.
-    roots : *dict of int*: :class:`numpy.ndarray`
+    roots : *dict of* {*int*: :class:`numpy.ndarray`}
         Spherical Bessel roots associated with the discrete spectrum.
     mode_count : int
         Total number of allowed spectral modes, counting spherical order
@@ -229,7 +227,7 @@ class DiscreteSpectrum:
         depths : int, array_like
             Maximal radial numbers, i.e. the number of allowed radial modes
             for each degree.
-        roots : *dict of int*: :class:`numpy.ndarray`
+        roots : *dict of* {*int*: :class:`numpy.ndarray`}
             Spherical Bessel roots.
         mode_count : int
             Total number of spectral modes, counting spherical order

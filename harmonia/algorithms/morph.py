@@ -25,9 +25,10 @@ class SphericalArray:
 
     The array is initialised in the natural structure together with an
     index array of the same structure.  A natural structure array is a
-    length-:math:`\ell` list of :math:`(m_\ell \times n_\ell)`-rectangular
-    arrays whose entries are indexed by a triplet :math:`(\ell, m_\ell,
-    n_\ell)`, which are respectively the spherical degree, order and depth.
+    length-:math:`\ell` sequence of
+    :math:`(m_\ell \times n_\ell)`-rectangular arrays whose entries are
+    indexed by a triplet :math:`(\ell, m_\ell, n_\ell)`, which are
+    respectively the spherical degree, order and depth.
 
     Spherical degrees :math:`\ell` and orders :math:`m` are associated with
     the spherical Bessel and harmonic functions, and spherical depths
@@ -53,7 +54,7 @@ class SphericalArray:
         Spherical degrees.
     depths : int, array_like
         Spherical depths for each degree.
-    roots : dict of int: :class:`numpy.ndarray`, optional
+    roots : *dict of* {*int*: :class:`numpy.ndarray`}, optional
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.  If this is `None`
         (default), the roots are computed by calling

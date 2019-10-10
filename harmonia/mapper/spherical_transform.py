@@ -215,15 +215,10 @@ class SphericalMap:
 
         Returns
         -------
-        n_coeff, nbar_coeff : dict of |array_dict|
+        n_coeff, nbar_coeff : dict of {int: complex :class:`numpy.ndarray`}
             Spherical Fourier coefficients for the observed and expected
             particle number densities, normalised to the homogeneous mean
             particle number density :attr:`mean_density`.
-
-
-        .. |array_dict| replace::
-
-            {int: complex :class:`numpy.ndarray`}
 
         Raises
         ------

@@ -3,12 +3,13 @@ Scale dependence (:mod:`~harmonia.cosmology.scale_dependence`)
 ===========================================================================
 
 Compute scale-dependent modifications due to local primordial
-non-Gausianity :math:`f_\textrm{NL}`.
+non-Gausianity :math:`f_\textrm{NL}` *at the current redshift epoch*
+:math:`z = 0`.
 
 .. autosummary::
 
     scale_dependent_bias
-    non_gaussianity_biased_power_spectrum
+    scale_modified_power_spectrum
 
 |
 
@@ -20,17 +21,28 @@ _SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY = 1.686
 _SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S = 2998.
 
 
-def scale_dependent_bias(k, f_nl, b_const, cosmo):
-    """Scale-dependent bias for non-vanishing local primordial
-    non-Gaussianity.
+def scale_dependent_bias(f_nl, b_const, cosmo):
+    r"""Scale-dependent bias for non-vanishing local primordial
+    non-Gaussianity :math:`f_\textrm{NL}`.
 
-    The transfer function appearing in the Poisson kernel is computed using
-    ``CLASS``.
+    The constant bias :math:`b_1` is modified as
+
+    .. math::
+
+        b_1 \mapsto b_1 + (b_1 - 1) f_\textrm{NL} \frac{\alpha(k)}{k^2} \,,
+
+    where
+
+    .. math::
+
+        \alpha(k) = 3  \Bigg(\frac{H_0}{\mathrm{c}}\Bigg)^2
+            \frac{\Omega_\textrm{m} \delta_\textrm{c}}{T(k)}
+
+    and the transfer function :math:`T(k)` is computed using ``CLASS`` by
+    ``nbodykit``.
 
     Parameters
     ----------
-    k : float, array_like
-        Fourier scale/wave number.
     f_nl : float
         Local primordial non-Gaussnianity.
     b_const : float
@@ -41,21 +53,28 @@ def scale_dependent_bias(k, f_nl, b_const, cosmo):
 
     Returns
     -------
-    bias : float, array_like
-        Scale-dependent bias.
+    bias : callable
+        Scale-dependent bias as a function of the Fourier scale (in h/Mpc).
 
     """
     num_factors = 3*_SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY * cosmo.Omega0_m \
          * (cosmo.h / _SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S)**2
 
-    bias = b_const + (b_const - 1) * f_nl * num_factors \
-        / cosmology.power.transfers.CLASS(cosmo, redshift=_REDSHIFT_EPOCH)(k) \
-        / k**2
+    def bias(k):
+
+        b_k = b_const + (b_const - 1) * f_nl * (num_factors / k**2) / (
+            cosmology.power.transfers.CLASS(
+                cosmo,
+                redshift=_REDSHIFT_EPOCH
+            )(k)
+        )
+
+        return b_k
 
     return bias
 
 
-def non_gaussianity_biased_power_spectrum(f_nl, b_const, cosmo):
+def scale_modified_power_spectrum(f_nl, b_const, cosmo):
     """Biased power spectrum with non-Gaussianity scale dependence
     modification.
 
@@ -72,11 +91,14 @@ def non_gaussianity_biased_power_spectrum(f_nl, b_const, cosmo):
     Returns
     -------
     modified_power_spectrum : callable
-        Non-Gaussianity modified biased power spectrum.
+        Non-Gaussianity modified biased power spectrum as a function of
+        the Fourier scale (in h/Mpc).
 
     """
-    power_spectrum = cosmology.LinearPower(cosmo, redshift=_REDSHIFT_EPOCH)
-    modified_power_spectrum = lambda k: \
-        scale_dependent_bias(k, f_nl, b_const, cosmo) * power_spectrum(k)
+    _scale_dependent_bias = scale_dependent_bias(f_nl, b_const, cosmo)
+    _power_spectrum = cosmology.LinearPower(cosmo, redshift=_REDSHIFT_EPOCH)
+
+    modified_power_spectrum = lambda k: _scale_dependent_bias(k) \
+        * _power_spectrum(k)
 
     return modified_power_spectrum

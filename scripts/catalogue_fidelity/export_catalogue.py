@@ -108,8 +108,6 @@ def view(results, savefig=False):
     """
     REDSHIFT = 0.
     YLIM = (22000, 120000)
-    ERROR_PANEL_CEILING = 0.05
-    ERROR_PATCH_HEIGHT = 0.01
 
     global k, Nk, Pk, dPk, Pk_model
 
@@ -207,7 +205,10 @@ if __name__ == '__main__':
 
     COLLATE = False
     LOAD = True
-    SAVE = True
 
-    results = export_data(collate=COLLATE, load=LOAD, save=SAVE)
+    results = export_data(collate=COLLATE, load=LOAD, save=True)
+
+    ERROR_PANEL_CEILING = 0.05
+    ERROR_PATCH_HEIGHT = 0.01
+
     view(results, savefig=False)

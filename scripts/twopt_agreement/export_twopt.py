@@ -216,8 +216,8 @@ if __name__ == '__main__':
     DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
         .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
     MODEL_TAG = "-(pivots={},{})".format(PIVOT_NAMES, PARAMS_TAG)
-
     NBODY_TAG = ""
+
     NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \
         "nbar=2.49e-4,bias=2.3415,kmax=0.04," + \
         "boxsize=1000.,mesh=c256,npair=11" + \

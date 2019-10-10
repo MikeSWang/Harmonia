@@ -482,7 +482,7 @@ def sort_dict_to_list(dict_data):
 
     Returns
     -------
-    list_data : list of array_like
+    sorted_list : list of array_like
         `dict_data` values sorted by `dict_data` keys.
 
     Raises
@@ -500,9 +500,9 @@ def sort_dict_to_list(dict_data):
 
     sorted_keys = np.sort(keys)
 
-    list_data = [dict_data[key] for key in sorted_keys]
+    sorted_list = [dict_data[key] for key in sorted_keys]
 
-    return list_data
+    return sorted_list
 
 
 def sort_list_to_dict(list_data, int_keys):

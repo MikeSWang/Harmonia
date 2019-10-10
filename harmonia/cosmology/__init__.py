@@ -16,7 +16,7 @@ from .geometry import (
 )
 from .scale_dependence import (
     scale_dependent_bias,
-    non_gaussianity_biased_power_spectrum,
+    scale_modified_power_spectrum,
 )
 
 fiducial_cosmology = cosmology.Planck15

@@ -61,7 +61,7 @@ RSD coupling kernels
    \Big[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r}) \Big]
    j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) G(z) \phi(r) \,,
 
-over the spherical Lebesgue measure, where :math:`\{ k_{\ell n} \}` are the
+over the spherical volume element, where :math:`k_{\ell n}` are the
 discrete wavenumbers.
 
 .. autosummary::
@@ -341,13 +341,13 @@ class Couplings:
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
-    survey_specs : dict of callable or None, or None, optional
+    survey_specs : dict of {str: callable or None} or None, optional
         Survey specification functions accessed with the following
         mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
         and ``'weight'`` for radial selection and weighting,
         ``'weight_derivative'`` for the derivative function of radial
         weighting.  Default is `None`.
-    cosmo_specs : dict of callable or None, or None, optional
+    cosmo_specs : dict of {str: callable or None} or None, optional
         Cosmological specification functions accessed with the following
         mandatory keys: ``'r2z'`` for cosmological comoving
         distance-to-redshift conversion, ``'z2chi'`` for fiducial
@@ -562,9 +562,10 @@ class Couplings:
 
         Returns
         -------
-        couplings_component : *dict of int*: :class:`numpy.ndarray`
+        couplings_component : dict of {int: :class:`numpy.ndarray`}
             Coupling coefficients with first triplet index fixed as a
-            dictinary with integer keys corresponding to spherical degrees.
+            dictionary with integer keys corresponding to spherical
+            degrees.
 
         Raises
         ------
@@ -602,7 +603,7 @@ class Couplings:
 
         This returns a dictionary whose keys are all the triplet indices,
         each with a value corresponding to the coefficients returned by
-        a call of :meth:`.spherical_model.Couplings.couplings_fixed_index`
+        a call of :meth:`~.spherical_model.Couplings.couplings_fixed_index`
         for the specified coupling type and that triplet index.
 
         Parameters
@@ -615,8 +616,13 @@ class Couplings:
 
         Returns
         -------
-        sequenced_couplings : *dict of tuple*: *dict*
+        sequenced_couplings : dict of {tuple: |NestedDict|}
             Sequence of coupling coefficients over the first triplet index.
+
+
+        .. |NestedDict| replace::
+
+            dict of {int: :class:`numpy.ndarray`}
 
         """
         with warnings.catch_warnings():
@@ -661,13 +667,13 @@ class TwoPointFunction(Couplings):
         Linear growth rate over bias :math:`\beta_0` at the current epoch.
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
-    survey_specs : dict of callable or None, or None, optional
+    survey_specs : dict of {str: callable or None} or None, optional
         Survey specification functions accessed with the following
         mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
         and ``'weight'`` for radial selection and weighting,
         ``'weight_derivative'`` for the derivative function of radial
         weighting.  Default is `None`.
-    cosmo_specs : dict of callable or None, or None, optional
+    cosmo_specs : dict of {str: callable or None} or None, optional
         Cosmological specification functions accessed with the following
         mandatory keys: ``'r2z'`` for cosmological comoving
         distance-to-redshift conversion, ``'z2chi'`` for fiducial
@@ -723,7 +729,7 @@ class TwoPointFunction(Couplings):
 
         Returns
         -------
-        *dict of str*: *dict*
+        dict of {str; dict}
             Coupling coefficients as a dictionary for coupling types
             each with a sub-dictionary for all triplet indices.
 

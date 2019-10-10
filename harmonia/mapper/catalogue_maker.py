@@ -169,7 +169,7 @@ class LogNormalCatalogue(CatalogSource):
             {
                 'nbar': mean_density,
                 'bias': bias,
-                'BoxSize': [boxsize,]*3,
+                'BoxSize': [boxsize]*3,
                 'Nmesh': num_mesh,
                 'RSD_flag': add_RSD,
                 'seed': seed,
@@ -222,6 +222,8 @@ class LogNormalCatalogue(CatalogSource):
         self._pos = position
         super().__init__(comm=comm)
         self._logger.info("%s generated. ", self.__str__())
+
+        self['Position'] += [boxsize/2]*3
 
         if add_RSD:
             self._vel_offset = growth_rate * displacement
@@ -373,6 +375,8 @@ class GaussianCatalogue(CatalogSource):
         self._pos = position
         super().__init__(comm=comm)
         self._logger.info("%s generated. ", self.__str__())
+
+        self['Position'] += [boxsize/2]*3
 
         if add_RSD:
             self._vel_offset = growth_rate * displacement

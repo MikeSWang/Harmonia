@@ -32,8 +32,8 @@ def initialise():
         If a required input arameter is missing.
 
     """
-    global pivots, rsd_flag, nbar, contrast, bias, redshift, zmax, kmax, \
-        expand, mesh_gen, mesh_cal, niter, prog_id
+    global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax, expand, \
+        mesh_gen, mesh_cal, niter, prog_id
 
     try:
         pivot = params.structure

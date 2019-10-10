@@ -689,6 +689,8 @@ class TwoPointFunction(Couplings):
         redshift-to-comoving distance conversion, ``'evolution'`` for
         clustering evolution, and ``'AP_distortion'`` for AP distortion.
         Default is `None`.
+    couplings : dict of {str: dict of {tuple: |NestedDict|}}
+        Pre-computed couplings.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -715,6 +717,10 @@ class TwoPointFunction(Couplings):
 
          :class:`nbodykit.cosmology.power.linear.LinearPower`
 
+    .. |NestedDict| replace::
+
+        dict of {int: :class:`numpy.ndarray`}
+
     """
 
     _logger = logging.getLogger("TwoPointFunction")
@@ -722,7 +728,7 @@ class TwoPointFunction(Couplings):
 
     def __init__(self, disc, nbar, b_1, f_nl=None, f_0=None,
                  power_spectrum=None, cosmo=None, survey_specs=None,
-                 cosmo_specs=None, comm=None):
+                 cosmo_specs=None, couplings=None, comm=None):
 
         super().__init__(
             disc,
@@ -749,12 +755,12 @@ class TwoPointFunction(Couplings):
                 transfer='CLASS'
             )
 
+        self._couplings = couplings
+
         if self.non_gaussianity is None:
             self._bias_k = const_function(b_1)
         else:
             self._bias_k = scale_dependent_bias(f_nl, b_1, cosmo)
-
-        self._couplings = None
 
     @property
     def couplings(self):

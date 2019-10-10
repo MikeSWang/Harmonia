@@ -689,7 +689,7 @@ class TwoPointFunction(Couplings):
         redshift-to-comoving distance conversion, ``'evolution'`` for
         clustering evolution, and ``'AP_distortion'`` for AP distortion.
         Default is `None`.
-    couplings : dict of {str: dict of {tuple: |NestedDict|}}
+    couplings : dict of {str: |DoubleNestedDict|}}
         Pre-computed couplings.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
@@ -717,9 +717,9 @@ class TwoPointFunction(Couplings):
 
          :class:`nbodykit.cosmology.power.linear.LinearPower`
 
-    .. |NestedDict| replace::
+    .. |DoubleNestedDict| replace::
 
-        dict of {int: :class:`numpy.ndarray`}
+        dict of {tuple: dict of {int: :class:`numpy.ndarray`}}
 
     """
 

@@ -21,17 +21,14 @@ Kernels
 Coupling kernels are integrands without the coordinate Jacobian, which may
 include the following factors: radial selection :math:`\phi(r)`, weight
 :math:`w(r)` or its derivative, and angular mask
-:math:`M(\hat{\mathbf{r}})`; linear growth rate normalised to linear bias
-:math:`\beta(z) = f(z)/b(z)`, clustering evolution :math:`G(z) = b(z) D(z)`
-where :math:`D(z)` is the linear growth factor, and the Alcock--Paczynski
-distortion
+:math:`M(\hat{\mathbf{r}})`; linear growth rate normalised to constant
+linear bias :math:`\beta(z) = f(z)/b_1(z)`, clustering evolution
+:math:`G(z) = b_1(z) D(z)` where :math:`D(z)` is the linear growth factor,
+and the Alcock--Paczynski distortion
 
 .. math::
 
-    \gamma(z) = \frac{\beta(z)}{\beta_0}
-        \frac{\mathrm{d}\tilde{r}}{\mathrm{d}r} \,,
-    \quad \text{with} \quad
-    \beta_0 \equiv \beta(0) \,,
+    \gamma(z) = \frac{\mathrm{d}\tilde{r}}{\mathrm{d}r} \,,
 
 where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted
 from redshift rather than from the true comoving distance--redshift
@@ -59,7 +56,7 @@ RSD coupling kernels
    \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
    \frac{\mathrm{d}}{\mathrm{d}\tilde{r}}
    \Big[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r}) \Big]
-   j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) G(z) \phi(r) \,,
+   j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) f(z) G(z) \phi(r) \,,
 
 over the spherical volume element, where :math:`k_{\ell n}` are the
 discrete wavenumbers.
@@ -77,12 +74,13 @@ discrete wavenumbers.
 
     \left\langle \delta_\mu \delta_\nu \right\rangle = \sum_\sigma
         M_{\mu\sigma} M^*_{\nu\sigma} \left(
-            \Phi_{\mu\sigma} + \beta_0 \Upsilon_{\mu\sigma}
+            b_0(k_\sigma) \Phi_{\mu\sigma} + f_0 \Upsilon_{\mu\sigma}
         \right) \left(
-        \Phi_{\nu\sigma} + \beta_0 \Upsilon_{\nu\sigma}
-        \right) \kappa_\sigma^{-1} P(k_\sigma)
+            b_0(k_\sigma) \Phi_{\nu\sigma} + f_0 \Upsilon_{\nu\sigma}
+        \right) \kappa_\sigma^{-1} P(k_\sigma) \,,
 
-and the shot noise part
+where :math:`b_0(k)` is the scale-dependent modification of the constant
+linear bias :math:`b_1(z=0)` at the current epoch, and the shot noise part
 
 .. math::
 

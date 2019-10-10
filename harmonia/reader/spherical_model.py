@@ -79,8 +79,7 @@ discrete wavenumbers.
             b_0(k_\sigma) \Phi_{\nu\sigma} + f_0 \Upsilon_{\nu\sigma}
         \right] \kappa_\sigma^{-1} P(k_\sigma) \,,
 
-where :math:`b_0(k)` is the scale-dependent modification of the constant
-linear bias :math:`b_1(z=0)` at the current epoch, and the shot noise part
+and the shot noise part
 
 .. math::
 
@@ -88,8 +87,10 @@ linear bias :math:`b_1(z=0)` at the current epoch, and the shot noise part
     \frac{1}{\bar{n}} M_{\mu\nu} \int \mathrm{d}r r^2 (w^2\phi)(r)
     j_\mu(r) j_\nu(r) \,,
 
-where :math:`M, \Phi, \Upsilon` are the angular, radial and RSD couplings
-and :math:`\kappa` the normalisation coefficients (see also
+where :math:`b_0(k)` is the scale-dependent modification of the constant
+linear bias :math:`b_1(z=0)` at the current epoch,  :math:`M, \Phi,
+\Upsilon` are the angular, radial and RSD couplings and :math:`\kappa` the
+normalisation coefficients (see also
 :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`), and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
@@ -610,7 +611,7 @@ class Couplings:
         ----------
         coupling_type : {'angular', 'radial', 'RSD'}
             Coupling type.
-        comm : :class:`mpi4py.MPI.Comm` or None, optional
+        comm : :class:`mpi4py.MPI.Comm` *or None, optional*
             MPI communicator.  If `None` (default), no multiprocessing
             is invoked.
 
@@ -703,7 +704,7 @@ class TwoPointFunction(Couplings):
     matter_power_spectrum : |LinearPower|
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/h).
-    comm : :class:`mpi4py.MPI.Comm` or None, optional
+    comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
 

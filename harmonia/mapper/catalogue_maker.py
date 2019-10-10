@@ -144,7 +144,7 @@ class LogNormalCatalogue(CatalogSource):
         to the radial directions.
     seed : int or None, optional
         Random seed of the catalogue (default is `None`).
-    comm : :class:`nbodykit.CurrentMPIComm` or None, optional
+    comm : :class:`nbodykit.CurrentMPIComm` *or None, optional*
         Current MPI communicator.
 
     """
@@ -290,7 +290,7 @@ class GaussianCatalogue(CatalogSource):
         to the radial directions.
     seed : int or None, optional
         Random seed of the catalogue (default is `None`).
-    comm : :class:`nbodykit.CurrentMPIComm` or None, optional
+    comm : :class:`nbodykit.CurrentMPIComm` *or None, optional*
         Current MPI communicator.
 
     Warnings

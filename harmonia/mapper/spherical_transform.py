@@ -45,7 +45,7 @@ class SphericalMap:
         Discrete spectrum.
     data : :class:`nbodykit.base.catalog.CatalogSource`
         Data catalogue of particles.
-    rand : :class:`nbodykit.base.catalog.CatalogSource` or None, optional
+    rand : :class:`nbodykit.base.catalog.CatalogSource` *or None, optional*
         Random catalogue of particles (default is `None`).
     source : {'mock', 'survey'}, optional
         Catalogue source, either ``'mock'`` simulations or ``'survey'``
@@ -60,9 +60,9 @@ class SphericalMap:
         Discrete spectrum.
     data : :class:`nbodykit.base.catalog.CatalogSource`
         Data catalogue of particles.
-    rand : :class:`nbodykit.base.catalog.CatalogSource` or None
+    rand : :class:`nbodykit.base.catalog.CatalogSource` *or None*
         Random catalogue of particles.
-    pair : |FKPCatalog| or None
+    pair : |FKPCatalog| *or None*
         FKP pair of data and random catalogues.
     mean_density : float
         Mean particle number density (in cubic h/Mpc) for the data

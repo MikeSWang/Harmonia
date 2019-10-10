@@ -140,7 +140,7 @@ class SphericalArray:
         ----------
         filling : array_like or None, optional
             Natural structure data array for filling (default is `None`).
-        disc : :class:`.DiscreteSpectrum` or None, optional
+        disc : :class:`.DiscreteSpectrum` *or None, optional*
             Discretisation set-up (default is `None`).
 
         Raises

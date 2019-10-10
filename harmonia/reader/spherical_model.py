@@ -28,7 +28,7 @@ and the Alcock--Paczynski distortion
 
 .. math::
 
-    \gamma(z) = \frac{\mathrm{d}\tilde{r}}{\mathrm{d}r} \,,
+    \gamma(z) = \frac{\mathrm{d}\tilde{r}(z)}{\mathrm{d}r(z)} \,,
 
 where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted
 from redshift rather than from the true comoving distance--redshift
@@ -73,11 +73,11 @@ discrete wavenumbers.
 .. math::
 
     \left\langle \delta_\mu \delta_\nu \right\rangle = \sum_\sigma
-        M_{\mu\sigma} M^*_{\nu\sigma} \left(
+        M_{\mu\sigma} M^*_{\nu\sigma} \left[
             b_0(k_\sigma) \Phi_{\mu\sigma} + f_0 \Upsilon_{\mu\sigma}
-        \right) \left(
+        \right] \left[
             b_0(k_\sigma) \Phi_{\nu\sigma} + f_0 \Upsilon_{\nu\sigma}
-        \right) \kappa_\sigma^{-1} P(k_\sigma) \,,
+        \right] \kappa_\sigma^{-1} P(k_\sigma) \,,
 
 where :math:`b_0(k)` is the scale-dependent modification of the constant
 linear bias :math:`b_1(z=0)` at the current epoch, and the shot noise part
@@ -686,7 +686,7 @@ class TwoPointFunction(Couplings):
         redshift-to-comoving distance conversion, ``'evolution'`` for
         clustering evolution, and ``'AP_distortion'`` for AP distortion.
         Default is `None`.
-    comm : :class:`mpi4py.MPI.Comm` or None, optional
+    comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
 

@@ -92,7 +92,7 @@ def process(runtime_info):
     args = disc, nbar, bias
     two_points = TwoPointFunction(
         *args,
-        growth_rate=growth_rate,
+        f_0=growth_rate,
         power_spectrum=Plin,
         comm=COMM
     )

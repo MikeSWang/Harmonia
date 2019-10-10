@@ -206,7 +206,7 @@ class SphericalMap:
 
         Parameters
         ----------
-        method : {'sum', 'integrate'} or None, optional
+        method : {'sum', 'integrate', None}, optional
             Computation method for expection, either Monte Carlo over
             the random catalogue (``'sum'``) or numerical integration
             (``'integrate'``).  If `None` (default), this may be

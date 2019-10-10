@@ -197,7 +197,7 @@ class SphericalArray:
             If `True` (default is `False`), the arrays are collapsed over
             spherical orders before flattening.  This is overriden to
             `True` if `axis_order` is ``'ln'`` or ``'k'``.
-        return_only : {'data', 'index'} or None, optional
+        return_only : {'data', 'index', None}, optional
             Only return the 'data' or 'index' array (default is `None`).
 
         Returns

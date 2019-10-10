@@ -432,7 +432,7 @@ class Couplings:
         distance--redshift conversion is the cosmological one (i.e. none of
         `mask`, `selection`, `weight`, `evolution`, `r2z` and `z2chi` is
         set), the coupling coefficients reduce to :math:`\Phi_{\mu\nu} =
-        \delta_{\mu\nu}`.
+        \delta_{\mu\nu}` for :math:`\ell_\mu = \ell_\nu`.
 
         Parameters
         ----------

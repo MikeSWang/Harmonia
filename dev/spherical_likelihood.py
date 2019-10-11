@@ -12,7 +12,7 @@ def _f_nl_parametrised_covariance(f_nl, pivot, *twopt_args, **twopt_kwargs):
 
     Parameters
     ----------
-    f_nl : float, array_like
+    f_nl : float
         Local primordial non-Gaussianity parameter.
     pivot : {‘natural’, ‘scale’, ‘lmn’, ‘lnm’, ‘nlm’, ‘ln’, ‘k’}
         Pivot axis for unpacking index data into a 1-d vector.
@@ -77,7 +77,7 @@ def _complex_normal_pdf(dat_vector, cov_matrix):
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
     data_dim = len(dat_vector)
 
-    det_divider = np.pi**data_dim * np.linalg.det(cov_matrix)
+    det_divider = np.pi**data_dim * np.abs(np.linalg.det(cov_matrix))
 
     chisq_exponent = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) @ dat_vector
@@ -87,31 +87,43 @@ def _complex_normal_pdf(dat_vector, cov_matrix):
     return prob_density
 
 
-def spherical_map_likelihood_f_nl(sample_parameter, data_vector, pivot,
+def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
                                   *twopt_args, **twopt_kwargs):
     """Evaluate the spherical map likelihood of the local non-Gaussianity
     parameter.
 
     Parameters
     ----------
-    sample_parameter : float, array_like
+    sample_parameters : float, array_like
         Sampling values of the local non-Gaussnaity parameter.
     data_vector : float or complex, array_like
         1-d data vector.
 
     Returns
     -------
-    sampled_likelihood : float, array_like
+    sampled_likelihood : float :class:`numpy.ndarray`
         Likelihood evaluated at the sample parameters.
 
-    """
-    _sample_covar = _f_nl_parametrised_covariance(
-        sample_parameter,
-        pivot,
-        *twopt_args,
-        **twopt_kwargs
-    )
+    Raises
+    ------
+    ValueError
+        If `sample_parameters` is not equivalent to a flat array.
 
-    sampled_likelihood = _complex_normal_pdf(data_vector, _sample_covar)
+    """
+    if len(set(np.shape(sample_parameters)).difference({1})) > 1:
+        raise ValueError(
+            "`sample_parameters` is not equivalent to a flat array. "
+        )
+
+    sampled_likelihood = np.zeros(len(sample_parameters))
+    for idx, parameter in enumerate(sample_parameters):
+        _sample_covar = _f_nl_parametrised_covariance(
+            parameter,
+            pivot,
+            *twopt_args,
+            **twopt_kwargs
+        )
+        sampled_likelihood[idx] = \
+            _complex_normal_pdf(data_vector, _sample_covar)
 
     return sampled_likelihood

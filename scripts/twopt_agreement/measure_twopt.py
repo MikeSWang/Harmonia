@@ -88,7 +88,7 @@ def initialise():
         pivot_tag = "pivots={},".format(params.structure).replace("'", "")
     pivot_tag = pivot_tag.replace(" ", "")
 
-    param_tag = "nbar={},bias={},beta={},rmax={},kmax={},xpd={},".format(
+    param_tag = "nbar={},b1={},f0={},rmax={},kmax={},xpd={},".format(
         format_float(nbar, 'sci'),
         format_float(bias, 'decdot'),
         rsd_tag,

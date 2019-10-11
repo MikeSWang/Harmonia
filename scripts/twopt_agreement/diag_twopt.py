@@ -212,10 +212,10 @@ if __name__ == '__main__':
 
     SCRIPT_NAME = "nbodymod_twopt"
     MODEL_TAG = \
-        "-(pivots=natural,nbar=2.49e-04,bias=2.40,beta=0.,rmax=500.,kmax=0.04)"
+        "-(pivots=natural,nbar=2.49e-04,b1=2.40,f0=0.,rmax=500.,kmax=0.04)"
     REFERENCE_FILE = (
         "halos-(NG=0.,z=1.)"
-        "-(nbar=2.49e-4,bias=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,pair=21)"
+        "-(nbar=2.49e-4,b1=2.3415,kmax=0.04,boxsize=1000.,mesh=c256,pair=21)"
     )
 
     PIVOT = 'natural'

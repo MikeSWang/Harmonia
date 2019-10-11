@@ -191,7 +191,7 @@ def view_data():
     if SAVE_FIG:
         plt.savefig(
             f"{PATHOUT}twopt-"
-            f"(pivot={PIVOT},beta={BETA},kmax={KMAX},diff={str(RATIO)}).png",
+            f"(pivot={PIVOT},f0={BETA},kmax={KMAX},diff={str(RATIO)}).png",
             format='png',
             dpi=500,
             transparent=False
@@ -210,7 +210,7 @@ if __name__ == '__main__':
 
     GEN_NAME = "nbodykit"
     PIVOT_NAMES = "[natural,k]"
-    PARAMS_TAG = "nbar=0.001,bias=2.,beta=none,rmax=148.,kmax=0.1"
+    PARAMS_TAG = "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1"
     BOX_TAG = "xpd=2.,mesh=gc256,iter=50*100"
 
     DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     NBODY_TAG = ""
 
     NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \
-        "nbar=2.49e-4,bias=2.3415,kmax=0.04," + \
+        "nbar=2.49e-4,b1=2.3415,kmax=0.04," + \
         "boxsize=1000.,mesh=c256,npair=11" + \
         ")"
 

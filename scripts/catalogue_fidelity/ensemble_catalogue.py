@@ -46,6 +46,11 @@ def initialise():
     runtime_info : str
         Runtime information.
 
+    Raises
+    ------
+    AttributeError
+        If a required input parameter is missing.
+
     """
     global generator, cataloguing, sampling, nbar, bias, redshift, kmax, dk, \
         nbins, boxsize, mesh_gen, mesh_cal, niter, prog_id

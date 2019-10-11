@@ -28,7 +28,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax
@@ -45,7 +45,7 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global rmax, beta, cosmo
+    global rmax, growth_rate, cosmo
 
     cosmo = cosmology.Planck15
     rmax = cosmo.comoving_distance(zmax)

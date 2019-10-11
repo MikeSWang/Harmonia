@@ -29,7 +29,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global input_file, kmax, dk, boxsize, mesh_cal, prog_id, headings

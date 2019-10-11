@@ -191,7 +191,8 @@ def view_data():
     if SAVE_FIG:
         plt.savefig(
             f"{PATHOUT}twopt-"
-            f"(pivot={PIVOT},f0={BETA},kmax={KMAX},diff={str(RATIO)}).png",
+            f"(pivot={PIVOT},f0={GROWTH_RATE},kmax={KMAX},"
+            f"diff={str(RATIO)}).png",
             format='png',
             dpi=500,
             transparent=False
@@ -201,7 +202,7 @@ def view_data():
 if __name__ == '__main__':
 
     PIVOT = 'k'
-    BETA = 'none'
+    GROWTH_RATE = 'none'
     KMAX = 0.1
     ZMAX = 0.05
     BOXSIZE = None  # 1000.

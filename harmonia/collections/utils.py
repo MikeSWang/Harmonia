@@ -369,7 +369,8 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     For each map to be applied, the input data array is scattered over the
     first axis for computation on difference process, and the computed
-    results are gathered in the exact structure of the input data array.
+    results are gathered in the exact structure of the input data array in
+    the root process.
 
     Parameters
     ----------
@@ -384,8 +385,9 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     Returns
     -------
-    out_data_arrays : array_like
-        Output data processed from `mapping`.
+    out_data_arrays : array_like or None
+        Output data processed from `mapping`.  This is `None` for process
+        ranks other than `root`.
 
     """
     from harmonia.collections import allocate_segments
@@ -399,6 +401,7 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     output = comm.gather(output, root=root)
 
+    out_data_arrays = None
     if comm.rank == root:
         out_data_arrays = np.concatenate(output, axis=0)
 

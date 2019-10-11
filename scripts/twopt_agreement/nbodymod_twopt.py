@@ -28,7 +28,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global pivots, nbar, bias, rmax, kmax

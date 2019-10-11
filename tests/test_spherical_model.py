@@ -4,7 +4,7 @@ from nbodykit.lab import cosmology
 
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.collections import unit_const
-from harmonia.reader import Couplings  # TODO: test `TwoPointFunction`
+from harmonia.reader import Couplings
 
 DISC_PARAMS = dict(
     radius=100.,

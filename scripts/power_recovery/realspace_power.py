@@ -41,7 +41,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global nbar, contrast, bias, redshift, zmax, kmax, dk, expand, \

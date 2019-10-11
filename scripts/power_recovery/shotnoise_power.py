@@ -29,7 +29,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global nbar, rmax, kmax, dk, mesh_cal, niter, prog_id

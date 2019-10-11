@@ -38,7 +38,7 @@ def initialise():
     Raises
     ------
     AttributeError
-        If a required input arameter is missing.
+        If a required input parameter is missing.
 
     """
     global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax, expand, \
@@ -62,12 +62,12 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, rmax, beta, gen_name
+    global Plin, rmax, growth_rate, gen_name
 
     cosmo = cosmology.Planck15
     Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
     rmax = cosmo.comoving_distance(zmax)
-    beta = cosmo.scale_independent_growth_rate(redshift) / bias
+    growth_rate = cosmo.scale_independent_growth_rate(redshift)
 
     if generator.lower().startswith('g'):
         gen_name = "gaussian"
@@ -78,7 +78,7 @@ def initialise():
     gen_tag = f"gen={gen_name},"
 
     if rsd_flag:
-        rsd_tag = "{:.2f}".format(beta)
+        rsd_tag = "{:.2f}".format(growth_rate)
     else:
         rsd_tag = 'none'
 

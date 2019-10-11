@@ -1,11 +1,10 @@
-"""Runtime configuration for likelihood inference.
+"""Runtime configuration for likelihood sampling.
 
 """
 import os
 import sys
 import warnings
 from argparse import ArgumentParser
-
 
 PATHIN = "./data/input/"  # TODO: "../../inference/input/"
 PATHOUT = "./data/output/"  # TODO: "../../inference/output/"
@@ -16,8 +15,8 @@ def import_local_package():
 
     """
     _cwd = os.path.dirname(__file__)
-    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
-
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
+    # TODO: "../../"
 
 def parse_cli_args():
     """Parse command line arguments.
@@ -31,6 +30,11 @@ def parse_cli_args():
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--structure')
+
+    cli_parser.add_argument('--priors', type=float,
+        nargs=2, default=[-100, 100])
+    cli_parser.add_argument('--nsamp', type=int, default=100)
+
     cli_parser.add_argument('--rsd', action='store_true')
     cli_parser.add_argument('--generator', default='nbodykit')
 
@@ -46,7 +50,7 @@ def parse_cli_args():
     cli_parser.add_argument('--mesh-gen', type=int, default=256)
     cli_parser.add_argument('--mesh-cal', type=int, default=256)
 
-    cli_parser.add_argument('--niter', type=int, default=25)
+    cli_parser.add_argument('--niter', type=int, default=10)
     cli_parser.add_argument('--prog-id', default="")
 
     return cli_parser.parse_args()

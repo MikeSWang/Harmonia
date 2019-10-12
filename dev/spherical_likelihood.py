@@ -44,14 +44,14 @@ def _f_nl_parametrised_covariance(f_nl, pivot, *twopt_args, **twopt_kwargs):
     """
     two_point_model = TwoPointFunction(*twopt_args, f_nl=f_nl, **twopt_kwargs)
 
-    covariance = two_point_model.two_point_covariance(pivot)
+    covariance = two_point_model.two_point_covariance(pivot, diag=True)
 
     return covariance
 
 
-def _complex_normal_pdf(dat_vector, cov_matrix):
-    """Compute the value of the complex normal probability density function
-    at specified data vector and covariance.
+def _log_complex_normal_pdf(dat_vector, cov_matrix):
+    """Compute natural log of the complex normal probability density
+    function at specified data vector and covariance.
 
     The data vector is assumed to be zero-centred.
 
@@ -64,8 +64,8 @@ def _complex_normal_pdf(dat_vector, cov_matrix):
 
     Returns
     -------
-    prob_density : float
-        PDF value.
+    log_prob_density : float
+        Log PDF value.
 
     Raises
     ------
@@ -77,14 +77,20 @@ def _complex_normal_pdf(dat_vector, cov_matrix):
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
     data_dim = len(dat_vector)
 
-    det_divider = np.pi**data_dim * np.abs(np.linalg.det(cov_matrix))
+    dat_vector /= 1e4
+    cov_matrix /= 1e4 ** 2
 
-    chisq_exponent = np.transpose(np.conj(dat_vector)) \
-        @ np.linalg.inv(cov_matrix) @ dat_vector
+    det_divider = data_dim * np.log(np.pi) \
+        + np.log(np.abs(np.linalg.det(cov_matrix)))
 
-    prob_density = np.exp(- chisq_exponent) / det_divider
+    chisq_exponent = np.real(
+        np.transpose(np.conj(dat_vector)) @ np.linalg.inv(cov_matrix) \
+            @ dat_vector
+    )
 
-    return prob_density
+    log_prob_density = - chisq_exponent - det_divider
+
+    return log_prob_density
 
 
 def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
@@ -124,6 +130,6 @@ def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
             **twopt_kwargs
         )
         sampled_likelihood[idx] = \
-            _complex_normal_pdf(data_vector, _sample_covar)
+            _log_complex_normal_pdf(data_vector, _sample_covar)
 
     return sampled_likelihood

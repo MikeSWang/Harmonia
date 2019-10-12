@@ -886,7 +886,7 @@ class TwoPointFunction(Couplings):
 
         return shot_noise
 
-    def two_point_covariance(self, pivot, part='both'):
+    def two_point_covariance(self, pivot, part='both', diag=False):
         """2-point signal, shot noise or full covariance matrix for given
         pivot axis for unpacking indices.
 
@@ -898,6 +898,9 @@ class TwoPointFunction(Couplings):
             If ``'both'`` (default), compute the sum of the signal and shot
             noise parts.  If ``'signal'`` or ``'shotnoise'``, compute
             only the corresponding part.
+        diag : bool, optional
+            If `True` (default is `False`), only compute the diagonal
+            entries of the covariance matrix.
 
         Returns
         -------
@@ -930,12 +933,18 @@ class TwoPointFunction(Couplings):
 
         dim_covar = len(index_vector)
         two_point_covar = np.zeros((dim_covar, dim_covar), dtype=complex)
-        for row_idx in range(dim_covar):
-            for col_idx in range(row_idx+1):
-                mu, nu = index_vector[row_idx], index_vector[col_idx]
-                two_point_covar[row_idx, col_idx] = two_point_component(mu, nu)
+        if diag:
+            for diag_idx in range(dim_covar):
+                mu = index_vector[diag_idx]
+                two_point_covar[diag_idx, diag_idx] = two_point_component(mu, mu)
+        else:
+            for row_idx in range(dim_covar):
+                for col_idx in range(row_idx+1):
+                    mu, nu = index_vector[row_idx], index_vector[col_idx]
+                    two_point_covar[row_idx, col_idx] = \
+                        two_point_component(mu, nu)
 
-        triu_indices = np.triu_indices(dim_covar, k=1)
-        two_point_covar[triu_indices] = two_point_covar.T[triu_indices]
+            triu_indices = np.triu_indices(dim_covar, k=1)
+            two_point_covar[triu_indices] = two_point_covar.T[triu_indices]
 
         return two_point_covar

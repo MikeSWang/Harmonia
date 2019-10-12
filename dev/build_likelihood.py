@@ -158,9 +158,8 @@ def process(runtime_info):
 
         twopt_args = disc, nbar, bias
         twopt_kwargs = dict(
-            f_0=growth_rate,
-            power_spectrum=Plin,
             couplings=external_couplings,
+            cosmo=fiducial_cosmology,
         )
 
         sample_likelihood = likelihood(

@@ -94,9 +94,10 @@ class SphericalArray:
             ]
         if isinstance(roots, dict):
             roots = sort_dict_to_list(roots)
+
         self.degrees, self.depths, self.roots = degrees, depths, roots
 
-        self.index_array = []
+        index_array = []
         for ell, nmax in zip(degrees, depths):
             ell_block = []
             for m in range(-ell, ell+1):
@@ -104,7 +105,8 @@ class SphericalArray:
                 for n_idx in range(nmax):
                     m_line.append((ell, m, n_idx + 1))
                 ell_block.append(m_line)
-            self.index_array.append(ell_block)
+            index_array.append(ell_block)
+        self.index_array = index_array
 
         if filling is not None:
             if len(filling) == len(degrees):
@@ -203,9 +205,11 @@ class SphericalArray:
         Returns
         -------
         data_flat : float array_like or None
-            Flattend 1-d data array.
+            Flattend 1-d data array.  Returned only if `return_only` is
+            `None` or ``'data'``.
         index_flat : list of tuple
-            Flattend 1-d index array.
+            Flattend 1-d index array.  Returned only if `return_only` is
+            `None` or ``'index'``.
 
         """
         data_arr, index_arr = self.data_array, self.index_array
@@ -233,7 +237,7 @@ class SphericalArray:
 
         if not empty_flag:
             data_flat = np.array(
-                self._flatten(data_arr, 'data', subarray_transpose=transpose),
+                self._flatten(data_arr, 'data', subarray_transpose=transpose)
             )
         index_flat = self._flatten(
             index_arr,

@@ -6,7 +6,7 @@ Evaluate Fourier bases and derived functions.
 
 Spherical function evaluation relies on :func:`scipy.special.sph_harm`,
 :func:`scipy.special.spherical_jn` and :func:`mpmath.besseljzero`.  Note
-that argument ordering and data-types may differ in this implementation.
+that argument ordering and data types may differ in this implementation.
 
 **Spherical basis functions**
 
@@ -36,9 +36,9 @@ def spherical_harmonic(ell, m, theta, phi):
     Parameters
     ----------
     ell : int, array_like
-        Degree of the spherical harmonic function ``ell >= 0``.
+        Degree of the spherical harmonic function, ``ell >= 0``.
     m : int, array_like
-        Order of the spherical harmonic function ``|m| <= ell``.
+        Order of the spherical harmonic function, ``|m| <= ell``.
     theta : float, array_like
         Polar angle in ``[0, pi]``.
     phi: float, array_like
@@ -61,7 +61,7 @@ def spherical_besselj(ell, x, derivative=False):
     Parameters
     ----------
     ell : int, array_like
-        Order of the spherical harmonic function ``ell >= 0``.
+        Order of the spherical harmonic function, ``ell >= 0``.
     x : float, array_like
         Function argument.
     derivative : bool, optional
@@ -76,31 +76,27 @@ def spherical_besselj(ell, x, derivative=False):
     return spherical_jn(ell, x, derivative=derivative)
 
 
-def spherical_besselj_root(ell, nmax, only=True, derivative=False):
+def spherical_besselj_root(ell, maxnum, only=True, derivative=False):
     r"""Compute positive zeros :math:`u_{\ell n}`, up to some maximal
     number :math:`n_\mathrm{max}`, of spherical Bessel functions of the
-    first kind or their derivatives.
+    first kind of order :math:`\ell` or their derivatives.
 
     Solving for roots of the spherical Bessel function :math:`j_\ell(x)`
-    relies on the identity
-
-    .. math:: j_\ell(x) = \sqrt{\frac{\pi}{2x}} J_{\ell + 1/2}(x)
-
-    where :math:`J_\ell(x)` is the Bessel funcion of the first kind.
-
-    Solving for roots of the derivative function :math:`j'_\ell(x)` employs
-    the interval bisection method, with the initial interval ansatz
-    :math:`\ell + 1 \leqslant x \leqslant n_\mathrm{max} \operatorname{max}
-    \{4, \ell\}`.
+    relies on the identity :math:`j_\ell(x) = \sqrt{\frac{\pi}{2x}}
+    J_{\ell + 1/2}(x)` where :math:`J_\ell(x)` is the Bessel funcion of the
+    first kind.  Solving for roots of the derivative function
+    :math:`j'_\ell(x)` employs the interval bisection method, with the
+    initial interval ansatz :math:`\ell + 1 \leqslant x \leqslant
+    n_\mathrm{max} \operatorname{max}\{4, \ell\}`.
 
     Parameters
     ----------
     ell : int
-        Order of the spherical Bessel function ``ell >= 0``.
-    nmax : int
-        Maximal number of positive zeros to be found ``nmax >= 1``.
+        Order of the spherical Bessel function, ``ell >= 0``.
+    maxnum : int
+        Maximal number of positive zeros to be found, ``maxnum >= 1``.
     only : bool, optional
-        If `True` (default), return the `nmax`-th root only.
+        If `True` (default), return the maximal root only.
     derivative : bool, optional
         If `True` (default is `False`), compute the root of the derivative
         function instead.
@@ -108,25 +104,25 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
     Returns
     -------
     u_ell : float, array_like
-        Positive zero(s).
+        Positive zero(s) (in ascending order) for order `ell`.
 
     """
     if not derivative:
         if only:
-            u_ell = float(besseljzero(ell+1/2, nmax, derivative=0))
+            u_ell = float(besseljzero(ell+1/2, maxnum, derivative=0))
         else:
             u_ell = np.array(
                 [
                     float(besseljzero(ell+1/2, n, derivative=0))
-                    for n in range(1, nmax+1)
+                    for n in range(1, maxnum+1)
                 ]
             )
     else:
         u_ell = binary_search(
             lambda x: spherical_besselj(ell, x, derivative=True),
             ell + 1,
-            nmax * max(4, ell),
-            maxnum=nmax
+            maxnum * max(4, ell),
+            maxnum=maxnum
         )
         if only:
             u_ell = u_ell[-1]

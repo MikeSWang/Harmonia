@@ -4,7 +4,7 @@ Numerical integration (:mod:`~harmonia.algorithms.integration`)
 
 Numerically integrate against Fourier basis functions.
 
-.. topic:: Caution
+.. warning::
 
     Quadrature integration of spherical Bessel functions may converge
     slowly.
@@ -32,7 +32,7 @@ from scipy.integrate import dblquad, quad
 from .bases import spherical_besselj, spherical_harmonic
 
 
-def _angular_integrand(phi, theta, afunc, complex_part):
+def _angular_integrand(phi, theta, func, complex_part):
     """Complex angular integrand with Jacobian.
 
     Notes
@@ -43,7 +43,7 @@ def _angular_integrand(phi, theta, afunc, complex_part):
     ----------
     phi, theta: float, array_like
         Angular coordinates in radians.
-    afunc : callable
+    func : callable
         Angular function to be integrated.
     complex_part : {'real', 'imag'}
         Real or imaginary part.
@@ -60,22 +60,20 @@ def _angular_integrand(phi, theta, afunc, complex_part):
 
     """
     if complex_part.lower() == 'real':
-        return np.abs(np.sin(theta)) * afunc(theta, phi).real
-
+        return np.abs(np.sin(theta)) * func(theta, phi).real
     if complex_part.lower() == 'imag':
-        return np.abs(np.sin(theta)) * afunc(theta, phi).imag
-
+        return np.abs(np.sin(theta)) * func(theta, phi).imag
     raise ValueError("`complex_part` neither 'real' nor 'imag'. ")
 
 
-def _radial_integrand(r, rfunc):
+def _radial_integrand(r, func):
     """Radial integrand with Jacobian.
 
     Parameters
     ----------
     r: float, array_like
         Radial coordinate.
-    rfunc : callable
+    func : callable
         Radial function to be integrated.
 
     Returns
@@ -84,7 +82,7 @@ def _radial_integrand(r, rfunc):
         Radial integrand value.
 
     """
-    return r**2 * rfunc(r)
+    return r**2 * func(r)
 
 
 def angular_spherical_integral(angular_func):
@@ -133,7 +131,7 @@ def radial_spherical_integral(radial_func, rmax):
     radial_func : callable
         Radial function to be integrated.
     rmax : float
-        Upper radial limit.
+        Upper radial limit ``rmax > 0``.
 
     Returns
     -------
@@ -153,16 +151,18 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
     Notes
     -----
     Arguments of `angular_func` must be in radians in the following order
-    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
+    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.  By
+    default integration is performed against the complex conjugated
+    spherical harmonic function.
 
     Parameters
     ----------
     angular_func : callable
         Angular function be integrated.
     ell : int
-        Degree of the spherical harmonic function.
+        Degree of the spherical harmonic function, ``ell >= 0``.
     m : int
-        Order of the spherical harmonic function.
+        Order of the spherical harmonic function, ``|m| <= ell``.
     conjugate : bool, optional
         If `True` (default), use conjugate of the spherical harmonic
         function.
@@ -195,11 +195,11 @@ def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
     radial_func : callable
         Radial function to be integrated.
     ell : int
-        Order of the spherical Bessel function.
+        Order of the spherical Bessel function, ``ell >= 0``.
     k : float
-        Wave number.
+        Wave number, ``k > 0``.
     rmax : float
-        Upper radial limit.
+        Upper radial limit, ``rmax > 0``.
     *args, **kwargs
         Additional positional and keyword arguments to be passed to
         `radial_func`.
@@ -210,8 +210,8 @@ def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
         Integral value.
 
     """
-    return radial_spherical_integral(
-        lambda r: radial_func(r, *args, **kwargs) \
-            * spherical_besselj(ell, k*r),
-        rmax
-    )
+    def _int_kernel(r):
+
+        return radial_func(r, *args, **kwargs) * spherical_besselj(ell, k*r)
+
+    return radial_spherical_integral(_int_kernel, rmax)

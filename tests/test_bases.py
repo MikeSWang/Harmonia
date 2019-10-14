@@ -75,26 +75,27 @@ def test_spherical_besselj_root():
             TEST_PARAMS['ell'],
             TEST_PARAMS['nmax'],
             only=True,
-            derivative=True,
+            derivative=True
         ),
-        14.5905521631,
+        14.5905521631
     )
     assert np.allclose(
         spherical_besselj_root(
             TEST_PARAMS['ell'],
             TEST_PARAMS['nmax'],
             only=False,
-            derivative=True,
+            derivative=True
         ),
         [
             6.7564563302,
             11.0702068737,
             14.5905521631,
-        ],
+        ]
     )
 
 
 def test_spherical_harmonic():
+
     show_query(
         f"SphericalHarmonicY[{TEST_PARAMS['ell']}, {TEST_PARAMS['m']}, "
         f"{TEST_PARAMS['theta']}, {TEST_PARAMS['phi']}]"
@@ -104,7 +105,7 @@ def test_spherical_harmonic():
             TEST_PARAMS['ell'],
             TEST_PARAMS['m'],
             TEST_PARAMS['theta'],
-            TEST_PARAMS['phi'],
+            TEST_PARAMS['phi']
         ),
-        - 0.0490981029 - 0.1511084229*1j,
+        - 0.0490981029 - 0.1511084229*1j
     )

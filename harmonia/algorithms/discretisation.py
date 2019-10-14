@@ -2,8 +2,8 @@
 Discrete Fourier spectrum (:mod:`~harmonia.algorithms.discretisation`)
 ===========================================================================
 
-Discretise the Fourier spectrum of cosmological fields by imposing boundary
-conditions.
+Discretise the Fourier spectrum of cosmological fields by imposing
+spherical boundary conditions.
 
 .. autosummary::
 
@@ -20,12 +20,12 @@ from .bases import spherical_besselj, spherical_besselj_root
 
 
 class DiscreteSpectrum:
-    r"""Discrete Fourier spectrum for given radial boundary conditions,
-    indexed by spherical degrees :math:`\ell` associated with spherical
+    r"""Discrete Fourier spectrum for the given radial boundary condition,
+    indexed by spherical degrees :math:`\ell` associated with the spherical
     harmonic and Bessel functions.
 
     When a boundary condition is prescribed at some maximum radius
-    :math:`r = R`, the allowed wave numbers for the discretised spectrum
+    :math:`r = R`, the allowed wavenumbers for the discretised spectrum
     are indexed by :math:`(\ell, n)` doublet tuples
 
     .. math::
@@ -36,23 +36,21 @@ class DiscreteSpectrum:
 
     are roots of the spherical Bessel functions of order :math:`\ell` if
     the boundary condition is Dirichlet, or roots of their derivatives if
-    the boundary condition is Neumann.  The spherical depths :math:`\{
-    n_{\mathrm{max},\ell} \}` are the maximal number of radial wave numbers
-    allowed in the specified range for each degree.  The normalisation
-    coefficients derived from completeness relations are
+    the boundary condition is Neumann.  The spherical depth
+    :math:`n_{\mathrm{max},\ell}` is the maximum number of radial
+    wavenumbers allowed in the scale cutoff range for each degree.  The
+    normalisation coefficients derived from completeness relations are
 
     .. math::
 
-        \kappa_{\ell n} = \frac{2}{R^3} j_{\ell+1}^{-2}(u_{\ell n})
-
-    for Dirichlet boundary conditions, and
-
-    .. math::
-
-        \kappa_{\ell n} = \frac{2}{R^3} j_{\ell}^{-2}(u_{\ell n})
-            \Bigg[ 1 - \frac{\ell(\ell + 1)}{u_{\ell n}^2} \Bigg]^{-1}
-
-    for Neumann boundary conditions.
+        \kappa_{\ell n} =
+            \begin{cases}
+                \frac{2}{R^3} j_{\ell+1}^{-2}(u_{\ell n}) \,,
+                    \quad \text{for Dirichlet boundary conditions;} \\
+                \frac{2}{R^3} j_{\ell}^{-2}(u_{\ell n}) \Big[
+                    1 - \frac{\ell(\ell + 1)}{u_{\ell n}^2} \Big]^{-1} \,,
+                    \quad \text{for Neumann boundary conditions.}
+            \end{cases}
 
     Parameters
     ----------
@@ -87,6 +85,12 @@ class DiscreteSpectrum:
         bounding radius and volume; ``'boundary_condition'`` for the
         boundary condition type.
 
+    Raises
+    ------
+    ValueError
+        If `condition` does not correpond to either the Dirichlet
+        or Neumann boundary condition.
+
     """
 
     _logger = logging.getLogger("DiscreteSpectrum")
@@ -96,8 +100,10 @@ class DiscreteSpectrum:
 
         condition = self._alias(condition)
 
+        discretise_args = (radius, condition, cuton, cutoff, mindeg, maxdeg)
+
         self.degrees, self.depths, self.roots, self.mode_count = \
-            self.discretise(radius, condition, cuton, cutoff, mindeg, maxdeg)
+            self._discretise(*discretise_args, logger=self._logger)
 
         self.attrs = {
             'min_wavenumber': cuton,
@@ -133,7 +139,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        dict of {int \| :class:`numpy.ndarray`}
+        dict of {int :code:`:` :class:`numpy.ndarray`}
             Wavenumbers.
 
         """
@@ -150,12 +156,12 @@ class DiscreteSpectrum:
 
     @property
     def root_indices(self):
-        r"""Root indices :math:`(\ell, n)`.
+        r"""Doublet root indices :math:`(\ell, n)`.
 
         Returns
         -------
-        dict of {int \| (int, int)}
-            Root indices.
+        dict of {int :code:`:` (int, int)}
+            Doublet root indices.
 
         """
         if self._root_indices is not None:
@@ -175,7 +181,7 @@ class DiscreteSpectrum:
 
         Returns
         -------
-        dict of {int \| :class:`numpy.ndarray`}
+        dict of {int :code:`:` :class:`numpy.ndarray`}
             Normalisation coefficients.
 
         """
@@ -202,7 +208,9 @@ class DiscreteSpectrum:
 
         return self._normalisations
 
-    def _discretise(self, radius, condition, kmin, kmax, ellmin, ellmax):
+    @staticmethod
+    def _discretise(radius, condition, kmin, kmax, ellmin, ellmax,
+                    logger=None):
         """
         Parameters
         ----------
@@ -214,6 +222,8 @@ class DiscreteSpectrum:
             Minimum and maximum wavenumbers.
         ellmin, ellmax : int or None
             Minimum and maximum spherical degrees.
+        logger : :class:`logging.Logger` or None, optional
+            Runtime logger (default is `None`).
 
         Returns
         -------
@@ -228,12 +238,6 @@ class DiscreteSpectrum:
             Total number of spectral modes counting spherical order
             multiplicities.
 
-        Raises
-        ------
-        ValueError
-            If `condition` does not correpond to either the Dirichlet
-            or Neumann boundary condition.
-
         """
         derivative = (condition == 'neumann')
 
@@ -243,7 +247,8 @@ class DiscreteSpectrum:
         while True:
             if ellmax is not None:
                 if ell > ellmax:
-                    self._logger.debug("Maximum degree reached. ")
+                    if logger:
+                        logger.debug("Maximum degree reached. ")
                     break
 
             u_ell, n_ell = [], 0
@@ -262,7 +267,8 @@ class DiscreteSpectrum:
                 )
 
             if n_ell == 0:
-                self._logger.debug("No more modes. Last degree is %d. ", ell)
+                if logger:
+                    logger.debug("No more modes. Last degree is %d. ", ell)
                 break
             else:
                 degrees.append(ell)
@@ -270,7 +276,8 @@ class DiscreteSpectrum:
                 roots[ell] = np.array(u_ell)
                 mode_count += (2*ell + 1) * n_ell
 
-                self._logger.debug("Roots for degree %d appended. ", ell)
+                if logger:
+                    logger.debug("Roots for degree %d appended. ", ell)
                 ell += 1
 
         return degrees, depths, roots, mode_count

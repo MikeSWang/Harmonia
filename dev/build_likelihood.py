@@ -173,7 +173,7 @@ def process(runtime_info):
         likelihood_samples.append(sample_likelihood)
 
     output_data = {
-        'f_nl': sample_parameters,
+        'f_nl': [sample_parameters],
         'like': likelihood_samples,
     }
 

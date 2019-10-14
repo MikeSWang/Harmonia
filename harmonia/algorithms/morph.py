@@ -2,7 +2,7 @@
 Array morphing (:mod:`~harmonia.algorithms.morph`)
 ===========================================================================
 
-Manipulate cosmological data array structures.
+Manipulate cosmological field data arrays.
 
 .. autosummary::
 
@@ -20,33 +20,34 @@ from harmonia.collections.utils import sort_dict_to_list
 
 
 class SphericalArray:
-    r"""Morphable spherical arrays with specified spherical degrees, orders
-    and depths.
+    r"""Spherical arrays with morphable structures.
 
     The array is initialised in the natural structure together with an
     index array of the same structure.  A natural structure array is a
     length-:math:`\ell` sequence of
     :math:`(m_\ell \times n_\ell)`-rectangular arrays whose entries are
-    indexed by a triplet :math:`(\ell, m_\ell, n_\ell)`, which are
-    respectively the spherical degree, order and depth.
+    indexed by a triplet :math:`(\ell, m_\ell, n_\ell)` corresponding to
+    the spherical degree, order and depth respectively.
 
     Spherical degrees :math:`\ell` and orders :math:`m` are associated with
     the spherical Bessel and harmonic functions, and spherical depths
     :math:`n` are the number of allowed radial wave numbers for each degree
-    of a discrete Fourier spectrum, implemented by
-    :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`.
+    of a discrete Fourier spectrum.
 
-    The supported array structures include the following:
+    Generally, the array can appear in the following structures:
 
-        * 'natural' or equivalently :math:`(\ell, m, n)`;
-        * :math:`(\ell, n, m)`, where ordering by spherical depths takes
-          precedence over that by spherical orders;
-        * :math:`(\ell, n)`, as above but values for equivalent :math:`m`
-          have been averaged/collapsed in the corresponding axis;
-        * :math:`k`, where a flattened array is sorted in ascending order
-          by wave numbers;
-        * 'scale', as above but values for equivalent :math:`m` have first
-          been averaged/collapsed in the corresponding axis.
+        * 'natural', or equivalently :math:`(\ell, m, n)`;
+        * 'transposed', or equivalently :math:`(\ell, n, m)`, where
+          ordering by spherical depths takes precedence over that by
+          spherical orders;
+        * 'spectral', or equivalently :math:`k`, where a flattened array is
+          sorted by the spectral wavenumbers in ascending order;
+        * 'root', or equivalently:math:`(\ell, n)`, as above but subarrays
+          of equivalent :math:`m` have been averaged/collapsed in the
+          corresponding axis;
+        * 'scale', or equivalently :math:`u`, similar to 'scale' but
+          subarrays of equivalent :math:`m` have been averaged/collapsed in
+          the corresponding axis.
 
     Parameters
     ----------
@@ -55,26 +56,25 @@ class SphericalArray:
     depths : int, array_like
         Spherical depths for each degree.
     roots : *dict of* {*int*: :class:`numpy.ndarray`}, optional
-        Roots of spherical Bessel functions or their derivatives
-        corresponding to `degrees` and `depths`.  If this is `None`
-        (default), the roots are computed by calling
+        Roots corresponding to `degrees`, `depths` and wavenumbers of the
+        discrete spherical spectrum.  If `None` (default), the roots are
+        computed by calling
         :func:`~harmonia.algorithms.bases.spherical_besselj_root`.
     filling : float array_like or None, optional
-        Data array from which the spherical array is built (default is
-        `None`).
+        Data to be filled in the spherical array (default is `None`).
 
     Attributes
     ----------
-    degrees : int, array_like
+    degrees : list of int
         Spherical degrees.
-    depths : int, array_like
+    depths : list of int
         Spherical depths associated with each spherical degree.
-    roots : list of float array_like
+    roots : list of float :class:`numpy.ndarray`
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.
-    index_array : list of (int, int, int) array_like
+    index_array : list of (int, int, int), array_like
         Triplet indices stored in the natural structure.
-    data_array : list of float array_like or None
+    data_array : list of :class:`numpy.ndarray` or None
         Data stored in the natural structure.
 
     Raises
@@ -83,19 +83,24 @@ class SphericalArray:
         If `filling` does not have the natural structure matching `degrees`
         and `depths`.
 
+    See Also
+    --------
+    :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
+
     """
 
     def __init__(self, degrees, depths, roots=None, filling=None):
 
+        self.degrees, self.depths = degrees, depths
+
+        if isinstance(roots, dict):
+            roots = sort_dict_to_list(roots)
         if roots is None:
             roots = [
                 spherical_besselj_root(ell, nmax, only=False)
                 for ell, nmax in zip(degrees, depths)
             ]
-        if isinstance(roots, dict):
-            roots = sort_dict_to_list(roots)
-
-        self.degrees, self.depths, self.roots = degrees, depths, roots
+        self.roots = roots
 
         index_array = []
         for ell, nmax in zip(degrees, depths):
@@ -108,10 +113,11 @@ class SphericalArray:
             index_array.append(ell_block)
         self.index_array = index_array
 
+        self.data_array = None
         if filling is not None:
             if len(filling) == len(degrees):
                 for ell, nmax, fillblock in zip(degrees, depths, filling):
-                    if np.shape(fillblock) != (2*ell + 1, nmax):
+                    if np.shape(fillblock) != (2*ell+1, nmax):
                         raise ValueError(
                             f"Element of spherical degree {ell} in `filling` "
                             "is not a rectangular array whose shape "
@@ -122,17 +128,10 @@ class SphericalArray:
                     "Length of `filling` is not consistent with `degrees`. "
                 )
             self.data_array = [np.array(fillblock) for fillblock in filling]
-        else:
-            self.data_array = None
-
-    def __repr__(self):
-
-        return f"SphericalArray(degnum={len(self.degrees)},id={id(self)})"
 
     @classmethod
     def build(cls, filling=None, disc=None):
-        """Alternative build from a natural structure array and/or a
-        discrete spectrum.
+        """Build spherical array from a given discrete spherical spectrum.
 
         If `disc` is not provided, the natural structure is inferred from
         `filling`; if only `disc` is provided, a natural structue index
@@ -141,7 +140,8 @@ class SphericalArray:
         Parameters
         ----------
         filling : array_like or None, optional
-            Natural structure data array for filling (default is `None`).
+            Data array in the natural structure for filling (default is
+            `None`).
         disc : :class:`.DiscreteSpectrum` *or None, optional*
             Discretisation set-up (default is `None`).
 
@@ -150,8 +150,7 @@ class SphericalArray:
         ValueError
             `disc` and `filling` are both `None`.
         ValueError
-            Spherical degrees inferred from `filling` do not respect the
-            odd parity and ascending ordering.
+            `filling` has the wrong shape or ordering.
 
         """
         if disc is not None:
@@ -166,16 +165,14 @@ class SphericalArray:
 
         if not all([len(fillblock) % 2 for fillblock in filling]):
             raise ValueError(
-                "At least one block element of `filling` "
-                "is not of odd lengths. "
+                "Subarrays of `filling` should have odd lengths. "
             )
 
         degrees = [len(fillblock) // 2 for fillblock in filling]
 
         if sorted(degrees) != degrees:
             raise ValueError(
-                "Block elements of `filling` are not ordered by ascending "
-                "block lengths. "
+                "`filling` subarrays should be in ascending order of lengths. "
             )
 
         depths = [np.size(fillblock, axis=-1) for fillblock in filling]
@@ -183,22 +180,22 @@ class SphericalArray:
         return cls(degrees, depths, filling=filling)
 
     def unfold(self, axis_order, collapse=False, return_only=None):
-        r"""Flatten data and index arrays in the specified order.
+        r"""Flatten data and index arrays in the specified axis order,
+        which corresponds to an array structure.
 
         If the arrays are collapsed amongst equivalent spherical orders,
         each block element in :attr:`data_array` is first averaged over the
-        rows and the triplet index tuple elements in :attr:`index_array`
-        are stripped of their middle order-index before flattening.
+        rows and the triplet index tuples in :attr:`index_array` are
+        stripped of their middle index before flattening.
 
         Parameters
         ----------
-        axis_order : {'natural', 'scale', 'lmn', 'lnm', 'ln', 'k'}
-            Axis order for array flattening.  If this is set to ``'ln'`` or
-            ``'scale'``, `collapse` is overriden to `True`.
+        axis_order : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+            Axis order for array flattening.
         collapse : bool, optional
             If `True` (default is `False`), the arrays are collapsed over
             spherical orders before flattening.  This is overriden to
-            `True` if `axis_order` is ``'ln'`` or ``'k'``.
+            `True` if `axis_order` is ``'root'`` or ``'scale'``.
         return_only : {'data', 'index', None}, optional
             Only return the 'data' or 'index' array (default is `None`).
 
@@ -212,9 +209,9 @@ class SphericalArray:
             `None` or ``'index'``.
 
         """
-        data_arr, index_arr = self.data_array, self.index_array
+        dat_arr, idx_arr = self.data_array, self.index_array
 
-        empty_flag = (data_arr is None)
+        empty_flag = (dat_arr is None)
         if empty_flag:
             data_flat = None
             warnings.warn(
@@ -225,39 +222,32 @@ class SphericalArray:
         axis_order = self._alias(axis_order)
         if axis_order == 'ln':
             axis_order, collapse = 'lmn', True
-        if axis_order == 'scale':
+        if axis_order == 'u':
             axis_order, collapse = 'k', True
 
+        transpose = (axis_order == 'lnm')
         if collapse:
             if not empty_flag:
-                data_arr = self.collapse_subarray(data_arr, 'data')
-            index_arr = self.collapse_subarray(index_arr, 'index')
+                dat_arr = self._collapse_subarray(dat_arr, 'data')
+            idx_arr = self._collapse_subarray(idx_arr, 'index')
 
-        transpose = (axis_order == 'lnm')
-
+        index_flat =  \
+            self._flatten(idx_arr, 'index', subarray_transpose=transpose)
         if not empty_flag:
             data_flat = np.array(
-                self._flatten(data_arr, 'data', subarray_transpose=transpose)
+                self._flatten(dat_arr, 'data', subarray_transpose=transpose)
             )
-        index_flat = self._flatten(
-            index_arr,
-            'index',
-            subarray_transpose=transpose
-        )
 
         if axis_order == 'k':
             roots = self.roots
             if not collapse:
-                roots = self.repeat_subarray(
-                    roots,
-                    'data',
-                    degrees=self.degrees
-                )
+                roots = \
+                    self._repeat_subarray(roots, 'data', degrees=self.degrees)
 
-            order = np.argsort(self._flatten(roots, 'data'))
+            flat_order = np.argsort(self._flatten(roots, 'data'))
+            index_flat = [index_flat[order_idx] for order_idx in flat_order]
             if not empty_flag:
-                data_flat = data_flat[order]
-            index_flat = [index_flat[ord_idx] for ord_idx in order]
+                data_flat = data_flat[flat_order]
 
         if return_only == 'data':
             return data_flat
@@ -265,38 +255,39 @@ class SphericalArray:
             return index_flat
         return data_flat, index_flat
 
-    def refold(self, flat_array, in_structure, subarray_type):
-        """Return a flattened array to its natural structure which is taken
-        to be the same as :attr:`data_array`.
+    def refold(self, flat_array, structure, subarray_type):
+        """Return a compatible external flat array to the natural
+        structure.
 
         Parameters
         ----------
         flat_array : array_like
-            Flat array to be refolded.
-        in_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
-            Input structure.
+            External flat array to be refolded.
+        structure : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+            Structure in which `flat_array` has been flattened.
         subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` for data arrays or ``'index'``
             for index arrays.
 
         Returns
         -------
-        list of tuple or float array_like
-            Refolded natural array.
+        array : list of tuple or float, array_like
+            External array in natural structure.
 
         Raises
         ------
         ValueError
-            If `in_structure` is not a valid structure name.
+            If `structure` is not a valid structure name.
 
         """
         if subarray_type == 'index':
             return self.index_array
 
-        ordered_index = self.unfold(in_structure, return_only='index')
+        ordered_index = self.unfold(structure, return_only='index')
 
-        if in_structure in ['natural', 'lmn', 'lnm', 'k']:
-            return_arr = []
+        structure = self._alias(structure)
+        if structure in ['lmn', 'lnm', 'k']:
+            array = []
             for ell, nmax in zip(self.degrees, self.depths):
                 ell_block = []
                 for m in range(-ell, ell+1):
@@ -304,80 +295,77 @@ class SphericalArray:
                     for n in range(nmax):
                         m_line.append(None)
                     ell_block.append(m_line)
-                return_arr.append(ell_block)
+                array.append(ell_block)
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, m_idx, n_idx = \
                     index[0], index[1] + index[0], index[-1] - 1
-                return_arr[ell_idx][m_idx][n_idx] = entry
-        elif in_structure in ['ln', 'scale']:
-            return_arr = [
+                array[ell_idx][m_idx][n_idx] = entry
+        elif structure in ['ln', 'u']:
+            array = [
                 [None for n in range(nmax)]
                 for ell, nmax in zip(self.degrees, self.depths)
             ]
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, n_idx = index[0], index[-1] - 1
-                return_arr[ell_idx][n_idx] = entry
-            return_arr = self.repeat_subarray(
-                return_arr,
-                'data',
-                degrees=self.degrees
-            )
+                array[ell_idx][n_idx] = entry
+            array = \
+                self._repeat_subarray(array, 'data', degrees=self.degrees)
         else:
-            raise ValueError("`in_structure` is invalid. ")
+            raise ValueError(f"Invalid `structure` value: {structure}. ")
 
-        return return_arr
+        return array
 
-    def morph(self, array, in_structure, out_structure, subarray_type):
-        """Morph an array from one structure to another structure.
-
-        All morphings are performed by returning the array shape to the
-        natural structure first.  The allowed morphings are (any
-        composition of) the following (modulo equivalent structure names):
-
-            * 'lmn' to/from 'lnm';
-            * 'lmn' to/from 'k';
-            * 'lmn' to 'scale' and the reverse with repetitions;
-            * 'lmn' to 'ln' and the reverse with repetitions.
+    def morph(self, flat_array, in_structure, out_structure, subarray_type):
+        """Morph a compatible external flat array flattened in one
+        structure to another structure by returning it to the natural
+        structure first.
 
         Parameters
         ----------
-        array : array_like
-            Array to be morphed.
-        in_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
+        flat_array : array_like
+            External flat array to be morphed.
+        in_structure : |structure_values|
             Input structure.
-        out_structure : {'natural', 'lmn', 'lnm', 'ln', 'k', 'scale'}
-            Output structure.
+        out_structure : |structure_values|
+            Output structure.  If this is ``'spectral'`` or ``'scale'``,
+            the morphed array is flattened; if this is ``'root'``, the
+            morphed array is collapsed.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'``
-            for index arrays.
+            Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
+
+
+        .. |structure_values| replace::
+
+            {'natural', 'transposed', 'spectral', 'root', 'scale'}
 
         Returns
         -------
-        morph_array : array_like
+        morphed_array : array_like
             Morphed array.
 
         """
         in_structure = self._alias(in_structure)
         out_structure = self._alias(out_structure)
 
-        natarr = self.refold(array, in_structure, subarray_type)
+        nat_arr = self.refold(flat_array, in_structure, subarray_type)
+
         if out_structure == 'lmn':
-            morph_array = natarr
+            morphed_array = nat_arr
         if out_structure == 'lnm':
-            morph_array = self.transpose_subarray(
-                array,
+            morphed_array = self._transpose_subarray(
+                flat_array,
                 subarray_type=subarray_type
             )
         if out_structure == 'ln':
-            morph_array = self.collapse_subarray(
-                array,
+            morphed_array = self._collapse_subarray(
+                flat_array,
                 subarray_type=subarray_type
             )
         if out_structure == 'k':
-            morph_array = self._flatten(natarr, subarray_type)
-            order = np.argsort(
+            morphed_array = self._flatten(nat_arr, subarray_type)
+            flat_order = np.argsort(
                 self._flatten(
-                    self.repeat_subarray(
+                    self._repeat_subarray(
                         self.roots,
                         'data',
                         degrees=self.degrees
@@ -386,68 +374,42 @@ class SphericalArray:
                 )
             )
             if subarray_type == 'data':
-                morph_array = morph_array[order]
+                morphed_array = morphed_array[flat_order]
             elif subarray_type == 'index':
-                morph_array = [morph_array[ord_idx] for ord_idx in order]
-        if out_structure == 'scale':
-            morph_array = self._flatten(
-                self.collapse_subarray(natarr, subarray_type),
+                morphed_array = [
+                    morphed_array[order_idx] for order_idx in flat_order
+                ]
+        if out_structure == 'u':
+            morphed_array = self._flatten(
+                self._collapse_subarray(nat_arr, subarray_type),
                 subarray_type
             )
-            order = np.argsort(self._flatten(self.roots, 'data'))
+            flat_order = np.argsort(self._flatten(self.roots, 'data'))
             if subarray_type == 'data':
-                morph_array = morph_array[order]
+                morphed_array = morphed_array[flat_order]
             elif subarray_type == 'index':
-                morph_array = [morph_array[ord_idx] for ord_idx in order]
+                morphed_array = [
+                    morphed_array[order_idx] for order_idx in flat_order
+                ]
+        return morphed_array
 
-        return morph_array
-
-    @staticmethod
-    def transpose_subarray(array, subarray_type):
-        """Transpose array elements in a list.
-
-        Parameters
-        ----------
-        array : list of float or tuple, array_like
-            List of subarrays.
-        subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'``
-            for index arrays.
-
-        Returns
-        -------
-        list of float or tuple, array_like
-            List of transposed subarrays.
-
-        Raises
-        ------
-        ValueError
-            If `subarray_type` is neither ``'data'`` nor ``'index'``.
-
-        """
-        if subarray_type == 'data':
-            return [np.array(ell_block).T for ell_block in array]
-        if subarray_type == 'index':
-            return [list(map(list, zip(*ell_block))) for ell_block in array]
-        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
-
-    @staticmethod
-    def collapse_subarray(array, subarray_type):
-        """Collapse a natural structure array over equivalent spherical
-        orders while preserving array dimensions.
+    def _flatten(self, array, subarray_type, subarray_transpose=False):
+        """Flatten a natural structure array.
 
         Parameters
         ----------
         array : list of float or tuple, array_like
             Natural structure array.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'``
-            for index arrays.
+            Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
+        subarray_transpose : bool, optional
+            If `True` (default is `False`), each subarray is flattened
+            along the columns rather than rows by a transposition.
 
         Returns
         -------
-        list of float or tuple, array_like
-            List of collapsed subarrays along the spherical order axis.
+        float or tuple, array_like
+            Flat 1-d array.
 
         Raises
         ------
@@ -455,74 +417,18 @@ class SphericalArray:
             If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
+        if subarray_transpose:
+            array = self._transpose_subarray(array, subarray_type)
+
         if subarray_type == 'data':
-            return [
-                np.mean(ell_block, axis=0, keepdims=True)
-                for ell_block in array
-            ]
-        if subarray_type == 'index':
-            return [
-                [
-                    list(map(lambda tup: (tup[0], tup[-1]), ell_block[0]))
-                ]
-                for ell_block in array
-            ]
-        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
-
-    @staticmethod
-    def repeat_subarray(array, subarray_type, degrees=None):
-        """Repeat an array collapsed over equivalent spherical orders to
-        recover the natural structure array.
-
-        Parameters
-        ----------
-        array : list of float or tuple, array_like
-            Array collapsed over spherical orders.
-        subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'``
-            for index arrays.
-        degrees : list of int array_like or None
-            Spherical degrees for which equivalent spherical order arrays
-            are repeated (default is `None`).  If it is `None`, the degrees
-            are inferred from the length of `array` assuming the first
-            degree is 0.
-
-        Returns
-        -------
-        list of float or tuple, array_like
-            Uncollapsed natural structure array.
-
-        Raises
-        ------
-        ValueError
-            If `subarray_type` is neither ``'data'`` nor ``'index'``.
-        ValueError
-            If length of `array` disagrees with input `degrees`.
-
-        """
-        if degrees is None:
-            degrees = np.arange(len(array))
-        elif len(degrees) != len(array):
-            raise ValueError(
-                "Lengths of `degrees` and `array` disagree: "
-                f"{len(degrees)} and {len(array)}. "
+            return np.concatenate(
+                [np.array(array_block).flatten() for array_block in array]
             )
-
-        if subarray_type == 'data':
-            return [
-                np.repeat(np.atleast_2d(line), 2*ell+1, axis=0)
-                for line, ell in zip(array, degrees)
-            ]
         if subarray_type == 'index':
             return [
-                [
-                    list(map(lambda tup: (tup[0], m, tup[-1]), lineblock[0]))
-                    for m in range(-ell, ell+1)
-                ]
-                for lineblock, ell in zip(array, degrees)
+                entry for block in array for line in block for entry in line
             ]
-
-        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
+        raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
 
     @staticmethod
     def _alias(structure_name):
@@ -541,26 +447,31 @@ class SphericalArray:
         """
         if structure_name == 'natural':
             return 'lmn'
+        if structure_name == 'transposed':
+            return 'lnm'
+        if structure_name == 'spectral':
+            return 'k'
+        if structure_name == 'root':
+            return 'ln'
+        if structure_name == 'scale':
+            return 'u'
         return structure_name
 
-    def _flatten(self, array, subarray_type, subarray_transpose=False):
-        """Flatten a natural structure array.
+    @staticmethod
+    def _transpose_subarray(array, subarray_type):
+        """Transpose array elements in a list.
 
         Parameters
         ----------
         array : list of float or tuple, array_like
-            Natural structure array.
+            Array of uncollapsed subarrays.
         subarray_type : {'data', 'index'}
-            Subarray type, either ``'data'`` for data arrays or ``'index'``
-            for index arrays.
-        subarray_transpose : bool, optional
-            If `True` (default is `False`), each subarray is flattened
-            along the columns rather than rows by a transposition.
+            Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
 
         Returns
         -------
-        float or tuple, array_like
-            Flat 1-d array.
+        list of float or tuple, array_like
+            Array of transposed subarrays.
 
         Raises
         ------
@@ -568,15 +479,105 @@ class SphericalArray:
             If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
-        if subarray_transpose:
-            array = self.transpose_subarray(array, subarray_type)
-
         if subarray_type == 'data':
-            return np.concatenate(
-                [np.array(array_block).flatten() for array_block in array]
-            )
+            return [np.array(ell_block).T for ell_block in array]
+        if subarray_type == 'index':
+            return [list(map(list, zip(*ell_block))) for ell_block in array]
+        raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
+
+    @staticmethod
+    def _collapse_subarray(array, subarray_type):
+        """Collapse a natural structure array over equivalent spherical
+        orders while preserving array dimensions.
+
+        Parameters
+        ----------
+        array : list of float or tuple, array_like
+            Natural structure array.
+        subarray_type : {'data', 'index'}
+            Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
+
+        Returns
+        -------
+        list of float or tuple, array_like
+            Array of collapsed subarrays.
+
+        Raises
+        ------
+        ValueError
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
+
+        """
+        if subarray_type == 'data':
+            return [
+                np.mean(ell_block, axis=0, keepdims=True)
+                for ell_block in array
+            ]
         if subarray_type == 'index':
             return [
-                entry for block in array for line in block for entry in line
+                [
+                    list(
+                        map(lambda index: (index[0], index[-1]), ell_block[0])
+                    )
+                ]
+                for ell_block in array
             ]
-        raise ValueError(f"Invalid `subarray_type`: {subarray_type}. ")
+        raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
+
+    @staticmethod
+    def _repeat_subarray(array, subarray_type, degrees=None):
+        """Repeat an array collapsed over equivalent spherical orders to
+        recover the natural structure array.
+
+        Parameters
+        ----------
+        array : list of float or tuple, array_like
+            Array of collapsed subarrays.
+        subarray_type : {'data', 'index'}
+            Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
+        degrees : list of int array_like or None
+            Spherical degrees correponding to the subarrays to be repeated
+            (default is `None`).  If `None`, this is inferred from the
+            `array` length assuming the lowest degree is 0.
+
+        Returns
+        -------
+        list of float or tuple, array_like
+            Natural structure array.
+
+        Raises
+        ------
+        ValueError
+            If `subarray_type` is neither ``'data'`` nor ``'index'``.
+        ValueError
+            If length of `array` disagrees with input `degrees`.
+
+        """
+        if degrees is None:
+            degrees = np.arange(len(array))
+        elif len(degrees) != len(array):
+            raise ValueError(
+                "`degrees` and `array` lengths differ: {} and {}. "
+                .format(len(degrees), len(array))
+            )
+
+        if subarray_type == 'data':
+            return [
+                np.repeat(np.atleast_2d(line), 2*ell+1, axis=0)
+                for line, ell in zip(array, degrees)
+            ]
+        if subarray_type == 'index':
+            new_array = []
+            for lineblock, ell in zip(array, degrees):
+                block = [
+                    list(
+                        map(
+                            lambda index: (index[0], m, index[-1]),
+                            lineblock[0]
+                        )
+                    )
+                    for m in range(-ell, ell+1)
+                ]
+                new_array.append(block)
+            return new_array
+        raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")

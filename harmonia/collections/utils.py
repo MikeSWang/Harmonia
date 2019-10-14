@@ -623,70 +623,88 @@ def covar_to_corr(cov):
 
 
 def binary_search(func, a, b, maxnum=None, precision=1.e-5):
-    """Binary seach for all roots of a function in an interval.
+    """Binary seach for all roots of a function in a real interval.
 
     Parameters
     ----------
     func : callable
         Function whose zeros are to be found.
     a, b : float
-        Interval end points.
+        Interval end points, ``a < b``.
     maxnum : int or None, optional
         Maximum number of roots needed from below (default is `None`).
-        If `None`, this is set to ``numpy.iinfo(np.int64).max``.
-    precision : float
-        Precision required (default is 1.0e-5).
+        If `None`, this is set to a very large integer
+        ``numpy.iinfo(np.int64).max``.
+    precision : float, optional
+        Desired precision of the root(s) (default is 1.0e-5).
 
     Returns
     -------
-    roots : float array_like or None
+    roots : array_like or None
         Possible roots.
+
+    Raises
+    ------
+    ValueError
+        If the initial interval covers only one point (``a == b``).
 
     """
     if maxnum is None:
         maxnum = MAX_INT
 
+    if a == b:
+        raise ValueError(
+            f"Initial interval covers only one point: [{a}, {b}]. "
+        )
+    if a > b:
+        a, b = b, a
+        warnings.warn(
+            f"Initial interval [{a}, {b}] reordered to [{b}, {a}]. ",
+            RuntimeWarning
+        )
+
     def _scan_interval(func, a, b, dx):
-        """Scan interval from lower end to detect sign change.
+        """Scan an interval from the lower end to detect sign changes.
 
         Parameters
         ----------
         func : callable
-            Function whose sign change interval is to be found.
+            Function whose sign-change interval is to be found.
         a, b: float
-            Starting interval end points.
+            Initial interval end points, ``a < b``.
         dx : float
-            Increment from lower end point.
+            Increment from the interval lower end, ``dx > 0``.
 
         Returns
         -------
-        x0, x1 : float or None
-            End points for an interval with sign change (`None` if the
-            result is null).
+        x_low, x_high : float or None
+            End points for a sign-change interval, ``x_low < x_high``.
+            `None` if the result is null.
 
         """
-        x0, x1 = a, a + dx
-        f0, f1 = func(x0), func(x1)
-        while f0 * f1 >= 0:
-            if x0 >= b:  # terminate when interval exhausted
+        x_low, x_high = a, a + dx
+
+        f_low, f_high = func(x_low), func(x_high)
+        while f_low * f_high >= 0:
+            if x_low >= b:
                 return None, None
-            x0, x1 = x1, x1 + dx
-            f0, f1 = f1, func(x1)
+            x_low, x_high = x_high, x_high + dx
+            f_low, f_high = f_high, func(x_high)
 
-        return x0, x1
+        return x_low, x_high
 
-    def _find_root(func, x0, x1, convergence=1.e-9):
+    def _find_root(func, x_low, x_high, convergence=1.e-9):
         """Bisection method for root finding.
 
         Parameters
         ----------
         func : callable
             Function whose zero bracket is to be found.
-        x0, x1: float
-            Starting interval end points.
+        x_low, x_high: float
+            Initial interval end points.
         convergence : float, optional
-            Precision control for convergence through maximum iteration
-            number (default is 1.0e-9).
+            Convergence precision for setting maximum iteration number
+            (default is 1.0e-9).
 
         Returns
         -------
@@ -694,47 +712,40 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
             Single possible root.
 
         """
-        # Simple checks.
-        f0, f1 = func(x0), func(x1)
-        if f0 == 0:
-            return x0
-        if f1 == 0:
-            return x1
-        if f0 * f1 > 0:
+        f_low, f_high = func(x_low), func(x_high)
+        if f_low == 0:
+            return x_low
+        if f_high == 0:
+            return x_high
+        if f_low * f_high > 0:
             warnings.warn("Root is not bracketed. ", RuntimeWarning)
             return None
 
-        # Determine maximum iteration given convergence precision.
-        niter = int(
-            np.ceil(
-                np.log(np.abs(x1 - x0) / convergence) / np.log(2.0)
-            )
-        )
+        maxiter = int(np.log((x_high - x_low)/convergence) / np.log(2) + 1)
+        for _ in range(maxiter):
+            x_middle = (x_low + x_high) / 2
+            f_middle = func(x_middle)
+            if f_middle == 0:
+                return x_middle
+            if f_high * f_middle < 0:
+                x_low = x_middle
+                f_low = f_middle
+            else:
+                x_high = x_middle
+                f_high = f_middle
 
-        for _ in range(niter):
-            x2 = (x0 + x1) / 2
-            f2 = func(x2)
-            if f2 == 0:  # root found
-                return x2
-            if f1 * f2 < 0:  # sign change, move lower end point
-                x0 = x2
-                f0 = f2
-            else:  # no sign change, move upper end point
-                x1 = x2
-                f1 = f2
-
-        return (x0 + x1) / 2
+        return (x_low + x_high) / 2
 
     roots = []
     while len(roots) < maxnum:
-        x0, x1 = _scan_interval(func, a, b, precision)
-        if x0 is not None:  # valid sign change interval
-            root = _find_root(func, x0, x1)
+        x_low, x_high = _scan_interval(func, a, b, precision)
+        if x_low is not None:
+            root = _find_root(func, x_low, x_high)
             if root is not None:
-                roots.append(round(root, -int(np.log10(precision))))
-            a = x1  # reset interval for next root
-        else:  # no more sign change interval, terminate
-            return np.array(roots)
+                roots.append(round(root, int(-np.log10(precision))))
+            a = x_high
+        else:
+            break
 
     return np.array(roots, dtype=float)
 

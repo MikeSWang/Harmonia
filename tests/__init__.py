@@ -13,11 +13,11 @@ def import_test_package():
     sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 
-def mathematica_query(message):
-    """Print our strings to be used as Mathematica/WolframAlpha queries.
+def display_mathematica_query(message):
+    """Print strings to be used as Mathematica/WolframAlpha queries.
 
     """
-    print("Mathematica query: \n{}\n".format(message))
+    print("Query: \n{}\n".format(message))
 
 
 class NamedFunction:

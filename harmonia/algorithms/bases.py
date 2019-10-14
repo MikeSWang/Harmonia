@@ -1,14 +1,14 @@
 """
-Fourier basis (:mod:`~harmonia.algorithms.bases`)
+Fourier bases (:mod:`~harmonia.algorithms.bases`)
 ===========================================================================
 
-Evaluate quantities related to Fourier basis functions.
+Evaluate Fourier bases and derived functions.
 
 Spherical function evaluation relies on :func:`scipy.special.sph_harm`,
 :func:`scipy.special.spherical_jn` and :func:`mpmath.besseljzero`.  Note
 that argument ordering and data-types may differ in this implementation.
 
-**Spherical basis**
+**Spherical basis functions**
 
 .. autosummary::
 
@@ -27,39 +27,41 @@ from harmonia.collections.utils import binary_search
 
 
 def spherical_harmonic(ell, m, theta, phi):
-    r"""Spherical harmonic function :math:`Y_{\ell m}(\theta, \phi)` of
-    degree :math:`\ell \geqslant 0` and order :math:`-\ell \leqslant m
-    \leqslant \ell`, where the polar angle :math:`\theta \in [0, \pi]` and
-    the azimuthal angle :math:`\phi \in [0, 2\pi]`.
+    r"""Evaluate the spherical harmonic function
+    :math:`Y_{\ell m}(\theta, \phi)` of degree :math:`\ell \geqslant 0` and
+    order :math:`-\ell \leqslant m \leqslant \ell`, where the polar angle
+    :math:`\theta \in [0, \pi]` and the azimuthal angle :math:`\phi \in
+    [0, 2\pi]`.
 
     Parameters
     ----------
     ell : int, array_like
-        Degree of the spherical harmonic function.
+        Degree of the spherical harmonic function ``ell >= 0``.
     m : int, array_like
-        Order of the spherical harmonic function.
+        Order of the spherical harmonic function ``|m| <= ell``.
     theta : float, array_like
-        Polar angle.
+        Polar angle in ``[0, pi]``.
     phi: float, array_like
-        Azimuthal angle.
+        Azimuthal angle in ``[0, 2*pi]``.
 
     Returns
     -------
     complex, array_like
-        Function value.
+        Function value of :math:`Y_{\ell m}`.
 
     """
     return sph_harm(m, ell, phi, theta)
 
 
 def spherical_besselj(ell, x, derivative=False):
-    r"""Spherical Bessel function of the first kind :math:`j_{\ell}(x)`, or
-    its derivative :math:`j'_{\ell}(x)`, of order :math:`\ell \geqslant 0`.
+    r"""Evaluate the spherical Bessel function of the first kind
+    :math:`j_{\ell}(x)` of order :math:`\ell \geqslant 0` or its derivative
+    :math:`j'_{\ell}(x)`, .
 
     Parameters
     ----------
     ell : int, array_like
-        Order of the spherical harmonic function.
+        Order of the spherical harmonic function ``ell >= 0``.
     x : float, array_like
         Function argument.
     derivative : bool, optional
@@ -87,15 +89,16 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
     where :math:`J_\ell(x)` is the Bessel funcion of the first kind.
 
     Solving for roots of the derivative function :math:`j'_\ell(x)` employs
-    the bisection method, with the initial interval ansatz :math:`\ell + 1
-    \leqslant x \leqslant n_\mathrm{max} \operatorname{max}\{4, \ell\}`.
+    the interval bisection method, with the initial interval ansatz
+    :math:`\ell + 1 \leqslant x \leqslant n_\mathrm{max} \operatorname{max}
+    \{4, \ell\}`.
 
     Parameters
     ----------
     ell : int
-        Order of the spherical Bessel function.
+        Order of the spherical Bessel function ``ell >= 0``.
     nmax : int
-        Maximal number of positive zeros to be found.
+        Maximal number of positive zeros to be found ``nmax >= 1``.
     only : bool, optional
         If `True` (default), return the `nmax`-th root only.
     derivative : bool, optional

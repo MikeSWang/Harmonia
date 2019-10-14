@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import mathematica_query as query
+from . import display_mathematica_query as show_query
 from harmonia.algorithms.bases import (
     spherical_besselj,
     spherical_besselj_root,
@@ -19,17 +19,17 @@ TEST_PARAMS = dict(
 
 def test_spherical_besselj():
 
-    query(f"SphericalBesselJ[{TEST_PARAMS['ell']}, {TEST_PARAMS['x']}]")
+    show_query(f"SphericalBesselJ[{TEST_PARAMS['ell']}, {TEST_PARAMS['x']}]")
     assert np.isclose(
         spherical_besselj(
             TEST_PARAMS['ell'],
             TEST_PARAMS['x'],
-            derivative=False,
+            derivative=False
         ),
-        -0.0555345116,
+        -0.0555345116
     )
 
-    query(
+    show_query(
         f"ReplaceAll[D[SphericalBesselJ[{TEST_PARAMS['ell']}, z], z], "
         f"{{z -> {TEST_PARAMS['x']}}}]"
     )
@@ -37,39 +37,39 @@ def test_spherical_besselj():
         spherical_besselj(
             TEST_PARAMS['ell'],
             TEST_PARAMS['x'],
-            derivative=True,
+            derivative=True
         ),
-        -0.0722685781,
+        -0.0722685781
     )
 
 
 def test_spherical_besselj_root():
 
-    query(f"SphericalBesselJ[{TEST_PARAMS['ell']}, x] == 0")
+    show_query(f"SphericalBesselJ[{TEST_PARAMS['ell']}, x] == 0")
     assert np.isclose(
         spherical_besselj_root(
             TEST_PARAMS['ell'],
             TEST_PARAMS['nmax'],
             only=True,
-            derivative=False,
+            derivative=False
         ),
-        16.3547096394,
+        16.3547096394
     )
     assert np.allclose(
         spherical_besselj_root(
             TEST_PARAMS['ell'],
             TEST_PARAMS['nmax'],
             only=False,
-            derivative=False,
+            derivative=False
         ),
         [
             9.3558121110,
             12.9665301728,
             16.3547096394,
-        ],
+        ]
     )
 
-    query(f"D[SphericalBesselJ[{TEST_PARAMS['ell']}, x], x] == 0")
+    show_query(f"D[SphericalBesselJ[{TEST_PARAMS['ell']}, x], x] == 0")
     assert np.isclose(
         spherical_besselj_root(
             TEST_PARAMS['ell'],
@@ -95,7 +95,7 @@ def test_spherical_besselj_root():
 
 
 def test_spherical_harmonic():
-    query(
+    show_query(
         f"SphericalHarmonicY[{TEST_PARAMS['ell']}, {TEST_PARAMS['m']}, "
         f"{TEST_PARAMS['theta']}, {TEST_PARAMS['phi']}]"
     )

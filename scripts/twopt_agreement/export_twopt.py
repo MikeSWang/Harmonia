@@ -100,15 +100,15 @@ def process_data(collate_data=False, load_data=False, load_model=False,
         data = aggregate_data(output)
 
         save_str = "".join(_.split("(")[-1].split(")")[:-1]) + f"*{count}"
-        confirm_dir(collate_path)
+        assert confirm_dir(collate_path)
         if _SAVE == 'full':
             save_name = f"{DATA_NAME_ROOT}-({save_str})-all.npy"
             assert overwrite_protection(collate_path, save_name)
-            np.save(collate_path+save_name, output)
+            np.save(collate_path + save_name, output)
         elif _SAVE == 'agg':
             save_name = f"{DATA_NAME_ROOT}-({save_str})-agg.npy"
             assert overwrite_protection(collate_path, save_name)
-            np.save(collate_path+save_name, data)
+            np.save(collate_path + save_name, data)
 
     if load_data:
         results = np.load(

@@ -96,14 +96,15 @@ class DiscreteSpectrum:
     _logger = logging.getLogger("DiscreteSpectrum")
 
     def __init__(self, radius, condition, cutoff, maxdeg=None, cuton=0.,
-                 mindeg=0):
+                 mindeg=0, comm=None):
 
         condition = self._alias(condition)
-
         discretise_args = (radius, condition, cuton, cutoff, mindeg, maxdeg)
 
         self.degrees, self.depths, self.roots, self.mode_count = \
-            self._discretise(*discretise_args, logger=self._logger)
+            self._discretise(*discretise_args, logger=self._logger, comm=comm)
+
+        self.comm = comm
 
         self.attrs = {
             'min_wavenumber': cuton,
@@ -117,12 +118,13 @@ class DiscreteSpectrum:
         self._root_indices = None
         self._normalisations = None
 
-        self._logger.info(
-            "%s computed: %d degrees and %d modes in total. ",
-            self.__str__(),
-            len(self.degrees),
-            self.mode_count,
-        )
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info(
+                "%s computed: %d degrees and %d modes in total. ",
+                self.__str__(),
+                len(self.degrees),
+                self.mode_count,
+            )
 
     def __str__(self):
 
@@ -150,7 +152,9 @@ class DiscreteSpectrum:
             ell : self.roots[ell] / self.attrs['boundary_radius']
             for ell in self.degrees
         }
-        self._logger.info("Spectral wavenumbers computed. ")
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Spectral wavenumbers computed. ")
 
         return self._wavenumbers
 
@@ -171,7 +175,9 @@ class DiscreteSpectrum:
             ell: [(ell, n) for n in range(1, nmax+1)]
             for ell, nmax in zip(self.degrees, self.depths)
         }
-        self._logger.info("Spectral root indices compiled. ")
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Spectral root indices compiled. ")
 
         return self._root_indices
 
@@ -189,28 +195,29 @@ class DiscreteSpectrum:
             return self._normalisations
 
         radius = self.attrs['boundary_radius']
-        condition = self.attrs['boundary_condition']
 
-        if condition == 'dirichlet':
+        if self.attrs['boundary_condition'] == 'dirichlet':
             self._normalisations = {
                 ell: 2 / radius**3 \
                     / spherical_besselj(ell+1, self.roots[ell])**2
                 for ell in self.degrees
             }
-        elif condition == 'neumann':
+        elif self.attrs['boundary_condition'] == 'neumann':
             self._normalisations = {
                 ell: 2 / radius**3 \
                     / spherical_besselj(ell, self.roots[ell])**2 \
                     / (1 - ell * (ell+1) / np.square(self.roots[ell]))
                 for ell in self.degrees
             }
-        self._logger.info("Spectral normalisations computed. ")
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Spectral normalisations computed. ")
 
         return self._normalisations
 
     @staticmethod
     def _discretise(radius, condition, kmin, kmax, ellmin, ellmax,
-                    logger=None):
+                    logger=None, comm=None):
         """
         Parameters
         ----------
@@ -222,8 +229,6 @@ class DiscreteSpectrum:
             Minimum and maximum wavenumbers.
         ellmin, ellmax : int or None
             Minimum and maximum spherical degrees.
-        logger : :class:`logging.Logger` or None, optional
-            Runtime logger (default is `None`).
 
         Returns
         -------
@@ -239,15 +244,16 @@ class DiscreteSpectrum:
             multiplicities.
 
         """
-        derivative = (condition == 'neumann')
+        to_log = (logger is not None) and (comm is None or comm.rank == 0)
 
-        degrees, depths, roots = [], [], {}
+        derivative = (condition == 'neumann') and (condition != 'dirichlet')
 
         ell, mode_count = ellmin, 0
+        degrees, depths, roots = [], [], {}
         while True:
             if ellmax is not None:
                 if ell > ellmax:
-                    if logger:
+                    if to_log:
                         logger.debug("Maximum degree reached. ")
                     break
 
@@ -267,7 +273,7 @@ class DiscreteSpectrum:
                 )
 
             if n_ell == 0:
-                if logger:
+                if to_log:
                     logger.debug("No more modes. Last degree is %d. ", ell)
                 break
             else:
@@ -276,7 +282,7 @@ class DiscreteSpectrum:
                 roots[ell] = np.array(u_ell)
                 mode_count += (2*ell + 1) * n_ell
 
-                if logger:
+                if to_log:
                     logger.debug("Roots for degree %d appended. ", ell)
                 ell += 1
 

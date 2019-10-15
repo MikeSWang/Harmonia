@@ -54,13 +54,15 @@ class RandomCatalogue(UniformCatalog):
 
     _logger = logging.getLogger('RandomCatalogue')
 
-    def __init__(self, mean_density, boxsize, seed=None):
+    def __init__(self, mean_density, boxsize, seed=None, comm=None):
 
-        UniformCatalog.__init__(self, mean_density, boxsize, seed=seed)
+        UniformCatalog.__init__(self,
+            mean_density, boxsize, seed=seed, comm=comm)
 
         self.attrs['nbar'] = mean_density
 
-        self._logger.debug("%s generated. ", self.__str__())
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.debug("%s generated. ", self.__str__())
 
     def __str__(self):
 
@@ -101,19 +103,21 @@ class NBKCatalogue(LogNormalCatalog):
     _logger = logging.getLogger('LognormalCatalogue')
 
     def __init__(self, power_spectrum, mean_density, boxsize, num_mesh,
-                 bias=2., add_RSD=False, seed=None):
+                 bias=2., add_RSD=False, seed=None, comm=None):
 
         ini_args = (power_spectrum, mean_density, boxsize, num_mesh)
 
-        super().__init__(*ini_args, bias=bias, seed=seed)
+        super().__init__(*ini_args, bias=bias, seed=seed, comm=comm)
 
         self.attrs['RSD_flag'] = add_RSD
-        self._logger.info("%s generated. ", self.__str__())
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("%s generated. ", self.__str__())
 
         if add_RSD:
             self['Position'] += self['VelocityOffset'] \
                 * normalise_vector(self['Position'])
-            self._logger.info("RSDs added to radial particle positions. ")
+            if self.comm is None or self.comm.rank == 0:
+                self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
 
@@ -237,7 +241,8 @@ class LogNormalCatalogue(CatalogSource):
 
         super().__init__(comm=comm)
 
-        self._logger.info("%s generated. ", self.__str__())
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("%s generated. ", self.__str__())
 
         self['Position'] += [boxsize/2] * 3
 
@@ -249,7 +254,8 @@ class LogNormalCatalogue(CatalogSource):
             else:
                 self['Position'] += self['VelocityOffset'] \
                     * normalise_vector(self['Position'])
-            self._logger.info("RSDs added to radial particle positions. ")
+            if self.comm is None or self.comm.rank == 0:
+                self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
 
@@ -393,7 +399,8 @@ class GaussianCatalogue(CatalogSource):
 
         super().__init__(comm=comm)
 
-        self._logger.info("%s generated. ", self.__str__())
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("%s generated. ", self.__str__())
 
         self['Position'] += [boxsize/2] * 3
 
@@ -405,7 +412,8 @@ class GaussianCatalogue(CatalogSource):
             else:
                 self['Position'] += self['VelocityOffset'] \
                     * normalise_vector(self['Position'])
-            self._logger.info("RSDs added to radial particle positions. ")
+            if comm is None or comm.rank == 0:
+                self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
 

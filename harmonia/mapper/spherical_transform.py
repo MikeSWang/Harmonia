@@ -426,17 +426,17 @@ class SphericalMap:
 
         """
         sorted_degrees = np.sort(list(n_coeff.keys()))
-        fill = [
-            n_coeff[ell] - nbar_coeff[ell]
-            for ell in sorted_degrees
-        ]
+
+        fill = [n_coeff[ell] - nbar_coeff[ell] for ell in sorted_degrees]
 
         delta_ellmn = SphericalArray.build(disc=disc, filling=fill)
 
-        delta_ellmn_flat = delta_ellmn.unfold(
-            pivot,
-            collapse=order_collapse,
-            return_only='data'
-        )
+        if order_collapse:
+            collapse = 'rms'
+        else:
+            collapse = None
+
+        delta_ellmn_flat = \
+            delta_ellmn.unfold(pivot, collapse=collapse, return_only='data')
 
         return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))

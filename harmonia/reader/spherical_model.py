@@ -623,11 +623,11 @@ class Couplings:
 
         Returns
         -------
-        sequenced_couplings : dict of {tuple: |NestedDict|}
+        sequenced_couplings : dict of {tuple: |nested_dict|}
             Sequence of coupling coefficients over the first triplet index.
 
 
-        .. |NestedDict| replace::
+        .. |nested_dict| replace::
 
             dict of {int: :class:`numpy.ndarray`}
 
@@ -711,7 +711,7 @@ class TwoPointFunction(Couplings):
         Linear growth rate at the current epoch.
     non_gaussianity : float or None
         Local primordial non-Gaussianity.
-    matter_power_spectrum : |LinearPower|
+    matter_power_spectrum : |linear_power|
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/h).
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
@@ -719,7 +719,7 @@ class TwoPointFunction(Couplings):
         is invoked.
 
 
-    .. |LinearPower| replace::
+    .. |linear_power| replace::
 
          :class:`nbodykit.cosmology.power.linear.LinearPower`
 

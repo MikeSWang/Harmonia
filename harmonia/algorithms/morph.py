@@ -179,7 +179,7 @@ class SphericalArray:
 
         return cls(degrees, depths, filling=filling)
 
-    def unfold(self, axis_order, collapse=False, return_only=None):
+    def unfold(self, axis_order, collapse=None, return_only=None):
         r"""Flatten data and index arrays in the specified axis order,
         which corresponds to an array structure.
 
@@ -192,10 +192,11 @@ class SphericalArray:
         ----------
         axis_order : {'natural', 'transposed', 'spectral', 'root', 'scale'}
             Axis order for array flattening.
-        collapse : bool, optional
-            If `True` (default is `False`), the arrays are collapsed over
-            spherical orders before flattening.  This is overriden to
-            `True` if `axis_order` is ``'root'`` or ``'scale'``.
+        collapse : {'mean', 'rms', None}, optional
+            If ``'mean'`` or ``'rms'`` (default is `None`), the arrays are
+            collapsed over spherical orders by averaging or averaging in
+            square modulus before flattening.  If `None` but `axis_order`
+            is ``'root'`` or ``'scale'``, this is overriden to `mean`.
         return_only : {'data', 'index', None}, optional
             Only return the 'data' or 'index' array (default is `None`).
 
@@ -221,14 +222,20 @@ class SphericalArray:
 
         axis_order = self._alias(axis_order)
         if axis_order == 'ln':
-            axis_order, collapse = 'lmn', True
+            axis_order = 'lmn'
+            if collapse is None:
+                collapse = 'mean'
         if axis_order == 'u':
-            axis_order, collapse = 'k', True
+            axis_order = 'k'
+            if collapse is None:
+                collapse = 'mean'
 
         transpose = (axis_order == 'lnm')
         if collapse:
+            square = (collapse == 'rms')
             if not empty_flag:
-                dat_arr = self._collapse_subarray(dat_arr, 'data')
+                dat_arr = \
+                    self._collapse_subarray(dat_arr, 'data', square=square)
             idx_arr = self._collapse_subarray(idx_arr, 'index')
 
         index_flat =  \
@@ -449,7 +456,9 @@ class SphericalArray:
             return 'ln'
         if structure_name == 'scale':
             return 'u'
-        if structure_name not in ['lmn', 'lnm', 'ln', 'k', 'u']:
+        if structure_name in ['lmn', 'lnm', 'ln', 'k', 'u']:
+            return structure_name
+        else:
             raise ValueError(
                 f"Invalid `structure_name` value: {structure_name}. "
             )
@@ -483,7 +492,7 @@ class SphericalArray:
         raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
 
     @staticmethod
-    def _collapse_subarray(array, subarray_type):
+    def _collapse_subarray(array, subarray_type, square=False):
         """Collapse a natural structure array over equivalent spherical
         orders while preserving array dimensions.
 
@@ -493,6 +502,9 @@ class SphericalArray:
             Natural structure array.
         subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
+        square : bool, optional
+            If `True` (default is `False`), the collapsed data array values
+            are root mean square magnitudes.
 
         Returns
         -------
@@ -505,7 +517,18 @@ class SphericalArray:
             If `subarray_type` is neither ``'data'`` nor ``'index'``.
 
         """
-        if subarray_type == 'data':
+        if subarray_type == 'data' and square:
+            return [
+                np.sqrt(
+                    np.mean(
+                        np.square(np.abs(ell_block)),
+                        axis=0,
+                        keepdims=True
+                    )
+                )
+                for ell_block in array
+            ]
+        if subarray_type == 'data' and not square:
             return [
                 np.mean(ell_block, axis=0, keepdims=True)
                 for ell_block in array

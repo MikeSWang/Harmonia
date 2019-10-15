@@ -150,7 +150,7 @@ def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
 
 @pytest.mark.parametrize(
     'in_structure',
-    ['natural', 'lmn', 'lnm', 'ln', 'k', 'scale'],
+    ['natural', 'transposed', 'root', 'spectral', 'scale'],
 )
 def test_refold(spherical_array, in_structure):
     assert all(
@@ -181,7 +181,7 @@ def test_refold(spherical_array, in_structure):
     )
 
 
-@pytest.mark.parametrize('in_structure,out_structure', [('lnm', 'scale')])
+@pytest.mark.parametrize('in_structure,out_structure', [('lnm', 'u')])
 def test_morph(spherical_array, in_structure, out_structure):
 
     in_array, in_indices = spherical_array.unfold(axis_order=in_structure)

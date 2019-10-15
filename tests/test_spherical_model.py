@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from nbodykit.lab import cosmology
 
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.collections import unit_const
@@ -14,13 +13,6 @@ DISC_PARAMS = dict(
     maxdeg=None,
     mindeg=0,
 )
-
-COSMO_PARAMS = {
-    'nbar': 1e-3,
-    'bias': 2.,
-    'Plin': cosmology.LinearPower(cosmology.Planck15, redshift=0.),
-    'beta': 0.35,
-}
 
 TEST_PARAMS = {
     'ell': 2,
@@ -42,8 +34,10 @@ SURVEY_SPECS = {
 
 @pytest.mark.parametrize('coupling_type', ['angular', 'radial', 'RSD'])
 def test_Couplings(discrete_spectrum, coupling_type):
+
     couplings_partial = Couplings(discrete_spectrum)
     couplings_full = Couplings(discrete_spectrum, survey_specs=SURVEY_SPECS)
+
     partial_couplings_fixed_index = couplings_partial.couplings_fixed_index(
         mu=TEST_PARAMS['mu'],
         coupling_type=coupling_type
@@ -52,7 +46,8 @@ def test_Couplings(discrete_spectrum, coupling_type):
         mu=TEST_PARAMS['mu'],
         coupling_type=coupling_type
     )
+
     assert np.allclose(
         partial_couplings_fixed_index[TEST_PARAMS['ell']],
-        full_couplings_fixed_index[TEST_PARAMS['ell']],
+        full_couplings_fixed_index[TEST_PARAMS['ell']]
     )

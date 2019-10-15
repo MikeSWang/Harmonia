@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from recovery_rc import PATHOUT
 from view_power import view_spectrum
 from harmonia.collections import (
-    collate as collate_data,
+    collate_data_files as collate_data,
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,

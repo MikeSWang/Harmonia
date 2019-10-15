@@ -2,9 +2,9 @@ r"""
 Scale dependence (:mod:`~harmonia.cosmology.scale_dependence`)
 ===========================================================================
 
-Compute scale-dependent modifications due to local primordial
-non-Gausianity :math:`f_\textrm{NL}` at the current epoch, i.e. redshift
-:math:`z = 0`.
+Compute scale-dependent modifications to galaxy clustering at the current
+epoch, i.e. redshift :math:`z = 0`, due to local primordial non-Gausianity
+:math:`f_\textrm{NL}` .
 
 .. autosummary::
 
@@ -22,8 +22,8 @@ _SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S = 2998.
 
 
 def scale_dependent_bias(f_nl, b_const, cosmo):
-    r"""Scale-dependent bias for non-vanishing local primordial
-    non-Gaussianity :math:`f_\textrm{NL}`.
+    r"""Return scale-dependent bias as a function for non-vanishing local
+    primordial non-Gaussianity :math:`f_\textrm{NL}`.
 
     The constant bias :math:`b_1` is modified as
 
@@ -35,11 +35,11 @@ def scale_dependent_bias(f_nl, b_const, cosmo):
 
     .. math::
 
-        \alpha(k) = 3  \Bigg(\frac{H_0}{\mathrm{c}}\Bigg)^2
+        \alpha(k) = 3 \left( \frac{H_0}{\mathrm{c}} \right)^2
             \frac{\Omega_\textrm{m} \delta_\textrm{c}}{T(k)}
 
-    and the transfer function :math:`T(k)` is computed using ``CLASS`` by
-    ``nbodykit``.
+    and the transfer function :math:`T(k)` is computed by ``nbodykit``
+    with ``CLASS``.
 
     Parameters
     ----------

@@ -2,7 +2,7 @@
 Visual style (:mod:`~harmonia.collections.style`)
 ===========================================================================
 
-:mod:`matplotlib` stylesheet.
+:mod:`matplotlib` style sheet.
 
 """
 import os.path

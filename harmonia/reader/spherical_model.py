@@ -21,14 +21,15 @@ Kernels
 Coupling kernels are integrands without the coordinate Jacobian, which may
 include the following factors: radial selection :math:`\phi(r)`, weight
 :math:`w(r)` or its derivative, and angular mask
-:math:`M(\hat{\mathbf{r}})`; linear growth rate normalised to constant
-linear bias :math:`\beta(z) = f(z)/b_1(z)`, clustering evolution
-:math:`G(z) = b_1(z) D(z)` where :math:`D(z)` is the linear growth factor,
+:math:`M(\hat{\mathbf{r}})`; linear growth rate :math:`f(z)`, clustering
+evolution :math:`G(z) = b_1(z) D(z)` where :math:`b_1(z)` is the
+scale-independent linear bias and :math:`D(z)` is the linear growth factor,
 and the Alcock--Paczynski distortion
 
 .. math::
 
-    \gamma(z) = \frac{\mathrm{d}\tilde{r}(z)}{\mathrm{d}r(z)} \,,
+    \gamma(z) =
+        \frac{\operatorname{d}\!\tilde{r}(z)}{\operatorname{d}\!r(z)} \,,
 
 where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted
 from redshift rather than from the true comoving distance--redshift
@@ -46,17 +47,24 @@ RSD coupling kernels
 
 .. math::
 
-   Y_{\ell_\mu m_\mu}^*(\hat{\mathbf{r}}) M(\hat{\mathbf{r}})
-   Y_{\ell_\nu m_\nu}(\hat{\mathbf{r}}) \,, \\
-
-   \kappa_{\ell_\nu n_\nu} w(\tilde{r})
-   j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
-   j_{\ell_\nu}(k_{\ell_\nu n_\nu} r) G(z) \phi(r) \,, \\
-
-   \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
-   \frac{\mathrm{d}}{\mathrm{d}\tilde{r}}
-   \Big[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r}) \Big]
-   j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r) \gamma(z) f(z) G(z) \phi(r) \,,
+   \begin{align*}
+       M_{\mu\nu} &= \int \operatorname{d}\!\hat{\mathbf{r}}
+           Y_{\ell_\mu m_\mu}^*(\hat{\mathbf{r}})
+           M(\hat{\mathbf{r}})
+           Y_{\ell_\nu m_\nu}(\hat{\mathbf{r}}) \,, \\
+       \Phi_{\mu\nu} &= \int \operatorname{d}\!r r^2
+           \kappa_{\ell_\nu n_\nu} w(\tilde{r})
+           j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
+           j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
+           \frac{G(z)}{G(0)} \phi(r) \,, \\
+       \Upsilon_{\mu\nu} &= \int \operatorname{d}\!r r^2
+           \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
+           \frac{\operatorname{d}\!{d}}{\operatorname{d}\!\tilde{r}}
+           \left[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
+               \right]
+           j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
+           \gamma(z) \frac{f(z)}{f(0)} \frac{G(z)}{G(0)} \phi(r) \,,
+   \end{align*}
 
 over the spherical volume element, where :math:`k_{\ell n}` are the
 discrete wavenumbers.
@@ -84,13 +92,14 @@ and the shot noise part
 .. math::
 
     \left\langle \epsilon_\mu \epsilon_\nu \right\rangle =
-    \frac{1}{\bar{n}} M_{\mu\nu} \int \mathrm{d}r r^2 (w^2\phi)(r)
-    j_\mu(r) j_\nu(r) \,,
+        \frac{1}{\bar{n}} M_{\mu\nu} \int \operatorname{d}\!r r^2
+        (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
 
 where :math:`b_0(k)` is the scale-dependent modification of the constant
-linear bias :math:`b_1(z=0)` at the current epoch, :math:`M, \Phi,
-\Upsilon` are the angular, radial and RSD couplings and :math:`\kappa` the
-normalisation coefficients (see also
+linear bias :math:`b_1(z=0)` at the current epoch, :math:`f_0` the linear
+growth rate at the current epoch, :math:`M, \Phi, \Upsilon` are the
+angular, radial and RSD couplings and :math:`\kappa` the normalisation
+coefficients (see
 :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`), and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
@@ -130,10 +139,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
     mu, nu : tuple or list of int
         Coefficient triplet index.
     mask : callable or None, optional
-        Mask as a function of angular coordinates (default is `None`).  The
-        arguments must be in the following order and range:
-        :math:`0 \leqslant \theta \leqslant \pi`, :math:`0 \leqslant \phi
-        \leqslant 2\pi`.
+        Mask as a function of angular coordinates (default is `None`).
 
     Returns
     -------

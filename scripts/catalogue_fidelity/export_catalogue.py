@@ -7,7 +7,7 @@ from nbodykit import cosmology
 
 from fidelity_rc import PATHOUT
 from harmonia.collections import (
-    collate as collate_data,
+    collate_data_files as collate_data,
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,

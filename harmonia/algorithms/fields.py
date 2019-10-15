@@ -7,6 +7,11 @@ a cubic box, and perform biasing, threshold clipping, log-normal
 transformation and discrete Poisson sampling of fields with particle
 population.
 
+.. warning::
+
+    Experimental module in replacement of ``nbodykit`` catalogue makers.
+    Use with caution.
+
 **Generation**
 
 .. autosummary::

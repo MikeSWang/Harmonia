@@ -11,7 +11,13 @@ Make discrete catalogues from observed or simulated realisations.
     LogNormalCatalogue
     GaussianCatalogue
 
-|
+.. warning::
+
+    :class:`~harmonia.mapper.catalogue_maker.LogNormalCatalogue` and
+    :class:`~harmonia.mapper.catalogue_maker.GaussianCatalogue` are
+    experimental catalogue generators in replacement of
+    :class:`nbodykit.source.catalog.lognormal.LogNormalCatalog`.  Use
+    with caution.
 
 """
 import logging
@@ -29,6 +35,7 @@ from harmonia.algorithms.fields import (
 )
 from harmonia.collections.utils import normalise_vector
 
+MAX_INT = 4294967295
 
 class RandomCatalogue(UniformCatalog):
     """Uniform random catalogue of given mean particle number density and
@@ -37,7 +44,7 @@ class RandomCatalogue(UniformCatalog):
     Parameters
     ----------
     mean_density : float
-        Input mean particle number density (in cubic h/Mpc).
+        Desired mean particle number density (in cubic h/Mpc).
     boxsize : float, array_like
         Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
     seed : int or None, optional
@@ -48,11 +55,15 @@ class RandomCatalogue(UniformCatalog):
     _logger = logging.getLogger('RandomCatalogue')
 
     def __init__(self, mean_density, boxsize, seed=None):
+
         UniformCatalog.__init__(self, mean_density, boxsize, seed=seed)
+
         self.attrs['nbar'] = mean_density
+
         self._logger.debug("%s generated. ", self.__str__())
 
     def __str__(self):
+
         return "RandomCatalogue(nbar={0}, boxsize={1}, seed={2})".format(
             self.attrs['nbar'],
             self.attrs['BoxSize'],
@@ -62,21 +73,23 @@ class RandomCatalogue(UniformCatalog):
 
 class NBKCatalogue(LogNormalCatalog):
     """``nbodykit`` log-normal random catalogue of given linear power
-    spectrum with particle velocities predicted by the Zel'dovich
-    approximation.
+    spectrum with particle velocitie displacements predicted by the
+    Zel'dovich approximation.
 
     Parameters
     ----------
     power_spectrum : :class:`nbodykit.cosmology.power.linear.LinearPower`
-        Linear matter power spectrum with specified cosmology and redshift.
-    nbar : float
-        Input mean particle number density (lenght unit Mpc/h).
+        Desired linear matter power spectrum with specified cosmology and
+        redshift.
+    mean_density : float
+        Desired mean particle number density (in cubic h/Mpc).
     boxsize : float, array_like
-        Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
+        Catalogue box size (in Mpc/h) as a scalar or a triplet of scalars.
     num_mesh : int
-        Mesh grid number for FFT generation.
+        Mesh grid number per dimension for FFT generation.
     bias : float, optional
-        Particle bias relative to the matter distribution (default is 2.).
+        Desired particle bias relative to the matter distribution (default
+        is 2.).
     add_RSD : bool, optional
         If `True` (default is `False`), add appropriately normalised
         redshift-space velocity offset to particle positions.
@@ -91,6 +104,7 @@ class NBKCatalogue(LogNormalCatalog):
                  bias=2., add_RSD=False, seed=None):
 
         ini_args = (power_spectrum, mean_density, boxsize, num_mesh)
+
         super().__init__(*ini_args, bias=bias, seed=seed)
 
         self.attrs['RSD_flag'] = add_RSD
@@ -118,27 +132,28 @@ class NBKCatalogue(LogNormalCatalog):
 
 class LogNormalCatalogue(CatalogSource):
     """Log-normal random catalogue of given number density and power
-    spectrum with particle velocities predicted by the Zel'dovich
-    approximation.
+    spectrum with particle velocities fulfilling the continuity equation.
 
     Parameters
     ----------
     power_spectrum : callable
-        Linear matter power spectrum (in cubic Mpc/h).
+        Desired linear matter power spectrum (in cubic Mpc/h).
     mean_density : float
         Desired mean particle number density (in cubic h/Mpc).
     boxsize : float
         Catalogue box size per dimension (in Mpc/h).
     num_mesh : int
-        Mesh grid number per dimension.
+        Mesh grid number per dimension for FFT generation.
     bias : float, optional
-        Particle bias relative to the input power spectrum (default is 2.).
+        Desired particle bias relative to the matter distribution (default
+        is 2.).
     add_RSD : bool, optional
         If `True` (default is `False`), add appropriately normalised
         redshift-space velocity offset to particle positions.
     growth_rate : float or None, optional
-        If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
-        'redshift' attributes, then this cannot be `None` (default).
+        Linear growth rate.  Cannot be `None` (default) if `add_RSD` is
+        `True` and `Plin` does not have both 'cosmo' and 'redshift'
+        attributes.
     line_of_sight : array_like or None, optional
         Line-of-sight direction vector.  If `None` (default), this is set
         to the radial directions.
@@ -156,15 +171,16 @@ class LogNormalCatalogue(CatalogSource):
                  bias=2., add_RSD=False, growth_rate=None, line_of_sight=None,
                  seed=None, comm=None):
 
-        self.power_spectrum = power_spectrum
         self.comm = comm
         if seed is None:
             if self.comm.rank == 0:
-                seed = np.random.randint(0, 4294967295)
+                seed = np.random.randint(0, MAX_INT)
             seed = self.comm.bcast(seed)
 
+        self.power_spectrum = power_spectrum
         if hasattr(power_spectrum, 'attrs'):
             self.attrs.update(power_spectrum.attrs)
+
         self.attrs.update(
             {
                 'nbar': mean_density,
@@ -181,17 +197,16 @@ class LogNormalCatalogue(CatalogSource):
             cosmo = getattr(power_spectrum, 'cosmo', None)
             redshift = getattr(power_spectrum, 'redshift', None)
             growth_rate = cosmo.scale_independent_growth_rate(redshift)
-        elif add_RSD and (growth_rate is None):
+        elif growth_rate is None and add_RSD:
             raise ValueError(
                 "`growth_rate` cannot be None if `add_RSD` is True and "
-                "'cosmo' and 'redshift' attributes are absent "
-                "in `power_spectrum`. "
+                "`power_spectrum` does not have 'cosmo' and 'redshift' "
+                "attributes. "
             )
         elif not add_RSD:
             growth_rate = None
         self.attrs['growth_rate'] = growth_rate
 
-        # Generate fields.
         field_seed, sampling_seed, drift_seed = \
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
@@ -208,7 +223,7 @@ class LogNormalCatalogue(CatalogSource):
             mean_density,
             boxsize,
             seed=sampling_seed
-            )
+        )
         position, displacement = pop_field(
             sampled_field,
             mean_density,
@@ -217,29 +232,30 @@ class LogNormalCatalogue(CatalogSource):
             seed=drift_seed
         )
 
-        # Instantiate the base class.
         self._size = len(position)
         self._pos = position
+
         super().__init__(comm=comm)
+
         self._logger.info("%s generated. ", self.__str__())
 
         self['Position'] += [boxsize/2] * 3
 
         if add_RSD:
             self._vel_offset = growth_rate * displacement
-            if line_of_sight is None:  # radial distortion only
-                self['Position'] += self['VelocityOffset'] \
-                    * normalise_vector(self['Position'])
-            else:  # forced line-of-sight direction
+            if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \
                     * np.array(line_of_sight)
+            else:
+                self['Position'] += self['VelocityOffset'] \
+                    * normalise_vector(self['Position'])
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
 
         return (
             "LogNormalCatalogue"
-            "(nbar={0}, bias={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
         ).format(
             self.attrs['nbar'],
             self.attrs['bias'],
@@ -272,21 +288,23 @@ class GaussianCatalogue(CatalogSource):
     Parameters
     ----------
     power_spectrum : callable
-        Linear matter power spectrum (in cubic Mpc/h).
+        Desired linear matter power spectrum (in cubic Mpc/h).
     mean_density : float
         Desired mean particle number density (in cubic h/Mpc).
     boxsize : float
         Catalogue box size per dimension (in Mpc/h).
     num_mesh : int
-        Mesh grid number per dimension.
+        Mesh grid number per dimension for FFT generation.
     bias : float, optional
-        Particle bias relative to the input power spectrum (default is 2.).
+        Desired particle bias relative to the matter distribution (default
+        is 2.).
     add_RSD : bool, optional
         If `True` (default is `False`), add appropriately normalised
         redshift-space velocity offset to particle positions.
     growth_rate : float or None, optional
-        If `add_RSD` is `True` and `Plin` does not have both 'cosmo' and
-        'redshift' attributes, then this cannot be `None` (default).
+        Linear growth rate.  Cannot be `None` (default) if `add_RSD` is
+        `True` and `Plin` does not have both 'cosmo' and 'redshift'
+        attributes.
     line_of_sight : array_like or None, optional
         Line-of-sight direction vector.  If `None` (default), this is set
         to the radial directions.
@@ -309,15 +327,16 @@ class GaussianCatalogue(CatalogSource):
                  bias=2., add_RSD=False, growth_rate=None, line_of_sight=None,
                  seed=None, comm=None):
 
-        self.power_spectrum = power_spectrum
         self.comm = comm
         if seed is None:
             if self.comm.rank == 0:
-                seed = np.random.randint(0, 4294967295)
+                seed = np.random.randint(0, MAX_INT)
             seed = self.comm.bcast(seed)
 
+        self.power_spectrum = power_spectrum
         if hasattr(power_spectrum, 'attrs'):
             self.attrs.update(power_spectrum.attrs)
+
         self.attrs.update(
             {
                 'nbar': mean_density,
@@ -334,17 +353,16 @@ class GaussianCatalogue(CatalogSource):
             cosmo = getattr(power_spectrum, 'cosmo', None)
             redshift = getattr(power_spectrum, 'redshift', None)
             growth_rate = cosmo.scale_independent_growth_rate(redshift)
-        elif add_RSD and (growth_rate is None):
+        elif growth_rate is None and add_RSD:
             raise ValueError(
                 "`growth_rate` cannot be None if `add_RSD` is True and "
-                "'cosmo' and 'redshift' attributes are absent "
-                "in `power_spectrum`. "
+                "`power_spectrum` does not have 'cosmo' and 'redshift' "
+                "attributes. "
             )
         elif not add_RSD:
             growth_rate = None
         self.attrs['growth_rate'] = growth_rate
 
-        # Generate fields.
         field_seed, sampling_seed, drift_seed = \
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
@@ -370,29 +388,30 @@ class GaussianCatalogue(CatalogSource):
             seed=drift_seed
         )
 
-        # Initiate the base class.
         self._size = len(position)
         self._pos = position
+
         super().__init__(comm=comm)
+
         self._logger.info("%s generated. ", self.__str__())
 
         self['Position'] += [boxsize/2] * 3
 
         if add_RSD:
             self._vel_offset = growth_rate * displacement
-            if line_of_sight is None:  # radial distortion only
-                self['Position'] += self['VelocityOffset'] \
-                    * normalise_vector(self['Position'])
-            else:  # forced line-of-sight direction
+            if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \
                     * np.array(line_of_sight)
+            else:
+                self['Position'] += self['VelocityOffset'] \
+                    * normalise_vector(self['Position'])
             self._logger.info("RSDs added to radial particle positions. ")
 
     def __str__(self):
 
         return (
             "GaussianCatalogue"
-            "(nbar={0}, bias={1}, fRSD={2}, boxsize={3}, Nmesh={4}, seed={5})"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, Nmesh={4}, seed={5})"
         ).format(
             self.attrs['nbar'],
             self.attrs['bias'],

@@ -10,7 +10,7 @@ from agreement_rc import PATHIN, PATHOUT
 from view_twopt import view_covariance
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
-    collate,
+    collate_data_files as collate,
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,

@@ -274,11 +274,6 @@ class SphericalArray:
         array : list of tuple or float, array_like
             External array in natural structure.
 
-        Raises
-        ------
-        ValueError
-            If `structure` is not a valid structure name.
-
         """
         if subarray_type == 'index':
             return self.index_array
@@ -310,12 +305,10 @@ class SphericalArray:
                 array[ell_idx][n_idx] = entry
             array = \
                 self._repeat_subarray(array, 'data', degrees=self.degrees)
-        else:
-            raise ValueError(f"Invalid `structure` value: {structure}. ")
 
         return array
 
-    def morph(self, flat_array, in_structure, out_structure, subarray_type):
+    def morph(self, flat_array, in_struct, out_struct, subarray_type):
         """Morph a compatible external flat array flattened in one
         structure to another structure by returning it to the natural
         structure first.
@@ -324,19 +317,14 @@ class SphericalArray:
         ----------
         flat_array : array_like
             External flat array to be morphed.
-        in_structure : |structure_values|
+        in_struct : {'natural', 'transposed', 'spectral', 'root', 'scale'}
             Input structure.
-        out_structure : |structure_values|
+        out_struct : {'natural', 'transposed', 'spectral', 'root', 'scale'}
             Output structure.  If this is ``'spectral'`` or ``'scale'``,
             the morphed array is flattened; if this is ``'root'``, the
             morphed array is collapsed.
         subarray_type : {'data', 'index'}
             Subarray type, either ``'data'`` arrays or ``'index'`` arrays.
-
-
-        .. |structure_values| replace::
-
-            {'natural', 'transposed', 'spectral', 'root', 'scale'}
 
         Returns
         -------
@@ -344,24 +332,24 @@ class SphericalArray:
             Morphed array.
 
         """
-        in_structure = self._alias(in_structure)
-        out_structure = self._alias(out_structure)
+        in_struct = self._alias(in_struct)
+        out_struct = self._alias(out_struct)
 
-        nat_arr = self.refold(flat_array, in_structure, subarray_type)
+        nat_arr = self.refold(flat_array, in_struct, subarray_type)
 
-        if out_structure == 'lmn':
+        if out_struct == 'lmn':
             morphed_array = nat_arr
-        if out_structure == 'lnm':
+        if out_struct == 'lnm':
             morphed_array = self._transpose_subarray(
                 flat_array,
                 subarray_type=subarray_type
             )
-        if out_structure == 'ln':
+        if out_struct == 'ln':
             morphed_array = self._collapse_subarray(
                 flat_array,
                 subarray_type=subarray_type
             )
-        if out_structure == 'k':
+        if out_struct == 'k':
             morphed_array = self._flatten(nat_arr, subarray_type)
             flat_order = np.argsort(
                 self._flatten(
@@ -379,7 +367,7 @@ class SphericalArray:
                 morphed_array = [
                     morphed_array[order_idx] for order_idx in flat_order
                 ]
-        if out_structure == 'u':
+        if out_struct == 'u':
             morphed_array = self._flatten(
                 self._collapse_subarray(nat_arr, subarray_type),
                 subarray_type
@@ -391,6 +379,7 @@ class SphericalArray:
                 morphed_array = [
                     morphed_array[order_idx] for order_idx in flat_order
                 ]
+
         return morphed_array
 
     def _flatten(self, array, subarray_type, subarray_transpose=False):
@@ -444,6 +433,11 @@ class SphericalArray:
         str
             Equivalent array structure name.
 
+        Raises
+        ------
+        ValueError
+            If `structure_name` is not a valid structure name.
+
         """
         if structure_name == 'natural':
             return 'lmn'
@@ -455,7 +449,10 @@ class SphericalArray:
             return 'ln'
         if structure_name == 'scale':
             return 'u'
-        return structure_name
+        if structure_name not in ['lmn', 'lnm', 'ln', 'k', 'u']:
+            raise ValueError(
+                f"Invalid `structure_name` value: {structure_name}. "
+            )
 
     @staticmethod
     def _transpose_subarray(array, subarray_type):

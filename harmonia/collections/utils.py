@@ -13,7 +13,7 @@ System utilities
 
     confirm_directory_path
     get_filename
-    collate
+    collate_data_files
     overwrite_protection
 
 **Multi-processing**
@@ -31,7 +31,7 @@ System utilities
     clean_warning_format
     format_float
 
-**Data-type conversion**
+**Data type conversion**
 
 .. autosummary::
 
@@ -47,6 +47,7 @@ Computational utilities
 
     zero_const
     unit_const
+    const_function
     covar_to_corr
     binary_search
 
@@ -79,7 +80,7 @@ import numpy as np
 __all__ = [
     'confirm_directory_path',
     'get_filename',
-    'collate',
+    'collate_data_files',
     'overwrite_protection',
     'allocate_tasks',
     'allocate_segments',
@@ -108,7 +109,7 @@ MAX_INT = np.iinfo(np.int64).max
 # -----------------------------------------------------------------------------
 
 def confirm_directory_path(dir_path):
-    """Confirm directoy exists at given path.
+    """Ensure a given directoy path exists.
 
     Parameters
     ----------
@@ -129,7 +130,7 @@ def confirm_directory_path(dir_path):
 
 
 def get_filename(file_path):
-    """Return file name without directory path or file extension.
+    """Return file name without the directory path or file extension.
 
     Parameters
     ----------
@@ -145,7 +146,8 @@ def get_filename(file_path):
     return os.path.splitext(os.path.basename(file_path))[0]
 
 
-def collate(file_path_pattern, file_extension, headings=None, columns=None):
+def collate_data_files(file_path_pattern, file_extension, headings=None,
+                       columns=None):
     """Collate data files.
 
     For text files, the data is assumed to be stored as a column-major 2-d
@@ -162,7 +164,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
         Data column headings to be used as dictionary keys (default is
         `None`).
     columns : list of int or None, optional
-        Data column indices (zero-indexed)  corresponding to headings
+        Data column indices (zero-indexed) corresponding to headings
         (default is `None`).
 
     Returns
@@ -177,7 +179,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
     Raises
     ------
     NotImplementedError
-        If `file_extension` is not currently supported.
+        If `file_extension` is not supported.
     ValueError
         If `file_extension` is ``'txt'`` or ``'dat'``, but either
         `headings` or `columns` is `None`.
@@ -216,10 +218,12 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
             )
 
         collated_data = defaultdict(list)
-        for keyidx, key in enumerate(headings):
+        for key_idx, key in enumerate(headings):
             collated_data[key] = np.concatenate(
                 [
-                    np.atleast_2d(np.loadtxt(file, usecols=columns)[:, keyidx])
+                    np.atleast_2d(
+                        np.loadtxt(file, usecols=columns)[:, key_idx]
+                    )
                     for file in all_files
                 ],
                 axis=0
@@ -228,7 +232,7 @@ def collate(file_path_pattern, file_extension, headings=None, columns=None):
         return collated_data, collation_count, last_collated_file
 
     raise NotImplementedError(
-        f"File extension currently unsupported: {file_extension}. "
+        f"Unsupported file extension: {file_extension}. "
     )
 
 
@@ -278,19 +282,18 @@ def overwrite_protection(outpath, outname, save=True):
     return overwrite_permission
 
 
-def allocate_tasks(tot_task, tot_proc):
+def allocate_tasks(total_task, total_proc):
     """Allocate tasks to processes for parallel computation.
 
-    If `tot_proc` processes share `tot_task` tasks, then
-    :func:`allocate_tasks` decides the numbers of tasks, :const:`tasks`,
-    different processes receive: the rank-``i`` process receives
-    ``tasks[i]`` many tasks.
+    If `total_proc` processes share `total_task` tasks, then this decides
+    the numbers of tasks, `tasks`, different processes receive: the
+    rank-``i`` process receives ``tasks[i]`` many tasks.
 
     Parameters
     ----------
-    tot_task : int
+    total_task : int
         Total number of tasks.
-    tot_proc : int
+    total_proc : int
         Total number of processes.
 
     Returns
@@ -299,7 +302,7 @@ def allocate_tasks(tot_task, tot_proc):
         Number of tasks for each process.
 
     """
-    num_task_remaining, num_proc_remaining, tasks = tot_task, tot_proc, []
+    num_task_remaining, num_proc_remaining, tasks = total_task, total_proc, []
 
     while num_task_remaining > 0:
         num_task_assigned = num_task_remaining // num_proc_remaining
@@ -310,27 +313,27 @@ def allocate_tasks(tot_task, tot_proc):
     return tasks
 
 
-def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
+def allocate_segments(tasks=None, total_task=None, total_proc=None):
     """Allocate segments of tasks to each process by the number of tasks it
     receives and its rank.
 
     For instance, if the rank-``i`` process receives ``tasks[i]`` tasks
     (e.g. assigned by :func:`allocate_tasks`), then this function assigns a
-    slice of the indexed tasks it should receive, with the indices ordered
-    in ascension in correspondence with ranks of the processes.
+    slice of the indexed tasks it should receive, with the indices in
+    ascending order in correspondence with ranks of the processes.
 
     Parameters
     ----------
     tasks : list of int or None, optional
-        Number of tasks each process receives.  This cannot be `None` if
-        either `tot_task` or `tot_proc` is `None`.  If this is not `None`,
-        `tot_task` and `tot_proc` are both ignored.
-    tot_task : int or None, optional
-        Total number of tasks.  This is ignored if `tasks` is not `None`,
-        otherwise this cannot be `None`.
-    tot_proc : int or None, optional
-        Total number of processes.  This is ignored if `tasks` is not
-        `None`, otherwise this cannot be `None`.
+        Number of tasks each process receives.  Cannot be `None` if either
+        `total_task` or `total_proc` is `None`.  If not `None`,
+        `total_task` and `total_proc` are both ignored.
+    total_task : int or None, optional
+        Total number of tasks.  Ignored if `tasks` is not `None`, otherwise
+        cannot be `None`.
+    total_proc : int or None, optional
+        Total number of processes.  Ignored if `tasks` is not `None`,
+        otherwise cannot be `None`.
 
     Returns
     -------
@@ -346,19 +349,19 @@ def allocate_segments(tasks=None, tot_task=None, tot_proc=None):
 
     """
     if tasks is None:
-        if tot_task is None or tot_proc is None:
+        if total_task is None or total_proc is None:
             raise ValueError(
-                "`tot_task` and `tot_proc` cannot be None "
+                "`total_task` and `total_proc` cannot be None "
                 "while `tasks` is None. "
             )
-        tasks = allocate_tasks(tot_task, tot_proc)
-    if tot_proc is None:
-        tot_proc = len(tasks)
+        tasks = allocate_tasks(total_task, total_proc)
+    if total_proc is None:
+        total_proc = len(tasks)
 
     breakpoints = np.insert(np.cumsum(tasks), 0, values=0)
     segments = [
         slice(breakpoints[rank], breakpoints[rank+1])
-        for rank in range(tot_proc)
+        for rank in range(total_proc)
     ]
 
     return segments
@@ -369,12 +372,12 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     For each map to be applied, the input data array is scattered over the
     first axis for computation on difference process, and the computed
-    results are gathered in the exact structure of the input data array in
+    results are gathered in the exact structure of the input data array on
     the root process.
 
     Parameters
     ----------
-    data_array : list
+    data_array : array_like
         Data array.
     mapping : callable
         Mapping to be applied.
@@ -385,14 +388,13 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     Returns
     -------
-    out_data_arrays : array_like or None
-        Output data processed from `mapping`.  This is `None` for process
-        ranks other than `root`.
+    output_array : array_like or None
+        Output data processed from `mapping`.  `None` for process ranks
+        other than `root`.
 
     """
-    from harmonia.collections import allocate_segments
-
-    segments = allocate_segments(tot_task=len(data_array), tot_proc=comm.size)
+    segments = \
+        allocate_segments(total_task=len(data_array), total_proc=comm.size)
     data_chunk = data_array[segments[comm.rank]]
 
     output = [mapping(data_piece) for data_piece in data_chunk]
@@ -401,11 +403,11 @@ def mpi_compute(data_array, mapping, comm, root=0):
 
     output = comm.gather(output, root=root)
 
-    out_data_arrays = None
+    output_array = None
     if comm.rank == root:
-        out_data_arrays = np.concatenate(output, axis=0)
+        output_array = np.concatenate(output, axis=0)
 
-    return out_data_arrays
+    return output_array
 
 
 def clean_warning_format(message, category, filename, lineno, line=None):
@@ -452,8 +454,7 @@ def format_float(x, case):
         If `case` is not one of the supported formats.
 
     """
-    if not isinstance(x, float):
-        x = float(x)
+    x = float(x)
 
     if case.lower() == 'latex':
         x_str = "{:g}".format(x)
@@ -467,17 +468,14 @@ def format_float(x, case):
     elif case.lower() == 'decdot':
         x_str = "{:.1f}".format(x).rstrip("0")
     else:
-        raise ValueError(
-            f"Unknown case: {case}. "
-            "Supported formats are 'latex', 'sci', 'intdot', 'decdot' only. "
-        )
+        raise ValueError(f"Invalid `case` value: {case}. ")
 
     return x_str
 
 
 def sort_dict_to_list(dict_data):
-    """Sort a dictionary by its integer key values and return a list of its
-    values in ascending order by the keys.
+    """Sort a dictionary by its integer keys and return a list of its
+    values by keys in ascending order.
 
     Parameters
     ----------
@@ -487,7 +485,7 @@ def sort_dict_to_list(dict_data):
     Returns
     -------
     sorted_list : list of array_like
-        `dict_data` values sorted by `dict_data` keys.
+        `dict_data` values sorted by its keys.
 
     Raises
     ------
@@ -515,16 +513,16 @@ def sort_list_to_dict(list_data, int_keys):
 
     Parameters
     ----------
-    list_data : list
+    list_data : list of array_like
         Ordered list-like data.
-    int_keys : list of int, array_like
+    int_keys : list of int
         Integer keys in correpondence with the list index.
 
     Returns
     -------
     sorted_dict : dict
-        Dictionary with integer keys in correspondence with list index
-        of `list_data`.
+        Dictionary with integer keys in correspondence with `list_data`
+        indices.
 
     Raises
     ------
@@ -533,15 +531,13 @@ def sort_list_to_dict(list_data, int_keys):
 
     """
     if len(list_data) != len(int_keys):
-        raise ValueError(
-            "`list_data` and `int_keys` do not have the same length. "
-        )
+        raise ValueError("`list_data` and `int_keys` lengths do not match. ")
 
     order = np.argsort(int_keys)
 
     sorted_dict = {
-        int_keys[ord_idx]: list_data[ord_idx]
-        for ord_idx in order
+        int_keys[order_idx]: list_data[order_idx]
+        for order_idx in order
     }
 
     return sorted_dict
@@ -550,13 +546,13 @@ def sort_list_to_dict(list_data, int_keys):
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
 
-def zero_const(*args):
-    """Return constant 0.
+def zero_const(*args, **kwargs):
+    """Return constant 0 with arbitrary arguments.
 
     Parameters
     ----------
-    *args
-        Arbitrary parameters.
+    *args, **kwargs
+        Arbitrary arguments.
 
     Returns
     -------
@@ -567,13 +563,13 @@ def zero_const(*args):
     return 0.
 
 
-def unit_const(*args):
-    """Return constant 1.
+def unit_const(*args, **kwargs):
+    """Return constant 1 with arbitrary arguments.
 
     Parameters
     ----------
-    *args
-        Arbitrary parameters.
+    *args, **kwargs
+        Arbitrary arguments.
 
     Returns
     -------
@@ -585,7 +581,7 @@ def unit_const(*args):
 
 
 def const_function(const):
-    """Return a constant function.
+    """Return a constant function with arbitrary arguments.
 
     Parameters
     ----------
@@ -598,16 +594,19 @@ def const_function(const):
         Constant function.
 
     """
-    return lambda x: const
+    def const_func(*args, **kwargs):
+
+        return const
+
+    return const_func
 
 
-# TODO: Implement conversion for more genertic covariance matrices.
-def covar_to_corr(cov):
+def covar_to_corr(covar):
     """Convert a real-valued covariance matrix to a correlation matrix.
 
     Parameters
     ----------
-    cov : float, array_like
+    covar : float, array_like
         Covariance matrix.
 
     Returns
@@ -615,9 +614,19 @@ def covar_to_corr(cov):
     corr : float, array_like
         Correlation matrix.
 
+    Raises
+    ------
+    NotImplementedError
+        If `cov` data type is complex.
+
     """
-    inv_diag = np.diag(1 / np.sqrt(np.diag(cov)))
-    corr = inv_diag @ np.array(cov) @ inv_diag
+    if np.iscomplexobj(covar):
+        raise NotImplementedError(
+            "Complex covariance matrices are not supprted. "
+        )
+
+    inv_diag = np.diag(np.power(np.diag(covar), -1/2))
+    corr = inv_diag @ covar @ inv_diag
 
     return corr
 
@@ -633,14 +642,12 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
         Interval end points, ``a < b``.
     maxnum : int or None, optional
         Maximum number of roots needed from below (default is `None`).
-        If `None`, this is set to a very large integer
-        ``numpy.iinfo(np.int64).max``.
     precision : float, optional
         Desired precision of the root(s) (default is 1.0e-5).
 
     Returns
     -------
-    roots : array_like or None
+    roots : float :class:`numpy.ndarray` or None
         Possible roots.
 
     Raises
@@ -750,43 +757,49 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
     return np.array(roots, dtype=float)
 
 
-def normalise_vector(vec, axis=-1):
+def normalise_vector(vector, axis=-1):
     """Normalise vector arrays to unit vectors.
 
     Parameters
     ----------
-    vec : float, array_like
+    vector : float, array_like
         Vector to be normalised.
     axis : int
-        Axis over which the Euclidean 2-norm is taken (default is -1, i.e.
-        `vec` is assumed to be an array of row vectors).
+        Axis over which the Euclidean 2-norm is taken (default is -1).
 
     Returns
     -------
-    float, array_like
+    unit_vector : float :class:`numpy.ndarray`
         Unit vector.
 
     """
-    return vec / np.linalg.norm(vec, axis=axis, keepdims=True)
+    unit_vector = vector / np.linalg.norm(vector, axis=axis, keepdims=True)
+
+    return unit_vector
 
 
 def spherical_indicator(cartesian_position, bounding_radius):
-    """Indicate whether an object lies within a spherical domain.
+    """Indicate whether an object lies within the bounding radius of a
+    spherical domain.
 
     Parameters
     ----------
     cartesian_position : float, array_like
         Object position in Cartesian coordinates.
     bounding_radius : float
-        Radius of the bounding sphere.
+        Bounding radius of the spherical domain.
 
     Returns
     -------
-    bool, array_like
+    indication : bool :class:`numpy.ndarray`
         `True` if the object lies within the spherical domain.
 
     """
-    return np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
+    indication = (
+        np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
+    )
+
+    return indication
 
 
 def cartesian_to_spherical(cartesian_coords):
@@ -811,7 +824,7 @@ def cartesian_to_spherical(cartesian_coords):
 
     Returns
     -------
-    spherical_coords : float, array_like
+    spherical_coords : float :class:`numpy.ndarray`
         Spherical coordinates.
 
     Raises
@@ -829,10 +842,8 @@ def cartesian_to_spherical(cartesian_coords):
     spherical_coords = np.zeros(c_coords.shape)
     spherical_coords[:, 0] = np.linalg.norm(c_coords, axis=1)
     spherical_coords[:, 1] = np.arccos(c_coords[:, 2] / spherical_coords[:, 0])
-    spherical_coords[:, 2] = np.mod(
-        np.arctan2(c_coords[:, 1], c_coords[:, 0]),
-        2*np.pi
-    )
+    spherical_coords[:, 2] = \
+        np.mod(np.arctan2(c_coords[:, 1], c_coords[:, 0]), 2*np.pi)
 
     return spherical_coords
 
@@ -856,7 +867,7 @@ def spherical_to_cartesian(spherical_coords):
 
     Returns
     -------
-    cartesian_coords : float, array_like
+    cartesian_coords : float :class:`numpy.ndarray`
         Cartesian coordinates.
 
     Raises
@@ -897,7 +908,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
 
     Returns
     -------
-    edges : float, array_like
+    edges : float :class:`numpy.ndarray`
         Bin edges.
 
     """
@@ -920,9 +931,10 @@ def bin_edges_from_centres(centres, extremes, align='low'):
     return edges
 
 
-def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
-                          dy_coarse=None):
-    """Smooth data points by simple average binning in coordinates.
+def smooth_by_bin_average(data, bin_edges, x_coarse_key, y_coarse_key,
+                          dx_coarse_key=None, dy_coarse_key=None):
+    """Smooth data points by simple average binning in coordinates, with
+    optional binning of uncertainties in quadratic.
 
     Parameters
     ----------
@@ -930,54 +942,49 @@ def smooth_by_bin_average(data, bin_edges, x_coarse, y_coarse, dx_coarse=None,
         Data to be smoothed with binning.
     bin_edges : float, array_like
         Bin edges.
-    x_coarse, y_coarse : str
-        Dictionary key holding unsmoothed data coordinates or data points.
-    dx_coarse, dy_coarse : str or None, optional
-        Dictionary key holding data coordinate or data point uncertainties
-        to be added in quadrature in bin without averaging.
+    x_coarse_key, y_coarse_key : str
+        Dictionary key holding unsmoothed data points.
+    dx_coarse_key, dy_coarse_key : str or None, optional
+        Dictionary key holding data point uncertainties to be binned
+        (default is `None`).
 
     Returns
     -------
     smoothed_data : dict
-        Smoothed quantities correspond to dictionary keys `x_coarse`,
-        `y_coarse`, `dx_coarse` and `dy_coarse` if the keys are not `None`.
-    bin_count : int, array_like
+        Smoothed quantities correspond to dictionary keys `x_coarse_key`
+        and `y_coarse_key`, and additionally `dx_coarse_key` and
+        `dy_coarse_key` if the keys are not `None`.
+    bin_count : int :class:`numpy.ndarray`
         Number of data points in each bin.
 
     Raises
     ------
     NotImplementedError
-        If `data` is not of supported data-types.
+        If `data` does not have a supported data type.
 
     """
     if not isinstance(data, dict):
         raise NotImplementedError(
-            "Data-types other than `dict` are currently unsupported. "
+            "Data types other than `dict` are unsupported. "
         )
     else:
-        num_bin = len(bin_edges) - 1
-        x_coarse_label, y_coarse_label = x_coarse, y_coarse
-
-        order = np.argsort(data[x_coarse])
-        x_coarse = data[x_coarse][order]
-        y_coarse = data[y_coarse][order]
+        order = np.argsort(data[x_coarse_key])
+        x_coarse = data[x_coarse_key][order]
+        y_coarse = data[y_coarse_key][order]
 
         which_bins = np.zeros(x_coarse.shape)
         for idx, val in enumerate(x_coarse):
             which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
 
+        num_bin = len(bin_edges) - 1
         x_smooth, y_smooth, bin_count = np.zeros((3, num_bin))
         for bin_idx in range(num_bin):
             x_smooth[bin_idx] = np.average(x_coarse[which_bins == bin_idx])
             y_smooth[bin_idx] = np.average(y_coarse[which_bins == bin_idx])
             bin_count[bin_idx] = np.sum(which_bins == bin_idx)
 
-        # Add uncertainties in quadrature in each bin if requested.
-        smoothed_data = {
-            x_coarse_label: x_smooth,
-            y_coarse_label: y_smooth,
-        }
-        for key in [dx_coarse, dy_coarse]:
+        smoothed_data = {x_coarse_key: x_smooth, y_coarse_key: y_smooth}
+        for key in [dx_coarse_key, dy_coarse_key]:
             if key is not None:
                 coarse = data[key][order]
                 smooth = np.zeros(num_bin)

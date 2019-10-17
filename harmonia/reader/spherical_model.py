@@ -19,21 +19,29 @@ Kernels
 ---------------------------------------------------------------------------
 
 Coupling kernels are integrands without the coordinate Jacobian, which may
-include the following factors: radial selection :math:`\phi(r)`, weight
-:math:`w(r)` or its derivative, and angular mask
-:math:`M(\hat{\mathbf{r}})`; linear growth rate :math:`f(z)`, clustering
-evolution :math:`G(z) = b_1(z) D(z)` where :math:`b_1(z)` is the
-scale-independent linear bias and :math:`D(z)` is the linear growth factor,
-and the Alcock--Paczynski distortion
+include the following factors:
 
-.. math::
+    * angular mask :math:`M(\hat{\mathbf{r}})`;
+    * radial selection :math:`\phi(r)`, and radial weight :math:`w(r)` or
+      its derivative :math:`w'(r)`;
+    * linear bias evolution :math:`G(z) = b_1(z) / b_1(0)` normalised to
+      unity at the current epoch, where :math:`b_1(z)` is the
+      scale-independent linear bias;
+    * clustering evolution, :math:`D(z)`, which is the linear growth factor
+      normalised to unity at the current epoch;
+    * linear growth rate evolution :math:`F(z) = f(z) / f_0` normalised to
+      unity at the current epoch, where :math:`f_0 \equiv f(0)`;
+    * Alcock--Paczynski distortion
 
-    \gamma(z) =
-        \frac{\operatorname{d}\!\tilde{r}(z)}{\operatorname{d}\!r(z)} \,,
+      .. math::
 
-where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance converted
-from redshift rather than from the true comoving distance--redshift
-correspondence :math:`z = z(r)`.
+          \gamma(z) =
+              \frac{\operatorname{d}\!\tilde{r}(z)}{\operatorname{d}\!r(z)}
+              \,,
+
+      where :math:`\tilde{r} = \tilde{r}(z)` is the fiducial distance
+      converted from redshift rather than from the true comoving
+      distance--redshift correspondence :math:`z = z(r)`.
 
 When using integration kernels that is a combination of functions of the
 above, pass additional parameters not being directly integrated over by
@@ -48,22 +56,23 @@ RSD coupling kernels
 .. math::
 
    \begin{align*}
-       M_{\mu\nu} &= \int \operatorname{d}\!\hat{\mathbf{r}}
+       M_{\mu\nu} &= \int \operatorname{d}^2\!\hat{\mathbf{r}}
            Y_{\ell_\mu m_\mu}^*(\hat{\mathbf{r}})
            M(\hat{\mathbf{r}})
            Y_{\ell_\nu m_\nu}(\hat{\mathbf{r}}) \,, \\
-       \Phi_{\mu\nu} &= \int \operatorname{d}\!r r^2
-           \kappa_{\ell_\nu n_\nu} w(\tilde{r})
+       \Phi_{\mu\nu} &= \kappa_{\ell_\nu n_\nu}
+           \int \operatorname{d}\!r r^2 w(\tilde{r})
            j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
            j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           \frac{G(z)}{G(0)} \phi(r) \,, \\
-       \Upsilon_{\mu\nu} &= \int \operatorname{d}\!r r^2
+           G(z) D(z) \phi(r) \,, \\
+       \Upsilon_{\mu\nu} &=
            \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
-           \frac{\operatorname{d}\!{d}}{\operatorname{d}\!\tilde{r}}
+           \int \operatorname{d}\!r r^2
+           \frac{\operatorname{d}\!}{\operatorname{d}\!\tilde{r}}
            \left[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
                \right]
            j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           \gamma(z) \frac{f(z)}{f(0)} \frac{G(z)}{G(0)} \phi(r) \,,
+           \gamma(z) F(z) D(z) \phi(r) \,,
    \end{align*}
 
 over the spherical volume element, where :math:`k_{\ell n}` are the
@@ -85,7 +94,7 @@ discrete wavenumbers.
             b_0(k_\sigma) \Phi_{\mu\sigma} + f_0 \Upsilon_{\mu\sigma}
         \right] \left[
             b_0(k_\sigma) \Phi_{\nu\sigma} + f_0 \Upsilon_{\nu\sigma}
-        \right] \kappa_\sigma^{-1} P(k_\sigma) \,,
+        \right] \kappa_\sigma^{-1} P_\textrm{m,0}(k_\sigma) \,,
 
 and the shot noise part
 
@@ -95,12 +104,13 @@ and the shot noise part
         \frac{1}{\bar{n}} M_{\mu\nu} \int \operatorname{d}\!r r^2
         (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
 
-where :math:`b_0(k)` is the scale-dependent modification of the constant
-linear bias :math:`b_1(z=0)` at the current epoch, :math:`f_0` the linear
-growth rate at the current epoch, :math:`M, \Phi, \Upsilon` are the
-angular, radial and RSD couplings and :math:`\kappa` the normalisation
-coefficients (see
-:class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`), and
+where the scale-dependent bias :math:`b_0(k) = b_1(0) + f_\textrm{NL}
+\Delta b(k)` includes the modification :math:`\Delta b(k)` due to
+primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the current
+epoch (see :mod:`~harmonia.cosmology.scale_dependence`);
+:math:`P_\textrm{m,0}` is the matter power spectrum at the current epoch;
+:math:`\kappa` denotes the normalisation coefficients (see
+:class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`); and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
 .. autosummary::
@@ -123,7 +133,7 @@ from harmonia.algorithms.integration import (
 )
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import const_function, mpi_compute
-from harmonia.cosmology.scale_dependence import scale_dependent_bias
+from harmonia.cosmology.scale_dependence import bias_modification
 
 
 # KERNELS
@@ -135,7 +145,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
     Parameters
     ----------
     theta, phi : float, array_like
-        Angular coordinates :math:`(\theta, \phi)`.
+        Angular coordinates :math:`\theta`, :math:`\phi`.
     mu, nu : tuple or list of int
         Coefficient triplet index.
     mask : callable or None, optional
@@ -143,7 +153,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
 
     Returns
     -------
-    kernel : complex, array_like
+    kernel : complex :class:`numpy.ndarray`
         Angular coupling kernel value.
 
     """
@@ -154,7 +164,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
         kernel *= mask(theta, phi)
     else:
         warnings.warn(
-            "`mask` is None. Angular model evaluation may be redundant. ",
+            "Angular kernel evaluation is redundant as `mask` is None. ",
             RuntimeWarning
         )
 
@@ -162,7 +172,8 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
 
 
 def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
-                   evolution=None, r2z=None, z2chi=None):
+                   bias_evolution=None, clustering_evolution=None,
+                   r2z=None, z2chi=None):
     """Evaluate the radial coupling kernel.
 
     Parameters
@@ -176,8 +187,9 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     selection, weight : callable or None, optional
         Selection or weight as a function of the radial coordinate (default
         is `None`).
-    evolution : callable or None, optional
-        Evolution as a function of redshift (default is `None`).
+    bias_evolution, clustering_evolution : callable or None, optional
+        Bias and clustering evolution as a function of redshift normalised
+        to unity at the current epoch (default is `None`).
     r2z : callable or None, optional
         Cosmological comoving distance-to-redshift conversion (default is
         `None`).
@@ -187,13 +199,14 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
 
     Returns
     -------
-    kernel : float, array_like
+    kernel : float :class:`numpy.ndarray`
         Radial coupling kernel value.
 
     Raises
     ------
-    ValueError
-        If `r2z` is not callable when either `evolution` or `z2chi` is.
+    TypeError
+        If `r2z` is not callable when any of `bias_evolution`,
+        `clustering_evolution` and `z2chi` is.
 
     """
     if not callable(z2chi):
@@ -202,7 +215,7 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         if callable(r2z):
             r_tilde = z2chi(r2z(r))
         else:
-            raise ValueError("`r2z` must be callable if `z2chi` is. ")
+            raise TypeError("`r2z` must be callable if `z2chi` is. ")
 
     kernel = spherical_besselj(mu[0], k_mu*r_tilde) \
         * spherical_besselj(nu[0], k_nu*r)
@@ -211,17 +224,23 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         kernel *= selection(r)
     if callable(weight):
         kernel *= weight(r_tilde)
-    if callable(evolution):
+    if callable(clustering_evolution):
         if not callable(r2z):
-            raise ValueError("`r2z` must be callable if `evolution` is. ")
-        kernel *= evolution(r2z(r))
+            raise TypeError(
+                "`r2z` must be callable if `clustering_evolution` is. "
+            )
+        kernel *= clustering_evolution(r2z(r))
+    if callable(bias_evolution):
+        if not callable(r2z):
+            raise TypeError("`r2z` must be callable if `bias_evolution` is. ")
+        kernel *= bias_evolution(r2z(r))
 
     return kernel
 
 
-def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
-                weight_derivative=None, evolution=None, AP_distortion=None,
-                r2z=None, z2chi=None):
+def _RSD_kernel(r, mu, nu, k_mu, k_nu, growth_evolution, r2z, z2chi=None,
+                selection=None, weight=None, weight_derivative=None,
+                clustering_evolution=None, AP_distortion=None):
     """Evaluate the RSD coupling kernel.
 
     Parameters
@@ -232,21 +251,22 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         Coefficient triplet index.
     k_mu, k_nu : float
         Discrete wave number corresponding to index `mu` or `nu`.
-    selection, weight : callable or None, optional
-        Selection or weight as a function of the radial coordinate (default
-        is `None`).
-    weight_derivative : callable or None, optional
-        Weight function derivative as a function of the radial coordinate
-        (default is `None`).
-    evolution, AP_distortion : callable or None, optional
-        Evolution or AP distortion as a function of redshift (default is
-        `None`).
-    r2z : callable or None, optional
-        Cosmological comoving distance-to-redshift conversion (default is
-        `None`).
+    growth_evolution : callable
+        Growth rate evolution as a function of redshift normalised
+        to unity at the current epoch.
+    r2z : callable
+        Cosmological comoving distance-to-redshift conversion.
     z2chi : callable or None, optional
         Fiducial comoving redshift-to-distance conversion (default is
         `None`).
+    selection, weight, weight_derivative : callable or None, optional
+        Selection, weight or weight derivative as a function of the radial
+        coordinate (default is `None`).
+    evolution : callable or None, optional
+        Clustering evolution as a function of redshift normalised to unity
+        at the current epoch (default is `None`).
+    AP_distortion : callable or None, optional
+        AP distortion as a function of redshift (default is `None`).
 
     Returns
     -------
@@ -255,22 +275,34 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
 
     Raises
     ------
-    ValueError
+    TypeError
+        If `r2z` is not callable.
+    TypeError
         If `weight_derivative` is not callable when `weight` is.
-    ValueError
-        If `r2z` is not callable when one of `z2chi`, `evolution` and
-        `AP_distortion` is,
+    TypeError
+        If `z2chi` and `AP_distortion` are not simultaneously callable.
 
     """
-    if not callable(z2chi):
-        r_tilde = r
-    else:
-        if callable(r2z):
-            r_tilde = z2chi(r2z(r))
-        else:
-            raise ValueError("`r2z` must be callable if `z2chi` is. ")
+    if not callable(r2z):
+        raise TypeError("`r2z` must be callable. ")
+    if (callable(z2chi) or callable(AP_distortion)) and \
+            not (callable(z2chi) and callable(AP_distortion)):
+        z2chi, AP_distortion = None, None
+        warnings.warn(
+            "`z2chi` and `AP_distortion` are not simultaneously callable. "
+            "Input value is ignored and both are set to None. "
+            "No AP correction is applied. ",
+            RuntimeWarning
+        )
+    apply_AP = callable(z2chi) and callable(AP_distortion)
 
     kernel = spherical_besselj(nu[0], k_nu*r, derivative=True)
+
+    if apply_AP:
+        r_tilde = r
+    else:
+        r_tilde = z2chi(r2z(r))
+        kernel *= AP_distortion(r2z(r))
 
     if callable(selection):
         kernel *= selection(r)
@@ -279,7 +311,7 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
         kernel *= k_mu * spherical_besselj(mu[0], k_mu*r, derivative=True)
     else:
         if not callable(weight_derivative):
-            raise ValueError(
+            raise TypeError(
                 "`weight_derivative` must be callable if `weight` is. "
             )
         kernel *= weight_derivative(r_tilde) \
@@ -288,14 +320,7 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
             * spherical_besselj(mu[0], k_mu*r_tilde, derivative=True)
 
     if callable(evolution):
-        if not callable(r2z):
-            raise ValueError("`r2z` must be callable if `evolution` is. ")
         kernel *= evolution(r2z(r))
-
-    if callable(AP_distortion):
-        if not callable(r2z):
-            raise ValueError("`r2z` must be callable if `AP_distortion` is. ")
-        kernel *= AP_distortion(r2z(r))
 
     return kernel
 
@@ -762,7 +787,8 @@ class TwoPointFunction(Couplings):
         if self.non_gaussianity is None:
             self._bias_k = const_function(b_1)
         else:
-            self._bias_k = scale_dependent_bias(f_nl, b_1, cosmo)
+            self._bias_k = lambda k: \
+                b_1 + bias_modification(f_nl, b_1, cosmo)(k)
 
     @property
     def couplings(self):

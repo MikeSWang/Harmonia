@@ -15,7 +15,7 @@ from .geometry import (
     redshift_to_distance,
 )
 from .scale_dependence import (
-    scale_dependent_bias,
+    bias_modification,
     scale_modified_power_spectrum,
 )
 

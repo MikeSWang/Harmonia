@@ -820,17 +820,23 @@ class TwoPointFunction(Couplings):
 
         self.mean_density = nbar
         self.bias_const = b_const
+        self.growth_rate = f_0
 
         if cosmo is None:
-            self.growth_rate = f_0
             self.matter_power_spectrum = power_spectrum
         else:
-            # Overide non-None `f_0` value for model consistency.
             if f_0 is not None:
-                self.growth_rate = \
+                cosmo_growth_rate = \
                     cosmo.scale_independent_growth_rate(self._CURRENT_Z)
-            else:
-                self.growth_rate = None
+                if not np.isclose(self.growth_rate, cosmo_growth_rate):
+                    warnings.warn(
+                        "`f_0` value is inconsistent with `cosmo` model: "
+                        "input {}, model predicted value {}. ".format(
+                            self.growth_rate,
+                            cosmo_growth_rate,
+                        ),
+                        RuntimeWarning
+                    )
             self.matter_power_spectrum = cosmology.LinearPower(
                 cosmo,
                 redshift=self._CURRENT_Z,
@@ -945,12 +951,10 @@ class TwoPointFunction(Couplings):
 
         kappa = self.disc.normalisations
         b_const = self.bias_const
-        A_k = self.mode_scale_modifications
         p_k = self.mode_powers
 
         signal = 0.
         for ell, nmax in zip(self.disc.degrees, self.disc.depths):
-            print(ell, M_mu[ell].shape)
             angular_sum = np.sum(
                 [
                     M_mu[ell][m_idx] * np.conj(M_nu[ell][m_idx])
@@ -960,7 +964,8 @@ class TwoPointFunction(Couplings):
 
             b_0_k = b_const * np.ones(nmax)
             if f_nl is not None:
-                b_0_k += f_nl * (b_const - tracer_parameter) * A_k[ell]
+                b_0_k += f_nl * (b_const - tracer_parameter) \
+                    * self.mode_scale_modifications[ell]
 
             if f_0 is None:
                 radial_sum = np.sum(

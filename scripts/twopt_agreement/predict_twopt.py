@@ -47,10 +47,9 @@ def initialise():
         raise AttributeError(attr_err)
 
     if len(pivots) > 1:
-        pivot_tag = "{}".format(pivots).replace("'", "")
+        pivot_tag = "{}".format(pivots)
     else:
-        pivot_tag = "{}".format(params.pivots).replace("'", "")
-    pivot_tag = pivot_tag.replace(" ", "")
+        pivot_tag = "{}".format(pivots).lstrip("[").rstrip("]")
 
     if rsd_flag:
         rsd_tag = "{:.2f}".format(growth_rate)
@@ -58,7 +57,7 @@ def initialise():
         rsd_tag = 'none'
 
     runtime_info = "-(pivots={},nbar={},b1={},f0={},rmax={},kmax={})".format(
-        pivot_tag,
+        pivot_tag.replace("'", "").replace(" ", ""),
         format_float(nbar, 'sci'),
         format_float(bias, 'decdot'),
         rsd_tag,

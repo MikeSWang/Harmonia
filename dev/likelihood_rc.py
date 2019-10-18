@@ -33,7 +33,8 @@ def parse_cli_args():
     cli_parser.add_argument(
         '--prior-range', type=float, nargs=2, default=[-100, 100]
     )
-    cli_parser.add_argument('--num-samp', type=int, default=100)
+    cli_parser.add_argument('--num-samp', type=int, default=200)
+
     cli_parser.add_argument('--pivot')
 
     cli_parser.add_argument('--generator', default='nbodykit')

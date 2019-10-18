@@ -52,13 +52,13 @@ def initialise():
     growth_rate = None
 
     if len(pivots) > 1:
-        pivot_tag = "{}".format(pivots).replace("'", "")
+        pivot_tag = "{}".format(pivots)
     else:
-        pivot_tag = "{}".format(params.pivots).replace("'", "")
+        pivot_tag = "{}".format(pivots).lstrip("[").rstrip("]")
 
     runtime_info = \
         "-(pivots={},nbar={:.2e},b1={:.2f},f0={},rmax={},kmax={})".format(
-            pivot_tag,
+            pivot_tag.replace("'", "").replace(" ", ""),
             nbar,
             bias,
             format_float(growth_rate, 'decdot'),

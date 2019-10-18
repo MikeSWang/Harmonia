@@ -529,17 +529,18 @@ class Couplings:
         if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computing %s. ", _info_msg)
 
-        k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
-        k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
-        kappa_nu = self.disc.normalisations[nu[0]][nu[-1]-1]
+        if coupling_type != 'angular':
+            k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
+            k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
+            kappa_nu = self.disc.normalisations[nu[0]][nu[-1]-1]
 
-        attrs = [
-            'selection',
-            'weight',
-            'clustering_evolution',
-            'z_from_r',
-            'chi_of_z',
-        ]
+            attrs = [
+                'selection',
+                'weight',
+                'clustering_evolution',
+                'z_from_r',
+                'chi_of_z',
+            ]
 
         if coupling_type == 'angular':
             trivial_case = not callable(self.mask)

@@ -650,12 +650,12 @@ class Couplings:
                 ]
             )
             if coupling_type == 'angular':  # the other half by `m`-parity
-                ell_component_parity = np.multiply(
-                    np.power(-1, np.arange(1, ell+1)[:, None]),
-                    np.flipud(ell_component[:-1])
+                ell_component_parity = np.conj(
+                    np.power(-1, np.arange(1, ell+1)) *
+                    np.flip(ell_component[:-1])
                 )
                 couplings_component[ell] = np.concatenate(
-                    (ell_component, np.conj(ell_component_parity))
+                    (ell_component, ell_component_parity)
                 )
             couplings_component[ell] = ell_component
 

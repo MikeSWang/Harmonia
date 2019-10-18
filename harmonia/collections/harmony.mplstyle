@@ -1,0 +1,38 @@
+lines.linewidth: 2
+lines.markersize: 6
+lines.antialiased: True
+
+font.family: serif
+font.size: 11.0
+
+text.usetex: True
+
+axes.prop_cycle: cycler('color', ['000000', 'C40233', '0087BD', 'FFD300', '009F6B'])
+
+xtick.top: True
+xtick.major.size: 5
+xtick.minor.size: 2.5
+xtick.major.width: 0.2
+xtick.minor.width: 0.2
+xtick.direction: out
+
+ytick.right: True
+ytick.major.size: 5
+ytick.minor.size: 2.5
+ytick.major.width: 0.2
+ytick.minor.width: 0.2
+ytick.direction: out
+
+legend.loc: best
+legend.frameon: False
+legend.fancybox: False
+legend.handlelength: 2.5
+
+figure.figsize: 8, 5
+figure.titlesize: large
+
+errorbar.capsize: 2.5
+
+savefig.format: pdf
+savefig.bbox: tight
+savefig.transparent: True

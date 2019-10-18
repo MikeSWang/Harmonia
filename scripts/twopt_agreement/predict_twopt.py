@@ -3,7 +3,6 @@
 """
 import numpy as np
 from mpi4py import MPI
-from nbodykit.lab import cosmology
 
 from agreement_rc import PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum
@@ -13,6 +12,7 @@ from harmonia.collections import (
     unit_const,
     zero_const,
 )
+from harmonia.cosmology import fiducial_cosmology
 from harmonia.reader import TwoPointFunction
 
 
@@ -31,30 +31,25 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax
+    global pivots, rsd_flag, nbar, bias, redshift, kmax, rmax, growth_rate
 
     try:
-        pivots = params.structure.split(",")
+        pivots = params.pivots.split(",")
         rsd_flag = params.rsd
-
         nbar = params.nbar
         bias = params.bias
         redshift = params.redshift
-        zmax = params.zmax
         kmax = params.kmax
+        rmax = fiducial_cosmology.comoving_distance(params.zmax)
+        growth_rate = rsd_flag \
+            * fiducial_cosmology.scale_independent_growth_rate(redshift)
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
-
-    global rmax, growth_rate, cosmo
-
-    cosmo = cosmology.Planck15
-    rmax = cosmo.comoving_distance(zmax)
-    growth_rate = rsd_flag * cosmo.scale_independent_growth_rate(redshift)
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots).replace("'", "")
     else:
-        pivot_tag = "{}".format(params.structure).replace("'", "")
+        pivot_tag = "{}".format(params.pivots).replace("'", "")
     pivot_tag = pivot_tag.replace(" ", "")
 
     if rsd_flag:
@@ -62,7 +57,7 @@ def initialise():
     else:
         rsd_tag = 'none'
 
-    param_tag = "pivots={},nbar={},b1={},f0={},rmax={},kmax={}".format(
+    runtime_info = "-(pivots={},nbar={},b1={},f0={},rmax={},kmax={})".format(
         pivot_tag,
         format_float(nbar, 'sci'),
         format_float(bias, 'decdot'),
@@ -70,7 +65,6 @@ def initialise():
         format_float(rmax, 'intdot'),
         format_float(kmax, 'sci'),
     )
-    runtime_info = "-({})".format(param_tag)
     return runtime_info
 
 
@@ -95,13 +89,14 @@ def process(runtime_info):
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     args = disc, nbar, bias
-    two_points = TwoPointFunction(
-        *args,
-        cosmo=cosmo,
+    kwargs = dict(
+        f_0=growth_rate,
+        cosmo=fiducial_cosmology,
         survey_specs=SURVEY_SPECS,
-        cosmo_specs=None,
-        comm=COMM
+        comm=COMM,
     )
+
+    two_points = TwoPointFunction(*args, **kwargs)
 
     couplings = two_points.couplings
 
@@ -168,7 +163,6 @@ if __name__ == '__main__':
         'weight': unit_const,
         'weight_derivative': zero_const
     }
-    SURVEY_SPECS = None
 
     program_tag = initialise()
     output_data = process(program_tag)

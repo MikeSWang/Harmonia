@@ -34,7 +34,7 @@ def initialise():
     global pivots, nbar, bias, rmax, kmax
 
     try:
-        pivots = params.structure.split(",")
+        pivots = params.pivots.split(",")
         nbar = params.nbar
         bias = params.bias
         rmax = params.boxside / 2
@@ -49,15 +49,15 @@ def initialise():
     ).T
 
     Plin = interp1d(k_points, Pk_points, assume_sorted=True)
-    growth_rate = 0.
+    growth_rate = None
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots).replace("'", "")
     else:
-        pivot_tag = "{}".format(params.structure).replace("'", "")
+        pivot_tag = "{}".format(params.pivots).replace("'", "")
 
-    param_tag = \
-        "pivots={},nbar={:.2e},b1={:.2f},f0={},rmax={},kmax={}".format(
+    runtime_info = \
+        "-(pivots={},nbar={:.2e},b1={:.2f},f0={},rmax={},kmax={})".format(
             pivot_tag,
             nbar,
             bias,
@@ -65,7 +65,6 @@ def initialise():
             format_float(rmax, 'intdot'),
             format_float(kmax, 'sci'),
         )
-    runtime_info = "-({})".format(param_tag)
     return runtime_info
 
 
@@ -90,12 +89,13 @@ def process(runtime_info):
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     args = disc, nbar, bias
-    two_points = TwoPointFunction(
-        *args,
+    kwargs = dict(
         f_0=growth_rate,
         power_spectrum=Plin,
-        comm=COMM
+        comm=COMM,
     )
+
+    two_points = TwoPointFunction(*args, **kwargs)
 
     couplings = two_points.couplings
 

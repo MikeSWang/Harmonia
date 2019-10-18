@@ -12,6 +12,7 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
 )
+from harmonia.cosmology import fiducial_cosmology
 from harmonia.mapper import (
     GaussianCatalogue,
     LogNormalCatalogue,
@@ -41,18 +42,17 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global pivots, rsd_flag, nbar, bias, redshift, zmax, kmax, expand, \
-        mesh_gen, mesh_cal, niter, prog_id
+    global pivots, gen_name, rsd_flag, nbar, bias, redshift, rmax, kmax, \
+        expand, mesh_gen, mesh_cal, niter, prog_id
 
     try:
-        pivots = params.structure.split(",")
-        rsd_flag = params.rsd
+        pivots = params.pivots.split(",")
         generator = params.generator
-
+        rsd_flag = params.rsd
         nbar = params.nbar
         bias = params.bias
         redshift = params.redshift
-        zmax = params.zmax
+        rmax = fiducial_cosmology.comoving_distance(params.zmax)
         kmax = params.kmax
         expand = params.expand
         mesh_gen = params.mesh_gen
@@ -62,21 +62,24 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, rmax, growth_rate, gen_name
-
-    cosmo = cosmology.Planck15
-    Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
-    rmax = cosmo.comoving_distance(zmax)
-    growth_rate = cosmo.scale_independent_growth_rate(redshift)
-
     if generator.lower().startswith('g'):
         gen_name = "gaussian"
     elif generator.lower().startswith('l'):
         gen_name = "lognormal"
     elif generator.lower().startswith('n'):
         gen_name = "nbodykit"
+
+    global Plin
+
+    Plin = cosmology.LinearPower(
+        fiducial_cosmology,
+        redshift=redshift,
+        transfer='CLASS'
+    )
+
     gen_tag = f"gen={gen_name},"
 
+    growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
     if rsd_flag:
         rsd_tag = "{:.2f}".format(growth_rate)
     else:
@@ -105,6 +108,7 @@ def initialise():
     iter_tag = "iter={}".format(niter)
 
     tags = (gen_tag, pivot_tag, param_tag, mesh_tag, iter_tag)
+
     runtime_info = "".join(["-(", *tags, ")-", "[", prog_id, "]"])
     return runtime_info
 
@@ -125,7 +129,7 @@ def process(runtime_info):
     """
     print(runtime_info.strip("-"))
 
-    boxsize = 2 * expand * rmax
+    boxsize = expand * 2*rmax
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     output_data = defaultdict(list)

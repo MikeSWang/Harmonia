@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from likelihood_rc import PATHOUT
 from view_likelihood import view_likelihood
 from harmonia.collections import (
-    collate,
+    collate_data_files,
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,

@@ -78,6 +78,13 @@ RSD coupling kernels
 over the spherical volume element, where :math:`k_{\ell n}` are the
 discrete wavenumbers.
 
+When there is no angular masking (i.e. :math:`M(\hat{\mathbf{r}})` is
+constant), the coupling coefficients reduce to :math:`M_{\mu\nu} =
+\delta_{\mu\nu}`; if in addition radial selection, weighting and
+evolutionary effects are all absent and the distance--redshift conversion
+is the cosmological one (i.e. no AP correction), the radial coupling
+coefficients is equivalent to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
+
 .. autosummary::
 
     Couplings
@@ -132,8 +139,8 @@ from harmonia.algorithms.integration import (
     radial_spherical_integral as rad_int,
 )
 from harmonia.algorithms.morph import SphericalArray
-from harmonia.collections.utils import const_function, mpi_compute
-from harmonia.cosmology.scale_dependence import bias_modification
+from harmonia.collections.utils import mpi_compute
+from harmonia.cosmology.scale_dependence import scale_modification
 
 
 # KERNELS
@@ -173,7 +180,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
 
 def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
                    bias_evolution=None, clustering_evolution=None,
-                   r2z=None, z2chi=None):
+                   z_from_r=None, chi_of_z=None):
     """Evaluate the radial coupling kernel.
 
     Parameters
@@ -190,10 +197,10 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     bias_evolution, clustering_evolution : callable or None, optional
         Bias and clustering evolution as a function of redshift normalised
         to unity at the current epoch (default is `None`).
-    r2z : callable or None, optional
+    z_from_r : callable or None, optional
         Cosmological comoving distance-to-redshift conversion (default is
         `None`).
-    z2chi : callable or None, optional
+    chi_of_z : callable or None, optional
         Fiducial comoving redshift-to-distance conversion (default is
         `None`).
 
@@ -205,17 +212,17 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     Raises
     ------
     TypeError
-        If `r2z` is not callable when any of `bias_evolution`,
-        `clustering_evolution` and `z2chi` is.
+        If `z_from_r` is not callable when any of `bias_evolution`,
+        `clustering_evolution` and `chi_of_z` is.
 
     """
-    if not callable(z2chi):
+    if not callable(chi_of_z):
         r_tilde = r
     else:
-        if callable(r2z):
-            r_tilde = z2chi(r2z(r))
+        if callable(z_from_r):
+            r_tilde = chi_of_z(z_from_r(r))
         else:
-            raise TypeError("`r2z` must be callable if `z2chi` is. ")
+            raise TypeError("`z_from_r` must be callable if `chi_of_z` is. ")
 
     kernel = spherical_besselj(mu[0], k_mu*r_tilde) \
         * spherical_besselj(nu[0], k_nu*r)
@@ -225,22 +232,25 @@ def _radial_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
     if callable(weight):
         kernel *= weight(r_tilde)
     if callable(clustering_evolution):
-        if not callable(r2z):
+        if not callable(z_from_r):
             raise TypeError(
-                "`r2z` must be callable if `clustering_evolution` is. "
+                "`z_from_r` must be callable if `clustering_evolution` is. "
             )
-        kernel *= clustering_evolution(r2z(r))
+        kernel *= clustering_evolution(z_from_r(r))
     if callable(bias_evolution):
-        if not callable(r2z):
-            raise TypeError("`r2z` must be callable if `bias_evolution` is. ")
-        kernel *= bias_evolution(r2z(r))
+        if not callable(z_from_r):
+            raise TypeError(
+                "`z_from_r` must be callable if `bias_evolution` is. "
+            )
+        kernel *= bias_evolution(z_from_r(r))
 
     return kernel
 
 
-def _RSD_kernel(r, mu, nu, k_mu, k_nu, growth_evolution, r2z, z2chi=None,
-                selection=None, weight=None, weight_derivative=None,
-                clustering_evolution=None, AP_distortion=None):
+def _RSD_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None,
+                weight_derivative=None, growth_evolution=None,
+                clustering_evolution=None, z_from_r=None, chi_of_z=None,
+                AP_distortion=None):
     """Evaluate the RSD coupling kernel.
 
     Parameters
@@ -251,20 +261,19 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, growth_evolution, r2z, z2chi=None,
         Coefficient triplet index.
     k_mu, k_nu : float
         Discrete wave number corresponding to index `mu` or `nu`.
-    growth_evolution : callable
-        Growth rate evolution as a function of redshift normalised
-        to unity at the current epoch.
-    r2z : callable
-        Cosmological comoving distance-to-redshift conversion.
-    z2chi : callable or None, optional
-        Fiducial comoving redshift-to-distance conversion (default is
-        `None`).
     selection, weight, weight_derivative : callable or None, optional
         Selection, weight or weight derivative as a function of the radial
         coordinate (default is `None`).
-    evolution : callable or None, optional
-        Clustering evolution as a function of redshift normalised to unity
-        at the current epoch (default is `None`).
+    growth_evolution, clustering_evolution : callable or None, optional
+        Growth rate evolution or clustering evolution as a function of
+        redshift normalised to unity at the current epoch (default is
+        `None`).
+    z_from_r : callable or None, optional
+        Cosmological comoving distance-to-redshift conversion (default is
+        `None`).
+    chi_of_z : callable or None, optional
+        Fiducial comoving redshift-to-distance conversion (default is
+        `None`).
     AP_distortion : callable or None, optional
         AP distortion as a function of redshift (default is `None`).
 
@@ -276,51 +285,67 @@ def _RSD_kernel(r, mu, nu, k_mu, k_nu, growth_evolution, r2z, z2chi=None,
     Raises
     ------
     TypeError
-        If `r2z` is not callable.
+        If `z_from_r` is not callable when any of `growth_evolution`,
+        `clustering_evolution` and `chi_of_z` is.
     TypeError
-        If `weight_derivative` is not callable when `weight` is.
+        If `weight` is not callable when `weight_derivative` is, and vice
+        versa.
     TypeError
-        If `z2chi` and `AP_distortion` are not simultaneously callable.
+        If `chi_of_z` is not callable when `AP_distortion` is, and vice
+        versa.
 
     """
-    if not callable(r2z):
-        raise TypeError("`r2z` must be callable. ")
-    if (callable(z2chi) or callable(AP_distortion)) and \
-            not (callable(z2chi) and callable(AP_distortion)):
-        z2chi, AP_distortion = None, None
+    require_z_from_r = any(
+        [
+            callable(growth_evolution),
+            callable(clustering_evolution),
+            callable(chi_of_z),
+        ]
+    )
+    if not callable(z_from_r) and require_z_from_r:
+        raise TypeError(
+            "`z_from_r` must be callable if any of "
+            "`growth_evolution`, `clustering_evolution` and `chi_of_z` is. "
+        )
+
+    apply_AP = callable(chi_of_z) and callable(AP_distortion)
+    if (callable(chi_of_z) or callable(AP_distortion)) and not apply_AP:
         warnings.warn(
-            "`z2chi` and `AP_distortion` are not simultaneously callable. "
-            "Input value is ignored and both are set to None. "
-            "No AP correction is applied. ",
+            "One of `chi_of_z` and `AP_distortion` is not callable, "
+            "so both are set to None and no AP correction is applied. ",
             RuntimeWarning
         )
-    apply_AP = callable(z2chi) and callable(AP_distortion)
+
+    apply_weight = callable(weight) and callable(weight_derivative)
+    if (callable(weight) or callable(weight_derivative)) and not apply_weight:
+        raise TypeError(
+            "`weight` and `weight_derivative` must both be callable "
+            "if either is. "
+        )
 
     kernel = spherical_besselj(nu[0], k_nu*r, derivative=True)
 
-    if apply_AP:
+    if not apply_AP:
         r_tilde = r
     else:
-        r_tilde = z2chi(r2z(r))
-        kernel *= AP_distortion(r2z(r))
+        r_tilde = chi_of_z(z_from_r(r))
+        kernel *= AP_distortion(z_from_r(r))
 
     if callable(selection):
         kernel *= selection(r)
 
-    if not callable(weight):
+    if not apply_weight:
         kernel *= k_mu * spherical_besselj(mu[0], k_mu*r, derivative=True)
     else:
-        if not callable(weight_derivative):
-            raise TypeError(
-                "`weight_derivative` must be callable if `weight` is. "
-            )
         kernel *= weight_derivative(r_tilde) \
             * spherical_besselj(mu[0], k_mu*r_tilde) \
             + k_mu * weight(r_tilde) \
             * spherical_besselj(mu[0], k_mu*r_tilde, derivative=True)
 
-    if callable(evolution):
-        kernel *= evolution(r2z(r))
+    if callable(growth_evolution):
+        kernel *= growth_evolution(z_from_r(r))
+    if callable(clustering_evolution):
+        kernel *= clustering_evolution(z_from_r(r))
 
     return kernel
 
@@ -347,10 +372,7 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
 
     """
     if selection is None and weight is None and mu[0] == nu[0]:
-        warnings.warn(
-            "Shot noise evaluation may be redundant. ",
-            RuntimeWarning
-        )
+        warnings.warn("Shot noise evaluation is redundant. ", RuntimeWarning)
 
     kernel = spherical_besselj(mu[0], k_mu*r) \
         * spherical_besselj(nu[0], k_nu*r)
@@ -381,11 +403,16 @@ class Couplings:
         weighting.  Default is `None`.
     cosmo_specs : dict of {str: callable or None} or None, optional
         Cosmological specification functions accessed with the following
-        mandatory keys: ``'r2z'`` for cosmological comoving
-        distance-to-redshift conversion, ``'z2chi'`` for fiducial
-        redshift-to-comoving distance conversion, ``'evolution'`` for
-        clustering evolution, and ``'AP_distortion'`` for AP distortion.
+        mandatory keys: ``'z_from_r'`` for cosmological comoving
+        distance-to-redshift conversion, ``'chi_of_z'`` for fiducial
+        redshift-to-comoving distance conversion, ``'bias_evolution'``,
+        ``'growth_evolution'`` and ``'clustering_evolution'`` for bias,
+        growth rate and clustering evolution as functions of the redshift
+        normalised to unity today, ``'AP_distortion'`` for AP distortion.
         Default is `None`.
+    comm : :class:`mpi4py.MPI.Comm` *or None, optional*
+        MPI communicator.  If `None` (default), no multiprocessing
+        is invoked.
 
     Attributes
     ----------
@@ -399,14 +426,22 @@ class Couplings:
         Weight function of the radial coordinate.
     weight_derivative : callable or None
         Weight derivative function of the radial coordinate.
-    r2z : callable or None
+    z_from_r : callable or None
         Cosmological comoving distance-to-redshift conversion.
-    z2chi : callable or None
+    chi_of_z : callable or None
         Fiducial comoving redshift-to-distance conversion.
-    evolution : callable or None
-        Clustering evolution function of redshift.
+    clustering_evolution : callable or None
+        Clustering evolution as a function of redshift normalised to unity
+        at the current epoch.
+    bias_evolution : callable or None
+        Bias evolution as a function of redshift normalised to unity
+        at the current epoch.
+    growth_evolution : callable or None
+        Growth rate evolution as a function of redshift normalised to unity
+        at the current epoch.
     AP_distortion : callable or None
-        AP distortion function of redshift.
+        AP distortion as a function of redshift normalised to unity
+        at the current epoch.
 
     Raises
     ------
@@ -420,50 +455,55 @@ class Couplings:
 
     """
 
-    _logger = logging.getLogger("Couplings")
-
     _all_specs_attr = {
-        "survey_specs": ('mask', 'selection', 'weight', 'weight_derivative'),
-        "cosmo_specs": ('r2z', 'z2chi', 'evolution', 'AP_distortion'),
+        "survey_specs": (
+            'mask',
+            'selection',
+            'weight',
+            'weight_derivative',
+        ),
+        "cosmo_specs": (
+            'z_from_r',
+            'chi_of_z',
+            'clustering_evolution',
+            'bias_evolution',
+            'growth_evolution',
+            'AP_distortion',
+        ),
     }
 
-    def __init__(self, disc, survey_specs=None, cosmo_specs=None):
+    def __init__(self, disc, survey_specs=None, cosmo_specs=None, comm=None,
+                 logger=None):
 
+        if logger is None:
+            self._logger = logging.getLogger("Couplings")
+
+        self.comm = comm
         self.disc = disc
 
-        for specs_name, specs_attrs in self._all_specs_attr.items():
-            specs_var_str = "`" + specs_name + "`"
-            specs = locals()[specs_name]
+        for specs_type, specs_attrs in self._all_specs_attr.items():
+            specs = locals()[specs_type]
+            specs_var_str = "`" + specs_type + "`"
             if isinstance(specs, dict):
                 try:
-                    for attr in specs_attrs:
-                        setattr(self, attr, specs[attr])
-                        attr_val = getattr(self, attr)
-                        if attr_val is not None and not callable(attr_val):
+                    for func_attr in specs_attrs:
+                        setattr(self, func_attr, specs[func_attr])
+                        attr_func = getattr(self, func_attr)
+                        if attr_func is not None and not callable(attr_func):
                             raise TypeError(
-                                f"{specs_var_str} {attr} value"
-                                f" must be None or callable. "
+                                f"{specs_var_str} {func_attr} value "
+                                f"must be None or callable. "
                             )
-                except KeyError as missing_key:
+                except KeyError as missing_func_attr:
                     raise KeyError(
-                        f"{specs_var_str} key {missing_key} is missing. "
+                        f"{specs_var_str} key {missing_func_attr} is missing. "
                     )
             elif specs is None:
-                for attr in specs_attrs:
-                    setattr(self, attr, None)
-
+                for func_attr in specs_attrs:
+                    setattr(self, func_attr, None)
 
     def coupling_coefficient(self, mu, nu, coupling_type):
         r"""Evaluate couplings at specified indices.
-
-        When there is no angular masking (i.e. `mask` is `None`), the
-        coupling coefficients reduce to :math:`M_{\mu\nu} =
-        \delta_{\mu\nu}`.  When there is no angular masking or clustering
-        evolution, if radial selection and weight are both absent and the
-        distance--redshift conversion is the cosmological one (i.e. none of
-        `mask`, `selection`, `weight`, `evolution`, `r2z` and `z2chi` is
-        set), the coupling coefficients reduce to :math:`\Phi_{\mu\nu} =
-        \delta_{\mu\nu}` for :math:`\ell_\mu = \ell_\nu`.
 
         Parameters
         ----------
@@ -474,89 +514,73 @@ class Couplings:
 
         Returns
         -------
-        coupling_coeff : float or complex, array_like
+        coupling_coeff : float or complex :class:`numpy.ndarray`
             Coupling coefficient of given type for specified indices.
 
-        Raises
-        ------
-        ValueError
-            If `coupling_type` does not correspond to a valid kernel.
-
         """
+        coupling_type = self._alias(coupling_type)
+
         _info_msg = "{} coupling for: {} and {}".format(
             coupling_type.replace("'", ""),
             str(mu).replace("'", ""),
             str(nu).replace("'", ""),
         )
-        self._logger.debug("Computing %s. ", _info_msg)
 
-        if coupling_type.lower().startswith('a'):
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.debug("Computing %s. ", _info_msg)
+
+        k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
+        k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
+        kappa_nu = self.disc.normalisations[nu[0]][nu[-1]-1]
+
+        attrs = [
+            'selection',
+            'weight',
+            'clustering_evolution',
+            'z_from_r',
+            'chi_of_z',
+        ]
+
+        if coupling_type == 'angular':
             trivial_case = not callable(self.mask)
-            if trivial_case:
-                if mu[0] == nu[0] and mu[1] == nu[1]:
-                    return 1. + 0.j
-                return 0. + 0.j
+            if trivial_case:  # Kronecker delta
+                coupling_coeff = complex(mu[0] == nu[0] and mu[1] == nu[1])
 
-            def _ang_kernel(theta, phi):
+            else:
+                coupling_coeff = ang_int(
+                    lambda theta, phi: \
+                        _angular_kernel(theta, phi, mu, nu, mask=self.mask)
+                )
+        elif coupling_type == 'radial':
+            attrs.extend(['bias_evolution'])
+            func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
-                return _angular_kernel(theta, phi, mu, nu, mask=self.mask)
-
-            coupling_coeff = ang_int(_ang_kernel)
-            self._logger.debug("Computed %s. ", _info_msg)
-
-            return coupling_coeff
-
-        rmax = self.disc.attrs['boundary_radius']
-
-        ell_mu, n_mu = mu[0], mu[-1]
-        ell_nu, n_nu = nu[0], nu[-1]
-
-        k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
-        k_nu = self.disc.wavenumbers[ell_nu][n_nu-1]
-        kappa_nu = self.disc.normalisations[ell_nu][n_nu-1]
-
-        if coupling_type.lower().startswith('rad'):
-            attrs = ['selection', 'weight', 'evolution', 'r2z', 'z2chi']
-            funcs = {attr: getattr(self, attr) for attr in attrs}
-
-            trivial_case = not any(
-                [callable(func) for attr, func in funcs.items()]
+            trivial_case = (mu[0] == nu[0]) and not any(
+                [callable(func) for attr, func in func_attrs.items()]
             )
-            if trivial_case:
-                if mu[0] == nu[0]:
-                    return float(mu[-1] == nu[-1])  # Kronecker delta
-
-            coupling_coeff = kappa_nu * rad_int(
-                lambda r: _radial_kernel(r, mu, nu, k_mu, k_nu, **funcs),
-                rmax
+            if trivial_case:  # Kronecker delta
+                coupling_coeff = float(mu[-1] == nu[-1])
+            else:
+                coupling_coeff = kappa_nu * rad_int(
+                    lambda r: \
+                        _radial_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
+                    self.disc.attrs['boundary_radius']
+                )
+        elif coupling_type == 'RSD':
+            attrs.extend(
+                ['weight_derivative', 'growth_evolution', 'AP_distortion']
             )
-            self._logger.debug("Computed %s. ", _info_msg)
-
-            return coupling_coeff
-
-        if coupling_type.lower().startswith('rsd'):
-            attrs = [
-                'selection',
-                'weight',
-                'weight_derivative',
-                'evolution',
-                'AP_distortion',
-                'r2z',
-                'z2chi',
-            ]
-            funcs = {attr: getattr(self, attr) for attr in attrs}
+            func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
             coupling_coeff = kappa_nu / k_nu * rad_int(
-                lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **funcs),
-                rmax
+                lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
+                self.disc.attrs['boundary_radius']
             )
+
+        if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computed %s.", _info_msg)
 
-            return coupling_coeff
-
-        raise ValueError(
-            "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
-        )
+        return coupling_coeff
 
     def couplings_fixed_index(self, mu, coupling_type):
         r"""Compute coupling coefficients with the first triplet index
@@ -599,52 +623,60 @@ class Couplings:
             dictionary with integer keys corresponding to spherical
             degrees.
 
-        Raises
-        ------
-        ValueError
-            If `coupling_type` does not correspond to a valid kernel.
-
         """
-        if coupling_type.lower().startswith('a'):
+        coupling_type = self._alias(coupling_type)
+
+        _info_msg = "all {} couplings".format(coupling_type.replace("'", ""))
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Computing %s.", _info_msg)
+
+        if coupling_type == 'angular':
             sigma_gen = lambda ell: [
-                (ell, m, None) for m in range(-ell, ell+1)
+                (ell, m, None) for m in range(-ell, 1)  # half by `m`-parity
             ]
-        elif coupling_type.lower().startswith(('rad', 'rsd')):
+        else:
             sigma_gen = lambda ell: [
                 (ell, None, n) for n in range(1, self.disc.depths[ell]+1)
             ]
-        else:
-            raise ValueError(
-                "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
-            )
 
         couplings_component = {}
         for ell in self.disc.degrees:
-            couplings_component[ell] = np.array(
+            ell_component = np.array(
                 [
                     self.coupling_coefficient(mu, sigma, coupling_type)
                     for sigma in sigma_gen(ell)
                 ]
             )
+            if coupling_type == 'angular':  # the other half by `m`-parity
+                ell_component_parity = np.multiply(
+                    np.power(-1, np.arange(1, ell+1)[:, None]),
+                    np.flipud(ell_component[:-1])
+                )
+                couplings_component[ell] = np.concatenate(
+                    (ell_component, np.conj(ell_component_parity))
+                )
+            couplings_component[ell] = ell_component
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Computed %s.", _info_msg)
 
         return couplings_component
 
-    def couplings(self, coupling_type, comm=None):
+    def couplings(self, coupling_type):
         r"""Compile all coupling coefficients of a given type as a sequence
         iterated through the first triplet index ordered as specified.
 
         This returns a dictionary whose keys are all the triplet indices,
         each with a value corresponding to the coefficients returned by
-        a call of :meth:`~.spherical_model.Couplings.couplings_fixed_index`
+        a call of
+        :meth:`~.reader.spherical_model.Couplings.couplings_fixed_index`
         for the specified coupling type and that triplet index.
 
         Parameters
         ----------
         coupling_type : {'angular', 'radial', 'RSD'}
             Coupling type.
-        comm : :class:`mpi4py.MPI.Comm` *or None, optional*
-            MPI communicator.  If `None` (default), no multiprocessing
-            is invoked.
 
         Returns
         -------
@@ -662,14 +694,16 @@ class Couplings:
             index_vector = SphericalArray.build(disc=self.disc)\
                 .unfold('natural', return_only='index')
 
-        if comm is not None:
+        if self.comm is not None:
             coeff_processor = lambda mu: \
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
-            coeff_vector = mpi_compute(index_vector, coeff_processor, comm)
+            coeff_vector = \
+                mpi_compute(index_vector, coeff_processor, self.comm)
 
-            if comm.rank == 0:
+            if self.comm.rank == 0:
                 sequenced_couplings = dict(zip(index_vector, coeff_vector))
-                sequenced_couplings = comm.bcast(sequenced_couplings, root=0)
+                sequenced_couplings = \
+                    self.comm.bcast(sequenced_couplings, root=0)
         else:
             coeff_vector = [
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
@@ -678,6 +712,18 @@ class Couplings:
             sequenced_couplings = dict(zip(index_vector, coeff_vector))
 
         return sequenced_couplings
+
+    def _alias(coupling_type):
+
+        if coupling_type.lower().startswith('a'):
+            return 'angular'
+        if coupling_type.lower().startswith('rad'):
+            return 'radial'
+        if coupling_type.lower().startswith('rsd'):
+            return 'RSD'
+        raise ValueError(
+            "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
+        )
 
 
 # 2-Point Correlators
@@ -694,31 +740,31 @@ class TwoPointFunction(Couplings):
         Discrete spectrum associated with the couplings.
     nbar : float
         Mean particle number density (in cubic h/Mpc).
-    b_1 : float
+    b_const : float
         Constant linear bias of the tracer particles at the current epoch.
-    f_nl : float or None, optional
-        Local primordial non-Gaussianity.  If `None` (default), this is set
-        to zero and ignored.
     f_0 : float or None, optional
-        Linear growth rate at the current epoch.  If `None` (default), RSD
-        calculations are neglected.
+        Linear growth rate at the current epoch.  If `None` (default), this
+        is set to zero and RSD calculations are neglected.
     power_spectrum : callable or None
         Linear matter power spectrum model.
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
-        Cosmological model used to produce the power spectrum model and the
-        transfer function for calculating scale-dependent bias.
+        Cosmological model used to produce a power spectrum model, linear
+        growth rate and the transfer function for calculating
+        scale-dependent bias.
     survey_specs : dict of {str: callable or None} or None, optional
         Survey specification functions accessed with the following
         mandatory keys: ``'mask'`` for angular mask, and ``'selection'``
         and ``'weight'`` for radial selection and weighting,
         ``'weight_derivative'`` for the derivative function of radial
-        weighting.  Default is `None`.
+        weighting.  Default is `None`.  Ignored if `cosmo` is `None`.
     cosmo_specs : dict of {str: callable or None} or None, optional
         Cosmological specification functions accessed with the following
-        mandatory keys: ``'r2z'`` for cosmological comoving
-        distance-to-redshift conversion, ``'z2chi'`` for fiducial
-        redshift-to-comoving distance conversion, ``'evolution'`` for
-        clustering evolution, and ``'AP_distortion'`` for AP distortion.
+        mandatory keys: ``'z_from_r'`` for cosmological comoving
+        distance-to-redshift conversion, ``'chi_of_z'`` for fiducial
+        redshift-to-comoving distance conversion, ``'bias_evolution'``,
+        ``'growth_evolution'`` and ``'clustering_evolution'`` for bias,
+        growth rate and clustering evolution as functions of the redshift
+        normalised to unity today, ``'AP_distortion'`` for AP distortion.
         Default is `None`.
     couplings : dict of {str: dict of {tuple: dict}} or None, optional
         Pre-computed couplings (default is `None`).
@@ -734,11 +780,13 @@ class TwoPointFunction(Couplings):
         Constant linear bias at the current epoch.
     growth_rate : float or None
         Linear growth rate at the current epoch.
-    non_gaussianity : float or None
-        Local primordial non-Gaussianity.
     matter_power_spectrum : |linear_power|
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/h).
+    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+        Cosmological model used to produce a power spectrum model, linear
+        growth rate and the transfer function for calculating
+        scale-dependent bias.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -751,44 +799,43 @@ class TwoPointFunction(Couplings):
     """
 
     _logger = logging.getLogger("TwoPointFunction")
-    _REDSHIFT_EPOCH = 0.
+    _CURRENT_Z = 0.
 
-    def __init__(self, disc, nbar, b_1, f_nl=None, f_0=None,
-                 power_spectrum=None, cosmo=None, survey_specs=None,
-                 cosmo_specs=None, couplings=None, comm=None):
+    def __init__(self, disc, nbar, b_const, f_0=None, power_spectrum=None,
+                 cosmo=None, survey_specs=None, cosmo_specs=None,
+                 couplings=None, comm=None):
 
         super().__init__(
             disc,
             survey_specs=survey_specs,
-            cosmo_specs=cosmo_specs
+            cosmo_specs=cosmo_specs,
+            comm=comm,
+            logger=self.logger
         )
-        self.comm = comm
 
         self.mean_density = nbar
-        self.bias_const = b_1
+        self.bias_const = b_const
 
-        self.growth_rate = f_0
         if cosmo is None:
-            self.non_gaussianity = None
+            self.growth_rate = f_0
             self.matter_power_spectrum = power_spectrum
         else:
-            if f_0 is not None:  # overide input `f_0` for model consistency
+            # Overide non-None `f_0` value for model consistency.
+            if f_0 is not None:
                 self.growth_rate = \
-                    cosmo.scale_independent_growth_rate(self._REDSHIFT_EPOCH)
-            self.non_gaussianity = f_nl
+                    cosmo.scale_independent_growth_rate(self._CURRENT_Z)
+            else:
+                self.growth_rate = None
             self.matter_power_spectrum = cosmology.LinearPower(
                 cosmo,
-                redshift=self._REDSHIFT_EPOCH,
+                redshift=self._CURRENT_Z,
                 transfer='CLASS'
             )
 
+        self.cosmo = cosmo
         self._couplings = couplings
-
-        if self.non_gaussianity is None:
-            self._bias_k = const_function(b_1)
-        else:
-            self._bias_k = lambda k: \
-                b_1 + bias_modification(f_nl, b_1, cosmo)(k)
+        self._mode_powers = None
+        self._mode_scale_modifications = None
 
     @property
     def couplings(self):
@@ -796,12 +843,11 @@ class TwoPointFunction(Couplings):
 
         Returns
         -------
-        dict of {str; dict}
+        dict of {str :code:`:` dict}
             Coupling coefficients as a dictionary for coupling types
             each with a sub-dictionary for all triplet indices.
 
         """
-
         if self._couplings is not None:
             return self._couplings
 
@@ -810,19 +856,71 @@ class TwoPointFunction(Couplings):
         else:
             self._couplings = dict.fromkeys(['angular', 'radial', 'RSD'])
         for coupling_type in self._couplings:
-            self._couplings[coupling_type] = \
-                super().couplings(coupling_type, comm=self.comm)
-        self._logger.info("Coupling coefficients computed. ")
+            self._couplings[coupling_type] = super().couplings(coupling_type)
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Coupling coefficients compiled. ")
 
         return self._couplings
 
-    def two_point_signal(self, mu, nu):
+    @property
+    def mode_powers(self):
+        """Power of the underlying matter distribution at the discretised
+        Fourier modes.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray``}
+            Mode power unmodulated by tracer bias.
+
+        """
+        if self._mode_powers is not None:
+            return self._mode_powers
+
+        self._mode_powers = {}
+        for ell in self.disc.degrees:
+            self._mode_powers[ell] = \
+                self.matter_power_spectrum(self.disc.wavenumbers[ell])
+
+        return self._mode_powers
+
+    @property
+    def mode_scale_modifications(self):
+        """Scale-dependent modification to constant linear bias at
+        discretised Fourier modes to be modulated by local primordial
+        non-Gaussianity and tracer parameter.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray`}
+            Mode scale-dependent modification.
+
+        """
+        if self._mode_bias_modifications is not None:
+            return self._mode_bias_modifications
+
+        scale_modification_kernel = \
+            scale_modification(self.cosmo, self._CURRENT_Z)
+
+        self._mode_bias_modifications = {}
+        for ell in self.disc.degrees:
+            self._mode_bias_modifications[ell] = \
+                scale_modification_kernel(self.disc.wavenumbers[ell])
+
+        return self._mode_bias_modifications
+
+    def two_point_signal(self, mu, nu, f_nl=None, tracer_parameter=1.):
         """Signal 2-point function for given triplet indices.
 
         Parameters
         ----------
         mu, nu : tuple or list of int
             Coefficient triplet index.
+        f_nl : float or None, optional
+            Local primordial non-Gaussianity parameter (default is `None`).
+        tracer_parameter : float, optional
+            Tracer species--dependent parameter for bias modulation
+            (default is 1.).
 
         Returns
         -------
@@ -831,17 +929,19 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
-        bias = self._bias_k
         f_0 = self.growth_rate
-        pk = self.matter_power_spectrum
-
-        k, kappa = self.disc.wavenumbers, self.disc.normalisations
 
         couplings = self.couplings
 
         M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
         Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
-        Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
+        if f_0 is not None:
+            Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
+
+        kappa = self.disc.normalisations
+        b_const = self.bias_const
+        A_k = self.mode_scale_modifications
+        p_k = self.mode_powers
 
         signal = 0.
         for ell, nmax in zip(self.disc.degrees, self.disc.depths):
@@ -851,25 +951,21 @@ class TwoPointFunction(Couplings):
                     for m_idx in range(0, 2*ell+1)
                 ]
             )
-            if self.growth_rate is None:
+
+            b_0_k = b_const * np.ones(nmax)
+            if f_nl is not None:
+                b_0_k += f_nl * (b_const - tracer_parameter) * A_k[ell]
+
+            if f_0 is None:
                 radial_sum = np.sum(
-                    [
-                        Phi_mu[ell][n_idx] * Phi_nu[ell][n_idx]
-                        * bias(k[ell][n_idx])**2
-                        * pk(k[ell][n_idx]) / kappa[ell][n_idx]
-                        for n_idx in range(0, nmax)
-                    ]
+                    Phi_mu[ell] * Phi_nu[ell]
+                    * b_0_k**2 * p_k[ell] / kappa[ell]
                 )
             else:
                 radial_sum = np.sum(
-                    [
-                        (bias(k[ell][n_idx]) * Phi_mu[ell][n_idx] \
-                             + f_0 * Upsilon_mu[ell][n_idx])
-                        * (bias(k[ell][n_idx]) * Phi_nu[ell][n_idx] \
-                               + f_0 * Upsilon_nu[ell][n_idx])
-                        * pk(k[ell][n_idx]) / kappa[ell][n_idx]
-                        for n_idx in range(0, nmax)
-                    ]
+                    (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
+                    * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
+                    * p_k[ell] / kappa[ell]
                 )
             signal += angular_sum * radial_sum
 
@@ -894,7 +990,7 @@ class TwoPointFunction(Couplings):
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        M_mu_nu = self.couplings['angular'][mu][ell_nu][m_nu+ell_nu]
+        M_mu_nu = (self.couplings['angular'][mu])[ell_nu][m_nu+ell_nu]
 
         u_mu = self.disc.roots[ell_mu][n_mu-1]
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
@@ -918,14 +1014,15 @@ class TwoPointFunction(Couplings):
 
         return shot_noise
 
-    def two_point_covariance(self, pivot, part='both', diag=False):
+    def two_point_covariance(self, pivot, part='both', diag=False,
+                             f_nl=None, tracer_parameter=1.):
         """2-point signal, shot noise or full covariance matrix for given
         pivot axis for unpacking indices.
 
         Parameters
         ----------
-        pivot : {'natural', 'scale', 'lmn', 'lnm', 'nlm', 'ln', 'k'}
-            Pivot axis order.
+        pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+            Pivot axis order for unpacking indices.
         part : {'both', 'signal', 'shotnoise'}, optional
             If ``'both'`` (default), compute the sum of the signal and shot
             noise parts.  If ``'signal'`` or ``'shotnoise'``, compute
@@ -933,6 +1030,11 @@ class TwoPointFunction(Couplings):
         diag : bool, optional
             If `True` (default is `False`), only compute the diagonal
             entries of the covariance matrix.
+        f_nl : float or None, optional
+            Local primordial non-Gaussianity parameter (default is `None`).
+        tracer_parameter : float, optional
+            Tracer species--dependent parameter for bias modulation
+            (default is 1.).
 
         Returns
         -------
@@ -952,11 +1054,11 @@ class TwoPointFunction(Couplings):
 
         if part == 'both':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu) \
+                self.two_point_signal(mu, nu, f_nl=None, tracer_parameter=1.) \
                 + self.two_point_shot_noise(mu, nu)
         elif part == 'signal':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu)
+                self.two_point_signal(mu, nu, f_nl=None, tracer_parameter=1.)
         elif part == 'shotnoise':
             two_point_component = lambda mu, nu: \
                 self.two_point_shot_noise(mu, nu)
@@ -968,7 +1070,8 @@ class TwoPointFunction(Couplings):
         if diag:
             for diag_idx in range(dim_covar):
                 mu = index_vector[diag_idx]
-                two_point_covar[diag_idx, diag_idx] = two_point_component(mu, mu)
+                two_point_covar[diag_idx, diag_idx] = \
+                    two_point_component(mu, mu)
         else:
             for row_idx in range(dim_covar):
                 for col_idx in range(row_idx+1):

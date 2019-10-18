@@ -9,8 +9,7 @@ The constant linear bias is modified as
 
     .. math::
 
-        b_1(z) \mapsto b_1(z) \
-            + f_\textrm{NL} [b_1(z) - p] \frac{A(k,z)}{k^2} \,,
+        b_1(z) \mapsto b_1(z) + f_\textrm{NL} [b_1(z) - p] A(k,z) \,,
 
 where :math:`p` is a tracer species--dependent parameter and the
 scale-dependence modification kernel
@@ -18,10 +17,10 @@ scale-dependence modification kernel
     .. math::
 
         A(k,z) = 3 \left( \frac{H_0}{\mathrm{c}} \right)^2
-            \frac{\Omega_\textrm{m} \delta_\textrm{c}}{T(k,z)}
+            \frac{\Omega_\textrm{m} \delta_\textrm{c}}{k^2 T(k,z)}
 
-relates to the transfer function :math:`T(k,z)` computed by ``nbodykit``
-with ``CLASS``.
+relates to the cosmological model and its transfer function :math:`T(k,z)`
+computed by ``nbodykit`` with ``CLASS``.
 
 .. autosummary::
 
@@ -34,9 +33,9 @@ with ``CLASS``.
 from nbodykit import cosmology
 
 
-def _scale_modification_kernel(cosmo, redshift):
-    r"""Return scale-dependence modification kernel :math:`A(k,z)` for a
-    a given cosmology.
+def scale_modification(cosmo, redshift):
+    r"""Return the scale-dependence modification kernel :math:`A(k,z)/k^2`
+    for a given cosmological model.
 
     Parameters
     ----------
@@ -63,20 +62,21 @@ def _scale_modification_kernel(cosmo, redshift):
 
     def kernel(k):
 
-        return num_factors / transfer_func(k)
+        return num_factors / (k**2 * transfer_func(k))
 
     return kernel
 
 
-def bias_modification(bz_const, cosmo, redshift=0., tracer_parameter=1.):
-    r"""Return the scale-dependent modification to the constant linear bias
-    amplified by the local primordial non-Gaussianity value
-    :math:`f_\textrm{NL}`.
+def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
+                         tracer_parameter=1.):
+    r"""Return the scale-dependent bias modulated by local primordial
+    non-Gaussianity.
 
     Parameters
     ----------
     bz_const : float
         Constant linear bias.  Must be the value at the specified redshift.
+    f_nl
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.
@@ -87,19 +87,18 @@ def bias_modification(bz_const, cosmo, redshift=0., tracer_parameter=1.):
 
     Returns
     -------
-    delta_bias : callable
-        Scale-dependent bias modificationn as a function of the Fourier
-        scale (in h/Mpc).
+    bias_k : callable
+        Scale-dependent bias as a function of the Fourier scale (in h/Mpc).
 
     """
-    def delta_bias(k):
+    def bias_k(k):
 
-        d_bias = (bz_const - tracer_parameter) / k**2 \
-            * _scale_modification_kernel(cosmo, redshift)(k)
+        bias_of_k = bz_const + (bz_const - tracer_parameter) \
+            * scale_modification(cosmo, redshift)(k)
 
-        return d_bias
+        return bias_of_k
 
-    return delta_bias
+    return bias_k
 
 
 def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
@@ -123,22 +122,23 @@ def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
 
     Returns
     -------
-    modified_power_spectrum : callable
+    power_spectrum : callable
         Non-Gaussianity modified biased power spectrum as a function of
         the Fourier scale (in h/Mpc).
 
     """
 
-    def modified_power_spectrum(k):
+    def power_spectrum(k):
 
-        bias_k = bz_const + f_nl * bias_modification(
+        bias = scale_dependent_bias(
             bz_const,
+            f_nl,
             cosmo,
             redshift=redshift,
             tracer_parameter=tracer_parameter
-        )(k)
-        power_k = cosmology.LinearPower(cosmo, redshift=redshift)(k)
+        )
+        power = cosmology.LinearPower(cosmo, redshift=redshift)
 
-        return bias_k**2 * power_k
+        return bias(k)**2 * power(k)
 
-    return modified_power_spectrum
+    return power_spectrum

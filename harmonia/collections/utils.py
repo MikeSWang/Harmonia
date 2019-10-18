@@ -2,7 +2,9 @@
 Utilities (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
-Common system and computational utilities.
+Convenience system utilities for I/O handling, processing, formatting and
+data manipulation, and common algebraic, geometric and statistical
+computational algorithms.
 
 System utilities
 ---------------------------------------------------------------------------

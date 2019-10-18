@@ -632,24 +632,16 @@ class Couplings:
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computing %s.", _info_msg)
 
-        if coupling_type == 'angular':
-            sigma_gen = lambda ell: [
-                (ell, m, None) for m in range(-ell, 1)  # half by `m`-parity
-            ]
-        else:
-            sigma_gen = lambda ell: [
-                (ell, None, n) for n in range(1, self.disc.depths[ell]+1)
-            ]
-
         couplings_component = {}
-        for ell in self.disc.degrees:
-            ell_component = np.array(
-                [
-                    self.coupling_coefficient(mu, sigma, coupling_type)
-                    for sigma in sigma_gen(ell)
-                ]
-            )
-            if coupling_type == 'angular':  # the other half by `m`-parity
+        if coupling_type == 'angular':  # exploiting `m`-parity
+            sigma_gen = lambda ell: [(ell, m, None) for m in range(-ell, 1)]
+            for ell in self.disc.degrees:
+                ell_component = np.array(
+                    [
+                        self.coupling_coefficient(mu, sigma, coupling_type)
+                        for sigma in sigma_gen(ell)
+                    ]
+                )
                 ell_component_parity = np.conj(
                     np.power(-1, np.arange(1, ell+1)) *
                     np.flip(ell_component[:-1])
@@ -657,7 +649,18 @@ class Couplings:
                 couplings_component[ell] = np.concatenate(
                     (ell_component, ell_component_parity)
                 )
-            couplings_component[ell] = ell_component
+        else:
+            sigma_gen = lambda ell: [
+                (ell, None, n) for n in range(1, self.disc.depths[ell]+1)
+            ]
+            for ell in self.disc.degrees:
+                ell_component = np.array(
+                    [
+                        self.coupling_coefficient(mu, sigma, coupling_type)
+                        for sigma in sigma_gen(ell)
+                    ]
+                )
+                couplings_component[ell] = ell_component
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computed %s.", _info_msg)
@@ -947,6 +950,7 @@ class TwoPointFunction(Couplings):
 
         signal = 0.
         for ell, nmax in zip(self.disc.degrees, self.disc.depths):
+            print(ell, M_mu[ell].shape)
             angular_sum = np.sum(
                 [
                     M_mu[ell][m_idx] * np.conj(M_nu[ell][m_idx])

@@ -24,7 +24,8 @@ computed by ``nbodykit`` with ``CLASS``.
 
 .. autosummary::
 
-    bias_modification
+    scale_modification
+    scale_dependent_bias
     scale_modified_power_spectrum
 
 |

@@ -15,8 +15,9 @@ from .geometry import (
     redshift_to_distance,
 )
 from .scale_dependence import (
-    bias_modification,
-    scale_modified_power_spectrum,
+    scale_modification,
+    scale_dependent_bias,
+    scale_modified_power_spectrum
 )
 
 fiducial_cosmology = cosmology.Planck15

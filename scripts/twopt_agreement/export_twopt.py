@@ -137,10 +137,10 @@ def process_data(collate_data=False, load_data=False, load_model=False,
     if load_data or collate_data:
         data_covar = data[PIVOT]
     if load_model:
-        model = model[PIVOT]
+        model = model[PIVOT.replace("k", "spectral")]
         model_covar = model['signal'] + model['shotnoise']
     if load_nbody:
-        nbody_model = nbody_model[PIVOT]
+        nbody_model = nbody_model[PIVOT.replace("k", "spectral")]
         model_covar = nbody_model['signal'] + nbody_model['shotnoise']
 
         data_covar = np.zeros(len(index_vector))
@@ -216,7 +216,7 @@ if __name__ == '__main__':
 
     DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
         .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
-    MODEL_TAG = "-(pivots={},{})".format(PIVOT_NAMES, PARAMS_TAG)
+    MODEL_TAG = "-(pivots={},{})".format(PIVOT_NAMES.replace("k", "spectral"), PARAMS_TAG)
     NBODY_TAG = ""
 
     NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \

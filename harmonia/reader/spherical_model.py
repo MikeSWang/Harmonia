@@ -1063,13 +1063,14 @@ class TwoPointFunction(Couplings):
             index_vector = SphericalArray.build(disc=self.disc)\
                 .unfold(pivot, return_only='index')
 
+        scale_mod_kwargs = dict(f_nl=f_nl, tracer_parameter=tracer_parameter)
         if part == 'both':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, f_nl=None, tracer_parameter=1.) \
+                self.two_point_signal(mu, nu, **scale_mod_kwargs) \
                 + self.two_point_shot_noise(mu, nu)
         elif part == 'signal':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, f_nl=None, tracer_parameter=1.)
+                self.two_point_signal(mu, nu, **scale_mod_kwargs)
         elif part == 'shotnoise':
             two_point_component = lambda mu, nu: \
                 self.two_point_shot_noise(mu, nu)

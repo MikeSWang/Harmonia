@@ -35,34 +35,29 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global prior_range, num_samples, pivot
-
-    global generator, nbar, bias, rsd_flag, rmax, kmax, redshift, expand, \
-        mesh_gen, mesh_cal, niter, prog_id
+    global prior_range, num_sample, pivot, generator, rsd_flag, nbar, bias, \
+        redshift, rmax, kmax, expand, mesh_gen, mesh_cal, niter, prog_id
 
     try:
         prior_range = params.priors
-        num_samples = params.nsamp
+        num_sample = params.num_sample
+        pivot = params.pivot
 
         if params.generator.lower().startswith('l'):
             generator = "lognormal"
         elif params.generator.lower().startswith('n'):
             generator = "nbodykit"
-
-        pivot = params.structure
+        rsd_flag = params.rsd
 
         nbar = params.nbar
         bias = params.bias
-        rsd_flag = params.rsd
-
+        redshift = params.redshift
         rmax = fiducial_distance(params.zmax)
         kmax = params.kmax
-        redshift = params.redshift
 
         expand = params.expand
         mesh_gen = params.mesh_gen
         mesh_cal = params.mesh_cal
-
         niter = params.niter
         prog_id = params.prog_id
     except AttributeError as attr_err:
@@ -81,7 +76,7 @@ def initialise():
 
     external_couplings = np.load(
         f"{PATHIN}predict_twopt"
-        "-(pivots=[natural,k],nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1)-"
+        "-(pivots=[natural,spectral],nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1)-"
         "couplings.npy"
     ).item()
 

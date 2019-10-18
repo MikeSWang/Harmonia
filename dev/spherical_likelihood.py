@@ -4,47 +4,31 @@ modelling.
 """
 import numpy as np
 
-from harmonia.reader import TwoPointFunction
 
-
-def _f_nl_parametrised_covariance(f_nl, pivot, *twopt_args, **twopt_kwargs):
+def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
     r"""Parametrised covariance matrix by local primordial non-Gaussianity.
 
     Parameters
     ----------
     f_nl : float
         Local primordial non-Gaussianity parameter.
-    pivot : {‘natural’, ‘scale’, ‘lmn’, ‘lnm’, ‘nlm’, ‘ln’, ‘k’}
-        Pivot axis for unpacking index data into a 1-d vector.
-    *twopt_args
-        Positional arguments to be passed to :class:`~.TwoPointFunction`
-        such as `disc`, `nbar`, `b_1`.
-    **twopt_kwargs
-        Keyword arguments to be passed to :class:`~.TwoPointFunction` such
-        as either `f_0` plus `power_spectrum` or `cosmo`, pre-computed
-        `couplings`, specifications such as `survey_specs` or `cosmo_specs`
-        and MPI communicator `comm`.
+    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function model without scale modification yet.
 
     Returns
     -------
-    covariance : complex or float, array_like
-        Covariance matrix evaluated at input parameter(s).
+    covariance : complex or float :class:`numpy.ndarray`
+        Covariance matrix value.
 
     See Also
     --------
     :class:`~harmonia.reader.spherical_model.TwoPointFunction`
 
-
-    .. todo::
-
-        `f_nl` is the only varying cosmological parameter, so currently
-        `couplings` are provided and MPI `comm` is disabled, with redundant
-        `survey_specs` and `cosmo_specs`.
-
     """
-    two_point_model = TwoPointFunction(*twopt_args, f_nl=f_nl, **twopt_kwargs)
-
-    covariance = two_point_model.two_point_covariance(pivot, diag=True)
+    covariance = \
+        two_point_model.two_point_covariance(pivot, diag=True, f_nl=f_nl)
 
     return covariance
 
@@ -77,26 +61,71 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
     data_dim = len(dat_vector)
 
-    dat_vector /= 1e4
-    cov_matrix /= 1e4 ** 2
-
     det_divider = data_dim * np.log(np.pi) \
         + np.log(np.abs(np.linalg.det(cov_matrix)))
 
-    chisq_exponent = np.real(
-        np.transpose(np.conj(dat_vector)) @ np.linalg.inv(cov_matrix) \
-            @ dat_vector
-    )
+    chisq_exponent = np.transpose(np.conj(dat_vector)) \
+        @ np.linalg.inv(cov_matrix) \
+        @ dat_vector
 
-    log_prob_density = - chisq_exponent - det_divider
+    log_prob_density = - det_divider - np.real(chisq_exponent)
 
     return log_prob_density
 
 
-def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
-                                  *twopt_args, **twopt_kwargs):
+def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
+                                  two_point_model):
+    """Parametrised chi-square value by local primordial non-Gaussianity.
+
+    The data vector is assumed to be zero-centred.
+
+    Parameters
+    ----------
+    sample_parameters : float, array_like
+        Sampling values of the local non-Gaussnaity parameter.
+    dat_vector : float or complex, array_like
+        1-d data vector centred at zero.
+    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function model without scale modification yet.
+
+    Returns
+    -------
+    sampled_chisq : float
+        Chi-square evaluated at the sample parameters.
+
+    Raises
+    ------
+    ValueError
+        If `data` is not equivalent to a 1-d vector.
+
+    """
+    if len(set(np.shape(dat_vector)).difference({1})) > 1:
+        raise ValueError("`data` is not equivalent to a 1-d vector. ")
+
+    sampled_chisq = np.zeros(len(sample_parameters))
+    for idx, parameter in enumerate(sample_parameters):
+        _sample_covar = _f_nl_parametrised_covariance(
+            parameter,
+            pivot,
+            two_point_model
+        )
+        sampled_chisq[idx] = np.real(
+            np.transpose(np.conj(dat_vector))
+            @ np.linalg.inv(_sample_covar)
+            @ dat_vector
+        )
+
+    return sampled_chisq
+
+
+def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
+                                  two_point_model):
     """Evaluate the spherical map likelihood of the local non-Gaussianity
     parameter.
+
+    The data vector is assumed to be zero-centred.
 
     Parameters
     ----------
@@ -104,6 +133,10 @@ def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
         Sampling values of the local non-Gaussnaity parameter.
     data_vector : float or complex, array_like
         1-d data vector.
+    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function model without scale modification yet.
 
     Returns
     -------
@@ -126,8 +159,7 @@ def spherical_map_likelihood_f_nl(sample_parameters, data_vector, pivot,
         _sample_covar = _f_nl_parametrised_covariance(
             parameter,
             pivot,
-            *twopt_args,
-            **twopt_kwargs
+            two_point_model
         )
         sampled_likelihood[idx] = \
             _log_complex_normal_pdf(data_vector, _sample_covar)

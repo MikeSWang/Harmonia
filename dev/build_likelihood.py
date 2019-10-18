@@ -5,7 +5,10 @@ import numpy as np
 from nbodykit.lab import cosmology
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
-from spherical_likelihood import spherical_map_likelihood_f_nl as likelihood
+from spherical_likelihood import (
+    _f_nl_parametrised_chi_square as chi_square,
+    spherical_map_f_nl_likelihood as likelihood,
+)
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
@@ -13,6 +16,7 @@ from harmonia.collections import (
 )
 from harmonia.cosmology import fiducial_cosmology, fiducial_distance
 from harmonia.mapper import LogNormalCatalogue, NBKCatalogue, SphericalMap
+from harmonia.reader import TwoPointFunction
 
 GEN_CATALOGUE = {
     'lognormal': LogNormalCatalogue,
@@ -63,26 +67,22 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global growth_rate, Plin, external_couplings
-
-    growth_rate = rsd_flag \
-        * fiducial_cosmology.scale_independent_growth_rate(redshift)
-
-    Plin = cosmology.LinearPower(
-        fiducial_cosmology,
-        redshift=redshift,
-        transfer='CLASS'
-    )
+    global external_couplings, Plin, growth_rate
 
     external_couplings = np.load(
         f"{PATHIN}predict_twopt"
-        "-(pivots=[natural,spectral],nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1)-"
+        "-(pivots=[natural,spectral],nbar=0.001,b1=2.,f0=none,"
+        "rmax=148.,kmax=0.1)-"
         "couplings.npy"
     ).item()
 
+    Plin = cosmology.LinearPower(fiducial_cosmology, redshift=redshift)
+
     if rsd_flag:
+        growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
         rsd_tag = "{:.2f}".format(growth_rate)
     else:
+        growth_rate = None
         rsd_tag = 'none'
 
     param_tag = "gen={},pivot={},nbar={},b1={},f0={},rmax={},kmax={},xpd={}," \
@@ -127,7 +127,18 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    sample_parameters = np.linspace(*prior_range, num=num_samples)
+    twopt_args = disc, nbar, bias
+    twopt_kwargs = dict(
+        f_0=growth_rate,
+        cosmo=fiducial_cosmology,
+        couplings=external_couplings,
+    )
+
+    two_point_model = TwoPointFunction(*twopt_args, **twopt_kwargs)
+
+    sample_parameters = np.linspace(*prior_range, num=num_sample)
+
+    chi_square_samples = []
     likelihood_samples = []
     for run in range(niter):
         catalogue = GEN_CATALOGUE[generator](
@@ -142,7 +153,6 @@ def process(runtime_info):
         spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 
         n_coeff, nbar_coeff = spherical_map.transform()
-
         overdensity = [
             n_coeff[ell] - nbar_coeff[ell]
             for ell in np.sort(disc.degrees)
@@ -151,25 +161,27 @@ def process(runtime_info):
         field_vector = SphericalArray.build(disc=disc, filling=overdensity) \
             .unfold(pivot, return_only='data')
 
-        twopt_args = disc, nbar, bias
-        twopt_kwargs = dict(
-            couplings=external_couplings,
-            cosmo=fiducial_cosmology,
+        sample_chi_square = chi_square(
+            sample_parameters,
+            field_vector,
+            pivot,
+            two_point_model
         )
 
         sample_likelihood = likelihood(
             sample_parameters,
             field_vector,
             pivot,
-            *twopt_args,
-            **twopt_kwargs
+            two_point_model
         )
 
+        chi_square_samples.append(sample_chi_square)
         likelihood_samples.append(sample_likelihood)
 
     output_data = {
         'f_nl': [sample_parameters],
-        'like': likelihood_samples,
+        'chi_square': chi_square_samples,
+        'likelihood': likelihood_samples,
     }
 
     return output_data

@@ -713,6 +713,7 @@ class Couplings:
 
         return sequenced_couplings
 
+    @staticmethod
     def _alias(coupling_type):
 
         if coupling_type.lower().startswith('a'):

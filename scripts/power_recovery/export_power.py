@@ -100,12 +100,9 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
         plt.style.use(harmony)
         plt.close('all')
         if SMOOTHING:
+            bins = np.linspace(0., 0.1, 13)
             smoothed_data, bin_count = smooth_by_bin_average(
-                results,
-                np.linspace(0., 0.1, 13),  # binning
-                'kln',
-                'Pln',
-                dy_coarse='dPln'
+                results, bins, 'kln', 'Pln', dy_coarse='dPln'
             )
         else:
             smoothed_data = None

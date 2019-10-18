@@ -52,6 +52,7 @@ def initialise():
         mesh_cal,
         niter,
     )
+
     runtime_info = "".join(["-(", param_tag, ")-", "[", prog_id, "]"])
     return runtime_info
 
@@ -73,6 +74,7 @@ def process(runtime_info):
     print(runtime_info.strip("-"))
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
+
     flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
 
     all_wavenumbers = np.concatenate(
@@ -112,6 +114,7 @@ def process(runtime_info):
         for var, vals in measurements.items()
     }
     output_data.update({'ln': [all_root_indices], 'kln': [all_wavenumbers]})
+
     return output_data
 
 

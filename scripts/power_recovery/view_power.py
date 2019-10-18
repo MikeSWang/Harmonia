@@ -26,8 +26,8 @@ def view_spectrum(data, case='error', smoothed_data=None):
         Plotting case, either a single plot (``'single'``) or with error
         panel (``'error'``).
     smoothed_data : dict or None, optional
-        Smoothed power spectrum data (default is `None`).  If not `None`,
-        this is plotted on top of plotted `data`.
+        Smoothed power spectrum data.  If not `None` (default), this is
+        plotted on top of plotted `data`.
 
     """
     if case == 'single':

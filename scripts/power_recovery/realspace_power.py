@@ -16,6 +16,7 @@ from harmonia.collections import (
     harmony,
     sort_dict_to_list,
 )
+from harmonia.cosmology import fiducial_cosmology
 from harmonia.mapper import (
     LogNormalCatalogue,
     NBKCatalogue,
@@ -44,8 +45,8 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global nbar, contrast, bias, redshift, zmax, kmax, dk, expand, \
-        mesh_gen, mesh_cal, niter, prog_id
+    global gen_name, nbar, contrast, bias, redshift, rmax, kmax, dk, \
+        expand, mesh_gen, mesh_cal, niter, prog_id
 
     try:
         generator = params.generator
@@ -53,7 +54,7 @@ def initialise():
         contrast = params.contrast
         bias = params.bias
         redshift = params.redshift
-        zmax = params.zmax
+        rmax = fiducial_cosmology.comoving_distance(params.zmax)
         kmax = params.kmax
         dk = params.dk
         expand = params.expand
@@ -64,21 +65,24 @@ def initialise():
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global cosmo, Plin, rmax, gen_name
-
-    cosmo = cosmology.Planck15
-    Plin = cosmology.LinearPower(cosmo, redshift=redshift, transfer='CLASS')
-    rmax = cosmo.comoving_distance(zmax)
-
     if generator.lower().startswith('g'):
         gen_name = "gaussian"
     elif generator.lower().startswith('l'):
         gen_name = "lognormal"
     elif generator.lower().startswith('n'):
         gen_name = "nbodykit"
-    gen_tag = f"gen={gen_name},"
+
+    global Plin
+
+    Plin = cosmology.LinearPower(
+        fiducial_cosmology,
+        redshift=redshift,
+        transfer='CLASS'
+    )
 
     global case_is_mock
+
+    gen_tag = f"gen={gen_name},"
 
     try:
         ratio_tag = format_float(float(contrast), 'decdot')
@@ -104,6 +108,7 @@ def initialise():
 
     part_tags = ["-(", gen_tag, param_tag, mesh_tag, iter_tag, ")-", "[", \
          prog_id, "]"]
+
     runtime_info = "".join(part_tags)
     return runtime_info
 
@@ -124,10 +129,11 @@ def process(runtime_info):
     """
     print(runtime_info.strip("-"))
 
-    boxsize = 2 * expand * rmax
+    boxsize = expand * 2*rmax
     to_mesh_params = dict(Nmesh=mesh_cal, resampler='tsc', compensated=True)
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
+
     flat_order = np.concatenate(sort_dict_to_list(disc.wavenumbers)).argsort()
 
     all_wavenumbers = np.concatenate(

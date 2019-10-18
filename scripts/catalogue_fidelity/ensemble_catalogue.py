@@ -178,7 +178,8 @@ def process(runtime_info):
     else:
         for run in range(niter):
             field = MECHANISM[generator](boxsize, mesh_gen, Plin, bias=bias)
-            if sampling: field = poisson_sample(field, nbar, boxsize)
+            if sampling:
+                field = poisson_sample(field, nbar, boxsize)
             k, Pk, Nk = cal_power(field, boxsize, kmax=kmax, nbins=nbins)
 
             suite['k'].append([k])
@@ -242,6 +243,7 @@ def finalise(output_data, save=True, plot=True):
 
             plt.xlabel(r'$k$ [$h/\textrm{Mpc}$]')
             plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
+            plt.ylim(22000, 120000)
             plt.legend()
             plt.savefig("".join([basepath, "/", filename, ".pdf"]))
         except Exception as e:

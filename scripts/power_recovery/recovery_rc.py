@@ -32,9 +32,9 @@ def parse_cli_args():
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--generator', default='nbodykit')
+
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--contrast', type=float, default=None)
-
     cli_parser.add_argument('--bias', type=float, default=2.)
     cli_parser.add_argument('--redshift', type=float, default=0.)
 

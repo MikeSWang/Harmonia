@@ -49,7 +49,7 @@ def initialise():
     ).T
 
     Plin = interp1d(k_points, Pk_points, assume_sorted=True)
-    growth_rate = None
+    growth_rate = 0.
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots)

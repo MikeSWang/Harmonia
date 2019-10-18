@@ -43,7 +43,7 @@ def initialise():
         redshift, rmax, kmax, expand, mesh_gen, mesh_cal, niter, prog_id
 
     try:
-        prior_range = params.priors
+        prior_range = params.prior_range
         num_sample = params.num_sample
         pivot = params.pivot
 

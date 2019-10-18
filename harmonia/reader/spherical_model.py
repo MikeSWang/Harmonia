@@ -632,35 +632,23 @@ class Couplings:
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computing %s.", _info_msg)
 
-        couplings_component = {}
-        if coupling_type == 'angular':  # exploiting `m`-parity
-            sigma_gen = lambda ell: [(ell, m, None) for m in range(-ell, 1)]
-            for ell in self.disc.degrees:
-                ell_component = np.array(
-                    [
-                        self.coupling_coefficient(mu, sigma, coupling_type)
-                        for sigma in sigma_gen(ell)
-                    ]
-                )
-                ell_component_parity = np.conj(
-                    np.power(-1, np.arange(1, ell+1)) *
-                    np.flip(ell_component[:-1])
-                )
-                couplings_component[ell] = np.concatenate(
-                    (ell_component, ell_component_parity)
-                )
+        if coupling_type == 'angular':
+            sigma_gen = lambda ell: [
+                (ell, m, None) for m in range(-ell, ell+1)
+            ]
         else:
             sigma_gen = lambda ell: [
                 (ell, None, n) for n in range(1, self.disc.depths[ell]+1)
             ]
-            for ell in self.disc.degrees:
-                ell_component = np.array(
-                    [
-                        self.coupling_coefficient(mu, sigma, coupling_type)
-                        for sigma in sigma_gen(ell)
-                    ]
-                )
-                couplings_component[ell] = ell_component
+
+        couplings_component = {}
+        for ell in self.disc.degrees:
+            couplings_component[ell] = np.array(
+                [
+                    self.coupling_coefficient(mu, sigma, coupling_type)
+                    for sigma in sigma_gen(ell)
+                ]
+            )
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computed %s.", _info_msg)

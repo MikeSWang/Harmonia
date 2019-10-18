@@ -276,19 +276,20 @@ class SphericalMap:
                 nbar_ell.append(nbar_ellm)
 
             if ell != 0:
-                n_ell_parity = np.multiply(
-                    np.power(-1, np.arange(1, ell+1)[:, None]),
-                    np.flipud(n_ell[:-1])
+                n_ell_parity = np.conj(
+                    np.power(-1, np.arange(1, ell+1)[:, None])
+                    * np.flipud(n_ell[:-1])
                 )
-                nbar_ell_parity = np.multiply(
-                    np.power(-1, np.arange(1, ell+1)[:, None]),
-                    np.flipud(nbar_ell[:-1])
+                nbar_ell_parity = np.conj(
+                    np.power(-1, np.arange(1, ell+1)[:, None])
+                    * np.flipud(nbar_ell[:-1])
                 )
-                n_ell = np.concatenate((n_ell, np.conj(n_ell_parity)))
-                nbar_ell = np.concatenate((nbar_ell, np.conj(nbar_ell_parity)))
 
-            n_coeff[ell] = n_ell
-            nbar_coeff[ell] = nbar_ell
+                n_ell = np.concatenate((n_ell, n_ell_parity))
+                nbar_ell = np.concatenate((nbar_ell, nbar_ell_parity))
+
+            n_coeff[ell] = np.array(n_ell)
+            nbar_coeff[ell] = np.array(nbar_ell)
 
         self._n_coeff, self._nbar_coeff = n_coeff, nbar_coeff
 

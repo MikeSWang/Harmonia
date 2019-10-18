@@ -810,7 +810,7 @@ class TwoPointFunction(Couplings):
             survey_specs=survey_specs,
             cosmo_specs=cosmo_specs,
             comm=comm,
-            logger=self.logger
+            logger=self._logger
         )
 
         self.mean_density = nbar

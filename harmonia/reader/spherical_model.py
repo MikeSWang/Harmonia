@@ -898,18 +898,18 @@ class TwoPointFunction(Couplings):
             Mode scale-dependent modification.
 
         """
-        if self._mode_bias_modifications is not None:
-            return self._mode_bias_modifications
+        if self._mode_scale_modifications is not None:
+            return self._mode_scale_modifications
 
         scale_modification_kernel = \
             scale_modification(self.cosmo, self._CURRENT_Z)
 
-        self._mode_bias_modifications = {}
+        self._mode_scale_modifications = {}
         for ell in self.disc.degrees:
-            self._mode_bias_modifications[ell] = \
+            self._mode_scale_modifications[ell] = \
                 scale_modification_kernel(self.disc.wavenumbers[ell])
 
-        return self._mode_bias_modifications
+        return self._mode_scale_modifications
 
     def two_point_signal(self, mu, nu, f_nl=None, tracer_parameter=1.):
         """Signal 2-point function for given triplet indices.

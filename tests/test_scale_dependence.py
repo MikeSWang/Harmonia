@@ -1,19 +1,29 @@
+import pytest
+
 from harmonia.cosmology import fiducial_cosmology
 from harmonia.cosmology.scale_dependence import (
+    scale_modification,
     scale_dependent_bias,
     scale_modified_power_spectrum,
 )
 
-TEST_PARAMETERS = dict(
-    f_nl=-5.,
-    b_const=2.,
-    cosmo=fiducial_cosmology,
+
+@pytest.mark.parametrize('cosmo,redshift', [(fiducial_cosmology, 0.)])
+def test_scale_modification(cosmo, redshift):
+    assert callable(scale_modification(cosmo, redshift))
+
+
+@pytest.mark.parametrize(
+    'bz_const,f_nl,cosmo',
+    [(2., -10., fiducial_cosmology)]
 )
+def test_scale_dependent_bias(bz_const, f_nl, cosmo):
+    assert callable(scale_dependent_bias(bz_const, f_nl, cosmo))
 
 
-def test_scale_dependent_bias():
-    assert callable(scale_dependent_bias(**TEST_PARAMETERS))
-
-
-def test_scale_modified_power_spectrum():
-    assert callable(scale_modified_power_spectrum(**TEST_PARAMETERS))
+@pytest.mark.parametrize(
+    'f_nl,bz_const,cosmo',
+    [(-10., 2., fiducial_cosmology)]
+)
+def test_scale_modified_power_spectrum(f_nl,bz_const,cosmo):
+    assert callable(scale_modified_power_spectrum(f_nl,bz_const,cosmo))

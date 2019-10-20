@@ -7,7 +7,7 @@ from nbodykit.lab import cosmology
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from spherical_likelihood import (
     _f_nl_parametrised_chi_square as chi_square,
-    spherical_map_f_nl_likelihood as likelihood,
+#    spherical_map_f_nl_likelihood as likelihood,
 )
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
@@ -139,7 +139,7 @@ def process(runtime_info):
     sample_parameters = np.linspace(*prior_range, num=num_sample)
 
     chi_square_samples = []
-    likelihood_samples = []
+#    likelihood_samples = []
     for run in range(niter):
         catalogue = GEN_CATALOGUE[generator](
             Plin,
@@ -168,20 +168,20 @@ def process(runtime_info):
             two_point_model
         )
 
-        sample_likelihood = likelihood(
-            sample_parameters,
-            field_vector,
-            pivot,
-            two_point_model
-        )
+#        sample_likelihood = likelihood(
+#            sample_parameters,
+#            field_vector,
+#            pivot,
+#            two_point_model
+#        )
 
         chi_square_samples.append(sample_chi_square)
-        likelihood_samples.append(sample_likelihood)
+#        likelihood_samples.append(sample_likelihood)
 
     output_data = {
         'f_nl': [sample_parameters],
         'chi_square': chi_square_samples,
-        'likelihood': likelihood_samples,
+#        'likelihood': likelihood_samples,
     }
 
     return output_data

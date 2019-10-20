@@ -104,6 +104,8 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
+    dat_vector /= 10**4
+
     sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
         _sample_covar = _f_nl_parametrised_covariance(
@@ -111,6 +113,9 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
             pivot,
             two_point_model
         )
+
+        _sample_covar /= 10**8
+
         sampled_chisq[idx] = np.real(
             np.transpose(np.conj(dat_vector))
             @ np.linalg.inv(_sample_covar)

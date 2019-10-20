@@ -35,8 +35,8 @@ from nbodykit import cosmology
 
 
 def scale_modification(cosmo, redshift):
-    r"""Return the scale-dependence modification kernel :math:`A(k,z)/k^2`
-    for a given cosmological model.
+    r"""Return the scale-dependence modification kernel :math:`A(k,z)` for
+    a given cosmological model.
 
     Parameters
     ----------
@@ -77,7 +77,8 @@ def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
     ----------
     bz_const : float
         Constant linear bias.  Must be the value at the specified redshift.
-    f_nl
+    f_nl : float
+        Local primordial non-Gaussnianity.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.

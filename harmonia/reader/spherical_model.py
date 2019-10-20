@@ -836,8 +836,8 @@ class TwoPointFunction(Couplings):
 
         self.cosmo = cosmo
         self._couplings = couplings
-        self._mode_powers = None
-        self._mode_scale_modifications = None
+        self._mode_powers_ = None
+        self._mode_scale_modifications_ = None
 
     @property
     def couplings(self):
@@ -866,7 +866,7 @@ class TwoPointFunction(Couplings):
         return self._couplings
 
     @property
-    def mode_powers(self):
+    def _mode_powers(self):
         """Power of the underlying matter distribution at the discretised
         Fourier modes.
 
@@ -876,18 +876,18 @@ class TwoPointFunction(Couplings):
             Mode power unmodulated by tracer bias.
 
         """
-        if self._mode_powers is not None:
-            return self._mode_powers
+        if self._mode_powers_ is not None:
+            return self._mode_powers_
 
-        self._mode_powers = {}
+        self._mode_powers_ = {}
         for ell in self.disc.degrees:
-            self._mode_powers[ell] = \
+            self._mode_powers_[ell] = \
                 self.matter_power_spectrum(self.disc.wavenumbers[ell])
 
-        return self._mode_powers
+        return self._mode_powers_
 
     @property
-    def mode_scale_modifications(self):
+    def _mode_scale_modifications(self):
         """Scale-dependent modification to constant linear bias at
         discretised Fourier modes to be modulated by local primordial
         non-Gaussianity and tracer parameter.
@@ -898,18 +898,18 @@ class TwoPointFunction(Couplings):
             Mode scale-dependent modification.
 
         """
-        if self._mode_scale_modifications is not None:
-            return self._mode_scale_modifications
+        if self._mode_scale_modifications_ is not None:
+            return self._mode_scale_modifications_
 
         scale_modification_kernel = \
             scale_modification(self.cosmo, self._CURRENT_Z)
 
-        self._mode_scale_modifications = {}
+        self._mode_scale_modifications_ = {}
         for ell in self.disc.degrees:
-            self._mode_scale_modifications[ell] = \
+            self._mode_scale_modifications_[ell] = \
                 scale_modification_kernel(self.disc.wavenumbers[ell])
 
-        return self._mode_scale_modifications
+        return self._mode_scale_modifications_
 
     def two_point_signal(self, mu, nu, f_nl=None, tracer_parameter=1.):
         """Signal 2-point function for given triplet indices.
@@ -942,7 +942,7 @@ class TwoPointFunction(Couplings):
 
         kappa = self.disc.normalisations
         b_const = self.bias_const
-        p_k = self.mode_powers
+        p_k = self._mode_powers
 
         signal = 0.
         for ell, nmax in zip(self.disc.degrees, self.disc.depths):
@@ -956,7 +956,7 @@ class TwoPointFunction(Couplings):
             b_0_k = b_const * np.ones(nmax)
             if f_nl is not None:
                 b_0_k += f_nl * (b_const - tracer_parameter) \
-                    * self.mode_scale_modifications[ell]
+                    * self._mode_scale_modifications[ell]
 
             if f_0 is None:
                 radial_sum = np.sum(

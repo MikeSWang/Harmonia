@@ -42,10 +42,10 @@ class SphericalArray:
           spherical orders;
         * 'spectral', or equivalently :math:`k`, where a flattened array is
           sorted by the spectral wavenumbers in ascending order;
-        * 'root', or equivalently:math:`(\ell, n)`, as above but subarrays
+        * 'root', or equivalently :math:`(\ell, n)`, as above but subarrays
           of equivalent :math:`m` have been averaged/collapsed in the
           corresponding axis;
-        * 'scale', or equivalently :math:`u`, similar to 'scale' but
+        * 'scale', or equivalently :math:`u`, similar to 'spectral' but
           subarrays of equivalent :math:`m` have been averaged/collapsed in
           the corresponding axis.
 
@@ -69,12 +69,12 @@ class SphericalArray:
         Spherical degrees.
     depths : list of int
         Spherical depths associated with each spherical degree.
-    roots : list of float :class:`numpy.ndarray`
+    roots : *list of float* :class:`numpy.ndarray`
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.
     index_array : list of (int, int, int), array_like
         Triplet indices stored in the natural structure.
-    data_array : list of :class:`numpy.ndarray` or None
+    data_array : *list of* :class:`numpy.ndarray` *or None*
         Data stored in the natural structure.
 
     Raises
@@ -196,7 +196,7 @@ class SphericalArray:
             If ``'mean'`` or ``'rms'`` (default is `None`), the arrays are
             collapsed over spherical orders by averaging or averaging in
             square modulus before flattening.  If `None` but `axis_order`
-            is ``'root'`` or ``'scale'``, this is overriden to `mean`.
+            is ``'root'`` or ``'scale'``, this is overridden to `mean`.
         return_only : {'data', 'index', None}, optional
             Only return the 'data' or 'index' array (default is `None`).
 

@@ -37,7 +37,8 @@ class SphericalMap:
     Notes
     -----
     The spherical degrees of the map is usually assumed to start at
-    :math:`\ell = 0` (see :ref:`here <degree-index-warning>`).
+    :math:`\ell = 0` (see :ref:`warning <degree-index-warning>` in
+    :mod:`~harmonia.reader.spherical_model`).
 
     Parameters
     ----------

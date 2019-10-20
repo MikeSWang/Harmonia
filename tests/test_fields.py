@@ -3,7 +3,7 @@ import pytest
 from nbodykit.lab import cosmology
 
 from harmonia.algorithms.fields import (
-    generate_regular_grid,
+    _generate_regular_grid,
     generate_gaussian_random_field,
     generate_lognormal_random_field,
     threshold_clip,
@@ -16,9 +16,9 @@ power_spectrum = cosmology.LinearPower(cosmology.Planck15, redshift=0.)
 
 
 @pytest.mark.parametrize("cell_size,num_mesh", [(1., 32), (2., 64)])
-def test_generate_regular_grid(cell_size, num_mesh):
+def test__generate_regular_grid(cell_size, num_mesh):
 
-    grid_norm = generate_regular_grid(cell_size, num_mesh, variable='norm')
+    grid_norm = _generate_regular_grid(cell_size, num_mesh, variable='norm')
 
     assert np.min(grid_norm) == pytest.approx(np.sqrt(3) * cell_size / 2)
     assert np.max(grid_norm) \

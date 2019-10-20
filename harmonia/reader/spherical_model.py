@@ -15,6 +15,7 @@ n_\mu)`, i.e. ``(mu[0], mu[1], mu[2])``.
     `wavenumbers` and `normalisations`, are assumed to start at spherical
     degree :math:`\ell = 0`.
 
+
 Kernels
 ---------------------------------------------------------------------------
 
@@ -46,6 +47,7 @@ include the following factors:
 When using integration kernels that is a combination of functions of the
 above, pass additional parameters not being directly integrated over by
 redefining these functions with the `lambda` keyword.
+
 
 Couplings
 ---------------------------------------------------------------------------
@@ -88,6 +90,7 @@ coefficients is equivalent to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
 .. autosummary::
 
     Couplings
+
 
 2-point functions
 ---------------------------------------------------------------------------

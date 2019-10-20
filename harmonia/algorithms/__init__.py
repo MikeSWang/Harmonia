@@ -22,7 +22,6 @@ from .discretisation import DiscreteSpectrum
 from .fields import (
     generate_gaussian_random_field,
     generate_lognormal_random_field,
-    generate_regular_grid,
     lognormal_transform,
     poisson_sample,
     populate_particles,

@@ -35,7 +35,7 @@ def test_collate_data_files(tmpdir):
             "{}/tmp_dat_*.txt".format(tmp_dir),
             'txt',
             headings=['x', 'y'],
-            columns=[0, 1],
+            columns=[0, 1]
         )
     assert np.allclose(collated_data['x'], TMP_COL['x'])
     assert np.allclose(collated_data['y'], TMP_COL['y'])
@@ -176,7 +176,7 @@ def test_binary_search(func, a, b, maxnum, roots):
 def test_normalise_vector(vec):
     assert np.allclose(
         np.array(vec) / np.linalg.norm(vec, axis=-1, keepdims=True),
-        utils.normalise_vector(vec),
+        utils.normalise_vector(vec)
     )
 
 
@@ -244,7 +244,7 @@ def test_smooth_by_bin_average():
             [1, 2, 3],
             [0, 0.005, 0.05, 0.1],
             'kln',
-            'Pln',
+            'Pln'
         )
 
     smoothed_data, count_in_bins = utils.smooth_by_bin_average(
@@ -253,7 +253,7 @@ def test_smooth_by_bin_average():
         'x',
         'y',
         dx_coarse_key='dx',
-        dy_coarse_key='dy',
+        dy_coarse_key='dy'
     )
     for key in smoothed_data:
         assert smoothed_data[key] == pytest.approx(TMP_SMOOTH_DATA[key])

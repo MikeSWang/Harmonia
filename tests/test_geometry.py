@@ -19,5 +19,5 @@ def test_redshift_to_distance(redshift):
             _fiducial_cosmology.h,
             _fiducial_cosmology.Omega0_b,
             _fiducial_cosmology.Omega0_cdm,
-        ),
+        )
     )

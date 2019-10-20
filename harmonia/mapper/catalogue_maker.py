@@ -37,6 +37,7 @@ from harmonia.collections.utils import normalise_vector
 
 MAX_INT = 4294967295
 
+
 class RandomCatalogue(UniformCatalog):
     """Uniform random catalogue of given mean particle number density and
     box size.

@@ -62,7 +62,7 @@ class SphericalMap:
         Data catalogue of particles.
     rand : :class:`nbodykit.base.catalog.CatalogSource` *or None*
         Random catalogue of particles.
-    pair : |fkp_catalog| *or None*
+    pair : |fkp_catalogue| *or None*
         FKP pair of data and random catalogues.
     mean_density : float
         Mean particle number density (in cubic h/Mpc) of the data
@@ -72,7 +72,7 @@ class SphericalMap:
         catalogue to that of the random catalogue.
 
 
-    .. |fkp_catalog| replace::
+    .. |fkp_catalogue| replace::
 
         :class:`nbodykit.algorithms.convpower.catalog.FKPCatalog`
 

@@ -10,18 +10,13 @@ from agreement_rc import PATHIN, PATHOUT
 from view_twopt import view_covariance
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
-    collate_data_files as collate,
+    collate_data_files,
     confirm_directory_path as confirm_dir,
     harmony,
     overwrite_protection,
     sort_dict_to_list,
 )
 from harmonia.cosmology import fiducial_distance
-
-DATA_NAME_ROOT = "measure_twopt"
-MODEL_NAME_ROOT = "predict_twopt"
-NBODY_NAME_ROOT = "nbodymod_twopt"
-NBODY_REF_NAME_ROOT = "halos"
 
 
 def aggregate_data(output):
@@ -93,7 +88,7 @@ def process_data(collate_data=False, load_data=False, load_model=False,
     collate_path = data_outpath + "collated/"
 
     if collate_data:
-        output, count, _ = collate(
+        output, count, _ = collate_data_files(
             f"{data_outpath}{DATA_NAME_ROOT}-{DATA_SEARCH_TAG}.npy",
             'npy'
         )
@@ -112,21 +107,21 @@ def process_data(collate_data=False, load_data=False, load_model=False,
 
     if load_data:
         results = np.load(
-            f"{collate_path}{DATA_NAME_ROOT}{DATA_TAG}.npy"
+            f"{collate_path}{DATA_NAME_ROOT}{data_tag}.npy"
         ).item()
-        if DATA_TAG.endswith("agg"):
+        if data_tag.endswith("agg"):
             data = results
-        elif DATA_TAG.endswith("all"):
+        elif data_tag.endswith("all"):
             data = aggregate_data(results)
 
     if load_model:
         model = np.load(
-            f"{model_outpath}{MODEL_NAME_ROOT}{MODEL_TAG}.npy"
+            f"{model_outpath}{MODEL_NAME_ROOT}{model_tag}.npy"
         ).item()
 
     if load_nbody:
         nbody_model = np.load(
-            f"{nbody_outpath}{NBODY_NAME_ROOT}{NBODY_TAG}.npy"
+            f"{nbody_outpath}{NBODY_NAME_ROOT}{nbody_tag}.npy"
         ).item()[PIVOT]
         nbody_power = aggregate_data(
             np.load(
@@ -166,7 +161,7 @@ def process_data(collate_data=False, load_data=False, load_model=False,
 
     global data_2pt, model_2pt
 
-    if load_data or load_nbody or collate:
+    if load_data or load_nbody or collate_data:
         data_2pt = np.abs(data_covar)
     if load_model or load_nbody:
         model_2pt = np.abs(model_covar)
@@ -201,11 +196,10 @@ def view_data():
 
 if __name__ == '__main__':
 
-    PIVOT = 'k'
-    GROWTH_RATE = 'none'
-    KMAX = 0.1
-    ZMAX = 0.05
-    BOXSIZE = None  # 1000.
+    DATA_NAME_ROOT = "measure_twopt"
+    MODEL_NAME_ROOT = "predict_twopt"
+    NBODY_NAME_ROOT = "nbodymod_twopt"
+    NBODY_REF_NAME_ROOT = "halos"
 
     DATA_SEARCH_TAG = "*nbodykit*"
 
@@ -214,15 +208,21 @@ if __name__ == '__main__':
     PARAMS_TAG = "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1"
     BOX_TAG = "xpd=2.,mesh=gc256,iter=50*100"
 
-    DATA_TAG = "-(gen={},pivots={},{},{})-agg"\
+    data_tag = "-(gen={},pivots={},{},{})-agg"\
         .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
-    MODEL_TAG = "-(pivots={},{})".format(PIVOT_NAMES.replace("k", "spectral"), PARAMS_TAG)
-    NBODY_TAG = ""
+    model_tag = "-(pivots={},{})".format(PIVOT_NAMES.replace("k", "spectral"), PARAMS_TAG)
+    nbody_tag = ""
 
     NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \
         "nbar=2.49e-4,b1=2.3415,kmax=0.04," + \
         "boxsize=1000.,mesh=c256,npair=11" + \
         ")"
+
+    PIVOT = 'k'
+    GROWTH_RATE = 'none'
+    KMAX = 0.1
+    ZMAX = 0.05
+    BOXSIZE = None  # 1000.
 
     setup_cosmology(BOXSIZE, zmax=ZMAX)
 

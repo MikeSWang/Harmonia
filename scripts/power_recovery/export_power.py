@@ -121,6 +121,6 @@ if __name__ == '__main__':
 
     COLLATE = False
     LOAD = True
-    SMOOTHING = True
+    SMOOTHING = False
 
     main(collate=COLLATE, load=LOAD, save=False, savefig=False)

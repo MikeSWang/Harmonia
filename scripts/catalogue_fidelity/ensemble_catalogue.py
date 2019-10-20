@@ -1,4 +1,4 @@
-"""Create an ensemble of catalogues.
+"""Create an ensemble of catalogues and measure their power spectra.
 
 """
 import warnings
@@ -214,7 +214,7 @@ def finalise(output_data, save=True, plot=True):
     if save:
         np.save("".join([basepath, "/", filename, ".npy"]), output_data)
     if plot:
-        dof_k = np.size(output_data['k'], axis=-1) - 1
+        dof_k = np.size(output_data['k'], axis=0) - 1
         dof_P = np.size(output_data['Pk'], axis=0) - 1
 
         results = {

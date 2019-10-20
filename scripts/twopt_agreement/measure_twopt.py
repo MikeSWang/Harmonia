@@ -129,7 +129,7 @@ def process(runtime_info):
     """
     print(runtime_info.strip("-"))
 
-    boxsize = expand * 2*rmax
+    boxsize = expand * (2*rmax)
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     output_data = defaultdict(list)

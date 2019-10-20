@@ -1,4 +1,4 @@
-"""Runtime configuration for catalogue fidelity tests.
+"""Runtime configuration for catalogue fidelity comparisons.
 
 """
 import os

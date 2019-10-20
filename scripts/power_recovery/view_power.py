@@ -81,7 +81,7 @@ def view_spectrum(data, case='error', smoothed_data=None):
 
     if case == 'error':
 
-        fig = plt.figure(figsize=(7, 5.5))
+        fig = plt.figure(figsize=(8, 6))
 
         plt.subplot2grid(
             ERROR_CANVAS_GRID,
@@ -174,7 +174,7 @@ def view_spectrum(data, case='error', smoothed_data=None):
             [ERROR_PATCH_HT]*2,
             [-ERROR_PATCH_HT]*2,
             color='k',
-            alpha=0.2
+            alpha=1/5
         )
 
         plt.xlim(left=0.99*data['kln'].min(), right=1.01*data['kln'].max())

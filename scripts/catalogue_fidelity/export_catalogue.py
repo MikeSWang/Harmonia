@@ -29,6 +29,7 @@ def aggregate_data(output_data):
 
     """
     dof = np.size(output_data['Pk'], axis=0) - 1
+
     results = {
         'Nk': np.sum(output_data['Nk'], axis=0),
         'k': np.average(output_data['k'], axis=0),
@@ -37,6 +38,7 @@ def aggregate_data(output_data):
         'dk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof),
         'dPk': np.std(output_data['Pk'], axis=0, ddof=1) / np.sqrt(dof),
     }
+
     return results
 
 
@@ -178,7 +180,7 @@ def view(results, savefig=False):
         xlim,
         [ERROR_PATCH_HEIGHT]*2,
         [-ERROR_PATCH_HEIGHT]*2,
-        alpha=0.2
+        alpha=1/5
     )
     plt.axhline(y=0., lw=1., ls='--')
 

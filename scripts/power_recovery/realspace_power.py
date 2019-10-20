@@ -129,7 +129,7 @@ def process(runtime_info):
     """
     print(runtime_info.strip("-"))
 
-    boxsize = expand * 2*rmax
+    boxsize = expand * (2*rmax)
     to_mesh_params = dict(Nmesh=mesh_cal, resampler='tsc', compensated=True)
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)

@@ -59,10 +59,10 @@ def process_data():
         f"{PATHOUT}{SCRIPT_NAME}/{SCRIPT_NAME}{MODEL_TAG}.npy"
     ).item()[PIVOT]
 
-    dim_covar = len(index_vector)
-
     global diagonal_normalisations, diagonal_k_coords, reference_covar, \
         model_covar
+
+    dim_covar = len(index_vector)
 
     diagonal_normalisations = np.zeros(dim_covar)
     diagonal_k_coords = np.zeros(dim_covar)
@@ -76,11 +76,12 @@ def process_data():
 
         diagonal_normalisations[vec_idx] = k_ordered_normalisations[ref_idx]
         diagonal_k_coords[vec_idx] = reference['kln'][ref_idx]
-        this_val = reference['Pln'][ref_idx] \
+        diag_val = reference['Pln'][ref_idx] \
             / k_ordered_normalisations[ref_idx]
-        if np.isinf(this_val):
-            print(this_val, vec_idx, ref_idx)
-        diagonal_covar[vec_idx] = this_val
+
+        if np.isinf(diag_val):
+            print(diag_val, vec_idx, ref_idx)
+        diagonal_covar[vec_idx] = diag_val
 
     reference_covar = diagonal_covar
     model_covar = np.abs(np.diag(model['signal'] + model['shotnoise']))
@@ -98,21 +99,19 @@ def diagonal_smoothing():
     }
     smooth_data = {}
 
-    spherical_wavenumber_zero_depth = np.array(
+    global bin_coords, counts
+
+    depth_zero_wavenumbers = np.array(
         [wavenumbers[0] for deg, wavenumbers in disc.wavenumbers.items()]
     )
-    spherical_wavenumber_selected_deg = [0, 4, 7, 9, 12]
-
     bins = np.concatenate(
         [
-            spherical_wavenumber_zero_depth[spherical_wavenumber_selected_deg],
+            depth_zero_wavenumbers[[0, 4, 7, 9, 12]],
             [0.04],
         ]
     )
     # HACK: manual rebinning.
     bins = [0.00675, 0.016, 0.025, 0.032, 0.036, 0.040]
-
-    global bin_coords, counts
 
     counts, _ = np.histogram(diagonal_k_coords, bins=bins)
     bin_coords = np.histogram(
@@ -158,14 +157,14 @@ def view_result():
     plt.loglog(
         bin_coords,
         smooth_data['measurements'],
-        ls='-',
+        linestyle='-',
         marker='+',
         label='measurements'
     )
     plt.loglog(
         bin_coords,
         smooth_data['predictions'],
-        ls=':',
+        linestyle=':',
         marker='+',
         label=f'{correction_tag} predictions'
     )
@@ -191,10 +190,11 @@ def view_result():
         xlim,
         [ERROR_PATCH_HT]*2,
         [-ERROR_PATCH_HT]*2,
-        alpha=0.2
+        alpha=1/5
     )
 
     plt.axhline(y=0, lw=1, ls='--')
+
     plt.xlim(xlim)
     plt.ylim(bottom=-ERROR_PANEL_HT,top=ERROR_PANEL_HT)
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
@@ -222,10 +222,11 @@ if __name__ == '__main__':
     RMAX = 500.
     KMAX = 0.04
 
-    ERROR_PANEL_HT = 0.05
-    ERROR_PATCH_HT = 0.01
-
     setup_cosmology()
     process_data()  # upscale bias by 1.027
     diagonal_smoothing()
+
+    ERROR_PANEL_HT = 0.05
+    ERROR_PATCH_HT = 0.01
+
     view_result()

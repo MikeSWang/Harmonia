@@ -72,8 +72,13 @@ def initialise():
     external_couplings = np.load(
         f"{PATHIN}predict_twopt-("
         "pivots=[natural,spectral],"
-        "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1)-"
-        "couplings.npy"
+        "nbar={},b1={},f0=none,rmax={},kmax={})-couplings.npy"
+        .format(
+            format_float(nbar, 'sci'),
+            format_float(bias, 'decdot'),
+            format_float(rmax, 'intdot'),
+            format_float(kmax, 'sci'),
+        )
     ).item()
 
     Plin = cosmology.LinearPower(fiducial_cosmology, redshift=redshift)

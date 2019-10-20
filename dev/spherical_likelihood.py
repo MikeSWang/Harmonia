@@ -4,6 +4,8 @@ modelling.
 """
 import numpy as np
 
+_OVERFLOW_DOWNSCALE = 10**4
+
 
 def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
     r"""Parametrised covariance matrix by local primordial non-Gaussianity.
@@ -15,7 +17,7 @@ def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
-        2-point function model without scale modification yet.
+        2-point function model without scale modification.
 
     Returns
     -------
@@ -64,6 +66,9 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
     det_divider = data_dim * np.log(np.pi) \
         + np.log(np.abs(np.linalg.det(cov_matrix)))
 
+    dat_vector /= _OVERFLOW_DOWNSCALE
+    cov_matrix /= _OVERFLOW_DOWNSCALE**2
+
     chisq_exponent = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) \
         @ dat_vector
@@ -88,7 +93,7 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
-        2-point function model without scale modification yet.
+        2-point function model without scale modification.
 
     Returns
     -------
@@ -104,7 +109,7 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
-    dat_vector /= 10**4
+    dat_vector /= _OVERFLOW_DOWNSCALE
 
     sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
@@ -114,7 +119,7 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
             two_point_model
         )
 
-        _sample_covar /= 10**8
+        _sample_covar /= _OVERFLOW_DOWNSCALE**2
 
         sampled_chisq[idx] = np.real(
             np.transpose(np.conj(dat_vector))
@@ -141,7 +146,7 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
-        2-point function model without scale modification yet.
+        2-point function model without scale modification.
 
     Returns
     -------

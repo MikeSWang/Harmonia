@@ -1,13 +1,11 @@
 """Export sampled spherical likelihood over many data realisations.
 
 """
-import warnings
-
 import numpy as np
 import matplotlib.pyplot as plt
 
 from likelihood_rc import PATHOUT
-from view_likelihood import view_likelihood
+from view_likelihood import view_chi_square
 from harmonia.collections import (
     collate_data_files,
     confirm_directory_path as confirm_dir,
@@ -51,13 +49,14 @@ def safe_save(data, path, name):
     np.save(path + name, data)
 
 
-def process_data(collate_data=False, load_data=False, save=True):
+def process_data(collate_data=False, load_data=False, save=False):
     """Collate, load and export likelihood outputs.
 
     Parameters
     ----------
     collate_data, load_data, save : bool, optional
-        If `True` , collate, load and/or save likelihood data.
+        If `True` (default is `False`), collate, load and/or save
+        likelihood data.
 
     """
     data_outpath = f"{PATHOUT}{SCRIPT_NAME}/"
@@ -66,8 +65,10 @@ def process_data(collate_data=False, load_data=False, save=True):
     global output, data
 
     if collate_data:
-        output, count, _ = \
-            collate(f"{data_outpath}{SCRIPT_NAME}-*{GEN_TAG}*.npy", 'npy')
+        output, count, _ = collate_data_files(
+            f"{data_outpath}{SCRIPT_NAME}-*{GEN_TAG}*.npy",
+            'npy'
+        )
         data = aggregate_data(output)
 
         if save:
@@ -91,20 +92,20 @@ def view_data(savefig=False):
     """
     plt.close('all')
     plt.style.use(harmony)
-    view_likelihood(data)
+    view_chi_square(data)
     if savefig:
         plt.savefig(f"{PATHOUT}likelihood-({GEN_TAG},{PARAM_TAG})")
 
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "build_likelihood"
+    SCRIPT_NAME = "sample_likelihood"
     GENERATOR = "nbodykit"
-    PIVOT = "k"
+    PIVOT = "spectral"
 
     GEN_TAG = f"gen={GENERATOR},pivot={PIVOT}"
     PARAM_TAG = \
         "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=250"
 
-    process_data(collate_data=True, load_data=False)
+    process_data(collate_data=True, load_data=False, save=True)
     view_data()

@@ -7,7 +7,7 @@ from nbodykit.lab import cosmology
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from spherical_likelihood import (
     _f_nl_parametrised_chi_square as chi_square,
-#    spherical_map_f_nl_likelihood as likelihood,
+    spherical_map_f_nl_likelihood as likelihood,
 )
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
@@ -70,16 +70,17 @@ def initialise():
     global external_couplings, Plin, growth_rate
 
     external_couplings = np.load(
-        f"{PATHIN}predict_twopt"
-        "-(pivots=[natural,spectral],nbar=0.001,b1=2.,f0=none,"
-        "rmax=148.,kmax=0.1)-"
+        f"{PATHIN}predict_twopt-("
+        "pivots=[natural,spectral],"
+        "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1)-"
         "couplings.npy"
     ).item()
 
     Plin = cosmology.LinearPower(fiducial_cosmology, redshift=redshift)
 
     if rsd_flag:
-        growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
+        growth_rate = \
+            fiducial_cosmology.scale_independent_growth_rate(redshift)
         rsd_tag = "{:.2f}".format(growth_rate)
     else:
         growth_rate = None
@@ -104,8 +105,9 @@ def initialise():
 
     iter_tag = "iter={}".format(niter)
 
-    runtime_info = "".join(["-(", param_tag, mesh_tag, iter_tag, ")-",
-        "[", prog_id, "]"])
+    runtime_info = "".join([
+        "-(", param_tag, mesh_tag, iter_tag, ")-", "[", prog_id, "]"
+    ])
     return runtime_info
 
 
@@ -139,13 +141,13 @@ def process(runtime_info):
     sample_parameters = np.linspace(*prior_range, num=num_sample)
 
     chi_square_samples = []
-#    likelihood_samples = []
+    likelihood_samples = []
     for run in range(niter):
         catalogue = GEN_CATALOGUE[generator](
             Plin,
             nbar,
             bias=bias,
-            boxsize=2*expand*rmax,
+            boxsize=expand*2*rmax,
             num_mesh=mesh_gen,
             add_RSD=rsd_flag
         )
@@ -168,20 +170,20 @@ def process(runtime_info):
             two_point_model
         )
 
-#        sample_likelihood = likelihood(
-#            sample_parameters,
-#            field_vector,
-#            pivot,
-#            two_point_model
-#        )
+        sample_likelihood = likelihood(
+            sample_parameters,
+            field_vector,
+            pivot,
+            two_point_model
+        )
 
         chi_square_samples.append(sample_chi_square)
-#        likelihood_samples.append(sample_likelihood)
+        likelihood_samples.append(sample_likelihood)
 
     output_data = {
         'f_nl': [sample_parameters],
         'chi_square': chi_square_samples,
-#        'likelihood': likelihood_samples,
+        'likelihood': likelihood_samples,
     }
 
     return output_data

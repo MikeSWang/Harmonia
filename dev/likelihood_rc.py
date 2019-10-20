@@ -15,8 +15,7 @@ def import_local_package():
 
     """
     _cwd = os.path.dirname(__file__)
-    # TODO: "../../"
-    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))  # TODO: "../../"
 
 
 def parse_cli_args():

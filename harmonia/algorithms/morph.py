@@ -537,7 +537,10 @@ class SphericalArray:
             return [
                 [
                     list(
-                        map(lambda index: (index[0], index[-1]), ell_block[0])
+                        map(
+                            lambda index: (index[0], None, index[-1]),
+                            ell_block[0]
+                        )
                     )
                 ]
                 for ell_block in array

@@ -726,7 +726,7 @@ class Couplings:
 # -----------------------------------------------------------------------------
 
 class TwoPointFunction(Couplings):
-    r"""Compute 2-point function values for given survey and cosmological
+    """Compute 2-point function values for given survey and cosmological
     specifications from a biased power spectrum model, linear growth rate
     and local primordial non-Gaussianity.
 
@@ -784,11 +784,11 @@ class TwoPointFunction(Couplings):
 
          :class:`nbodykit.cosmology.power.linear.LinearPower`
 
+
     .. todo::
 
-        Include evolution and geometrical effects---this requires `cosmo`
-        to override some but not all attributes in `cosmo_specs`, or vice
-        versa.
+        Fully include evolution and AP effects y resolving the conflicts
+        between attributes set by `cosmo_specs` and derived by `cosmo`.
 
     """
 
@@ -807,30 +807,26 @@ class TwoPointFunction(Couplings):
             logger=self._logger
         )
 
-        self.growth_rate = f_0
-
-        if cosmo is None:
-            self.matter_power_spectrum = power_spectrum
-        else:
-            if f_0 is not None:
-                cosmo_growth_rate = \
-                    cosmo.scale_independent_growth_rate(self._CURRENT_Z)
-                if not np.isclose(self.growth_rate, cosmo_growth_rate):
-                    warnings.warn(
-                        "`f_0` value is inconsistent with `cosmo` model: "
-                        "input {}, model predicted value {}. ".format(
-                            self.growth_rate,
-                            cosmo_growth_rate,
-                        ),
-                        RuntimeWarning
-                    )
-            self.matter_power_spectrum = cosmology.LinearPower(
+        if cosmo is not None:
+            power_spectrum = cosmology.LinearPower(
                 cosmo,
                 redshift=self._CURRENT_Z,
                 transfer='CLASS'
             )
-
+            if f_0 is not None:
+                cosmo_growth_rate = \
+                    cosmo.scale_independent_growth_rate(self._CURRENT_Z)
+                if not np.isclose(f_0, cosmo_growth_rate):
+                    warnings.warn(
+                        "`f_0` value is inconsistent with `cosmo` model: "
+                        "input {}, model predicted value {}. "
+                        .format(f_0, cosmo_growth_rate),
+                        RuntimeWarning
+                    )
+        self.growth_rate = f_0
+        self.matter_power_spectrum = power_spectrum
         self.cosmo = cosmo
+
         self._couplings = couplings
         self._mode_powers_ = None
         self._mode_scale_modifications_ = None
@@ -845,18 +841,49 @@ class TwoPointFunction(Couplings):
             Coupling coefficients as a dictionary for coupling types
             each with a sub-dictionary for all triplet indices.
 
+        Raises
+        ------
+        ValueError
+            If externally set non-NoneType :attr:`couplings` do not match
+            `cosmo_specs` or `growth_rate`, or is missing ``'radial'`` key
+            or ``'radial'``-key value is `None`.
+
         """
         if self._couplings is not None:
+            couplings_missing = (
+                self.mask is not None
+                and (
+                    'angular' not in self._couplings
+                    or self._couplings['angular'] is None
+                )
+            ) or (
+                self.growth_rate is not None
+                and (
+                    'RSD' not in self._couplings
+                    or self._couplings['RSD'] is None
+                )
+            ) or (
+                'radial' not in self._couplings \
+                or self._couplings['radial'] is None
+            )
+            if couplings_missing:
+                raise ValueError(
+                    "Externally loaded `couplings` mismatch "
+                    "non-NoneType `cosmo_spec` or `growth_rate`. "
+                )
             return self._couplings
 
-        self._couplings = {'radial': None}
-        if self.mask is not None:
-            self._couplings['angular'] = None
-        if self.growth_rate is not None:
-            self._couplings['RSD'] = None
+        self._couplings['radial'] = super().couplings('RSD')
 
-        for coupling_type in self._couplings:
-            self._couplings[coupling_type] = super().couplings(coupling_type)
+        if self.mask is None:
+            self._couplings['angular'] = None
+        else:
+            self._couplings['angular'] = super().couplings('angular')
+
+        if self.growth_rate is None:
+            self._couplings['RSD'] = None
+        else:
+            self._couplings['RSD'] = super().couplings('RSD')
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Relevant coupling coefficients compiled. ")
@@ -895,9 +922,17 @@ class TwoPointFunction(Couplings):
         dict of {int: float :class:`numpy.ndarray`}
             Mode scale-dependent modification.
 
+        Raises
+        ------
+        ValueError
+            If :attr:`cosmo` is `None`.
+
         """
         if self._mode_scale_modifications_ is not None:
             return self._mode_scale_modifications_
+
+        if self.cosmo is None:
+            raise ValueError("`cosmo` cannot be None for scale modification. ")
 
         scale_modification_kernel = \
             scale_modification(self.cosmo, self._CURRENT_Z)
@@ -911,7 +946,8 @@ class TwoPointFunction(Couplings):
 
     def two_point_signal(self, mu, nu, b_const, f_nl=None,
                          tracer_parameter=1.):
-        """Signal 2-point function for given triplet indices.
+        """Compute signal 2-point function for given triplet indices with
+        or without scale modification by primordial non-Gaussianity.
 
         Parameters
         ----------
@@ -933,23 +969,24 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
-        f_0 = self.growth_rate
-        angular_reduction = (self.mask is None)
-
         couplings = self.couplings
 
+        angular_reduction = (self.couplings['angular'] is None)
+        rsd_reduction = (self.growth_rate is None)
+
         Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
-        if angular_reduction:
+        if not angular_reduction:
             M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
-        if f_0 is not None:
+        if not rsd_reduction:
             Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
 
-        kappa = self.disc.normalisations
+        f_0 = self.growth_rate
         p_k = self._mode_powers
+        kappa = self.disc.normalisations
 
         signal = 0.
         if angular_reduction:
-            trivial_case = (mu[:-1] == nu[:-1])
+            trivial_case = (mu[:-1] != nu[:-1])
             if not trivial_case:
                 ell = mu[0]  # equivalently nu[0]
                 ell_idx = ell - 1
@@ -960,7 +997,7 @@ class TwoPointFunction(Couplings):
                     b_0_k += f_nl * (b_const - tracer_parameter) \
                         * self._mode_scale_modifications[ell]
 
-                if f_0 is None:
+                if rsd_reduction:
                     radial_sum = np.sum(
                         Phi_mu[ell] * Phi_nu[ell]
                         * b_0_k**2 * p_k[ell] / kappa[ell]
@@ -1003,7 +1040,7 @@ class TwoPointFunction(Couplings):
         return signal
 
     def two_point_shot_noise(self, mu, nu, nbar):
-        """Shot noise 2-point function for given triplet indices.
+        """Compute shot noise 2-point function for given triplet indices.
 
         Parameters
         ----------
@@ -1021,7 +1058,7 @@ class TwoPointFunction(Couplings):
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        if self.mask is None:
+        if self.couplings['angular'] is None:
             if ell_mu != ell_nu or m_mu != m_nu:
                 return 0.j
             else:
@@ -1055,12 +1092,13 @@ class TwoPointFunction(Couplings):
 
     def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
                              b_const=None, f_nl=None, tracer_parameter=1.):
-        """2-point signal, shot noise or full covariance matrix for given
-        pivot axis for unpacking indices.
+        """Compute 2-point signal, shot noise or full covariance matrix for
+        given pivot axis for unpacking indices with or without scale
+        modification by primordial non-Gaussianity.
 
         Parameters
         ----------
-        pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        pivot : {'natural', 'transposed', 'spectral'}
             Pivot axis order for unpacking indices.
         part : {'both', 'signal', 'shotnoise'}, optional
             If ``'both'`` (default), compute the sum of the signal and shot
@@ -1095,6 +1133,8 @@ class TwoPointFunction(Couplings):
             or ``'both'``.
         ValueError
             If `part` is not a recognised 2-point covariance component.
+        ValueError
+            If `pivot` is ``'root'`` or ``'scale'``.
 
         """
         if b_const is None and part in ['signal', 'both']:
@@ -1104,6 +1144,13 @@ class TwoPointFunction(Couplings):
         if nbar is None and part in ['shotnoise', 'both']:
             raise ValueError(
                 "`nbar` cannot be None if `part` is 'shotnoise' or 'both'. "
+            )
+        if pivot in ['root', 'scale']:
+            raise ValueError(
+                "Pivot by 'root' or 'scale' is not supported by this method. "
+                "Apply `variance` method instead for order-collapse cases "
+                "where no masking, selection, weighting, evolution or "
+                "geometrical effects are present. "
             )
 
         scale_mod_kwargs = dict(f_nl=f_nl, tracer_parameter=tracer_parameter)
@@ -1143,3 +1190,81 @@ class TwoPointFunction(Couplings):
             two_point_covar[triu_indices] = two_point_covar.T[triu_indices]
 
         return two_point_covar
+
+    def variance_reduction(self, pivot, part='both', nbar=None, b_const=None,
+                           f_nl=None, tracer_parameter=1.):
+        """Compute the signal, shot noise or total variance for given pivot
+        axis for unpacking indices, reduced to the simplest case of no
+        masking, selection, weighting, evolution or geometrical effects and
+        with or without scale modification by primordial non-Gaussianity.
+
+        Parameters
+        ----------
+        pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+            Pivot axis order for unpacking indices.
+        part : {'both', 'signal', 'shotnoise'}, optional
+            If ``'both'`` (default), compute the sum of the signal and shot
+            noise parts.  If ``'signal'`` or ``'shotnoise'``, compute
+            only the corresponding part.
+        nbar : float or None, optional
+            Mean particle number density (in cubic h/Mpc).  If `part` is
+            ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
+        b_const : float or None, optional
+            Constant linear bias of the tracer particles at the current
+            epoch.  If `part` is ``'signal'`` or ``'both'``, this cannot be
+            `None` (default).
+        f_nl : float or None, optional
+            Local primordial non-Gaussianity parameter (default is `None`).
+        tracer_parameter : float, optional
+            Tracer species--dependent parameter for bias modulation
+            (default is 1.).
+
+        Returns
+        -------
+        variance : complex :class:`numpy.ndarray`
+            2-point variance vector pivoted at given axis order.
+
+        Raises
+        ------
+        ValueError
+            If `b_const` is `None` when `part` is ``'signal'`` or
+            ``'both'``, or `nbar` is `None` when `part` is ``'shotnoise'``
+            or ``'both'``.
+        ValueError
+            If `part` is not a recognised 2-point covariance component.
+
+        """
+        if b_const is None and part in ['signal', 'both']:
+            raise ValueError(
+                "`b_const` cannot be None if `part` is 'signal' or 'both'. "
+            )
+        if nbar is None and part in ['shotnoise', 'both']:
+            raise ValueError(
+                "`nbar` cannot be None if `part` is 'shotnoise' or 'both'. "
+            )
+
+        kappa = self.disc.normalisations
+        p_k = self._mode_powers
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            index_vector = SphericalArray.build(disc=self.disc)\
+                .unfold(pivot, return_only='index')
+
+        collapse_dof_correction = (pivot in ['scale', 'root'])
+
+        variance = np.zeros(len(index_vector))
+        for idx, index in enumerate(index_vector):
+            ell, n_idx = index[0], index[-1] - 1
+
+            b_0_k = b_const
+            if f_nl is not None:
+                b_0_k += f_nl * (b_const - tracer_parameter) \
+                    * self._mode_scale_modifications[ell][n_idx]
+
+            variance[idx] = b_0_k**2 * p_k[ell][n_idx] / kappa[ell][n_idx]
+
+            if collapse_dof_correction:
+                variance[idx] /= 2*ell + 1
+
+        return variance

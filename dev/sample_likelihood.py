@@ -175,20 +175,20 @@ def process(runtime_info):
             two_point_model
         )
 
-        sample_likelihood = likelihood(
-            sample_parameters,
-            field_vector,
-            pivot,
-            two_point_model
-        )
+        # sample_likelihood = likelihood(
+        #     sample_parameters,
+        #     field_vector,
+        #     pivot,
+        #     two_point_model
+        # )
 
         chi_square_samples.append(sample_chi_square)
-        likelihood_samples.append(sample_likelihood)
+        # likelihood_samples.append(sample_likelihood)
 
     output_data = {
         'f_nl': [sample_parameters],
         'chi_square': chi_square_samples,
-        'likelihood': likelihood_samples,
+        # 'likelihood': likelihood_samples,
     }
 
     return output_data

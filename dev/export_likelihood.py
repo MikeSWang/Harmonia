@@ -73,7 +73,7 @@ def process_data(collate_data=False, load_data=False, save=False):
 
         if save:
             save_str = "".join(_.split("(")[-1].split(")")[:-1]) + f"*{count}"
-            safe_save(data, collate_path, f"{SCRIPT_NAME}-({save_str}).npy")
+            safe_save(output, collate_path, f"{SCRIPT_NAME}-({save_str}).npy")
 
     if load_data:
         data = np.load(
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     GEN_TAG = f"gen={GENERATOR},pivot={PIVOT}"
     PARAM_TAG = \
-        "nbar=0.001,b1=2.,f0=none,rmax=148.,kmax=0.1,xpd=2.,mesh=gc256,iter=250"
+        "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=500"
 
     process_data(collate_data=True, load_data=False, save=True)
     view_data()

@@ -784,6 +784,12 @@ class TwoPointFunction(Couplings):
 
          :class:`nbodykit.cosmology.power.linear.LinearPower`
 
+    .. todo::
+
+        Include evolution and geometrical effects---this requires `cosmo`
+        to override some but not all attributes in `cosmo_specs`, or vice
+        versa.
+
     """
 
     _logger = logging.getLogger("TwoPointFunction")
@@ -843,15 +849,17 @@ class TwoPointFunction(Couplings):
         if self._couplings is not None:
             return self._couplings
 
-        if self.growth_rate is None:
-            self._couplings = dict.fromkeys(['angular', 'radial'])
-        else:
-            self._couplings = dict.fromkeys(['angular', 'radial', 'RSD'])
+        self._couplings = {'radial': None}
+        if self.mask is not None:
+            self._couplings['angular'] = None
+        if self.growth_rate is not None:
+            self._couplings['RSD'] = None
+
         for coupling_type in self._couplings:
             self._couplings[coupling_type] = super().couplings(coupling_type)
 
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Coupling coefficients compiled. ")
+            self._logger.info("Relevant coupling coefficients compiled. ")
 
         return self._couplings
 
@@ -926,11 +934,13 @@ class TwoPointFunction(Couplings):
 
         """
         f_0 = self.growth_rate
+        angular_reduction = (self.mask is None)
 
         couplings = self.couplings
 
-        M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
         Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
+        if angular_reduction:
+            M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
         if f_0 is not None:
             Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
 
@@ -938,31 +948,57 @@ class TwoPointFunction(Couplings):
         p_k = self._mode_powers
 
         signal = 0.
-        for ell, nmax in zip(self.disc.degrees, self.disc.depths):
-            angular_sum = np.sum(
-                [
-                    M_mu[ell][m_idx] * np.conj(M_nu[ell][m_idx])
-                    for m_idx in range(0, 2*ell+1)
-                ]
-            )
+        if angular_reduction:
+            trivial_case = (mu[:-1] == nu[:-1])
+            if not trivial_case:
+                ell = mu[0]  # equivalently nu[0]
+                ell_idx = ell - 1
+                nmax = self.disc.depths[ell_idx]
 
-            b_0_k = b_const * np.ones(nmax)
-            if f_nl is not None:
-                b_0_k += f_nl * (b_const - tracer_parameter) \
-                    * self._mode_scale_modifications[ell]
+                b_0_k = b_const * np.ones(nmax)
+                if f_nl is not None:
+                    b_0_k += f_nl * (b_const - tracer_parameter) \
+                        * self._mode_scale_modifications[ell]
 
-            if f_0 is None:
-                radial_sum = np.sum(
-                    Phi_mu[ell] * Phi_nu[ell]
-                    * b_0_k**2 * p_k[ell] / kappa[ell]
+                if f_0 is None:
+                    radial_sum = np.sum(
+                        Phi_mu[ell] * Phi_nu[ell]
+                        * b_0_k**2 * p_k[ell] / kappa[ell]
+                    )
+                else:
+                    radial_sum = np.sum(
+                        (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
+                        * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
+                        * p_k[ell] / kappa[ell]
+                    )
+
+                signal += radial_sum
+        else:
+            for ell, nmax in zip(self.disc.degrees, self.disc.depths):
+                angular_sum = np.sum(
+                    [
+                        M_mu[ell][m_idx] * np.conj(M_nu[ell][m_idx])
+                        for m_idx in range(0, 2*ell+1)
+                    ]
                 )
-            else:
-                radial_sum = np.sum(
-                    (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
-                    * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
-                    * p_k[ell] / kappa[ell]
-                )
-            signal += angular_sum * radial_sum
+
+                b_0_k = b_const * np.ones(nmax)
+                if f_nl is not None:
+                    b_0_k += f_nl * (b_const - tracer_parameter) \
+                        * self._mode_scale_modifications[ell]
+
+                if f_0 is None:
+                    radial_sum = np.sum(
+                        Phi_mu[ell] * Phi_nu[ell]
+                        * b_0_k**2 * p_k[ell] / kappa[ell]
+                    )
+                else:
+                    radial_sum = np.sum(
+                        (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
+                        * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
+                        * p_k[ell] / kappa[ell]
+                    )
+                signal += angular_sum * radial_sum
 
         return signal
 
@@ -982,12 +1018,18 @@ class TwoPointFunction(Couplings):
             Shot noise 2-point function value for given triplet indices.
 
         """
-        rmax = self.disc.attrs['boundary_radius']
-
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        M_mu_nu = (self.couplings['angular'][mu])[ell_nu][m_nu+ell_nu]
+        if self.mask is None:
+            if ell_mu != ell_nu or m_mu != m_nu:
+                return 0.j
+            else:
+                M_mu_nu = 1.
+        else:
+            M_mu_nu = (self.couplings['angular'][mu])[ell_nu][m_nu+ell_nu]
+
+        rmax = self.disc.attrs['boundary_radius']
 
         u_mu = self.disc.roots[ell_mu][n_mu-1]
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]

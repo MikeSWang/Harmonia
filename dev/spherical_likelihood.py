@@ -7,7 +7,7 @@ import numpy as np
 _OVERFLOW_DOWNSCALE = 10**4
 
 
-def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
+def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model, nbar, bias):
     r"""Parametrised covariance matrix by local primordial non-Gaussianity.
 
     Parameters
@@ -18,6 +18,11 @@ def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
         2-point function model without scale modification.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    bias : float
+        Constant linear bias of the tracer particles at the current
+        epoch.
 
     Returns
     -------
@@ -29,8 +34,13 @@ def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model):
     :class:`~harmonia.reader.spherical_model.TwoPointFunction`
 
     """
-    covariance = \
-        two_point_model.two_point_covariance(pivot, diag=True, f_nl=f_nl)
+    covariance = two_point_model.two_point_covariance(
+        pivot,
+        diag=True,
+        f_nl=f_nl,
+        nbar=nbar,
+        bias=bias
+    )
 
     return covariance
 
@@ -79,7 +89,7 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
 
 
 def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
-                                  two_point_model):
+                                  two_point_model, nbar, bias):
     """Parametrised chi-square value by local primordial non-Gaussianity.
 
     The data vector is assumed to be zero-centred.
@@ -94,6 +104,11 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
         2-point function model without scale modification.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    bias : float
+        Constant linear bias of the tracer particles at the current
+        epoch.
 
     Returns
     -------
@@ -116,7 +131,9 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
         _sample_covar = _f_nl_parametrised_covariance(
             parameter,
             pivot,
-            two_point_model
+            two_point_model,
+            nbar,
+            bias
         )
 
         _sample_covar /= _OVERFLOW_DOWNSCALE**2
@@ -131,7 +148,7 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
 
 
 def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
-                                  two_point_model):
+                                  two_point_model, nbar, bias):
     """Evaluate the spherical map likelihood of the local non-Gaussianity
     parameter.
 
@@ -147,6 +164,11 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
         Pivot axis for unpacking indexed data into a 1-d vector.
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
         2-point function model without scale modification.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    bias : float
+        Constant linear bias of the tracer particles at the current
+        epoch.
 
     Returns
     -------
@@ -169,7 +191,9 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
         _sample_covar = _f_nl_parametrised_covariance(
             parameter,
             pivot,
-            two_point_model
+            two_point_model,
+            nbar,
+            bias
         )
         sampled_likelihood[idx] = \
             _log_complex_normal_pdf(data_vector, _sample_covar)

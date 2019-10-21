@@ -134,14 +134,13 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    twopt_args = disc, nbar, bias
     twopt_kwargs = dict(
         f_0=growth_rate,
         cosmo=fiducial_cosmology,
         couplings=external_couplings,
     )
 
-    two_point_model = TwoPointFunction(*twopt_args, **twopt_kwargs)
+    two_point_model = TwoPointFunction(disc, **twopt_kwargs)
 
     sample_parameters = np.linspace(*prior_range, num=num_sample)
 
@@ -172,7 +171,9 @@ def process(runtime_info):
             sample_parameters,
             field_vector,
             pivot,
-            two_point_model
+            two_point_model,
+            nbar,
+            bias
         )
 
         # sample_likelihood = likelihood(
@@ -180,6 +181,8 @@ def process(runtime_info):
         #     field_vector,
         #     pivot,
         #     two_point_model
+        #     nbar,
+        #     bias
         # )
 
         chi_square_samples.append(sample_chi_square)

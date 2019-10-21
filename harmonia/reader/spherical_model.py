@@ -734,10 +734,6 @@ class TwoPointFunction(Couplings):
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
-    nbar : float
-        Mean particle number density (in cubic h/Mpc).
-    b_const : float
-        Constant linear bias of the tracer particles at the current epoch.
     f_0 : float or None, optional
         Linear growth rate at the current epoch.  If `None` (default), this
         is set to zero and RSD calculations are neglected.
@@ -770,10 +766,6 @@ class TwoPointFunction(Couplings):
 
     Attributes
     ----------
-    mean_density : float
-        Mean particle number density (in cubic h/Mpc).
-    bias_const : float
-        Constant linear bias at the current epoch.
     growth_rate : float or None
         Linear growth rate at the current epoch.
     matter_power_spectrum : |linear_power|
@@ -797,9 +789,9 @@ class TwoPointFunction(Couplings):
     _logger = logging.getLogger("TwoPointFunction")
     _CURRENT_Z = 0.
 
-    def __init__(self, disc, nbar, b_const, f_0=None, power_spectrum=None,
-                 cosmo=None, survey_specs=None, cosmo_specs=None,
-                 couplings=None, comm=None):
+    def __init__(self, disc, f_0=None, power_spectrum=None, cosmo=None,
+                 survey_specs=None, cosmo_specs=None, couplings=None,
+                 comm=None):
 
         super().__init__(
             disc,
@@ -809,8 +801,6 @@ class TwoPointFunction(Couplings):
             logger=self._logger
         )
 
-        self.mean_density = nbar
-        self.bias_const = b_const
         self.growth_rate = f_0
 
         if cosmo is None:
@@ -911,13 +901,17 @@ class TwoPointFunction(Couplings):
 
         return self._mode_scale_modifications_
 
-    def two_point_signal(self, mu, nu, f_nl=None, tracer_parameter=1.):
+    def two_point_signal(self, mu, nu, b_const, f_nl=None,
+                         tracer_parameter=1.):
         """Signal 2-point function for given triplet indices.
 
         Parameters
         ----------
         mu, nu : tuple or list of int
             Coefficient triplet index.
+        b_const : float
+            Constant linear bias of the tracer particles at the current
+            epoch.
         f_nl : float or None, optional
             Local primordial non-Gaussianity parameter (default is `None`).
         tracer_parameter : float, optional
@@ -941,7 +935,6 @@ class TwoPointFunction(Couplings):
             Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
 
         kappa = self.disc.normalisations
-        b_const = self.bias_const
         p_k = self._mode_powers
 
         signal = 0.
@@ -973,13 +966,15 @@ class TwoPointFunction(Couplings):
 
         return signal
 
-    def two_point_shot_noise(self, mu, nu):
+    def two_point_shot_noise(self, mu, nu, nbar):
         """Shot noise 2-point function for given triplet indices.
 
         Parameters
         ----------
         mu, nu : tuple or list of int
             Coefficient triplet index.
+        nbar : float
+            Mean particle number density (in cubic h/Mpc).
 
         Returns
         -------
@@ -1012,12 +1007,12 @@ class TwoPointFunction(Couplings):
                 rmax
             )
 
-        shot_noise *= M_mu_nu / self.mean_density
+        shot_noise *= M_mu_nu / nbar
 
         return shot_noise
 
-    def two_point_covariance(self, pivot, part='both', diag=False,
-                             f_nl=None, tracer_parameter=1.):
+    def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
+                             b_const=None, f_nl=None, tracer_parameter=1.):
         """2-point signal, shot noise or full covariance matrix for given
         pivot axis for unpacking indices.
 
@@ -1032,6 +1027,13 @@ class TwoPointFunction(Couplings):
         diag : bool, optional
             If `True` (default is `False`), only compute the diagonal
             entries of the covariance matrix.
+        nbar : float or None, optional
+            Mean particle number density (in cubic h/Mpc).  If `part` is
+            ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
+        b_const : float or None, optional
+            Constant linear bias of the tracer particles at the current
+            epoch.  If `part` is ``'signal'`` or ``'both'``, this cannot be
+            `None` (default).
         f_nl : float or None, optional
             Local primordial non-Gaussianity parameter (default is `None`).
         tracer_parameter : float, optional
@@ -1046,27 +1048,40 @@ class TwoPointFunction(Couplings):
         Raises
         ------
         ValueError
+            If `b_const` is `None` when `part` is ``'signal'`` or
+            ``'both'``, or `nbar` is `None` when `part` is ``'shotnoise'``
+            or ``'both'``.
+        ValueError
             If `part` is not a recognised 2-point covariance component.
 
         """
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray.build(disc=self.disc)\
-                .unfold(pivot, return_only='index')
+        if b_const is None and part in ['signal', 'both']:
+            raise ValueError(
+                "`b_const` cannot be None if `part` is 'signal' or 'both'. "
+            )
+        if nbar is None and part in ['shotnoise', 'both']:
+            raise ValueError(
+                "`nbar` cannot be None if `part` is 'shotnoise' or 'both'. "
+            )
 
         scale_mod_kwargs = dict(f_nl=f_nl, tracer_parameter=tracer_parameter)
         if part == 'both':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, **scale_mod_kwargs) \
-                + self.two_point_shot_noise(mu, nu)
+                self.two_point_signal(mu, nu, b_const, **scale_mod_kwargs) \
+                + self.two_point_shot_noise(mu, nu, nbar)
         elif part == 'signal':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, **scale_mod_kwargs)
+                self.two_point_signal(mu, nu, b_const, **scale_mod_kwargs)
         elif part == 'shotnoise':
             two_point_component = lambda mu, nu: \
-                self.two_point_shot_noise(mu, nu)
+                self.two_point_shot_noise(mu, nu, nbar)
         else:
             raise ValueError(f"Invalid covariance part: {part}. ")
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            index_vector = SphericalArray.build(disc=self.disc)\
+                .unfold(pivot, return_only='index')
 
         dim_covar = len(index_vector)
         two_point_covar = np.zeros((dim_covar, dim_covar), dtype=complex)

@@ -66,5 +66,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# VS Code
+.vscode/
+
 # User customised
 data/

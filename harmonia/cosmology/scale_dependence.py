@@ -95,7 +95,7 @@ def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
     """
     def bias_k(k):
 
-        bias_of_k = bz_const + (bz_const - tracer_parameter) \
+        bias_of_k = bz_const + f_nl * (bz_const - tracer_parameter) \
             * scale_modification(cosmo, redshift)(k)
 
         return bias_of_k

@@ -76,9 +76,10 @@ def process_data(collate_data=False, load_data=False, save=False):
             safe_save(output, collate_path, f"{SCRIPT_NAME}-({save_str}).npy")
 
     if load_data:
-        data = np.load(
+        output = np.load(
             f"{collate_path}{SCRIPT_NAME}-({GEN_TAG},{PARAM_TAG}).npy"
         ).item()
+        data = aggregate_data(output)
 
 
 def view_data(savefig=False):
@@ -105,7 +106,7 @@ if __name__ == '__main__':
 
     GEN_TAG = f"gen={GENERATOR},pivot={PIVOT}"
     PARAM_TAG = \
-        "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=500"
+        "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=1000"
 
-    process_data(collate_data=True, load_data=False, save=True)
+    process_data(collate_data=False, load_data=True, save=True)
     view_data()

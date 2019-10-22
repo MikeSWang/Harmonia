@@ -5,10 +5,6 @@ import numpy as np
 from nbodykit.lab import cosmology
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
-from spherical_likelihood import (
-    _f_nl_parametrised_chi_square as chi_square,
-    spherical_map_f_nl_likelihood as likelihood,
-)
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
@@ -17,6 +13,10 @@ from harmonia.collections import (
 from harmonia.cosmology import fiducial_cosmology, fiducial_distance
 from harmonia.mapper import LogNormalCatalogue, NBKCatalogue, SphericalMap
 from harmonia.reader import TwoPointFunction
+from spherical_likelihood import (
+    spherical_map_f_nl_chi_square as f_nl_chi_square,
+    # spherical_map_f_nl_likelihood as f_nl_likelihood,
+)
 
 GEN_CATALOGUE = {
     'lognormal': LogNormalCatalogue,
@@ -145,7 +145,7 @@ def process(runtime_info):
     sample_parameters = np.linspace(*prior_range, num=num_sample)
 
     chi_square_samples = []
-    likelihood_samples = []
+    # likelihood_samples = []
     for run in range(niter):
         catalogue = GEN_CATALOGUE[generator](
             Plin,
@@ -167,7 +167,7 @@ def process(runtime_info):
         field_vector = SphericalArray.build(disc=disc, filling=overdensity) \
             .unfold(pivot, return_only='data')
 
-        sample_chi_square = chi_square(
+        sample_chi_square = f_nl_chi_square(
             sample_parameters,
             field_vector,
             pivot,
@@ -176,7 +176,7 @@ def process(runtime_info):
             bias
         )
 
-        # sample_likelihood = likelihood(
+        # sample_likelihood = f_nl_likelihood(
         #     sample_parameters,
         #     field_vector,
         #     pivot,

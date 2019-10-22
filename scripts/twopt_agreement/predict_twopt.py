@@ -41,8 +41,8 @@ def initialise():
         redshift = params.redshift
         kmax = params.kmax
         rmax = fiducial_cosmology.comoving_distance(params.zmax)
-        growth_rate = rsd_flag \
-            * fiducial_cosmology.scale_independent_growth_rate(redshift)
+        growth_rate = \
+            fiducial_cosmology.scale_independent_growth_rate(redshift)
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
@@ -54,6 +54,7 @@ def initialise():
     if rsd_flag:
         rsd_tag = "{:.2f}".format(growth_rate)
     else:
+        growth_rate = None
         rsd_tag = 'none'
 
     runtime_info = "-(pivots={},nbar={},b1={},f0={},rmax={},kmax={})".format(
@@ -90,7 +91,6 @@ def process(runtime_info):
     kwargs = dict(
         f_0=growth_rate,
         cosmo=fiducial_cosmology,
-        survey_specs=SURVEY_SPECS,
         comm=COMM,
     )
 
@@ -160,7 +160,7 @@ def finalise(output_data, save=True):
 if __name__ == '__main__':
 
     COMM = MPI.COMM_WORLD
-    SURVEY_SPECS = {
+    SURVEY_SPECS_FUTURE = {
         'mask': unit_const,
         'selection': unit_const,
         'weight': unit_const,

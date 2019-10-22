@@ -53,6 +53,7 @@ def parse_cli_args():
 
     cli_parser.add_argument('--niter', type=int, default=10)
     cli_parser.add_argument('--prog-id', default="")
+    cli_parser.add_argument('--input-file', default="halos-(NG=0.,z=1.)-0")
 
     return cli_parser.parse_args()
 

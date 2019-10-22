@@ -49,19 +49,24 @@ def initialise():
     ).T
 
     Plin = interp1d(k_points, Pk_points, assume_sorted=True)
-    growth_rate = 0.
+    growth_rate = None
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots)
     else:
         pivot_tag = "{}".format(pivots).lstrip("[").rstrip("]")
 
+    if isinstance(growth_rate, float):
+        growth_status = format_float(growth_rate, 'decdot')
+    else:
+        growth_status = 'none'
+
     runtime_info = \
         "-(pivots={},nbar={:.2e},b1={:.2f},f0={},rmax={},kmax={})".format(
             pivot_tag.replace("'", "").replace(" ", ""),
             nbar,
             bias,
-            format_float(growth_rate, 'decdot'),
+            growth_status,
             format_float(rmax, 'intdot'),
             format_float(kmax, 'sci'),
         )

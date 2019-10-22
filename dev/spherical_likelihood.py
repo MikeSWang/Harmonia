@@ -7,42 +7,40 @@ import numpy as np
 _OVERFLOW_DOWNSCALE = 10**4
 
 
-def _f_nl_parametrised_covariance(f_nl, pivot, two_point_model, nbar, bias):
-    r"""Parametrised covariance matrix by local primordial non-Gaussianity.
+def _chi_square(dat_vector, cov_matrix):
+    """Compute chi-square for the specified data vector and covariance.
+
+    The data vector is assumed to be zero-centred.
 
     Parameters
     ----------
-    f_nl : float
-        Local primordial non-Gaussianity parameter.
-    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
-        Pivot axis for unpacking indexed data into a 1-d vector.
-    two_point_model : :class:`~.spherical_model.TwoPointFunction`
-        2-point function model without scale modification.
-    nbar : float
-        Mean particle number density (in cubic h/Mpc).
-    bias : float
-        Constant linear bias of the tracer particles at the current
-        epoch.
+    dat_vector : float or complex, array_like
+        1-d data vector centred at zero.
+    cov_matrix : float or complex, array_like
+        2-d covariance matrix.
 
     Returns
     -------
-    covariance : complex or float :class:`numpy.ndarray`
-        Covariance matrix value.
+    chi_square : float
+        Chi-square value.
 
-    See Also
-    --------
-    :class:`~harmonia.reader.spherical_model.TwoPointFunction`
+    Raises
+    ------
+    ValueError
+        If `data` is not equivalent to a 1-d vector.
 
     """
-    covariance = two_point_model.two_point_covariance(
-        pivot,
-        diag=True,
-        f_nl=f_nl,
-        nbar=nbar,
-        bias=bias
-    )
+    if len(set(np.shape(dat_vector)).difference({1})) > 1:
+        raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
-    return covariance
+    dat_vector /= _OVERFLOW_DOWNSCALE
+    cov_matrix /= _OVERFLOW_DOWNSCALE**2
+
+    chi_square = np.transpose(np.conj(dat_vector)) \
+        @ np.linalg.inv(cov_matrix) \
+        @ dat_vector
+
+    return chi_square
 
 
 def _log_complex_normal_pdf(dat_vector, cov_matrix):
@@ -88,9 +86,84 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
     return log_prob_density
 
 
-def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
+def _f_nl_parametrised_covariance(f_nl, b_const, nbar, two_point_model, pivot):
+    r"""Parametrised covariance matrix by local primordial non-Gaussianity.
+
+    Parameters
+    ----------
+    f_nl : float
+        Local primordial non-Gaussianity parameter.
+    b_const : float
+        Constant linear bias of the tracer particles at the current epoch.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function model without scale modification.
+    pivot : {'natural', 'transposed', 'spectral'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+
+    Returns
+    -------
+    covariance : complex or float :class:`numpy.ndarray`
+        Covariance matrix value.
+
+    See Also
+    --------
+    :class:`~harmonia.reader.spherical_model.TwoPointFunction`
+
+    """
+    covariance = two_point_model.two_point_covariance(
+        pivot,
+        diag=True,  # HACK: temporary
+        nbar=nbar,
+        b_const=b_const,
+        f_nl=f_nl
+    )
+
+    return covariance
+
+
+def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
+    r"""Parametrised variance vector (diagonal covariance matrix) by local
+    primordial non-Gaussianity.
+
+    Parameters
+    ----------
+    f_nl : float
+        Local primordial non-Gaussianity parameter.
+    b_const : float
+        Constant linear bias of the tracer particles at the current epoch.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function model without scale modification.
+    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+
+    Returns
+    -------
+    variance : float :class:`numpy.ndarray`
+        Variance vector value.
+
+    See Also
+    --------
+    :class:`~harmonia.reader.spherical_model.TwoPointFunction`
+
+    """
+    variance = two_point_model.mode_variance(
+        pivot,
+        nbar=nbar,
+        b_const=b_const,
+        f_nl=f_nl
+    )
+
+    return variance
+
+
+def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
                                   two_point_model, nbar, bias):
-    """Parametrised chi-square value by local primordial non-Gaussianity.
+    """Evaluate the spherical map chi-square of the local non-Gaussianity
+    parameter.
 
     The data vector is assumed to be zero-centred.
 
@@ -98,7 +171,7 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
     ----------
     sample_parameters : float, array_like
         Sampling values of the local non-Gaussnaity parameter.
-    dat_vector : float or complex, array_like
+    data_vector : float or complex, array_like
         1-d data vector centred at zero.
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
@@ -121,28 +194,21 @@ def _f_nl_parametrised_chi_square(sample_parameters, dat_vector, pivot,
         If `data` is not equivalent to a 1-d vector.
 
     """
-    if len(set(np.shape(dat_vector)).difference({1})) > 1:
-        raise ValueError("`data` is not equivalent to a 1-d vector. ")
-
-    dat_vector /= _OVERFLOW_DOWNSCALE
+    if len(set(np.shape(sample_parameters)).difference({1})) > 1:
+        raise ValueError(
+            "`sample_parameters` is not equivalent to a flat array. "
+        )
 
     sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
-        _sample_covar = _f_nl_parametrised_covariance(
+        sample_covar = _f_nl_parametrised_variance(
             parameter,
-            pivot,
-            two_point_model,
+            bias,
             nbar,
-            bias
+            two_point_model,
+            pivot
         )
-
-        _sample_covar /= _OVERFLOW_DOWNSCALE**2
-
-        sampled_chisq[idx] = np.real(
-            np.transpose(np.conj(dat_vector))
-            @ np.linalg.inv(_sample_covar)
-            @ dat_vector
-        )
+        sampled_chisq[idx] = np.real(_chi_square(data_vector, sample_covar))
 
     return sampled_chisq
 
@@ -190,10 +256,10 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
     for idx, parameter in enumerate(sample_parameters):
         _sample_covar = _f_nl_parametrised_covariance(
             parameter,
-            pivot,
-            two_point_model,
+            bias,
             nbar,
-            bias
+            two_point_model,
+            pivot
         )
         sampled_likelihood[idx] = \
             _log_complex_normal_pdf(data_vector, _sample_covar)

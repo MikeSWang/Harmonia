@@ -33,7 +33,7 @@ COUPLINGS_TEST_PARAMS = {
     'mu': (1, -1, 1),
 }
 
-@pytest.mark.parametrize('coupling_type', ['angular', 'radial', 'RSD'])
+@pytest.mark.parametrize("coupling_type", ['angular', 'radial', 'RSD'])
 def test_Couplings(discrete_spectrum, coupling_type):
 
     couplings_partial = Couplings(discrete_spectrum)
@@ -68,6 +68,7 @@ TWO_POINT_TEST_PARAMS = dict(
 )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("pivot,part", [('spectral', 'signal')])
 def test_TwoPointFunction(discrete_spectrum, pivot, part):
 

@@ -96,7 +96,7 @@ MAX_ENTRY = 9
 
 
 @pytest.mark.parametrize(
-    'axis_order,flat_array,flat_indices',
+    "axis_order,flat_array,flat_indices",
     [
          (
              'natural',
@@ -151,7 +151,7 @@ def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
 
 
 @pytest.mark.parametrize(
-    'in_structure',
+    "in_structure",
     ['natural', 'transposed', 'root', 'spectral', 'scale'],
 )
 def test_refold(spherical_array, in_structure):
@@ -183,7 +183,7 @@ def test_refold(spherical_array, in_structure):
     )
 
 
-@pytest.mark.parametrize('in_structure,out_structure', [('lnm', 'u')])
+@pytest.mark.parametrize("in_structure,out_structure", [('lnm', 'u')])
 def test_morph(spherical_array, in_structure, out_structure):
 
     in_array, in_indices = spherical_array.unfold(axis_order=in_structure)

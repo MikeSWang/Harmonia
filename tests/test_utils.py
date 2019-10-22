@@ -43,7 +43,7 @@ def test_collate_data_files(tmpdir):
     assert last_collated_file.startswith('tmp_dat_')
 
 
-@pytest.mark.parametrize('ntasks,nproc', [(10, 3), (100, 12), (1000, 72)])
+@pytest.mark.parametrize("ntasks,nproc", [(10, 3), (100, 12), (1000, 72)])
 def test_allocate_tasks(ntasks, nproc):
 
     tasks = utils.allocate_tasks(ntasks, nproc)
@@ -57,7 +57,7 @@ TEST_CASE_PROCS = 5
 
 
 @pytest.mark.parametrize(
-    'tasks,ntask,nproc',
+    "tasks,ntask,nproc",
     [
         (
             [TEST_CASE_INTERVAL] * (TEST_CASE_PROCS - 1) \
@@ -93,7 +93,7 @@ def test_allocate_segments(tasks, ntask, nproc):
 
 
 @pytest.mark.parametrize(
-    'x,case,float_str',
+    "x,case,float_str",
     [
         (0.000001, 'latex', r'1 \times 10^{-6}'),
         (0.000001, 'sci', '1e-6'),
@@ -110,7 +110,7 @@ def test_format_float(x, case, float_str):
 
 
 @pytest.mark.parametrize(
-    'keys,arrays,sorted_arrays',
+    "keys,arrays,sorted_arrays",
     [
         ([1, 3, 2], [[1], [2, 3], [4, 5, 6]], [[1], [4, 5, 6], [2, 3]]),
     ]
@@ -123,7 +123,7 @@ def test_sort_dict_to_list(keys, arrays, sorted_arrays):
 
 
 @pytest.mark.parametrize(
-    'keys,arrays,sorted_keys,sorted_arrays',
+    "keys,arrays,sorted_keys,sorted_arrays",
     [
         (
             [1, 3, 2],
@@ -146,12 +146,12 @@ def test_unit_const():
     assert utils.unit_const() == pytest.approx(1.)
 
 
-@pytest.mark.parametrize('const,x', [(1j, 5), (100, 1j)])
+@pytest.mark.parametrize("const,x", [(1j, 5), (100, 1j)])
 def test_const_function(const, x):
     assert utils.const_function(const)(x) == pytest.approx(const)
 
 
-@pytest.mark.parametrize('ndim,nsize', [(3, 10), (5, 8)])
+@pytest.mark.parametrize("ndim,nsize", [(3, 10), (5, 8)])
 def test_covar_to_corr(ndim, nsize):
 
     randvec = np.random.random(size=(ndim, nsize))
@@ -162,7 +162,7 @@ def test_covar_to_corr(ndim, nsize):
 
 
 @pytest.mark.parametrize(
-    'func,a,b,maxnum,roots',
+    "func,a,b,maxnum,roots",
     [
         (np.sin, -0.01, 3.15, 1, np.array([0])),
         (np.cos, -0.01, 3.15, 10, np.array([np.pi/2])),
@@ -172,7 +172,7 @@ def test_binary_search(func, a, b, maxnum, roots):
     assert np.allclose(utils.binary_search(func, a, b, maxnum=maxnum), roots)
 
 
-@pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])
+@pytest.mark.parametrize("vec", [[[1, 3, -5], [0.2, -0.88, -10]]])
 def test_normalise_vector(vec):
     assert np.allclose(
         np.array(vec) / np.linalg.norm(vec, axis=-1, keepdims=True),
@@ -180,12 +180,12 @@ def test_normalise_vector(vec):
     )
 
 
-@pytest.mark.parametrize('vec,r', [([1, 0, -1], 1)])
+@pytest.mark.parametrize("vec,r", [([1, 0, -1], 1)])
 def test_spherical_indicator(vec,r):
     assert not utils.spherical_indicator(vec, r)
 
 
-@pytest.mark.parametrize('vec', [[[1, 3, -5], [0.2, -0.88, -10]]])
+@pytest.mark.parametrize("vec", [[[1, 3, -5], [0.2, -0.88, -10]]])
 def test_cartesian_to_spherical(vec):
     assert np.allclose(
         utils.cartesian_to_spherical(vec),
@@ -197,7 +197,7 @@ def test_cartesian_to_spherical(vec):
 
 
 @pytest.mark.parametrize(
-    'vec',
+    "vec",
     [
         [
             [5.916079783, 2.577650012, 1.249045772],

@@ -1189,12 +1189,13 @@ class TwoPointFunction(Couplings):
 
         return two_point_covar
 
-    def variance_reduction(self, pivot, part='both', nbar=None, b_const=None,
-                           f_nl=None, tracer_parameter=1.):
-        """Compute the signal, shot noise or total variance for given pivot
-        axis for unpacking indices, reduced to the simplest case of no
-        masking, selection, weighting, evolution or geometrical effects and
-        with or without scale modification by primordial non-Gaussianity.
+    def mode_variance(self, pivot, part='both', nbar=None, b_const=None,
+                      f_nl=None, tracer_parameter=1.):
+        """Compute the signal, shot noise or total mode variance for given
+        pivot axis for unpacking indices, reduced to the simplest case of
+        no masking, selection, weighting, evolution or geometrical effects
+        and with or without scale modification by local primordial
+        non-Gaussianity.
 
         Parameters
         ----------
@@ -1219,8 +1220,8 @@ class TwoPointFunction(Couplings):
 
         Returns
         -------
-        variance : complex :class:`numpy.ndarray`
-            2-point variance vector pivoted at given axis order.
+        mode_variance : complex :class:`numpy.ndarray`
+            2-point mode variance vector pivoted at given axis order.
 
         Raises
         ------
@@ -1251,18 +1252,23 @@ class TwoPointFunction(Couplings):
 
         collapse_dof_correction = (pivot in ['scale', 'root'])
 
-        variance = np.zeros(len(index_vector))
+        mode_variance = np.zeros(len(index_vector))
         for idx, index in enumerate(index_vector):
             ell, n_idx = index[0], index[-1] - 1
 
-            b_0_k = b_const
-            if f_nl is not None:
-                b_0_k += f_nl * (b_const - tracer_parameter) \
-                    * self._mode_scale_modifications[ell][n_idx]
+            unnormalised_variance = 0.
+            if part in ['signal', 'both']:
+                b_0_k = b_const
+                if f_nl is not None:
+                    b_0_k += f_nl * (b_const - tracer_parameter) \
+                        * self._mode_scale_modifications[ell][n_idx]
+                unnormalised_variance += b_0_k**2 * p_k[ell][n_idx]
+            if part in ['shotnoise', 'both']:
+                unnormalised_variance += 1 / nbar
 
-            variance[idx] = b_0_k**2 * p_k[ell][n_idx] / kappa[ell][n_idx]
+            mode_variance[idx] = unnormalised_variance / kappa[ell][n_idx]
 
             if collapse_dof_correction:
-                variance[idx] /= 2*ell + 1
+                mode_variance[idx] /= 2*ell + 1
 
-        return variance
+        return mode_variance

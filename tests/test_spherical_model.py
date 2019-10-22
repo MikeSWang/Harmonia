@@ -90,7 +90,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
         f_0=None,
         cosmo=fiducial_cosmology,
     )
-    variance_matrix = variance_model.variance_reduction(
+    variance_matrix = variance_model.mode_variance(
         pivot,
         part=part,
         **TWO_POINT_TEST_PARAMS

@@ -48,5 +48,4 @@ class NamedFunction:
         return self.func(*args, **kwargs)
 
 
-if not __name__ == '__main__':
-    import_test_package()
+import_test_package()

@@ -873,8 +873,7 @@ class TwoPointFunction(Couplings):
                 )
             return self._couplings
 
-        self._couplings['radial'] = super().couplings('RSD')
-
+        self._couplings = {'radial': super().couplings('radial')}
         if self.mask is None:
             self._couplings['angular'] = None
         else:
@@ -989,8 +988,7 @@ class TwoPointFunction(Couplings):
             trivial_case = (mu[:-1] != nu[:-1])
             if not trivial_case:
                 ell = mu[0]  # equivalently nu[0]
-                ell_idx = ell - 1
-                nmax = self.disc.depths[ell_idx]
+                nmax = self.disc.depths[ell]
 
                 b_0_k = b_const * np.ones(nmax)
                 if f_nl is not None:
@@ -1024,7 +1022,7 @@ class TwoPointFunction(Couplings):
                     b_0_k += f_nl * (b_const - tracer_parameter) \
                         * self._mode_scale_modifications[ell]
 
-                if f_0 is None:
+                if rsd_reduction:
                     radial_sum = np.sum(
                         Phi_mu[ell] * Phi_nu[ell]
                         * b_0_k**2 * p_k[ell] / kappa[ell]

@@ -185,13 +185,13 @@ def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
 
     Returns
     -------
-    sampled_chisq : float
+    sampled_chisq : float :class:`numpy.ndarray`
         Chi-square evaluated at the sample parameters.
 
     Raises
     ------
     ValueError
-        If `data` is not equivalent to a 1-d vector.
+        If `sample_parameters` is not equivalent to a 1-d vector.
 
     """
     if len(set(np.shape(sample_parameters)).difference({1})) > 1:
@@ -254,7 +254,7 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
 
     sampled_likelihood = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
-        _sample_covar = _f_nl_parametrised_covariance(
+        _sample_covar = _f_nl_parametrised_covariance(  # not ..._variance
             parameter,
             bias,
             nbar,

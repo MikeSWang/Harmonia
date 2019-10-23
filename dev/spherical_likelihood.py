@@ -124,8 +124,8 @@ def _f_nl_parametrised_covariance(f_nl, b_const, nbar, two_point_model, pivot):
 
 
 def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
-    r"""Parametrised variance vector (diagonal covariance matrix) by local
-    primordial non-Gaussianity.
+    r"""Parametrised diagonal covariance matrix by local primordial
+    non-Gaussianity.
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
     Returns
     -------
     variance : float :class:`numpy.ndarray`
-        Variance vector value.
+        Diagonal covariance matrix.
 
     See Also
     --------
@@ -157,7 +157,7 @@ def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
         f_nl=f_nl
     )
 
-    return variance
+    return np.diag(variance)
 
 
 def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,

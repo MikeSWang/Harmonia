@@ -66,18 +66,18 @@ def process_data(collate_data=False, load_data=False, save=False):
 
     if collate_data:
         output, count, _ = collate_data_files(
-            f"{data_outpath}{SCRIPT_NAME}-*{GEN_TAG}*.npy",
+            f"{data_outpath}{FILE_ROOT}-*).npy",
             'npy'
         )
         data = aggregate_data(output)
 
         if save:
             save_str = "".join(_.split("(")[-1].split(")")[:-1]) + f"*{count}"
-            safe_save(output, collate_path, f"{SCRIPT_NAME}-({save_str}).npy")
+            safe_save(output, collate_path, f"{FILE_ROOT}-({save_str}).npy")
 
     if load_data:
         output = np.load(
-            f"{collate_path}{SCRIPT_NAME}-({GEN_TAG},{PARAM_TAG}).npy"
+            f"{collate_path}{FILE_ROOT}-({GEN_TAG},{PARAM_TAG}).npy"
         ).item()
         data = aggregate_data(output)
 
@@ -100,13 +100,17 @@ def view_data(savefig=False):
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "sample_likelihood"
+    SCRIPT_NAME = "simulation_likelihood"
+    FILE_ROOT = "halos-(NG=0.,z=1.)"  # SCRIPT_NAME
+
+    PRIOR = "[-100,100]"
     GENERATOR = "nbodykit"
     PIVOT = "spectral"
 
-    GEN_TAG = f"gen={GENERATOR},pivot={PIVOT}"
+    GEN_TAG = f"prior={PRIOR},pivot={PIVOT}" # f"gen={GENERATOR},pivot={PIVOT}"
     PARAM_TAG = \
-        "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=1000"
+        "(prior=[-100,100],pivot=spectral,kmax=0.04)"
+    #     "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=1000"
 
-    process_data(collate_data=False, load_data=True, save=True)
+    process_data(collate_data=True, load_data=False, save=True)
     view_data()

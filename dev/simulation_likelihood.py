@@ -61,8 +61,9 @@ def initialise():
 
     growth_rate = None
 
-    runtime_info = "-(boxsize={},kmax={})".format(
-        format_float(boxsize, 'intdot'),
+    runtime_info = "-(prior={},pivot={},,kmax={})".format(
+        str(prior_range).replace(" ", ""),
+        pivot,
         format_float(kmax, 'sci'),
     )
     return runtime_info

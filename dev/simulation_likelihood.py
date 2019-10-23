@@ -11,6 +11,7 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
 )
+from harmonia.cosmology import fiducial_cosmology
 from harmonia.mapper import SphericalMap
 from harmonia.reader import TwoPointFunction
 from spherical_likelihood import (
@@ -110,8 +111,12 @@ def process(runtime_info):
         .build(disc=disc, filling=overdensity) \
         .unfold(pivot, return_only='data')
 
-    two_point_model = \
-        TwoPointFunction(disc, f_0=growth_rate, power_spectrum=Plin)
+    two_point_model = TwoPointFunction(
+        disc,
+        f_0=growth_rate,
+        power_spectrum=Plin,
+        cosmo=fiducial_cosmology
+    )
 
     sample_parameters = np.linspace(*prior_range, num=num_sample+1)
 

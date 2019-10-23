@@ -658,7 +658,7 @@ class Couplings:
 
         return couplings_component
 
-    def couplings(self, coupling_type):
+    def compile_couplings(self, coupling_type):
         r"""Compile all coupling coefficients of a given type as a sequence
         iterated through the first triplet index ordered as specified.
 
@@ -807,12 +807,23 @@ class TwoPointFunction(Couplings):
             logger=self._logger
         )
 
+        self.growth_rate = f_0
+        self.matter_power_spectrum = power_spectrum
+
         if cosmo is not None:
-            power_spectrum = cosmology.LinearPower(
-                cosmo,
-                redshift=self._CURRENT_Z,
-                transfer='CLASS'
-            )
+            if power_spectrum is None:
+                power_spectrum = cosmology.LinearPower(
+                    cosmo,
+                    redshift=self._CURRENT_Z,
+                    transfer='CLASS'
+                )
+            else:
+                warnings.warn(
+                    "Input `power_spectrum` is used instead of "
+                    "the power spectrum associated with `cosmo`. "
+                    "Double check their underlying cosmological models "
+                    "are consistent. "
+                )
             if f_0 is not None:
                 cosmo_growth_rate = \
                     cosmo.scale_independent_growth_rate(self._CURRENT_Z)
@@ -820,11 +831,8 @@ class TwoPointFunction(Couplings):
                     warnings.warn(
                         "`f_0` value is inconsistent with `cosmo` model: "
                         "input {}, model predicted value {}. "
-                        .format(f_0, cosmo_growth_rate),
-                        RuntimeWarning
+                        .format(f_0, cosmo_growth_rate)
                     )
-        self.growth_rate = f_0
-        self.matter_power_spectrum = power_spectrum
         self.cosmo = cosmo
 
         self._couplings = couplings
@@ -873,16 +881,16 @@ class TwoPointFunction(Couplings):
                 )
             return self._couplings
 
-        self._couplings = {'radial': super().couplings('radial')}
+        self._couplings = {'radial': super().compile_couplings('radial')}
         if self.mask is None:
             self._couplings['angular'] = None
         else:
-            self._couplings['angular'] = super().couplings('angular')
+            self._couplings['angular'] = super().compile_couplings('angular')
 
         if self.growth_rate is None:
             self._couplings['RSD'] = None
         else:
-            self._couplings['RSD'] = super().couplings('RSD')
+            self._couplings['RSD'] = super().compile_couplings('RSD')
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Relevant coupling coefficients compiled. ")

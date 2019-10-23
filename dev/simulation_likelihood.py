@@ -158,7 +158,7 @@ def finalise(output_data, save=True):
     base_path = f"{PATHOUT}{script_name}"
     assert confirm_dir(base_path)
 
-    filename = f"{script_name}{program_tag}"
+    filename = f"{input_file}{program_tag}"
     if save:
         np.save("".join([base_path, "/", filename, "-dv.npy"]), overdensity)
         np.save("".join([base_path, "/", filename, ".npy"]), output_data)

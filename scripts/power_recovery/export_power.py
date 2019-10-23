@@ -94,7 +94,8 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
         output = np.load(
             f"{outpath}collated/{FILE_PREFIX}{FILE_TAG}.npy"
         ).item()
-        if aggregate: results = aggregate_data(output)
+        if aggregate:
+            results = aggregate_data(output)
 
     if export:
         plt.style.use(harmony)
@@ -102,7 +103,7 @@ def main(collate=False, load=False, export=True, aggregate=True, save=True,
         if SMOOTHING:
             bins = np.linspace(0., 0.1, 13)
             smoothed_data, bin_count = smooth_by_bin_average(
-                results, bins, 'kln', 'Pln', dy_coarse='dPln'
+                results, bins, 'kln', 'Pln', dy_coarse_key='dPln'
             )
         else:
             smoothed_data = None

@@ -285,7 +285,7 @@ def threshold_clip(density_contrast, threshold=-1.):
     """
     density_contrast = np.array(density_contrast)
 
-    clipping_mask = density_contrast < -1.
+    clipping_mask = density_contrast < threshold
     clipping_ratio = np.sum(clipping_mask) / np.size(clipping_mask)
     if clipping_ratio > 0.005:
         warnings.warn(

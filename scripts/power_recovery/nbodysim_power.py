@@ -32,7 +32,7 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global input_file, kmax, dk, boxsize, mesh_cal, prog_id, headings
+    global input_file, kmax, dk, boxsize, mesh_cal, headings
 
     try:
         input_file = params.input_file

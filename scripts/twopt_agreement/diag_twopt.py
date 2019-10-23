@@ -196,7 +196,7 @@ def view_result():
     plt.axhline(y=0, lw=1, ls='--')
 
     plt.xlim(xlim)
-    plt.ylim(bottom=-ERROR_PANEL_HT,top=ERROR_PANEL_HT)
+    plt.ylim(bottom=-ERROR_PANEL_HT, top=ERROR_PANEL_HT)
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
     plt.ylabel(
         r"$\langle\delta\delta^*\rangle_\mathrm{{data}} \big/$"

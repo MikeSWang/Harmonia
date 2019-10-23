@@ -811,8 +811,8 @@ class TwoPointFunction(Couplings):
         self.matter_power_spectrum = power_spectrum
 
         if cosmo is not None:
-            if power_spectrum is None:
-                power_spectrum = cosmology.LinearPower(
+            if self.matter_power_spectrum is None:
+                self.matter_power_spectrum = cosmology.LinearPower(
                     cosmo,
                     redshift=self._CURRENT_Z,
                     transfer='CLASS'
@@ -824,14 +824,14 @@ class TwoPointFunction(Couplings):
                     "Double check their underlying cosmological models "
                     "are consistent. "
                 )
-            if f_0 is not None:
+            if self.growth_rate is not None:
                 cosmo_growth_rate = \
                     cosmo.scale_independent_growth_rate(self._CURRENT_Z)
-                if not np.isclose(f_0, cosmo_growth_rate):
+                if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
                         "`f_0` value is inconsistent with `cosmo` model: "
                         "input {}, model predicted value {}. "
-                        .format(f_0, cosmo_growth_rate)
+                        .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
 
@@ -1067,8 +1067,7 @@ class TwoPointFunction(Couplings):
         if self.couplings['angular'] is None:
             if ell_mu != ell_nu or m_mu != m_nu:
                 return 0.j
-            else:
-                M_mu_nu = 1.
+            M_mu_nu = 1.
         else:
             M_mu_nu = (self.couplings['angular'][mu])[ell_nu][m_nu+ell_nu]
 

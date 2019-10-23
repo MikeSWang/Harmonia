@@ -293,7 +293,6 @@ class DiscreteSpectrum:
 
         if condition.lower().startswith('d'):
             return 'dirichlet'
-        elif condition.lower().startswith('n'):
+        if condition.lower().startswith('n'):
             return 'neumann'
-        else:
-            raise ValueError(f"Invalid boundary `condition`: {condition}. ")
+        raise ValueError(f"Invalid boundary `condition`: {condition}. ")

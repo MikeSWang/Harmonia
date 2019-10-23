@@ -32,7 +32,7 @@ from harmonia.collections.utils import (
 
 
 class SphericalMap:
-    """Discretised spherical Fourier map from catalogue sources.
+    r"""Discretised spherical Fourier map from catalogue sources.
 
     Notes
     -----

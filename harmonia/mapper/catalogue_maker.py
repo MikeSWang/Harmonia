@@ -57,8 +57,9 @@ class RandomCatalogue(UniformCatalog):
 
     def __init__(self, mean_density, boxsize, seed=None, comm=None):
 
-        UniformCatalog.__init__(self,
-            mean_density, boxsize, seed=seed, comm=comm)
+        UniformCatalog.__init__(
+            self, mean_density, boxsize, seed=seed, comm=comm
+        )
 
         self.attrs['nbar'] = mean_density
 
@@ -233,7 +234,7 @@ class LogNormalCatalogue(CatalogSource):
             sampled_field,
             mean_density,
             boxsize,
-            vel_offset_fields=vec_field,
+            velocity_offset_fields=vec_field,
             seed=drift_seed
         )
 
@@ -391,7 +392,7 @@ class GaussianCatalogue(CatalogSource):
             sampled_field,
             mean_density,
             boxsize,
-            vel_offset_fields=vec_field,
+            velocity_offset_fields=vec_field,
             seed=drift_seed
         )
 

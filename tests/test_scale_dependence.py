@@ -25,5 +25,5 @@ def test_scale_dependent_bias(bz_const, f_nl, cosmo):
     "f_nl,bz_const,cosmo",
     [(-10., 2., fiducial_cosmology)]
 )
-def test_scale_modified_power_spectrum(f_nl,bz_const,cosmo):
-    assert callable(scale_modified_power_spectrum(f_nl,bz_const,cosmo))
+def test_scale_modified_power_spectrum(f_nl, bz_const, cosmo):
+    assert callable(scale_modified_power_spectrum(f_nl, bz_const, cosmo))

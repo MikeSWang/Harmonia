@@ -114,7 +114,7 @@ def _view(output):
     plt.legend()
 
 
-if not __name__ == '__main__':
+if __name__ != '__main__':
 
     import_local_package()
 

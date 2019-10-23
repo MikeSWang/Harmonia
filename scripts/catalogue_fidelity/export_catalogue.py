@@ -154,7 +154,7 @@ def view(results, savefig=False):
     plt.close('all')
     plt.figure("Catalogue fidelity")
 
-    main_ax = plt.subplot2grid((5,6), (0,0), rowspan=4, colspan=6)
+    main_ax = plt.subplot2grid((5, 6), (0, 0), rowspan=4, colspan=6)
 
     plt.errorbar(k, Pk_model, dPk_model, ls='--', label="power spectrum input")
     main = plt.errorbar(k, Pk, dPk, label=f"{gen_name} {obj_name} output")
@@ -166,7 +166,7 @@ def view(results, savefig=False):
     plt.ylabel(r'$P(k)$ [$(\textrm{Mpc}/h)^3$]')
     plt.legend()
 
-    plt.subplot2grid((5,6), (4,0), colspan=6, sharex=main_ax)
+    plt.subplot2grid((5, 6), (4, 0), colspan=6, sharex=main_ax)
 
     plt.plot(k, deviation, color=main[0].get_color(), ls='--')
     plt.fill_between(

@@ -15,8 +15,8 @@ import warnings
 
 import numpy as np
 
-from .bases import spherical_besselj_root
 from harmonia.collections.utils import sort_dict_to_list
+from .bases import spherical_besselj_root
 
 
 class SphericalArray:
@@ -291,13 +291,7 @@ class SphericalArray:
         if structure in ['lmn', 'lnm', 'k']:
             array = []
             for ell, nmax in zip(self.degrees, self.depths):
-                ell_block = []
-                for m in range(-ell, ell+1):
-                    m_line = []
-                    for n in range(nmax):
-                        m_line.append(None)
-                    ell_block.append(m_line)
-                array.append(ell_block)
+                array.append([[None] * nmax] * (2*ell + 1))
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, m_idx, n_idx = \
                     index[0], index[1] + index[0], index[-1] - 1
@@ -458,10 +452,9 @@ class SphericalArray:
             return 'u'
         if structure_name in ['lmn', 'lnm', 'ln', 'k', 'u']:
             return structure_name
-        else:
-            raise ValueError(
-                f"Invalid `structure_name` value: {structure_name}. "
-            )
+        raise ValueError(
+            f"Invalid `structure_name` value: {structure_name}. "
+        )
 
     @staticmethod
     def _transpose_subarray(array, subarray_type):

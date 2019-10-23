@@ -52,7 +52,7 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-if not __name__ == '__main__':
+if __name__ != '__main__':
 
     import_local_package()
 

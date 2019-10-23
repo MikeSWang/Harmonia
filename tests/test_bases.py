@@ -1,11 +1,11 @@
 import numpy as np
 
-from . import display_mathematica_query as show_query
 from harmonia.algorithms.bases import (
     spherical_besselj,
     spherical_besselj_root,
     spherical_harmonic,
 )
+from . import display_mathematica_query as show_query
 
 TEST_PARAMS = dict(
     ell=5,

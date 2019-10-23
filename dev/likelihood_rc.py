@@ -46,7 +46,7 @@ def parse_cli_args():
     cli_parser.add_argument('--zmax', type=float, default=0.05)
     cli_parser.add_argument('--kmax', type=float, default=0.1)
 
-    cli_parser.add_argument('--boxside', type=float, default=1000.)
+    cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--mesh-gen', type=int, default=256)
     cli_parser.add_argument('--mesh-cal', type=int, default=256)

@@ -142,7 +142,7 @@ def process(runtime_info):
 
     two_point_model = TwoPointFunction(disc, **twopt_kwargs)
 
-    sample_parameters = np.linspace(*prior_range, num=num_sample)
+    sample_parameters = np.linspace(*prior_range, num=num_sample+1)
 
     chi_square_samples = []
     # likelihood_samples = []

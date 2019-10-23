@@ -113,7 +113,7 @@ def process(runtime_info):
     two_point_model = \
         TwoPointFunction(disc, f_0=growth_rate, power_spectrum=Plin)
 
-    sample_parameters = np.linspace(*prior_range, num=num_sample)
+    sample_parameters = np.linspace(*prior_range, num=num_sample+1)
 
     sample_chi_square = f_nl_chi_square(
         sample_parameters,
@@ -155,6 +155,7 @@ def finalise(output_data, save=True):
 
     filename = f"{script_name}{program_tag}"
     if save:
+        np.save("".join([base_path, "/", filename, "-dv.npy"]), overdensity)
         np.save("".join([base_path, "/", filename, ".npy"]), output_data)
 
 

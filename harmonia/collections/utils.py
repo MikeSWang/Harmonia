@@ -446,7 +446,7 @@ def format_float(x, case, use_sci_dp=3):
         float whose first decimal place is 0 represented as a rounded
         integer ending with a decimal dot (``'decdot'``).
     use_sci_dp : int, optional
-        The number of decimal places beyond which the scientific notation
+        Number of decimal places beyond which the scientific notation
         is used instead of the decimal notation when `case` is ``'sci'``.
         Default is 3.
 

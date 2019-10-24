@@ -70,7 +70,7 @@ def initialise():
     global external_couplings, Plin, growth_rate
 
     external_couplings = np.load(
-        f"{PATHIN}predict_twopt-("
+        f"{PATHIN}{script_name}/predict_twopt-("
         "pivots=[natural,spectral],"
         "nbar={},b1={},f0=none,rmax={},kmax={})-couplings.npy"
         .format(

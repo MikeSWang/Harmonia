@@ -463,21 +463,19 @@ def format_float(x, case, use_sci_dp=3):
     """
     x = float(x)
 
-    def _dec_or_sci(x):
-
-        return (
-            "{:.4f}" if np.abs(np.int(np.log10(x))) <= use_sci_dp else "{:e}"
-        ).format(x).rstrip("0")
-
     if case.lower() == 'latex':
         x_str = "{:g}".format(x)
         if "e" in x_str:
             base, exponent = x_str.split("e")
             x_str = r"{0} \times 10^{{{1}}}".format(base, int(exponent))
     elif case.lower() == 'sci':
-        x_str = _dec_or_sci(x)
-        if "e" in x_str:
-            base, exponent = x_str.split("e")
+        base, exponent = "{:.2e}".format(x).split("e")
+        if 0 < int(exponent) <= use_sci_dp:
+            x_str = "{:.1f}".format(x).rstrip("0")
+        elif - use_sci_dp <= int(exponent) < 0:
+            x = float("{:.1f}".format(float(base))) * 10**int(exponent)
+            x_str = "{:f}".format(x).rstrip("0")
+        else:
             x_str = "{0}e{1}".format(base.rstrip("0"), int(exponent))
     elif case.lower() == 'intdot':
         x_str = "{}".format(np.around(x)).rstrip("0")

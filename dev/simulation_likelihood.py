@@ -172,7 +172,7 @@ def finalise(output_data, save=True):
 
     filename = f"{input_file}{program_tag}"
     if save:
-        np.save("".join([base_path, "/", filename, "-d.npy"]), overdensity)
+        # np.save("".join([base_path, "/", filename, "-d.npy"]), overdensity)
         np.save("".join([base_path, "/", filename, ".npy"]), output_data)
 
 

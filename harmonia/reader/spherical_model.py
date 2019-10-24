@@ -25,9 +25,9 @@ include the following factors:
     * angular mask :math:`M(\hat{\mathbf{r}})`;
     * radial selection :math:`\phi(r)`, and radial weight :math:`w(r)` or
       its derivative :math:`w'(r)`;
-    * linear bias evolution :math:`G(z) = b_1(z) / b_1(0)` normalised to
-      unity at the current epoch, where :math:`b_1(z)` is the
-      scale-independent linear bias;
+    * linear bias evolution :math:`G_k(z) = b(z,k) / b(0,k)` normalised to
+      unity at the current epoch, where :math:`b(z,k)` is the
+      scale-dependent linear bias;
     * clustering evolution, :math:`D(z)`, which is the linear growth factor
       normalised to unity at the current epoch;
     * linear growth rate evolution :math:`F(z) = f(z) / f_0` normalised to
@@ -66,7 +66,7 @@ RSD coupling kernels
            \int \operatorname{d}\!r r^2 w(\tilde{r})
            j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
            j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           G(z) D(z) \phi(r) \,, \\
+           G_\nu(z) D(z) \phi(r) \,, \\
        \Upsilon_{\mu\nu} &=
            \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
            \int \operatorname{d}\!r r^2
@@ -115,7 +115,7 @@ and the shot noise part
         (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
 
 where the scale-dependent bias :math:`b_0(k) = b_1(0) + f_\textrm{NL}
-\Delta b(k)` includes the modification :math:`\Delta b(k)` due to
+\Delta b(k)` includes the modification :math:`\Delta b(k)` due to local
 primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the current
 epoch (see :mod:`~harmonia.cosmology.scale_dependence`);
 :math:`P_\textrm{m,0}` is the matter power spectrum at the current epoch;
@@ -954,7 +954,7 @@ class TwoPointFunction(Couplings):
     def two_point_signal(self, mu, nu, b_const, f_nl=None,
                          tracer_parameter=1.):
         """Compute signal 2-point function for given triplet indices with
-        or without scale modification by primordial non-Gaussianity.
+        or without scale modification by local primordial non-Gaussianity.
 
         Parameters
         ----------
@@ -1099,7 +1099,7 @@ class TwoPointFunction(Couplings):
                              b_const=None, f_nl=None, tracer_parameter=1.):
         """Compute 2-point signal, shot noise or full covariance matrix for
         given pivot axis for unpacking indices with or without scale
-        modification by primordial non-Gaussianity.
+        modification by local primordial non-Gaussianity.
 
         Parameters
         ----------

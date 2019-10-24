@@ -787,7 +787,7 @@ class TwoPointFunction(Couplings):
 
     .. todo::
 
-        Fully include evolution and AP effects y resolving the conflicts
+        Fully include evolution and AP effects by resolving the conflicts
         between attributes set by `cosmo_specs` and derived by `cosmo`.
 
     """

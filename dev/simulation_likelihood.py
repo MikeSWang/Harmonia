@@ -69,7 +69,7 @@ def initialise():
         str(prior_range).replace(" ", ""),
         pivot,
         format_float(nbar, 'sci'),
-        format_float(bias, 'decdot'),
+        format_float(bias, 'sci'),
         rsd_tag,
         format_float(kmax, 'sci'),
     )

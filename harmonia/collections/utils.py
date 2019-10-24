@@ -433,7 +433,7 @@ def clean_warning_format(message, category, filename, lineno, line=None):
     return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
 
 
-def format_float(x, case):
+def format_float(x, case, use_sci_dp=3):
     r"""Format float as a string.
 
     Parameters
@@ -445,6 +445,10 @@ def format_float(x, case):
         rounded integer ending with a decimal dot (``'intdot'``), or a
         float whose first decimal place is 0 represented as a rounded
         integer ending with a decimal dot (``'decdot'``).
+    use_sci_dp : int, optional
+        The number of decimal places beyond which the scientific notation
+        is used instead of the decimal notation when `case` is ``'sci'``.
+        Default is 3.
 
     Returns
     -------
@@ -459,13 +463,19 @@ def format_float(x, case):
     """
     x = float(x)
 
+    def _dec_or_sci(x):
+
+        return (
+            "{:.4f}" if np.ceil(- np.log10(x)) <= use_sci_dp else "{:.2e}"
+        ).format(x).rstrip("0")
+
     if case.lower() == 'latex':
         x_str = "{:g}".format(x)
         if "e" in x_str:
             base, exponent = x_str.split("e")
             x_str = r"{0} \times 10^{{{1}}}".format(base, int(exponent))
     elif case.lower() == 'sci':
-        x_str = "{:g}".format(x).replace("e+0", "e+").replace("e-0", "e-")
+        x_str = _dec_or_sci(x).replace("e+0", "e+").replace("e-0", "e-")
     elif case.lower() == 'intdot':
         x_str = "{}".format(np.around(x)).rstrip("0")
     elif case.lower() == 'decdot':

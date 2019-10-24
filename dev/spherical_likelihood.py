@@ -33,8 +33,8 @@ def _chi_square(dat_vector, cov_matrix):
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
-    dat_vector /= _OVERFLOW_DOWNSCALE
-    cov_matrix /= _OVERFLOW_DOWNSCALE**2
+    dat_vector = dat_vector / _OVERFLOW_DOWNSCALE
+    cov_matrix = cov_matrix / _OVERFLOW_DOWNSCALE**2
 
     chi_square = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) \
@@ -74,8 +74,8 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
     det_divider = data_dim * np.log(np.pi) \
         + np.log(np.abs(np.linalg.det(cov_matrix)))
 
-    dat_vector /= _OVERFLOW_DOWNSCALE
-    cov_matrix /= _OVERFLOW_DOWNSCALE**2
+    dat_vector = dat_vector / _OVERFLOW_DOWNSCALE
+    cov_matrix = cov_matrix / _OVERFLOW_DOWNSCALE**2
 
     chisq_exponent = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) \

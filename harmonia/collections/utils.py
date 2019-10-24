@@ -470,7 +470,7 @@ def format_float(x, case, use_sci_dp=3):
             x_str = r"{0} \times 10^{{{1}}}".format(base, int(exponent))
     elif case.lower() == 'sci':
         base, exponent = "{:.2e}".format(x).split("e")
-        if 0 < int(exponent) <= use_sci_dp:
+        if 0 <= int(exponent) <= use_sci_dp:
             x_str = "{:.1f}".format(x).rstrip("0")
         elif - use_sci_dp <= int(exponent) < 0:
             x = float("{:.1f}".format(float(base))) * 10**int(exponent)

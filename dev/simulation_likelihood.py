@@ -180,4 +180,4 @@ if __name__ == '__main__':
 
     program_tag = initialise()
     output_data = process(program_tag)
-    finalise(output_data)
+    finalise(output_data, save=False)

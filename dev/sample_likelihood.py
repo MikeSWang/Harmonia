@@ -1,4 +1,4 @@
-"""Sample spherical likelihood for primordial non-Gaussianity.
+"""Sample spherical likelihood for local primordial non-Gaussianity.
 
 """
 import numpy as np
@@ -134,13 +134,13 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
-    twopt_kwargs = dict(
+    two_point_kwargs = dict(
         f_0=growth_rate,
         cosmo=fiducial_cosmology,
-        couplings=external_couplings,
+        couplings=None,  # external_couplings
     )
 
-    two_point_model = TwoPointFunction(disc, **twopt_kwargs)
+    two_point_model = TwoPointFunction(disc, **two_point_kwargs)
 
     sample_parameters = np.linspace(*prior_range, num=num_sample+1)
 
@@ -158,13 +158,10 @@ def process(runtime_info):
 
         spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 
-        n_coeff, nbar_coeff = spherical_map.transform()
-        overdensity = [
-            n_coeff[ell] - nbar_coeff[ell]
-            for ell in np.sort(disc.degrees)
-        ]
+        overdensity = spherical_map.density_constrast()
 
-        field_vector = SphericalArray.build(disc=disc, filling=overdensity) \
+        field_vector = SphericalArray\
+            .build(disc=disc, filling=overdensity) \
             .unfold(pivot, return_only='data')
 
         sample_chi_square = f_nl_chi_square(

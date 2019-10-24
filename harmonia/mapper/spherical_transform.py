@@ -296,13 +296,41 @@ class SphericalMap:
 
         return n_coeff, nbar_coeff
 
+    def density_constrast(self, method=None):
+        """Compute spherical Fourier density contrast coefficients.
+
+        Parameters
+        ----------
+        method : str, optional
+            Expectation computation method (default is `None`) if the
+            transformed spherical Fourier coefficients have not been
+            computed.
+
+        Returns
+        -------
+        density_constrast : dict of {int: complex :class:`numpy.ndarray`}
+            Spherical Fourier density contrast coefficients.
+
+        """
+        if self._n_coeff is None or self._nbar_coeff is None:
+            self._n_coeff, self._nbar_coeff = self.transform(method=method)
+
+        density_constrast = {
+            ell: self._n_coeff[ell] - self._nbar_coeff[ell]
+            for ell in self.disc.degrees
+        }
+
+        return density_constrast
+
     def spherical_power(self, method=None):
         """Compute spherically recovered power spectrum.
 
         Parameters
         ----------
         method : str, optional
-            Expectation computation method (default is `None`).
+            Expectation computation method (default is `None`) if the
+            transformed spherical Fourier coefficients have not been
+            computed.
 
         Returns
         -------
@@ -312,12 +340,10 @@ class SphericalMap:
             orders.
 
         """
-        if self._n_coeff is None or self._nbar_coeff is None:
-            self._n_coeff, self._nbar_coeff = self.transform(method=method)
+        density_contrast_coeff = self.density_constrast(method=method)
 
         spherical_power = self._square_amplitude(
-            self._n_coeff,
-            self._nbar_coeff,
+            density_contrast_coeff,
             normalisation=self.disc.normalisations
         )
 
@@ -332,7 +358,9 @@ class SphericalMap:
         pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
             Pivot axis order for unpacking indices.
         method : str, optional
-            Expectation computation method (default is `None`).
+            Expectation computation method (default is `None`) if the
+            transformed spherical Fourier coefficients have not been
+            computed.
         order_collapse : bool, optional
             If `True` (default is `False`), spherical Fourier coefficients
             are first collapsed over spherical orders.
@@ -347,28 +375,24 @@ class SphericalMap:
         :class:`~.morph.SphericalArray` : spherical array structure.
 
         """
-        if self._n_coeff is None or self._nbar_coeff is None:
-            self._n_coeff, self._nbar_coeff = self.transform(method=method)
+        density_contrast_coeff = self.density_constrast(method=method)
 
         return self._compute_pivoted_two_points_from_coeff(
-            self._n_coeff,
-            self._nbar_coeff,
+            density_contrast_coeff,
             self.disc,
             pivot=pivot,
             order_collapse=order_collapse
         )
 
     @staticmethod
-    def _square_amplitude(n_coeff, nbar_coeff, normalisation=None):
+    def _square_amplitude(density_contrast_coeff, normalisation=None):
         """Compute normalised square amplitudes from spherical Fourier
         coefficients of the field.
 
         Parameters
         ----------
-        n_coeff, nbar_coeff : *dict of* {*int*: *complex* |ndarray|}
-            Observed and expected spherical Fourier coefficients for the
-            field normalised to the homogeneous particle number density
-            :attr:`mean_density`.
+        density_contrast_coeff : *dict of* {*int*: *complex* |ndarray|}
+            Spherical Fourier density contrast coefficients.
         normalisation : *dict of* {*int*: |ndarray|}, optional
             Normalisation coefficients.  If `None`, all normalisation
             coefficients are set to unity.
@@ -382,30 +406,28 @@ class SphericalMap:
         .. |ndarray| replace:: :class:`numpy.ndarray`
 
         """
-        sorted_degrees = np.sort(list(n_coeff.keys()))
+        sorted_degrees = np.sort(list(density_contrast_coeff.keys()))
 
         if normalisation is None:
             normalisation = dict.fromkeys(sorted_degrees, 1)
 
         return [
             normalisation[ell] * np.average(
-                np.abs(n_coeff[ell] - nbar_coeff[ell])**2,
+                np.abs(density_contrast_coeff[ell])**2,
                 axis=0
             )
             for ell in sorted_degrees
         ]
 
     @staticmethod
-    def _compute_pivoted_two_points_from_coeff(n_coeff, nbar_coeff, disc,
+    def _compute_pivoted_two_points_from_coeff(density_contrast_coeff, disc,
                                                pivot, order_collapse=False):
         r"""Compute 2-point values from spherical Fourier coefficients.
 
         Parameters
         ----------
-        n_coeff, nbar_coeff : *dict of* {*int*: *complex* |ndarray|}
-            Spherical Fourier coefficients for the observed and expected
-            particle number densities, normalised to the homogeneous mean
-            particle number density :attr:`mean_density`.
+        density_contrast_coeff : *dict of* {*int*: *complex* |ndarray|}
+            Spherical Fourier density contrast coefficients.
         disc : :class:`~.mapper.spherical_transform.DiscreteSpectrum`
             Discrete spectrum.
         pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
@@ -427,11 +449,10 @@ class SphericalMap:
         .. |ndarray| replace:: :class:`numpy.ndarray`
 
         """
-        sorted_degrees = np.sort(list(n_coeff.keys()))
-
-        fill = [n_coeff[ell] - nbar_coeff[ell] for ell in sorted_degrees]
-
-        delta_ellmn = SphericalArray.build(disc=disc, filling=fill)
+        delta_ellmn = SphericalArray.build(
+            disc=disc,
+            filling=density_contrast_coeff
+        )
 
         if order_collapse:
             collapse = 'rms'

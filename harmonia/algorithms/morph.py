@@ -115,6 +115,8 @@ class SphericalArray:
 
         self.data_array = None
         if filling is not None:
+            if isinstance(filling, dict):
+                filling = sort_dict_to_list(filling)
             if len(filling) == len(degrees):
                 for ell, nmax, fillblock in zip(degrees, depths, filling):
                     if np.shape(fillblock) != (2*ell+1, nmax):

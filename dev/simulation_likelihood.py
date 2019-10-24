@@ -1,4 +1,4 @@
-"""Simulation spherical likelihood for primordial non-Gaussianity.
+"""Simulation spherical likelihood for local primordial non-Gaussianity.
 
 """
 import numpy as np
@@ -99,14 +99,9 @@ def process(runtime_info):
         + catalogue['y'][:, None] * [0, 1, 0] \
         + catalogue['z'][:, None] * [0, 0, 1]
 
-    spherical_map = SphericalMap(disc, catalogue)
+    spherical_map = SphericalMap(disc, catalogue, mean_density_data=nbar)
 
-    n_coeff, nbar_coeff = spherical_map.transform()
-
-    overdensity = [
-        n_coeff[ell] - nbar_coeff[ell]
-        for ell in np.sort(disc.degrees)
-    ]
+    overdensity = spherical_map.density_constrast()
 
     field_vector = SphericalArray \
         .build(disc=disc, filling=overdensity) \
@@ -129,6 +124,15 @@ def process(runtime_info):
         nbar,
         bias
     )
+
+    # sample_likelihood = f_nl_likelihood(
+    #     sample_parameters,
+    #     field_vector,
+    #     pivot,
+    #     two_point_model
+    #     nbar,
+    #     bias
+    # )
 
     output_data = {
         'f_nl': [sample_parameters],
@@ -161,7 +165,7 @@ def finalise(output_data, save=True):
 
     filename = f"{input_file}{program_tag}"
     if save:
-        np.save("".join([base_path, "/", filename, "-dv.npy"]), overdensity)
+        np.save("".join([base_path, "/", filename, "-d.npy"]), overdensity)
         np.save("".join([base_path, "/", filename, ".npy"]), output_data)
 
 

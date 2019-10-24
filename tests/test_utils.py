@@ -96,7 +96,7 @@ def test_allocate_segments(tasks, ntask, nproc):
     "x,case,float_str",
     [
         (0.000001, 'latex', r'1 \times 10^{-6}'),
-        (0.000001, 'sci', '1e-6'),
+        (0.000001, 'sci', '1.e-6'),
         (1, 'intdot', '1.'),
         (1.02, 'decdot', '1.'),
     ]

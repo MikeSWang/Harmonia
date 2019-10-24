@@ -37,8 +37,8 @@ def initialise():
         If a required input parameter is missing.
 
     """
-    global prior_range, num_sample, pivot, nbar, bias, kmax, boxsize, \
-        input_file
+    global prior_range, num_sample, pivot, nbar, bias, growth_rate, \
+        kmax, boxsize, input_file
 
     try:
         prior_range = params.prior_range
@@ -46,24 +46,31 @@ def initialise():
         pivot = params.pivot
         nbar = params.nbar
         bias = params.bias
+        growth_rate = params.growth_rate
         kmax = params.kmax
         boxsize = params.boxsize
         input_file = params.input_file
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
-    global Plin, growth_rate
+    global Plin
 
     k_points, Pk_points = \
         np.loadtxt("".join([PATHIN, script_name, "/", PK_FILE_ROOT, ".txt"])).T
 
     Plin = interp1d(k_points, Pk_points, assume_sorted=True)
 
-    growth_rate = None
+    if growth_rate is None:
+        rsd_tag = 'none'
+    else:
+        rsd_tag = "{:.2f}".format(growth_rate)
 
-    runtime_info = "-(prior={},pivot={},,kmax={})".format(
+    runtime_info = "-(prior={},pivot={},nbar={},b1={},f0={},kmax={})".format(
         str(prior_range).replace(" ", ""),
         pivot,
+        format_float(nbar, 'sci'),
+        format_float(bias, 'decdot'),
+        rsd_tag,
         format_float(kmax, 'sci'),
     )
     return runtime_info

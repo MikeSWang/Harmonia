@@ -91,17 +91,19 @@ def initialise():
         growth_rate = None
         rsd_tag = 'none'
 
-    param_tag = "gen={},pivot={},nbar={},b1={},f0={},rmax={},kmax={},xpd={}," \
-        .format(
-            generator,
-            pivot,
-            format_float(nbar, 'sci'),
-            format_float(bias, 'decdot'),
-            rsd_tag,
-            format_float(rmax, 'intdot'),
-            format_float(kmax, 'sci'),
-            format_float(expand, 'decdot'),
-        )
+    param_tag = (
+        "prior={},pivot={},gen={},nbar={},b1={},f0={},rmax={},kmax={},xpd={},"
+    ).format(
+        str(prior_range).replace(" ", ""),
+        pivot,
+        generator,
+        format_float(nbar, 'sci'),
+        format_float(bias, 'decdot'),
+        rsd_tag,
+        format_float(rmax, 'intdot'),
+        format_float(kmax, 'sci'),
+        format_float(expand, 'decdot'),
+    )
 
     if mesh_gen == mesh_cal:
         mesh_tag = f"mesh=gc{mesh_gen},"

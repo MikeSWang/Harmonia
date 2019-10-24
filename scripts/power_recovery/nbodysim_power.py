@@ -37,7 +37,7 @@ def initialise():
     try:
         input_file = params.input_file
         kmax = params.kmax
-        dk = params.dk,
+        dk = params.dk
         boxsize = params.boxsize
         mesh_cal = params.mesh_cal
     except AttributeError as attr_err:

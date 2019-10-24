@@ -25,7 +25,7 @@ include the following factors:
     * angular mask :math:`M(\hat{\mathbf{r}})`;
     * radial selection :math:`\phi(r)`, and radial weight :math:`w(r)` or
       its derivative :math:`w'(r)`;
-    * linear bias evolution :math:`G_k(z) = b(z,k) / b(0,k)` normalised to
+    * linear bias evolution :math:`G(z,k) = b(z,k) / b(0,k)` normalised to
       unity at the current epoch, where :math:`b(z,k)` is the
       scale-dependent linear bias;
     * clustering evolution, :math:`D(z)`, which is the linear growth factor
@@ -66,7 +66,7 @@ RSD coupling kernels
            \int \operatorname{d}\!r r^2 w(\tilde{r})
            j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
            j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           G_\nu(z) D(z) \phi(r) \,, \\
+           G(z, k_{\ell_\nu n_\nu}) D(z) \phi(r) \,, \\
        \Upsilon_{\mu\nu} &=
            \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
            \int \operatorname{d}\!r r^2

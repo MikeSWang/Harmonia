@@ -136,7 +136,7 @@ def process(runtime_info):
     #     sample_parameters,
     #     field_vector,
     #     pivot,
-    #     two_point_model
+    #     two_point_model,
     #     nbar,
     #     bias
     # )

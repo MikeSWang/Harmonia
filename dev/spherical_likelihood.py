@@ -33,9 +33,6 @@ def _chi_square(dat_vector, cov_matrix):
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
-    dat_vector = dat_vector / _OVERFLOW_DOWNSCALE
-    cov_matrix = cov_matrix / _OVERFLOW_DOWNSCALE**2
-
     chi_square = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) \
         @ dat_vector
@@ -69,14 +66,8 @@ def _log_complex_normal_pdf(dat_vector, cov_matrix):
     """
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
-    data_dim = len(dat_vector)
 
-    det_divider = data_dim * np.log(np.pi) \
-        + np.log(np.abs(np.linalg.det(cov_matrix)))
-
-    dat_vector = dat_vector / _OVERFLOW_DOWNSCALE
-    cov_matrix = cov_matrix / _OVERFLOW_DOWNSCALE**2
-
+    det_divider = np.log(np.abs(np.linalg.det(cov_matrix)))
     chisq_exponent = np.transpose(np.conj(dat_vector)) \
         @ np.linalg.inv(cov_matrix) \
         @ dat_vector
@@ -199,6 +190,8 @@ def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
             "`sample_parameters` is not equivalent to a flat array. "
         )
 
+    data_vector = data_vector / _OVERFLOW_DOWNSCALE
+
     sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
         sample_covar = _f_nl_parametrised_variance(
@@ -208,6 +201,7 @@ def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
             two_point_model,
             pivot
         )
+        sample_covar = sample_covar / _OVERFLOW_DOWNSCALE**2
         sampled_chisq[idx] = np.real(_chi_square(data_vector, sample_covar))
 
     return sampled_chisq
@@ -252,16 +246,19 @@ def spherical_map_f_nl_likelihood(sample_parameters, data_vector, pivot,
             "`sample_parameters` is not equivalent to a flat array. "
         )
 
+    data_vector = data_vector / _OVERFLOW_DOWNSCALE
+
     sampled_likelihood = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
-        _sample_covar = _f_nl_parametrised_covariance(  # not ..._variance
+        sample_covar = _f_nl_parametrised_variance(  # not ..._variance
             parameter,
             bias,
             nbar,
             two_point_model,
             pivot
         )
+        sample_covar = sample_covar / _OVERFLOW_DOWNSCALE**2
         sampled_likelihood[idx] = \
-            _log_complex_normal_pdf(data_vector, _sample_covar)
+            _log_complex_normal_pdf(data_vector, sample_covar)
 
     return sampled_likelihood

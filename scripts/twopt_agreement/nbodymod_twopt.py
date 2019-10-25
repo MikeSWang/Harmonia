@@ -10,6 +10,8 @@ from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
+    unit_const,
+    zero_const,
 )
 from harmonia.reader import TwoPointFunction
 
@@ -97,6 +99,7 @@ def process(runtime_info):
         f_0=growth_rate,
         power_spectrum=Plin,
         comm=COMM,
+        survey_specs=None,  # SURVEY_SPECS
     )
 
     two_points = TwoPointFunction(disc, **kwargs)
@@ -163,6 +166,13 @@ def finalise(output_data, save=True):
 
 
 if __name__ == '__main__':
+
+    SURVEY_SPECS = {
+        'mask': unit_const,
+        'selection': unit_const,
+        'weight': unit_const,  # None
+        'weight_derivative' : zero_const,  # None
+    }
 
     COMM = MPI.COMM_WORLD
     program_tag = initialise()

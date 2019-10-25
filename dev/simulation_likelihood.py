@@ -16,7 +16,7 @@ from harmonia.mapper import SphericalMap
 from harmonia.reader import TwoPointFunction
 from spherical_likelihood import (
     spherical_map_f_nl_chi_square as f_nl_chi_square,
-    # spherical_map_f_nl_likelihood as f_nl_likelihood,
+    spherical_map_f_nl_likelihood as f_nl_likelihood,
 )
 
 PK_FILE_ROOT = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
@@ -132,19 +132,19 @@ def process(runtime_info):
         bias
     )
 
-    # sample_likelihood = f_nl_likelihood(
-    #     sample_parameters,
-    #     field_vector,
-    #     pivot,
-    #     two_point_model,
-    #     nbar,
-    #     bias
-    # )
+    sample_likelihood = f_nl_likelihood(
+        sample_parameters,
+        field_vector,
+        pivot,
+        two_point_model,
+        nbar,
+        bias
+    )
 
     output_data = {
         'f_nl': [sample_parameters],
         'chi_square': [sample_chi_square],
-        # 'likelihood': [sample_likelihood],
+        'likelihood': [sample_likelihood],
     }
 
     return output_data

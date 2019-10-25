@@ -148,11 +148,13 @@ def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
         f_nl=f_nl
     )
 
-    return np.diag(variance)
+    return variance
 
 
 def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
-                                  two_point_model, nbar, bias):
+                                  two_point_model, nbar, bias,
+                                  reject_mode=None, retain_mode=None,
+                                  index_vector=None):
     """Evaluate the spherical map chi-square of the local non-Gaussianity
     parameter.
 
@@ -192,15 +194,32 @@ def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
 
     data_vector = data_vector / _OVERFLOW_DOWNSCALE
 
+    selected_slice = np.ones(len(index_vector), dtype=bool)
+    if reject_mode is not None:
+        modes_to_reject = np.atleast_1d(reject_mode)
+        selected_slice = list(
+            map(lambda index: index[0] not in modes_to_reject, index_vector)
+        )
+    if retain_mode is not None:
+        modes_to_retain = np.atleast_1d(retain_mode)
+        selected_slice = list(
+            map(lambda index: index[0] in modes_to_retain, index_vector)
+        )
+
+    data_vector = data_vector[selected_slice]
+
+    print(len(data_vector))
+
     sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
-        sample_covar = _f_nl_parametrised_variance(
+        sample_var = _f_nl_parametrised_variance(
             parameter,
             bias,
             nbar,
             two_point_model,
             pivot
         )
+        sample_covar = np.diag(sample_var[selected_slice])
         sample_covar = sample_covar / _OVERFLOW_DOWNSCALE**2
         sampled_chisq[idx] = np.real(_chi_square(data_vector, sample_covar))
 

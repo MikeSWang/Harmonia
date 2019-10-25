@@ -16,7 +16,7 @@ from harmonia.mapper import SphericalMap
 from harmonia.reader import TwoPointFunction
 from spherical_likelihood import (
     spherical_map_f_nl_chi_square as f_nl_chi_square,
-    spherical_map_f_nl_likelihood as f_nl_likelihood,
+#    spherical_map_f_nl_likelihood as f_nl_likelihood,
 )
 
 PK_FILE_ROOT = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
@@ -38,7 +38,7 @@ def initialise():
 
     """
     global prior_range, num_sample, pivot, nbar, bias, growth_rate, \
-        kmax, boxsize, input_file
+        kmax, boxsize, input_file, reject_mode, retain_mode
 
     try:
         prior_range = params.prior_range
@@ -50,6 +50,8 @@ def initialise():
         kmax = params.kmax
         boxsize = params.boxsize
         input_file = params.input_file
+        reject_mode = params.reject_mode
+        retain_mode = params.retain_mode
     except AttributeError as attr_err:
         raise AttributeError(attr_err)
 
@@ -92,7 +94,12 @@ def process(runtime_info):
     """
     print(runtime_info.strip("-"))
 
+    global disc
+
     disc = DiscreteSpectrum(boxsize/2, 'Dirichlet', kmax)
+
+    index_vector = \
+        SphericalArray.build(disc=disc).unfold(pivot, return_only='index')
 
     global overdensity
 
@@ -123,28 +130,52 @@ def process(runtime_info):
 
     sample_parameters = np.linspace(*prior_range, num=num_sample+1)
 
-    sample_chi_square = f_nl_chi_square(
-        sample_parameters,
-        field_vector,
-        pivot,
-        two_point_model,
-        nbar,
-        bias
-    )
+    if reject_mode is not None:
+        sample_chi_square = f_nl_chi_square(
+            sample_parameters,
+            field_vector,
+            pivot,
+            two_point_model,
+            nbar,
+            bias,
+            reject_mode=reject_mode,
+            index_vector=index_vector
+        )
+    elif retain_mode is not None:
+        sample_chi_square = f_nl_chi_square(
+            sample_parameters,
+            field_vector,
+            pivot,
+            two_point_model,
+            nbar,
+            bias,
+            retain_mode=retain_mode,
+            index_vector=index_vector
+        )
+    else:
+        sample_chi_square = f_nl_chi_square(
+            sample_parameters,
+            field_vector,
+            pivot,
+            two_point_model,
+            nbar,
+            bias
+        )
 
-    sample_likelihood = f_nl_likelihood(
-        sample_parameters,
-        field_vector,
-        pivot,
-        two_point_model,
-        nbar,
-        bias
-    )
+
+#    sample_likelihood = f_nl_likelihood(
+#        sample_parameters,
+#        field_vector,
+#        pivot,
+#        two_point_model,
+#        nbar,
+#        bias
+#    )
 
     output_data = {
         'f_nl': [sample_parameters],
         'chi_square': [sample_chi_square],
-        'likelihood': [sample_likelihood],
+#        'likelihood': [sample_likelihood],
     }
 
     return output_data
@@ -171,6 +202,10 @@ def finalise(output_data, save=True):
     assert confirm_dir(base_path)
 
     filename = f"{input_file}{program_tag}"
+    if reject_mode:
+        filename += "-reject[{}]".format(reject_mode)
+    if retain_mode:
+        filename += "-retain[{}]".format(retain_mode)
     if save:
         # np.save("".join([base_path, "/", filename, "-d.npy"]), overdensity)
         np.save("".join([base_path, "/", filename, ".npy"]), output_data)

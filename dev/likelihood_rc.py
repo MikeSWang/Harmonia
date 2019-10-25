@@ -35,6 +35,12 @@ def parse_cli_args():
     cli_parser.add_argument('--num-sample', type=int, default=200)
 
     cli_parser.add_argument('--pivot')
+    cli_parser.add_argument(
+        '--reject-mode', action='append', nargs='+', type=int, default=None
+    )
+    cli_parser.add_argument(
+        '--retain-mode', action='append', nargs='+', type=int, default=None
+    )
 
     cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--rsd', action='store_true')

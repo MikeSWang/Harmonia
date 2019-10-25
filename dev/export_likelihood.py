@@ -109,11 +109,11 @@ if __name__ == '__main__':
     PIVOT = "spectral"
     GENERATOR = "nbodykit"
 
-    GEN_TAG = f"prior={PRIOR},pivot={PIVOT}"  # f"prior={PRIOR},pivot={PIVOT},gen={GENERATOR}"  #
+    GEN_TAG = f"pivot={PIVOT}"  # f"prior={PRIOR},pivot={PIVOT},gen={GENERATOR}"  #
     PARAM_TAG = \
         "nbar=2.49e-4,b1=2.4048,f0=none,kmax=0.04"
     # "nbar=0.001,b1=2.,f0=none,rmax=293.,kmax=0.04,xpd=2.,mesh=gc256,iter=1000"
     #
 
-    process_data(collate_data=False, load_data=True, save=True)
+    process_data(collate_data=True, load_data=False, save=True)
     view_data()

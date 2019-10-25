@@ -1,16 +1,9 @@
 # To-Do List
 
-## Always there
-
-- [ ] [dev/](./dev/): implementation under development
-
 ## Current items
 
 - [ ] [mapper/spherical_transform.py](./harmonia/mapper/spherical_transform.py):
-      1) fix spherical order collapse; 2) generalise for non-uniform selection,
-      e.g. FKP catalogues;
-- [ ] [reader/spherical_model.py](./harmonia/reader/spherical_model.py):
-      fix spherical order collapse.
+      generalise for non-uniform selection, e.g. FKP catalogues.
 
 ## On the horizon
 
@@ -20,12 +13,11 @@
 
 ## Distant future
 
-Extend cosmological functions in ``cosmology`` module, and incorporate further
-effects into ``mapper`` catalogues, e.g. clustering evolution,
-Alcock--Paczynski effects and integral constraints.
+Add evolution and AP functions in module ``cosmology``, and include
+corresponding effects into ``mapper`` catalogue maker.
 
 ## Publishing
 
 - [ ] tests: [tests/](./tests/)
-- [ ] documentation build: [examples/](./examples/)
+- [ ] tutorial build: [examples/](./examples/)
 - [ ] distribution build: [./](./)

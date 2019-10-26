@@ -1,6 +1,8 @@
 """Bias fitting for simulations without local primordial non-Gaussianity.
 
 """
+import warnings
+
 import numpy as np
 from nbodykit.lab import CSVCatalog
 from scipy.interpolate import interp1d
@@ -174,6 +176,8 @@ def finalise(output_data, save=True):
 
 
 if __name__ == '__main__':
+
+    warnings.simplefilter("ignore", UserWarning)
 
     SCRIPT_NAME = "bias_fitting"
 

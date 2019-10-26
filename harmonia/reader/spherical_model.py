@@ -1227,7 +1227,7 @@ class TwoPointFunction(Couplings):
 
         Returns
         -------
-        mode_variance : complex :class:`numpy.ndarray`
+        mode_variance : float :class:`numpy.ndarray`
             2-point mode variance vector pivoted at given axis order.
 
         Raises

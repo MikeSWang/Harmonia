@@ -7,7 +7,7 @@ import numpy as np
 _OVERFLOW_DOWNSCALE = 10**4
 
 
-def _chi_square(dat_vector, cov_matrix):
+def _chi_square(dat_vector, cov_matrix, by_element=False):
     """Compute chi-square for the specified data vector and covariance.
 
     The data vector is assumed to be zero-centred.
@@ -18,11 +18,14 @@ def _chi_square(dat_vector, cov_matrix):
         1-d data vector centred at zero.
     cov_matrix : float or complex, array_like
         2-d covariance matrix.
+    by_element : bool, optional
+        If `True` (default is `False`), return chi-square from each element
+        of `dat_vector`.
 
     Returns
     -------
-    chi_square : float
-        Chi-square value.
+    chi_square : float, array_like
+        Chi-square value(s).
 
     Raises
     ------
@@ -33,11 +36,14 @@ def _chi_square(dat_vector, cov_matrix):
     if len(set(np.shape(dat_vector)).difference({1})) > 1:
         raise ValueError("`data` is not equivalent to a 1-d vector. ")
 
-    chi_square = np.transpose(np.conj(dat_vector)) \
-        @ np.linalg.inv(cov_matrix) \
-        @ dat_vector
+    if not by_element:
+        chi_square = np.transpose(np.conj(dat_vector)) \
+            @ np.linalg.inv(cov_matrix) \
+            @ dat_vector
+    else:
+        chi_square = np.abs(dat_vector)**2 / np.diag(cov_matrix)
 
-    return chi_square
+    return np.real(chi_square)
 
 
 def _log_complex_normal_pdf(dat_vector, cov_matrix):
@@ -105,7 +111,7 @@ def _f_nl_parametrised_covariance(f_nl, b_const, nbar, two_point_model, pivot):
     """
     covariance = two_point_model.two_point_covariance(
         pivot,
-        diag=True,  # HACK: temporary
+        diag=True,  # HACK: temporary speed-up
         nbar=nbar,
         b_const=b_const,
         f_nl=f_nl
@@ -148,13 +154,12 @@ def _f_nl_parametrised_variance(f_nl, b_const, nbar, two_point_model, pivot):
         f_nl=f_nl
     )
 
-    return variance
+    return np.diag(variance)
 
 
 def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
                                   two_point_model, nbar, bias,
-                                  reject_mode=None, retain_mode=None,
-                                  index_vector=None):
+                                  by_mode=False):
     """Evaluate the spherical map chi-square of the local non-Gaussianity
     parameter.
 
@@ -194,34 +199,24 @@ def spherical_map_f_nl_chi_square(sample_parameters, data_vector, pivot,
 
     data_vector = data_vector / _OVERFLOW_DOWNSCALE
 
-    selected_slice = np.ones(len(index_vector), dtype=bool)
-    if reject_mode is not None:
-        modes_to_reject = np.atleast_1d(reject_mode)
-        selected_slice = list(
-            map(lambda index: index[0] not in modes_to_reject, index_vector)
-        )
-    if retain_mode is not None:
-        modes_to_retain = np.atleast_1d(retain_mode)
-        selected_slice = list(
-            map(lambda index: index[0] in modes_to_retain, index_vector)
-        )
-
-    data_vector = data_vector[selected_slice]
-
-    print(len(data_vector))
-
-    sampled_chisq = np.zeros(len(sample_parameters))
+    if by_mode:
+        sampled_chisq = np.zeros((len(sample_parameters), len(data_vector)))
+    else:
+        sampled_chisq = np.zeros(len(sample_parameters))
     for idx, parameter in enumerate(sample_parameters):
-        sample_var = _f_nl_parametrised_variance(
+        sample_covar = _f_nl_parametrised_variance(
             parameter,
             bias,
             nbar,
             two_point_model,
             pivot
         )
-        sample_covar = np.diag(sample_var[selected_slice])
+
         sample_covar = sample_covar / _OVERFLOW_DOWNSCALE**2
-        sampled_chisq[idx] = np.real(_chi_square(data_vector, sample_covar))
+
+        sampled_chisq[idx] = _chi_square(
+            data_vector, sample_covar, by_element=by_mode
+        )
 
     return sampled_chisq
 

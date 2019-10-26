@@ -167,7 +167,7 @@ def finalise(output_data, save=True):
         If the output path does not exist.
 
     """
-    base_path = f"{PATHOUT}{SCRIPT_NAME}"
+    base_path = f"{PATHOUT}simu_bias_fitting"
     assert confirm_directory_path(base_path)
 
     filename = f"{input_file}{program_tag}"
@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     warnings.simplefilter("ignore", UserWarning)
 
-    SCRIPT_NAME = "bias_fitting"
+    SCRIPT_NAME = "simulation_likelihood"
 
     program_tag = initialise()
     output_data = process(program_tag)

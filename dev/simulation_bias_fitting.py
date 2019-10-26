@@ -43,12 +43,17 @@ def bias_chi_square(bias, dat_vector, two_point_model, pivot, nbar,
         Chi-square value(s).
 
     """
-    var_vector = two_point_model.mode_variance(pivot, nbar=nbar, b_const=bias)
+    chi_square = np.zeros(len(np.atleast_1d(bias)))
 
-    chi_square = np.abs(dat_vector)**2 / var_vector
+    for idx, b in enumerate(bias):
+        var_vector = two_point_model.mode_variance(pivot, nbar=nbar, b_const=b)
 
-    if not by_mode:
-        chi_square = np.sum(chi_square)
+        chisq = np.abs(dat_vector)**2 / var_vector
+
+        if not by_mode:
+            chisq = np.sum(chisq)
+
+        chi_square[idx] = chisq
 
     return chi_square
 

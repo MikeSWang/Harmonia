@@ -920,9 +920,9 @@ class TwoPointFunction(Couplings):
 
     @property
     def _mode_scale_modifications(self):
-        """Scale-dependent modification to constant linear bias at
-        discretised Fourier modes to be modulated by local primordial
-        non-Gaussianity and tracer parameter.
+        """Scale-dependent modification to the scale-independent linear
+        bias at discretised Fourier modes to be modulated by local
+        primordial non-Gaussianity and tracer parameter.
 
         Returns
         -------

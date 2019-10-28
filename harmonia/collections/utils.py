@@ -51,6 +51,7 @@ Computational utilities
     zero_const
     unit_const
     const_function
+    matrix_log_det
     covar_to_corr
     binary_search
 
@@ -95,6 +96,7 @@ __all__ = [
     'zero_const',
     'unit_const',
     'const_function',
+    'matrix_log_det',
     'covar_to_corr',
     'binary_search',
     'normalise_vector',
@@ -463,20 +465,44 @@ def format_float(x, case, use_sci_dp=3):
     """
     x = float(x)
 
-    if case.lower() == 'latex':
-        x_str = "{:g}".format(x)
-        if "e" in x_str:
-            base, exponent = x_str.split("e")
-            x_str = r"{0} \times 10^{{{1}}}".format(base, int(exponent))
-    elif case.lower() == 'sci':
-        base, exponent = "{:.2e}".format(x).split("e")
+    def _decimal_to_sci_switch(x, use_sci_dp):
+        """Switch between the decimal and scientific representation of a
+        float number.
+
+        Parameters
+        ----------
+        x : float
+            Float number to be recast.
+        use_sci_dp : int
+            Number of decimal places beyond which the scientific notation
+            is used instead of the decimal representation.
+        
+        Returns
+        -------
+        x_str : str
+            String representation of the float number.
+
+        """
+        base_str, exponent_str = "{:.2e}".format(x).split("e")
+
+        base, exponent = float(base_str.rstrip("0")), int(exponent_str)
+
         if 0 <= int(exponent) <= use_sci_dp:
             x_str = "{:.1f}".format(x).rstrip("0")
         elif - use_sci_dp <= int(exponent) < 0:
-            x = float("{:.1f}".format(float(base))) * 10**int(exponent)
-            x_str = "{:f}".format(x).rstrip("0")
+            base = float("{:.1f}".format(base))
+            x_str = "{:f}".format(base*10**exponent).rstrip("0")
         else:
-            x_str = "{0}e{1}".format(base.rstrip("0"), int(exponent))
+            x_str = "{0}e{1}".format(base, exponent)
+
+        return x_str
+
+    if case.lower() == 'latex':
+        x_str = _decimal_to_sci_switch(x, use_sci_dp)
+        if "e" in x_str:
+            x_str = r"{0} \times 10^{{{1}}}".format(*x_str.split("e"))
+    elif case.lower() == 'sci':
+        x_str = _decimal_to_sci_switch(x, use_sci_dp)
     elif case.lower() == 'intdot':
         x_str = "{}".format(np.around(x)).rstrip("0")
     elif case.lower() == 'decdot':
@@ -555,7 +581,7 @@ def sort_list_to_dict(list_data, int_keys):
     }
 
     return sorted_dict
-
+    
 
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
@@ -613,6 +639,47 @@ def const_function(const):
         return const
 
     return const_func
+
+
+def matrix_log_det(matrix, diag=False):
+    """Calculate logarithm of the determinant of a positive-definite
+    matrix.
+
+    Parameters
+    ----------
+    matrix : float or complex, array_like
+        Positive definite 2-d matrix.
+    diag : bool, optional
+        If `True` (default is `False`), the input matrix is assumed to be
+        diagonal.
+
+    Returns
+    -------
+    log_det : float
+        Logarithm of the matrix determinant.
+
+    Raises
+    ------
+    ValueError
+        If `matrix` is not in an equivalent shape for a 2-d square matrix.
+    ValueError
+        If `matrix` is not positive definite.
+
+    """
+    if np.array(matrix).ndim != 2 or len(set(np.shape(matrix))) != 1:
+        raise ValueError("`matrix` is not a 2-d square matrix. ")
+
+    if diag:
+        sign_det = np.prod(np.sign(np.diag(matrix)))
+        if sign_det != 1:
+            raise ValueError("`matrix` is not positive definite. ")
+        log_det = np.sum(np.log(np.abs(np.diag(matrix))))
+    else:
+        sign_det, log_det = np.linalg.slogdet(matrix)
+        if sign_det != 1:
+            raise ValueError("`matrix` is not positive definite. ")
+
+    return log_det
 
 
 def covar_to_corr(covar):

@@ -5,7 +5,7 @@ Scale dependence (:mod:`~harmonia.cosmology.scale_dependence`)
 Compute scale-dependent modifications to galaxy clustering from local
 primordial non-Gausianity :math:`f_\textrm{NL}`.
 
-The constant linear bias is modified as
+The scale-independent linear bias is modified as
 
     .. math::
 
@@ -76,7 +76,8 @@ def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
     Parameters
     ----------
     bz_const : float
-        Constant linear bias.  Must be the value at the specified redshift.
+        Scale-independent bias.  Must be the value at the specified
+        redshift.
     f_nl : float
         Local primordial non-Gaussnianity.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
@@ -113,7 +114,8 @@ def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
     f_nl : float
         Local primordial non-Gaussnianity.
     bz_const : float
-        Constant linear bias.  Must be the value at the specified redshift.
+        Scale-independent bias.  Must be the value at the specified
+        redshift.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.

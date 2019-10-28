@@ -6,8 +6,8 @@ import sys
 import warnings
 from argparse import ArgumentParser
 
-PATHIN = "./data/input/"  # TODO: "../../inference/input/"
-PATHOUT = "./data/output/"  # TODO: "../../inference/output/"
+PATHIN = "./data/input/"  # TODO: "../../data/inference/input/"
+PATHOUT = "./data/output/"  # TODO: "../../data/inference/output/"
 
 
 def import_local_package():
@@ -32,9 +32,10 @@ def parse_cli_args():
     cli_parser.add_argument(
         '--prior-range', type=float, nargs=2, default=[-200., 200.]
     )
-    cli_parser.add_argument('--num-sample', type=int, default=200)
+    cli_parser.add_argument('--num-sample', type=int, default=100)
 
     cli_parser.add_argument('--pivot')
+    cli_parser.add_argument('--kmax', type=float, default=0.1)
 
     cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--rsd', action='store_true')
@@ -43,10 +44,8 @@ def parse_cli_args():
     cli_parser.add_argument('--bias', type=float, default=2.)
     cli_parser.add_argument('--growth-rate', type=float, default=None)
     cli_parser.add_argument('--redshift', type=float, default=0.)
-
+    
     cli_parser.add_argument('--zmax', type=float, default=0.05)
-    cli_parser.add_argument('--kmax', type=float, default=0.1)
-
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
     cli_parser.add_argument('--mesh-gen', type=int, default=256)

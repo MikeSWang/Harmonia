@@ -105,7 +105,7 @@ if __name__ == '__main__':
     SCRIPT_NAME = "simulation_likelihood"  # "sample_likelihood"  #
     FILE_ROOT = "halos-(NG=0.,z=1.)"  # SCRIPT_NAME  #
 
-    PRIOR = "[-100,100]"
+    PRIOR = "[-1000.,1000.]"
     PIVOT = "spectral"
     GENERATOR = "nbodykit"
 

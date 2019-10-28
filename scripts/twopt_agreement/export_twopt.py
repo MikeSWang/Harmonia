@@ -210,7 +210,10 @@ if __name__ == '__main__':
 
     data_tag = "-(gen={},pivots={},{},{})-agg"\
         .format(GEN_NAME, PIVOT_NAMES, PARAMS_TAG, BOX_TAG)
-    model_tag = "-(pivots={},{})".format(PIVOT_NAMES.replace("k", "spectral"), PARAMS_TAG)
+    model_tag = "-(pivots={},{})".format(
+        PIVOT_NAMES.replace("k", "spectral"), 
+        PARAMS_TAG
+    )
     nbody_tag = ""
 
     NBODY_REF_TAG = "-(NG=0.,z=1.)-(" + \

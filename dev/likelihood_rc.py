@@ -30,7 +30,7 @@ def parse_cli_args():
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument(
-        '--prior-range', type=float, nargs=2, default=[-100., 100.]
+        '--prior-range', type=float, nargs=2, default=[-200., 200.]
     )
     cli_parser.add_argument('--num-sample', type=int, default=200)
 

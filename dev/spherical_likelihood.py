@@ -67,7 +67,8 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
 
 def spherical_map_likelihood(param_points, param_name, spherical_data,
                              two_point_model, pivot, nbar, bias=None,
-                             f_nl=None, **param_covar_kwargs):
+                             f_nl=None, remove_degrees=(), mode_indices=None,
+                             **param_covar_kwargs):
     """Evaluate the spherical map logarithmic likelihood.
 
     Parameters
@@ -92,9 +93,19 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
     f_nl : float or None, optional
         Local primordial non-Gaussianity.  Cannot be `None` (default) if 
         `param_name` is ``'bias'``.
+
+    Other parameters
+    ----------------
     **param_covar_kwargs
         Keyword arguments `independence` and `diag` for 
         :func:`~.parametrised_covariance`.
+    remove_degrees : int, array_like, optional
+        If not an empty tuple (default), modes whose spherical degree is an
+        element are removed from the data vector and parametrised
+         covariance.
+    mode_indices : list of (int, int, int) or None, optional
+        Mode indices of the spherical data.  Cannot be `None` (default) if
+        `remove_degrees` is not `None`.
 
     Returns
     -------
@@ -109,6 +120,19 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
 
     """
     data_vector = spherical_data.unfold(pivot, return_only='data')
+    if remove_degrees:
+        if mode_indices is None:
+            raise ValueError(
+                "`mode_indices` must be provided "
+                "if `remove_degrees` is non-empty. "
+            )
+        excluded_deg = np.array(
+            list(
+                map(lambda index: index[0] in remove_degrees, mode_indices)
+            ),
+            dtype=bool
+        )
+        data_vector = data_vector[~excluded_deg]
 
     param_covar_args = (two_point_model, pivot, nbar)
 
@@ -142,6 +166,9 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
             raise ValueError(
                 f"Invalid `param_name` for sampling: {param_name}. "
             )
+
+        if remove_degrees:
+            sample_covar = sample_covar[:, ~excluded_deg][~excluded_deg, :]
             
         sampled_likelihood[idx] = complex_normal_log_pdf(
             data_vector,

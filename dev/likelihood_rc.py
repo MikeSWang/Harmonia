@@ -6,8 +6,39 @@ import sys
 import warnings
 from argparse import ArgumentParser
 
-PATHIN = "./data/input/"  # TODO: "../../data/inference/input/"
-PATHOUT = "./data/output/"  # TODO: "../../data/inference/output/"
+# TODO: "../../data/inference/input/", "../../data/inference/output/"
+PATHIN = "./data/input/"
+PATHOUT = "./data/output/"
+
+
+def safe_save(data, path, name, extension):
+    """Safely save data by checking overwrite protections.
+
+    Parameters
+    ----------
+    data : array_like
+        Data to be saved.
+    path, name, extension : str
+        Path, file name and file extension for the data to be saved.
+
+    Raises
+    ------
+    AssertionError
+        If path does not exist.
+    AssertionError
+        If overwrite permission is denied at the output path.
+
+    """
+    from numpy import save
+    from harmonia.collections import (
+        confirm_directory_path,
+        overwrite_protection
+    )
+
+    file = name + extension
+    assert confirm_directory_path(path)
+    assert overwrite_protection(path, file)
+    save(path + file, data)
 
 
 def import_local_package():
@@ -15,7 +46,9 @@ def import_local_package():
 
     """
     _cwd = os.path.dirname(__file__)
-    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))  # TODO: "../../"
+    sys.path.insert(
+        0, os.path.realpath(os.path.join(_cwd, "../"))  # TODO: "../../"
+    )
 
 
 def parse_cli_args():
@@ -29,13 +62,14 @@ def parse_cli_args():
     """
     cli_parser = ArgumentParser()
 
+    cli_parser.add_argument('--pivot', default='natural')
+    cli_parser.add_argument('--kmax', type=float, default=0.1)
+    cli_parser.add_argument('--load-couplings', action='store_true')
+
     cli_parser.add_argument(
         '--prior-range', type=float, nargs=2, default=[-200., 200.]
     )
     cli_parser.add_argument('--num-sample', type=int, default=100)
-
-    cli_parser.add_argument('--pivot')
-    cli_parser.add_argument('--kmax', type=float, default=0.1)
 
     cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--rsd', action='store_true')
@@ -44,7 +78,7 @@ def parse_cli_args():
     cli_parser.add_argument('--bias', type=float, default=2.)
     cli_parser.add_argument('--growth-rate', type=float, default=None)
     cli_parser.add_argument('--redshift', type=float, default=0.)
-    
+
     cli_parser.add_argument('--zmax', type=float, default=0.05)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)

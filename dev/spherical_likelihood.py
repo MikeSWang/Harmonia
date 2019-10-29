@@ -126,10 +126,8 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
                 "`mode_indices` must be provided "
                 "if `remove_degrees` is non-empty. "
             )
-        excluded_deg = np.array(
-            list(
-                map(lambda index: index[0] in remove_degrees, mode_indices)
-            ),
+        excluded_deg = np.fromiter(
+            map(lambda index: index[0] in remove_degrees, mode_indices),
             dtype=bool
         )
         data_vector = data_vector[~excluded_deg]

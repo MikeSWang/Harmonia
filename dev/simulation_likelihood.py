@@ -162,7 +162,9 @@ def process(runtime_params, runtime_info):
         spherical_map = SphericalMap(
             disc, catalogue, mean_density_data=runtime_params['nbar']
         )
-        overdensity_field = spherical_map.density_constrast()
+        overdensity_field = SphericalArray.build(
+            disc=disc, fill=spherical_map.density_constrast()
+        )
 
         log_likelihood_args = (
             sample_parameters,

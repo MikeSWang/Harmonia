@@ -1,21 +1,40 @@
-"""View spherical likelihoods.
+"""View sampled likelihood values.
 
 """
+import warnings
+
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
+from scipy.integrate import simps
 
 
-def view_chi_square(data, scatter=False):
-    """View data--model chi-square values.
+def view_samples(samples, xlabel, ylabel, scatter_plot=False,
+                 xlim=None, ylim=None, scaling=None, estimate=None,
+                 truth=None):
+    """View sampled likelihood-related values.
 
     Parameters
     ----------
-    data : dict
-        Chi-square samples.
-    scatter : bool, optional
-        If `True` (default is `False`), data are plural and each is plotted
-        scattered around the averaged data plot.
+    samples : dict
+        Sampled likelihood-related value.
+    xlabel, ylabel : str
+        Horizontal or vertical axis label.
+    scatter_plot : bool, optional
+        If `True` (default is `False`), each realisation in the sampling
+        data is plotted in additional to the overall sample averages.
+    xlim, ylim : tuple of (float, float), optional
+        Horizontal or vertical axis limits.
+    scaling : {'normalised', 'exp_max', None}, optional
+        If `None` (default), the logarithmic likelihood is plotted;
+        if ``'normalised'``, the normalised posterior with uniform prior is
+        plotted; if ``'exp_max'``, the likelihood normalised to the maximum
+        is plotted.
+    estimate : {'max', None}, optional
+        If not `None` (default), the likelihood parameter estimate is
+        marked.
+    truth : float or None, optional
+        If not `None` (default), the true parameter value is marked.
 
     Returns
     -------
@@ -23,53 +42,57 @@ def view_chi_square(data, scatter=False):
         Plotted figure.
 
     """
-    sns.set(style='ticks', font='serif')
+    SCATTER_ALPHA = 1/8
 
-    plt.figure("Non-Gaussianity chi-square")
+    parameters = samples['parameters']
+    likelihoods = samples['likelihood']
 
-    if not scatter:
-        parameters = data['f_nl']
-        chi_square = data['chi_square']
-        plt.plot(parameters, chi_square)
-    else:
-        for parameters, chi_square in zip(data['f_nl'], data['chi_square']):
-            plt.plot(parameters, chi_square, alpha=1/5)
-        plt.plot(
-            np.average(data['f_nl'], axis=0),
-            np.average(data['chi_square'], axis=0),
-            lw=2.,
-            ls='--'
+    likelihoods -= np.min(likelihoods, axis=1)[:, None]
+
+    avg_likelihood = np.average(likelihoods, axis=0)
+    avg_likelihood -= np.min(avg_likelihood)
+
+    if scaling == 'exp_max':
+        avg_likelihood = np.exp(avg_likelihood - np.max(avg_likelihood))
+        likelihoods = np.exp(likelihoods - np.max(avg_likelihood, axis=1))
+    elif scaling == 'normalised':
+        avg_likelihood = np.exp(avg_likelihood)
+        likelihoods = np.exp(likelihoods)
+        avg_normalisation = simps(avg_likelihood, parameters)
+        normalisations = np.array(
+            [simps(values, parameters) for values in likelihoods]
         )
+        avg_likelihood /= avg_normalisation
+        likelihoods /= normalisations[:, None]
 
-    plt.xlabel(r"$f_\mathrm{NL}$")
-    plt.ylabel(r"$\chi^2(f_\mathrm{NL})$")
-
-
-def view_likelihood(data, scaling='log'):
-    """View likelihood function.
-
-    Parameters
-    ----------
-    data : dict
-        Likelihood samples.
-    scaling : {'normalised', 'log'}, optional
-        Plot 'normalised' or 'log' (default) likelihood function.
-
-    Returns
-    -------
-    fig : :class:`matplotlib.Figure`
-        Plotted figure.
-
-    """
     sns.set(style='ticks', font='serif')
 
-    parameters = data['f_nl']
-    if scaling == 'normal':
-        raise NotImplementedError
-    elif scaling == 'log':
-        likelihoods = data['likelihood']
+    fig = plt.figure()
 
-    plt.figure("{} non-Gaussianity likelihood".format(scaling))
-    plt.plot(parameters, likelihoods)
-    plt.xlabel(r"$f_\mathrm{NL}$")
-    plt.ylabel(r"$\log\mathcal{L}(f_\mathrm{NL})$")
+    plt.plot(parameters, avg_likelihood, lw=2., label="average")
+
+    if estimate == 'max':
+        max_likelihood_parameter = parameters[np.argmax(avg_likelihood)]
+        plt.axvline(
+            x=max_likelihood_parameter,
+            ls='--',
+            label="max. loc. {}".format(max_likelihood_parameter)
+        )
+    if truth is not None:
+        plt.axvline(x=truth, ls=':', label="truth {}".format(truth))
+
+    if scatter_plot:
+        for values in likelihoods:
+            plt.plot(parameters, values, alpha=SCATTER_ALPHA)
+
+    if xlim:
+        plt.xlim(xlim)
+    else:
+        plt.xlim(parameters.min(), parameters.max())
+    if ylim:
+        plt.ylim(ylim)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+
+    return fig

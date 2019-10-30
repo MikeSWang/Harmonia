@@ -44,7 +44,8 @@ def chi_square(dat_vector, cov_matrix, by_diag=False):
     return chi_sq
 
 
-def complex_normal_log_pdf(dat_vector, cov_matrix, overflow_rescale=None):
+def complex_normal_log_pdf(dat_vector, cov_matrix, overflow_rescale=None,
+                           breakdown=False):
     """Compute natural logarithm of the complex normal probability density
     function given the zero-centred data vector and covariance matrix.
 
@@ -58,10 +59,13 @@ def complex_normal_log_pdf(dat_vector, cov_matrix, overflow_rescale=None):
         If not `None` (default), the data vector and covariance matrix are
         simultaneous rescaled by division in computing the exponent and
         matrix determinant normalisation.
+    breakdown : bool, optional
+        If `True` (default is `False`), contributions from each data
+        vector component are broken down.
 
     Returns
     -------
-    log_pdf: float
+    log_pdf: float, array_like
         Log PDF value.
 
     """
@@ -73,9 +77,16 @@ def complex_normal_log_pdf(dat_vector, cov_matrix, overflow_rescale=None):
         cov_matrix = cov_matrix / overflow_rescale**2
         normalisation_const += 2 * dat_dim * np.log(overflow_rescale)
 
-    det_divider = matrix_log_det(cov_matrix)
+    if breakdown:
+        var_vector = np.diag(cov_matrix)
+        sign_check = np.prod(np.sign(var_vector))
+        if sign_check != 1.:
+            raise ValueError("`cov_matrix` is not positive definite. ")
+        det_divider = np.log(np.abs(var_vector))
+    else:
+        det_divider = matrix_log_det(cov_matrix)
 
-    chisq_exponent = chi_square(dat_vector, cov_matrix)
+    chisq_exponent = chi_square(dat_vector, cov_matrix, by_diag=breakdown)
 
     log_pdf = normalisation_const - det_divider - chisq_exponent
 

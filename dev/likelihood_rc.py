@@ -70,6 +70,7 @@ def parse_cli_args():
         '--prior-range', type=float, nargs=2, default=[-200., 200.]
     )
     cli_parser.add_argument('--num-sample', type=int, default=100)
+    cli_parser.add_argument('--breakdown', action='store_true')
 
     cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--rsd', action='store_true')

@@ -43,6 +43,7 @@ def initialise():
     # Likelihood set-up
     ini_params['prior_range'] = params.prior_range
     ini_params['num_sample'] = params.num_sample
+    ini_params['breakdown'] = params.breakdown
 
     # Catalogue set-up
     if params.generator.lower().startswith('l'):
@@ -175,6 +176,7 @@ def process(runtime_params, runtime_tag):
 
         log_likelihood_kwargs = dict(
             bias=runtime_params['bias'],  #
+            breakdown=runtime_params['breakdown'],
             remove_degrees=(),
             mode_indices=index_vector,
         )

@@ -677,12 +677,12 @@ def matrix_log_det(matrix, diag=False):
 
     if diag:
         sign_det = np.prod(np.sign(np.diag(matrix)))
-        if sign_det != 1:
+        if sign_det != 1.:
             raise ValueError("`matrix` is not positive definite. ")
         log_det = np.sum(np.log(np.abs(np.diag(matrix))))
     else:
         sign_det, log_det = np.linalg.slogdet(matrix)
-        if sign_det != 1:
+        if sign_det != 1.:
             raise ValueError("`matrix` is not positive definite. ")
 
     return log_det

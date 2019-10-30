@@ -67,8 +67,8 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
 
 def spherical_map_likelihood(param_points, param_name, spherical_data,
                              two_point_model, pivot, nbar, bias=None,
-                             f_nl=None, remove_degrees=(), mode_indices=None,
-                             **param_covar_kwargs):
+                             f_nl=None, breakdown=False, remove_degrees=(),
+                             mode_indices=None, **param_covar_kwargs):
     """Evaluate the spherical map logarithmic likelihood.
 
     Parameters
@@ -96,9 +96,6 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
 
     Other parameters
     ----------------
-    **param_covar_kwargs
-        Keyword arguments `independence` and `diag` for
-        :func:`~.parametrised_covariance`.
     remove_degrees : int, array_like, optional
         If not an empty tuple (default), modes whose spherical degree is an
         element are removed from the data vector and parametrised
@@ -106,6 +103,12 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
     mode_indices : list of (int, int, int) or None, optional
         Mode indices of the spherical data.  Cannot be `None` (default) if
         `remove_degrees` is not `None`.
+    breakdown : bool, optional
+        If `True` (default is `False`), the contribution from each data
+        vector is broken down but the covariance matrix must be diagonal.
+    **param_covar_kwargs
+        Keyword arguments `independence` and `diag` for
+        :func:`~.parametrised_covariance`.
 
     Returns
     -------
@@ -134,7 +137,10 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
 
     param_covar_args = (two_point_model, pivot, nbar)
 
-    sampled_likelihood = np.zeros_like(param_points)
+    if breakdown:
+        log_likelihood = np.zeros((len(param_points), len(data_vector)))
+    else:
+        log_likelihood = np.zeros_like(param_points)
     for idx, param in enumerate(param_points):
         if param_name == 'f_nl':
             if bias is None:
@@ -168,10 +174,11 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
         if remove_degrees:
             sample_covar = sample_covar[:, ~excluded_deg][~excluded_deg, :]
 
-        sampled_likelihood[idx] = complex_normal_log_pdf(
+        log_likelihood[idx] = complex_normal_log_pdf(
             data_vector,
             sample_covar,
-            overflow_rescale=_OVERFLOW_DOWNSCALE
+            overflow_rescale=_OVERFLOW_DOWNSCALE,
+            breakdown=breakdown
         )
 
-    return sampled_likelihood
+    return log_likelihood

@@ -6,9 +6,9 @@ import warnings
 import numpy as np
 from nbodykit.lab import cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, params, script_name, safe_save
+from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import format_float
+from harmonia.collections import confirm_directory_path, format_float
 from harmonia.cosmology import fiducial_cosmology, fiducial_distance
 from harmonia.mapper import LogNormalCatalogue, NBKCatalogue, SphericalMap
 from harmonia.reader import TwoPointFunction
@@ -193,7 +193,7 @@ def process(runtime_params, runtime_tag):
     return output_data
 
 
-def finalise(output_data, program_tag):
+def finalise(output_data, process_tag):
     """Finalise program.
 
     Parameters
@@ -204,12 +204,14 @@ def finalise(output_data, program_tag):
         Program tag.
 
     """
-    program_tag = "-({})".format(program_tag)
+    file_tag = "-({})".format(process_tag)
 
     base_path = f"{PATHOUT}{script_name}/"
-    filename = f"{script_name}{program_tag}"
+    assert confirm_directory_path(base_path)
 
-    safe_save(output_data, base_path, filename, ".npy")
+    file_path = base_path + f"{script_name}{file_tag}.npy"
+
+    np.save(file_path, output_data)
 
 
 if __name__ == '__main__':

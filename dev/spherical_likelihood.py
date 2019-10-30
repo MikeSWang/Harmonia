@@ -99,7 +99,7 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
     remove_degrees : int, array_like, optional
         If not an empty tuple (default), modes whose spherical degree is an
         element are removed from the data vector and parametrised
-         covariance.
+        covariance.
     mode_indices : list of (int, int, int) or None, optional
         Mode indices of the spherical data.  Cannot be `None` (default) if
         `remove_degrees` is not `None`.

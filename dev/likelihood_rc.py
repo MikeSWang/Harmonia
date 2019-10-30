@@ -11,36 +11,6 @@ PATHIN = "./data/input/"
 PATHOUT = "./data/output/"
 
 
-def safe_save(data, path, name, extension):
-    """Safely save data by checking overwrite protections.
-
-    Parameters
-    ----------
-    data : array_like
-        Data to be saved.
-    path, name, extension : str
-        Path, file name and file extension for the data to be saved.
-
-    Raises
-    ------
-    AssertionError
-        If path does not exist.
-    AssertionError
-        If overwrite permission is denied at the output path.
-
-    """
-    from numpy import save
-    from harmonia.collections import (
-        confirm_directory_path,
-        overwrite_protection
-    )
-
-    file = name + extension
-    assert confirm_directory_path(path)
-    assert overwrite_protection(path, file)
-    save(path + file, data)
-
-
 def import_local_package():
     """Add package to Python module path.
 

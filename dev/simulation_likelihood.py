@@ -7,9 +7,9 @@ import numpy as np
 from nbodykit.lab import CSVCatalog
 from scipy.interpolate import interp1d
 
-from likelihood_rc import PATHIN, PATHOUT, params, script_name, safe_save
+from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import format_float
+from harmonia.collections import confirm_directory_path, format_float
 from harmonia.cosmology import fiducial_cosmology
 from harmonia.mapper import SphericalMap
 from harmonia.reader import TwoPointFunction
@@ -205,12 +205,14 @@ def finalise(output_data, output_info):
         Program output information.
 
     """
-    program_tag = "-({})".format(output_info)
+    file_tag = "-({})".format(output_info)
 
     base_path = f"{PATHOUT}{script_name}/"
-    filename = f"{parameters['input_file']}{program_tag}"
+    assert confirm_directory_path(base_path)
 
-    safe_save(output_data, base_path, filename, ".npy")
+    file_path = base_path + f"{parameters['input_file']}{file_tag}.npy"
+
+    np.save(file_path, output_data)
 
 
 if __name__ == '__main__':

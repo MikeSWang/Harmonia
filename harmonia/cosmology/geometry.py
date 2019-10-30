@@ -80,5 +80,7 @@ def differential_distortion_from_AP(chi_z_fiducial, chi_z_cosmological):
     differential_distortion : callable
         Differential distortion as a fuction of redshift.
 
+    .. todo:: Not yet implemented.
+
     """
     raise NotImplementedError

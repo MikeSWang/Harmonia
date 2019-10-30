@@ -51,7 +51,9 @@ def setup_cosmology():
 
 
 def process_data():
+    """Process loaded data.
 
+    """
     reference = _aggregate_data(
         np.load(f"{PATHIN}{SCRIPT_NAME}/{REFERENCE_FILE}.npy").item()
     )

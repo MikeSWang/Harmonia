@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-import harmonia.collections.utils as utils
+from harmonia.collections import utils
 
 
 def test_confirm_directory_path():
@@ -95,7 +95,7 @@ def test_allocate_segments(tasks, ntask, nproc):
 @pytest.mark.parametrize(
     "x,case,float_str",
     [
-        (0.000001, 'latex', r'1 \times 10^{-6}'),
+        (0.000001, 'latex', r'1.0 \times 10^{-6}'),
         (0.000001, 'sci', '1.e-6'),
         (1, 'intdot', '1.'),
         (1.02, 'decdot', '1.'),
@@ -151,6 +151,17 @@ def test_const_function(const, x):
     assert utils.const_function(const)(x) == pytest.approx(const)
 
 
+@pytest.mark.parametrize(
+    "matrix,logdet",
+    [(10*np.eye(499), 1148.9899614040)]
+)
+def test_matrix_log_det(matrix, logdet):
+    assert utils.matrix_log_det(matrix) == pytest.approx(logdet)
+    assert utils.matrix_log_det(matrix, diag=True) == pytest.approx(logdet)
+    with pytest.raises(ValueError):
+        utils.matrix_log_det(-matrix)
+
+
 @pytest.mark.parametrize("ndim,nsize", [(3, 10), (5, 8)])
 def test_covar_to_corr(ndim, nsize):
 
@@ -181,7 +192,7 @@ def test_normalise_vector(vec):
 
 
 @pytest.mark.parametrize("vec,r", [([1, 0, -1], 1)])
-def test_spherical_indicator(vec,r):
+def test_spherical_indicator(vec, r):
     assert not utils.spherical_indicator(vec, r)
 
 

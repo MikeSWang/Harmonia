@@ -7,7 +7,7 @@ from harmonia.collections import matrix_log_det
 
 
 def chi_square(dat_vector, cov_matrix, by_diag=False):
-    """Calculate chi-square for zero-centred data vector and its covariance 
+    """Calculate chi-square for zero-centred data vector and its covariance
     matrix.
 
     Parameters

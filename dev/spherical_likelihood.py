@@ -28,7 +28,7 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
         Consparam_covar_kwargstant linear bias.
     independence : bool, optional
         If `True` (default is `False`), independence amongst Fourier modes
-        is assumed and the diagonal covariance matrix is computed without 
+        is assumed and the diagonal covariance matrix is computed without
         coupling coefficients.
     diag : bool, optional
         If `True` (default is `False`), only the diagonal elements of the
@@ -77,7 +77,7 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
         Parameter sampling values.
     param_name : {'f_nl', 'bias'}
         Name of the parameter to be sampled, either ``'f_nl'`` for the
-        local primordial non-Gaussianity or ``'bias'`` for the 
+        local primordial non-Gaussianity or ``'bias'`` for the
         scale-independent linear bias.
     spherical_data : :class:`~harmonia.algorithms.morph.SphericalArray`
         Spherical data array of the transformed field.
@@ -91,13 +91,13 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
         Constant linear bias of the tracer particles at the current
         epoch.  Cannot be `None` (default) if `param_name` is ``'f_nl'``.
     f_nl : float or None, optional
-        Local primordial non-Gaussianity.  Cannot be `None` (default) if 
+        Local primordial non-Gaussianity.  Cannot be `None` (default) if
         `param_name` is ``'bias'``.
 
     Other parameters
     ----------------
     **param_covar_kwargs
-        Keyword arguments `independence` and `diag` for 
+        Keyword arguments `independence` and `diag` for
         :func:`~.parametrised_covariance`.
     remove_degrees : int, array_like, optional
         If not an empty tuple (default), modes whose spherical degree is an
@@ -167,7 +167,7 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
 
         if remove_degrees:
             sample_covar = sample_covar[:, ~excluded_deg][~excluded_deg, :]
-            
+
         sampled_likelihood[idx] = complex_normal_log_pdf(
             data_vector,
             sample_covar,

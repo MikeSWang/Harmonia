@@ -180,7 +180,7 @@ def process(runtime_info):
             field = MECHANISM[generator](boxsize, mesh_gen, Plin, bias=bias)
             if sampling:
                 field = poisson_sample(field, nbar, boxsize)
-            k, Pk, Nk = cal_power(field, boxsize, kmax=kmax, nbins=nbins)
+            k, Pk, Nk = cal_power(field, boxsize, kmax=kmax, num_bin=nbins)
 
             suite['k'].append([k])
             suite['Nk'].append([Nk])

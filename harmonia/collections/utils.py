@@ -476,31 +476,37 @@ def format_float(x, case, use_sci_dp=3):
         use_sci_dp : int
             Number of decimal places beyond which the scientific notation
             is used instead of the decimal representation.
-        
+
         Returns
         -------
         x_str : str
             String representation of the float number.
 
         """
-        base_str, exponent_str = "{:.2e}".format(x).split("e")
+        if x == 0.:
+            exponent, base = 0., 0.
+        else:
+            exponent = int(np.floor(np.log10(np.abs(x))))
+            base = x/10**exponent
 
-        base, exponent = float(base_str.rstrip("0")), int(exponent_str)
-
-        if 0 <= int(exponent) <= use_sci_dp:
+        if 0 <= exponent <= use_sci_dp:
             x_str = "{:.1f}".format(x).rstrip("0")
-        elif - use_sci_dp <= int(exponent) < 0:
-            base = float("{:.1f}".format(base))
+        elif - use_sci_dp <= exponent < 0:
+            base = np.around(base, decimals=1)
             x_str = "{:f}".format(base*10**exponent).rstrip("0")
         else:
-            x_str = "{0}e{1}".format(base, exponent)
+            base_str = "{:.2f}".format(base).rstrip("0")
+            x_str = "{0}e{1}".format(base_str, exponent)
 
         return x_str
 
     if case.lower() == 'latex':
         x_str = _decimal_to_sci_switch(x, use_sci_dp)
         if "e" in x_str:
-            x_str = r"{0} \times 10^{{{1}}}".format(*x_str.split("e"))
+            base_str, exp_str = x_str.split("e")
+            if base_str.endswith("."):
+                base_str += "0"
+            x_str = r"{0} \times 10^{{{1}}}".format(base_str, exp_str)
     elif case.lower() == 'sci':
         x_str = _decimal_to_sci_switch(x, use_sci_dp)
     elif case.lower() == 'intdot':
@@ -581,7 +587,7 @@ def sort_list_to_dict(list_data, int_keys):
     }
 
     return sorted_dict
-    
+
 
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------

@@ -48,7 +48,7 @@ class DiscreteSpectrum:
                 \frac{2}{R^3} j_{\ell+1}^{-2}(u_{\ell n}) \,,
                     \quad \text{for Dirichlet boundary conditions;} \\
                 \frac{2}{R^3} j_{\ell}^{-2}(u_{\ell n}) \left[
-                    1 - \frac{\ell(\ell + 1)}{u_{\ell n}^2} \right]^{-1} 
+                    1 - \frac{\ell(\ell + 1)}{u_{\ell n}^2} \right]^{-1}
                     \,, \quad \text{for Neumann boundary conditions.}
             \end{cases}
 

@@ -51,7 +51,7 @@ def initialise():
     elif params.generator.lower().startswith('n'):
         ini_params['generator'] = "nbodykit"
 
-    ini_params['rsd_flag'] = params.rsd_flag
+    ini_params['rsd_flag'] = params.rsd
     ini_params['rmax'] = fiducial_distance(params.zmax)
     ini_params['expand'] = params.expand
     ini_params['mesh_gen'] = params.mesh_gen

@@ -166,7 +166,7 @@ if __name__ == '__main__':
     KMAX = 0.04
 
     ZMAX = None
-    BOXSIZE = None
+    BOXSIZE = 1000.
 
     PARAM_TAG = "nbar=2.49e-4,b1=2.4048,f0=none"
     # PARAM_TAG = (
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         save=True
     )
     view_data(
-        output,  # filter_data(output)
+        filter_data(output, remove_degrees=()),
         scatter_plot=True,
         scaling='normalised',
         estimate='max',

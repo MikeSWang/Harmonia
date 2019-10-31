@@ -17,6 +17,8 @@ from harmonia.collections import (
 )
 from harmonia.mapper import SphericalMap
 
+NBAR = 10450893 / (42 * 1000** 3)
+
 
 def initialise():
     """Initialise from input parameters and return runtime information.
@@ -102,7 +104,7 @@ def process(runtime_info):
         )
         cartesian_power = FFTPower(mesh, mode='1d', dk=dk, kmax=kmax).power
 
-        spherical_map = SphericalMap(disc, catalogue)
+        spherical_map = SphericalMap(disc, catalogue, mean_density_data=NBAR)
         spherical_power = spherical_map.spherical_power()
 
         measurements['k'].append([cartesian_power['k']])

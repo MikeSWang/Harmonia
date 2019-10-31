@@ -17,7 +17,7 @@ from harmonia.collections import (
 )
 from harmonia.mapper import SphericalMap
 
-NBAR = 10450893 / (42 * 1000** 3)
+NBAR = 10450893 / (42 * 1000**3)
 
 
 def initialise():

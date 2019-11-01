@@ -11,8 +11,9 @@ _OVERFLOW_DOWNSCALE = 10**4
 
 def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
                             independence=False, diag=False):
-    r"""Parametrised covariance matrix given the 2-point function base
-    model and the pivot axis for data vectorisation of transformed fields.
+    r"""Compute the parametrised covariance matrix given the 2-point
+    function base model and the pivot axis for data vectorisation of
+    transformed fields.
 
     Parameters
     ----------

@@ -106,8 +106,8 @@ def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
 
 def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
                                   tracer_parameter=1.):
-    """Biased power spectrum with non-Gaussianity scale dependence
-    modification.
+    """Return the biased power spectrum with non-Gaussianity
+    scale-dependence modification.
 
     Parameters
     ----------

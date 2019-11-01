@@ -954,7 +954,8 @@ class TwoPointFunction(Couplings):
     def two_point_signal(self, mu, nu, b_const, f_nl=None,
                          tracer_parameter=1.):
         """Compute signal 2-point function for given triplet indices with
-        or without scale modification by local primordial non-Gaussianity.
+        or without scale-dependence modification by local primordial
+        non-Gaussianity.
 
         Parameters
         ----------
@@ -1098,8 +1099,8 @@ class TwoPointFunction(Couplings):
     def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
                              b_const=None, f_nl=None, tracer_parameter=1.):
         """Compute 2-point signal, shot noise or full covariance matrix for
-        given pivot axis for unpacking indices with or without scale
-        modification by local primordial non-Gaussianity.
+        given pivot axis for unpacking indices with or without
+        scale-dependence modification by local primordial non-Gaussianity.
 
         Parameters
         ----------
@@ -1201,8 +1202,8 @@ class TwoPointFunction(Couplings):
         """Compute the signal, shot noise or total mode variance for given
         pivot axis for unpacking indices, reduced to the simplest case of
         no masking, selection, weighting, evolution or geometrical effects
-        and with or without scale modification by local primordial
-        non-Gaussianity.
+        and with or without scale-dependence modification by local
+        primordial non-Gaussianity.
 
         Parameters
         ----------

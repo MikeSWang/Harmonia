@@ -41,7 +41,7 @@ def safe_save(data, path, name, extension):
     save(path + file, data)
 
 
-def filter_data(full_data, remove_degrees=()):
+def filter_data(full_data, remove_degrees=(), renorm_range=()):
     """Filter data.
 
     Parameters
@@ -52,6 +52,9 @@ def filter_data(full_data, remove_degrees=()):
         If not an empty tuple (default), modes whose spherical degree is an
         element are removed from the data vector and parametrised
         covariance.
+    renorm_range : float, array_like, optional
+        If not an empty tuple (default), renormalise likelihood in the new
+        prior range specified.
 
     Returns
     -------
@@ -72,11 +75,30 @@ def filter_data(full_data, remove_degrees=()):
         map(lambda index: index[0] in remove_degrees, index_vector),
         dtype=bool
     )
+    if renorm_range:
+        if len(renorm_range) != 2:
+            raise ValueError(
+                "Renormalisation prior range must be given "
+                "exactly two end points. "
+            )
+        # Firs [0] for returning the first and only axis, and the second
+        # [0] for the first and only index.
+        try:
+            included_range = slice(
+                np.argwhere(full_data['parameters'] == renorm_range[0])[0][0],
+                np.argwhere(full_data['parameters'] == renorm_range[1])[0][0] + 1
+            )
+        except IndexError:
+            included_range = slice(None, None)
+    else:
+        included_range = slice(None, None)
 
-    likelihood_contributions = full_data['likelihood'][:, :, ~excluded_deg]
+    parameter_flat = full_data['parameters'][included_range]
+    likelihood_contributions = \
+        full_data['likelihood'][:, included_range, ~excluded_deg]
 
     filtered_data = {
-        'parameters': full_data['parameters'],
+        'parameters': parameter_flat,
         'likelihood': np.sum(likelihood_contributions, axis=-1)
     }
 
@@ -161,26 +183,31 @@ if __name__ == '__main__':
     SCRIPT_NAME = "simulation_likelihood"  # "realisation_likelihood"  #
     FILE_ROOT = "halos-(NG=0.,z=1.)"  # SCRIPT_NAME  #
 
-    PRIOR = "-200.0,200.0"
-    PIVOT = "spectral"
-    KMAX = 0.04
-
     ZMAX = None
     BOXSIZE = 1000.
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.4048,f0=none"
+    PRIOR = "-400.0,400.0"
+    PIVOT = "spectral"
+    KMAX = 0.075
+
+    PARAM_TAG = "nbar=2.49e-4,b1=2.38,f0=none"
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
     # )
 
     output = read_data(
-        collate_data=False,
-        load_data=True,
+        collate_data=True,
+        load_data=False,
         save=True
     )
+    processed_data = filter_data(
+        output,
+        remove_degrees=(),
+        renorm_range=()
+    )
     view_data(
-        filter_data(output, remove_degrees=()),
+        processed_data,
         scatter_plot=True,
         scaling='normalised',
         estimate='max',

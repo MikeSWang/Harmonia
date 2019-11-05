@@ -208,7 +208,7 @@ def process(runtime_params, runtime_info):
                     runtime_params['contrast']*runtime_params['nbar']
             )
 
-            mesh = spherical_map.data.to_mesh(
+            mesh = spherical_map.pair.to_mesh(
                 Nmesh=runtime_params['mesh_cal'],
                 resampler='tsc',
                 compensated=True

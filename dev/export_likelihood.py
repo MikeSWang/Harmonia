@@ -123,7 +123,8 @@ def read_data(collate_data=False, load_data=False, save=False):
     collate_path = scr_dir_path + "collated/"
 
     if collate_data:
-        search_root = f"prior=[[]{PRIOR}[]],pivot={PIVOT},kmax={KMAX}"
+        search_root = \
+            f"map={MAP},prior=[[]{PRIOR}[]],pivot={PIVOT},kmax={KMAX}"
         output, count, name_instance = collate_data_files(
             f"{scr_dir_path}{FILE_ROOT}-*{search_root}*.npy", 'npy'
         )
@@ -140,7 +141,7 @@ def read_data(collate_data=False, load_data=False, save=False):
             )
 
     if load_data:
-        program_root = f"prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
+        program_root = f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
         output = np.load(
             f"{collate_path}{FILE_ROOT}-({program_root},{PARAM_TAG}).npy"
         ).item()
@@ -171,7 +172,7 @@ def view_data(data, savefig=False, **plot_kwargs):
         **plot_kwargs
     )
     if savefig:
-        program_root = f"prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
+        program_root = f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
         plt.savefig(
             f"{PATHOUT}log_likelihood-"
             f"{FILE_ROOT}-({program_root},{PARAM_TAG}).pdf"
@@ -186,7 +187,8 @@ if __name__ == '__main__':
     ZMAX = None
     BOXSIZE = 1000.
 
-    PRIOR = "-400.0,400.0"
+    MAP = "cartesian"
+    PRIOR = "2.0,3.0"
     PIVOT = "spectral"
     KMAX = 0.075
 
@@ -201,6 +203,10 @@ if __name__ == '__main__':
         load_data=False,
         save=True
     )
+#    clean = np.ones(42, dtype=bool)
+#    clean[6] = False
+#    clean[7] = False
+#    output['likelihood'] = output['likelihood'][clean, :]
     processed_data = filter_data(
         output,
         remove_degrees=(),

@@ -4,7 +4,7 @@
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-from scipy.integrate import simps
+from scipy.integrate import cumtrapz
 
 
 def view_samples(samples, xlabel, ylabel, scatter_plot=False,
@@ -46,22 +46,22 @@ def view_samples(samples, xlabel, ylabel, scatter_plot=False,
     likelihoods = samples['likelihood']
 
     likelihoods -= np.min(likelihoods, axis=1)[:, None]
-
     avg_likelihood = np.average(likelihoods, axis=0)
-    avg_likelihood -= np.min(avg_likelihood)
 
-    if scaling == 'exp_max':
-        avg_likelihood = np.exp(avg_likelihood - np.max(avg_likelihood))
-        likelihoods = np.exp(likelihoods - np.max(avg_likelihood, axis=1))
+    likelihoods = np.exp(likelihoods)
+    avg_likelihood = np.exp(avg_likelihood)
+
+    distribution = np.array(
+        [cumtrapz(values, parameters, initial=0.) for values in likelihoods]
+    )
+    avg_distribution = cumtrapz(avg_likelihood, parameters, initial=0.)
+
+    if scaling == 'log':
+        avg_likelihood = np.log(avg_likelihood / avg_distribution[-1])
+        likelihoods = np.log(likelihoods / distribution[:, [-1]])
     elif scaling == 'normalised':
-        avg_likelihood = np.exp(avg_likelihood)
-        likelihoods = np.exp(likelihoods)
-        avg_normalisation = simps(avg_likelihood, parameters)
-        normalisations = np.array(
-            [simps(values, parameters) for values in likelihoods]
-        )
-        avg_likelihood /= avg_normalisation
-        likelihoods /= normalisations[:, None]
+        avg_likelihood /= avg_distribution[-1]
+        likelihoods /= distribution[:, [-1]]
 
     sns.set(style='ticks', font='serif')
 
@@ -71,11 +71,19 @@ def view_samples(samples, xlabel, ylabel, scatter_plot=False,
 
     if estimate == 'max':
         max_likelihood_parameter = parameters[np.argmax(avg_likelihood)]
+        lower_bound = parameters[np.argmin(
+            np.abs(avg_distribution - 0.317/2*avg_distribution[-1])
+        )]
+        upper_bound = parameters[np.argmin(
+            np.abs(avg_distribution - (1-0.317/2)*avg_distribution[-1])
+        )]
         plt.axvline(
             x=max_likelihood_parameter,
             ls='--',
             label="max. loc. {}".format(max_likelihood_parameter)
         )
+        plt.axvline(x=lower_bound, ls='--')
+        plt.axvline(x=upper_bound, ls='--')
     if truth is not None:
         plt.axvline(x=truth, ls=':', label="truth {}".format(truth))
 

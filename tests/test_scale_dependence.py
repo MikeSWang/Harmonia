@@ -14,16 +14,16 @@ def test_scale_modification(cosmo, redshift):
 
 
 @pytest.mark.parametrize(
-    "bz_const,f_nl,cosmo",
+    "b_1,f_nl,cosmo",
     [(2., -10., fiducial_cosmology)]
 )
-def test_scale_dependent_bias(bz_const, f_nl, cosmo):
-    assert callable(scale_dependent_bias(bz_const, f_nl, cosmo))
+def test_scale_dependent_bias(b_1, f_nl, cosmo):
+    assert callable(scale_dependent_bias(b_1, f_nl, cosmo))
 
 
 @pytest.mark.parametrize(
-    "f_nl,bz_const,cosmo",
+    "f_nl,b_1,cosmo",
     [(-10., 2., fiducial_cosmology)]
 )
-def test_scale_modified_power_spectrum(f_nl, bz_const, cosmo):
-    assert callable(scale_modified_power_spectrum(f_nl, bz_const, cosmo))
+def test_scale_modified_power_spectrum(f_nl, b_1, cosmo):
+    assert callable(scale_modified_power_spectrum(f_nl, b_1, cosmo))

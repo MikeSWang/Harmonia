@@ -63,7 +63,7 @@ TWO_POINT_SURVEY_SPECS = {
 }
 TWO_POINT_TEST_PARAMS = dict(
     nbar=1e-3,
-    b_const=2.,
+    b_10=2.,
     f_nl=0.,
 )
 

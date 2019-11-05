@@ -103,7 +103,7 @@ def process(runtime_info):
             part: two_points.two_point_covariance(
                 pivot,
                 nbar=nbar,
-                b_const=bias,
+                b_10=bias,
                 part=part
             )
             for part in ['signal', 'shotnoise', 'both']

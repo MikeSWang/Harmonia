@@ -68,15 +68,15 @@ def scale_modification(cosmo, redshift):
     return kernel
 
 
-def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
+def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0.,
                          tracer_parameter=1.):
     r"""Return the scale-dependent bias modulated by local primordial
     non-Gaussianity.
 
     Parameters
     ----------
-    bz_const : float
-        Scale-independent bias.  Must be the value at the specified
+    b_1 : float
+        Scale-independent linear bias.  Must be the value at the specified
         redshift.
     f_nl : float
         Local primordial non-Gaussnianity.
@@ -90,21 +90,21 @@ def scale_dependent_bias(bz_const, f_nl, cosmo, redshift=0.,
 
     Returns
     -------
-    bias_k : callable
+    b_k : callable
         Scale-dependent bias as a function of the Fourier scale (in h/Mpc).
 
     """
-    def bias_k(k):
+    def b_k(k):
 
-        bias_of_k = bz_const + f_nl * (bz_const - tracer_parameter) \
+        b_of_k = b_1 + f_nl * (b_1 - tracer_parameter) \
             * scale_modification(cosmo, redshift)(k)
 
-        return bias_of_k
+        return b_of_k
 
-    return bias_k
+    return b_k
 
 
-def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
+def scale_modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
                                   tracer_parameter=1.):
     """Return the biased power spectrum with non-Gaussianity
     scale-dependence modification.
@@ -113,8 +113,8 @@ def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
     ----------
     f_nl : float
         Local primordial non-Gaussnianity.
-    bz_const : float
-        Scale-independent bias.  Must be the value at the specified
+    b_1 : float
+        Scale-independent linear bias.  Must be the value at the specified
         redshift.
     cosmo : :class:`nbodykit.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
@@ -135,7 +135,7 @@ def scale_modified_power_spectrum(f_nl, bz_const, cosmo, redshift=0.,
     def power_spectrum(k):
 
         bias = scale_dependent_bias(
-            bz_const,
+            b_1,
             f_nl,
             cosmo,
             redshift=redshift,

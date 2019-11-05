@@ -9,7 +9,7 @@ from complex_normal import complex_normal_log_pdf
 _OVERFLOW_DOWNSCALE = 10**4
 
 
-def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
+def parametrised_covariance(two_point_model, pivot, nbar, b_10, f_nl,
                             independence=False, diag=False):
     r"""Compute the parametrised covariance matrix given the 2-point
     function base model and the pivot axis for data vectorisation of
@@ -25,8 +25,8 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
         Mean particle number density (in cubic h/Mpc).
     f_nl : float
         Local primordial non-Gaussianity.
-    b_const : float
-        Consparam_covar_kwargstant linear bias.
+    b_10 : float
+        Scale-indepepdent linear bias at the current epoch.
     independence : bool, optional
         If `True` (default is `False`), independence amongst Fourier modes
         is assumed and the diagonal covariance matrix is computed without
@@ -50,7 +50,7 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
         variance = two_point_model.mode_variance(
             pivot,
             nbar=nbar,
-            b_const=b_const,
+            b_10=b_10,
             f_nl=f_nl
         )
         covariance = np.diag(variance)
@@ -59,7 +59,7 @@ def parametrised_covariance(two_point_model, pivot, nbar, b_const, f_nl,
             pivot,
             diag=diag,
             nbar=nbar,
-            b_const=b_const,
+            b_10=b_10,
             f_nl=f_nl
         )
 
@@ -89,8 +89,9 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
     nbar : float
         Mean particle number density (in cubic h/Mpc).
     bias : float or None, optional
-        Constant linear bias of the tracer particles at the current
-        epoch.  Cannot be `None` (default) if `param_name` is ``'f_nl'``.
+        Scale-independent linear bias of the tracer particles at the
+        current epoch.  Cannot be `None` (default) if `param_name` is
+        ``'f_nl'``.
     f_nl : float or None, optional
         Local primordial non-Gaussianity.  Cannot be `None` (default) if
         `param_name` is ``'bias'``.

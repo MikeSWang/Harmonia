@@ -155,7 +155,7 @@ def process(runtime_params, runtime_info):
             couplings=runtime_params['external_couplings']
         )
         log_likelihood = spherical_map_likelihood
-    elif runtime_params['likelihood'] == 'spherical':
+    elif runtime_params['likelihood'] == 'cartesian':
         log_likelihood = cartesian_map_likelihood
 
     sample_parameters = np.linspace(

@@ -11,7 +11,7 @@ _OVERFLOW_DOWNSCALE = 10**4
 _CURRENT_REDSHIFT = 0.
 
 
-def parametrised_moments(wavenumbers, cosmo, b_10, nbar=None, f_nl=None,
+def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
                          mode_count=None, contrast=None, power_spectrum=None):
     """Compute the parametrised moment(s) of power spectrum realisations.
 
@@ -19,10 +19,6 @@ def parametrised_moments(wavenumbers, cosmo, b_10, nbar=None, f_nl=None,
     ----------
     wavenumbers : float, array_like
         Wavenumbers at which the power spectrum moments are evaluated.
-    cosmo : :class:`nbodykit.cosmology.Cosmology`
-        Cosmological model used to produce a power spectrum model, linear
-        growth rate and the transfer function for calculating
-        scale-dependent bias.
     b_10 : float
         Scale-independent linear bias at the current epoch.
     nbar : float or None, optional
@@ -30,6 +26,10 @@ def parametrised_moments(wavenumbers, cosmo, b_10, nbar=None, f_nl=None,
         (default), shot noise is not included.
     f_nl : float or None, optional
         Local primordial non-Gaussianity (default is `None`).
+    cosmo : :class:`nbodykit.cosmology.Cosmology` or None, optional
+        Cosmological model used to produce a power spectrum model, linear
+        growth rate and the transfer function for calculating
+        scale-dependent bias (default is `None`).
     mode_count : int, array_like or None, optional
         Number of grid modes for each wavenumber bin (default is `None`).
 
@@ -139,7 +139,7 @@ def cartesian_map_likelihood(param_points, param_name, cartesian_data,
     data_vector = cartesian_data['Pk']
 
     wavenumbers, mode_count = cartesian_data['k'], cartesian_data['Nk']
-    if np.squeeze(mode_count).shape() != np.squeeze(wavenumbers).shape():
+    if np.squeeze(mode_count).shape != np.squeeze(wavenumbers).shape:
         raise ValueError(
             "`mode_count` and `wavenumbers` shapes do not match. "
         )
@@ -155,38 +155,37 @@ def cartesian_map_likelihood(param_points, param_name, cartesian_data,
             mean_vector, variance_vector = parametrised_moments(
                 wavenumbers,
                 bias,
-                cosmo=cosmo,
                 nbar=nbar,
                 f_nl=param,
+                cosmo=cosmo,
                 mode_count=mode_count,
                 contrast=contrast,
                 power_spectrum=power_spectrum
             )
 
             det_divider = - 1/2 * np.sum(np.log(variance_vector))
-            exponent = - 1/2 * data_vector**2 / variance_vector
+            exponent = - 1/2 * np.sum(
+                (data_vector - mean_vector)**2 / variance_vector
+            )
 
             log_likelihood[idx] = det_divider + exponent
     elif param_name == 'bias':
-        if f_nl is None:
-            raise ValueError(
-                "`f_nl` value must be provided "
-                "for sampling scale-independent bias. "
-            )
         for idx, param in enumerate(param_points):
             mean_vector, variance_vector = parametrised_moments(
                 wavenumbers,
                 param,
-                cosmo=cosmo,
                 nbar=nbar,
                 f_nl=None,
+                cosmo=cosmo,
                 mode_count=mode_count,
                 contrast=contrast,
                 power_spectrum=power_spectrum
             )
 
             det_divider = - 1/2 * np.sum(np.log(variance_vector))
-            exponent = - 1/2 * data_vector**2 / variance_vector
+            exponent = - 1/2 * np.sum(
+                (data_vector - mean_vector)**2 / variance_vector
+            )
 
             log_likelihood[idx] = det_divider + exponent
 

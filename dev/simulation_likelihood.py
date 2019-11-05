@@ -136,7 +136,7 @@ def process(runtime_params, runtime_info):
         Program output.
 
     """
-    print(runtime_info)
+    print(runtime_info + "\n")
 
     disc = DiscreteSpectrum(
         runtime_params['boxsize']/2, 'Dirichlet', runtime_params['kmax']
@@ -220,10 +220,14 @@ def process(runtime_params, runtime_info):
                 kmax=runtime_params['kmax']
             ).poles
 
+            if cartesian_power['k'][0] == 0.:
+                clean = slice(1, None)
+            else:
+                clean = slice(None, None)
             compressed_data = {
-                'k': cartesian_power['k'],
-                'Nk': cartesian_power['modes'],
-                'Pk': cartesian_power['power_0'].real,
+                'k': cartesian_power['k'][clean],
+                'Nk': cartesian_power['modes'][clean],
+                'Pk': cartesian_power['power_0'][clean].real,
                 'Pshot': cartesian_power.attrs['shotnoise'],
             }
 

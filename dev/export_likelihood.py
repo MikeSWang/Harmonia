@@ -172,21 +172,20 @@ if __name__ == '__main__':
     PIVOT = "spectral"
     KMAX = 0.075
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.329,f0=none" # f_nl=0., b1=2.329
+    PARAM_TAG = "nbar=2.49e-4,b1=2.383,f0=none" # f_nl=0., b1=2.329
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
     # )
 
     output = read_data(
-        collate_data=False,
-        load_data=True,
+        collate_data=True,
+        load_data=False,
         save=True
     )
-#    processed_output = filter_data(output, remove_degrees=())
     view_data(
-        output, # processed_output
-        # truth=0.,
+        output, # filter_data(output, remove_degrees=())
+        truth=0.,
         precision=0,
         norm_range=()
     )

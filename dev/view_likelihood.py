@@ -55,13 +55,10 @@ def view_samples(samples, xlabel, ylabel, scaling='normalised', estimate='max',
             )
         # Firs [0] for returning the first and only axis, and the second
         # [0] for the first and only index.
-        try:
-            included_range = slice(
-                np.argwhere(samples['parameters'] == norm_range[0])[0][0],
-                np.argwhere(samples['parameters'] == norm_range[1])[0][0] + 1
-            )
-        except IndexError:
-            included_range = slice(None, None)
+        included_range = slice(
+            np.argmin(np.abs(samples['parameters'] - norm_range[0])),
+            np.argmin(np.abs(samples['parameters'] - norm_range[1])) + 1
+        )
     else:
         included_range = slice(None, None)
 

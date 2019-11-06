@@ -2,6 +2,7 @@
 
 """
 import warnings
+from collections import defaultdict
 
 import numpy as np
 from nbodykit.lab import CSVCatalog, ConvolvedFFTPower
@@ -158,12 +159,15 @@ def process(runtime_params, runtime_info):
     elif runtime_params['likelihood'] == 'cartesian':
         log_likelihood = cartesian_map_likelihood
 
+    output_data = defaultdict(list)
+
     sample_parameters = np.linspace(
         *runtime_params['prior_range'],
         num=runtime_params['num_sample']+1
     )
 
-    sample_values = []
+    output_data['parameters'].append(sample_parameters)
+
     for file_suffix in ["L", "R"]:
         catalogue_path = "{}{}/{}{}.txt".format(
             PATHIN, script_name, runtime_params['input_file'], file_suffix
@@ -225,6 +229,8 @@ def process(runtime_params, runtime_info):
                 clean = slice(1, None)
             else:
                 clean = slice(None, None)
+                if cartesian_power['modes'][0] % 2 == 1:
+                    cartesian_power['modes'][0] -= 1
             compressed_data = {
                 'k': cartesian_power['k'][clean],
                 'Nk': cartesian_power['modes'][clean],
@@ -232,27 +238,25 @@ def process(runtime_params, runtime_info):
                 'Pshot': cartesian_power.attrs['shotnoise'],
             }
 
+            output_data['k'].append(compressed_data['k'])
+            output_data['Nk'].append(compressed_data['Nk'])
+
             log_likelihood_args = (
                 sample_parameters,
-                'f_nl',  # 'bias', #
+                'f_nl', # 'bias', #
                 compressed_data,
                 runtime_params['nbar'],
             )
             log_likelihood_kwargs = dict(
                 cosmo=fiducial_cosmology,
-                bias=runtime_params['bias'],  # f_nl=None, #
+                bias=runtime_params['bias'], # f_nl=None, #
                 contrast=runtime_params['contrast'],
                 power_spectrum=runtime_params['matter_power_spectrum'],
             )
 
-        sample_values.append(
+        output_data['likelihood'].append(
             log_likelihood(*log_likelihood_args, **log_likelihood_kwargs)
         )
-
-    output_data = {
-        'parameters': [sample_parameters],
-        'likelihood': [sample_values],
-    }
 
     return output_data
 

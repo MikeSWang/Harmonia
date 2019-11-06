@@ -157,11 +157,6 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
                 **param_covar_kwargs
             )
         elif param_name == 'bias':
-            if f_nl is None:
-                raise ValueError(
-                    "`f_nl` value must be provided "
-                    "for sampling scale-independent bias. "
-                )
             sample_covar = parametrised_covariance(
                 *param_covar_args,
                 param,

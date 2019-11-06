@@ -191,6 +191,7 @@ def process(runtime_params, runtime_info):
                 breakdown=runtime_params['breakdown'],
                 remove_degrees=(),
                 mode_indices=index_vector,
+                independence=True,
             )
         elif runtime_params['likelihood'] == 'cartesian':
 

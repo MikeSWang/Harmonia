@@ -41,7 +41,7 @@ def safe_save(data, path, name, extension):
     save(path + file, data)
 
 
-def filter_data(full_data, remove_degrees=(), renorm_range=()):
+def filter_data(full_data, remove_degrees=()):
     """Filter data.
 
     Parameters
@@ -52,9 +52,6 @@ def filter_data(full_data, remove_degrees=(), renorm_range=()):
         If not an empty tuple (default), modes whose spherical degree is an
         element are removed from the data vector and parametrised
         covariance.
-    renorm_range : float, array_like, optional
-        If not an empty tuple (default), renormalise likelihood in the new
-        prior range specified.
 
     Returns
     -------
@@ -75,27 +72,10 @@ def filter_data(full_data, remove_degrees=(), renorm_range=()):
         map(lambda index: index[0] in remove_degrees, index_vector),
         dtype=bool
     )
-    if renorm_range:
-        if len(renorm_range) != 2:
-            raise ValueError(
-                "Renormalisation prior range must be given "
-                "exactly two end points. "
-            )
-        # Firs [0] for returning the first and only axis, and the second
-        # [0] for the first and only index.
-        try:
-            included_range = slice(
-                np.argwhere(full_data['parameters'] == renorm_range[0])[0][0],
-                np.argwhere(full_data['parameters'] == renorm_range[1])[0][0] + 1
-            )
-        except IndexError:
-            included_range = slice(None, None)
-    else:
-        included_range = slice(None, None)
 
-    parameter_flat = full_data['parameters'][included_range]
+    parameter_flat = full_data['parameters']
     likelihood_contributions = \
-        full_data['likelihood'][:, included_range, ~excluded_deg]
+        full_data['likelihood'][:, :, ~excluded_deg]
 
     filtered_data = {
         'parameters': parameter_flat,
@@ -167,8 +147,8 @@ def view_data(data, savefig=False, **plot_kwargs):
 
     view_samples(
         data,
-        r"$f_\mathrm{NL}$",
-        r"$\mathcal{L}(f_\mathrm{NL})$",
+        r"$f_\mathrm{NL}$", # r"$b_1$", #
+        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         **plot_kwargs
     )
     if savefig:
@@ -181,41 +161,32 @@ def view_data(data, savefig=False, **plot_kwargs):
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "simulation_likelihood"  # "realisation_likelihood"  #
-    FILE_ROOT = "halos-(NG=0.,z=1.)"  # SCRIPT_NAME  #
+    SCRIPT_NAME = "simulation_likelihood" # "realisation_likelihood" #
+    FILE_ROOT = "halos-(NG=0.,z=1.)" # SCRIPT_NAME #
 
     ZMAX = None
     BOXSIZE = 1000.
 
-    MAP = "cartesian"
-    PRIOR = "2.0,3.0"
+    MAP = "spherical"
+    PRIOR = "-800.0,800.0"
     PIVOT = "spectral"
     KMAX = 0.075
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.38,f0=none"
+    PARAM_TAG = "nbar=2.49e-4,b1=2.329,f0=none" # f_nl=0., b1=2.329
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
     # )
 
     output = read_data(
-        collate_data=True,
-        load_data=False,
+        collate_data=False,
+        load_data=True,
         save=True
     )
-#    clean = np.ones(42, dtype=bool)
-#    clean[6] = False
-#    clean[7] = False
-#    output['likelihood'] = output['likelihood'][clean, :]
-    processed_data = filter_data(
-        output,
-        remove_degrees=(),
-        renorm_range=()
-    )
+#    processed_output = filter_data(output, remove_degrees=())
     view_data(
-        processed_data,
-        scatter_plot=True,
-        scaling='normalised',
-        estimate='max',
-        truth=0.
+        output, # processed_output
+        # truth=0.,
+        precision=0,
+        norm_range=()
     )

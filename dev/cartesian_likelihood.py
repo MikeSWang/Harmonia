@@ -1,18 +1,16 @@
-"""Cartesian likelihood constructed from data realisation and covariance
-modelling.
+"""Cartesian likelihood constructed from data realisation and modelling.
 
 """
 import numpy as np
 from nbodykit.lab import cosmology
 
 from harmonia.cosmology import modified_power_spectrum
-
-_OVERFLOW_DOWNSCALE = 10**4
-_CURRENT_REDSHIFT = 0.
+from harmonia.reader import multivariate_normal_pdf
 
 
 def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
-                         mode_count=None, contrast=None, power_spectrum=None):
+                         reshift=0., mode_count=None, contrast=None,
+                         power_spectrum=None):
     """Compute the parametrised moment(s) of power spectrum realisations.
 
     Parameters
@@ -30,6 +28,8 @@ def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating
         scale-dependent bias (default is `None`).
+    reshift : float, optional
+        Reshift at which models are evaluated (default is 0.).
     mode_count : int, array_like or None, optional
         Number of grid modes for each wavenumber bin (default is `None`).
 
@@ -52,19 +52,17 @@ def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
     """
     if f_nl is None:
         if power_spectrum is None:
-            power_spectrum = cosmology.LinearPower(
-                cosmo, redshift=_CURRENT_REDSHIFT
-            )
+            power_spectrum = cosmology.LinearPower(cosmo, reshift)
         expected_power = b_10**2 * power_spectrum(wavenumbers)
     else:
         if power_spectrum is None:
             power_spectrum = modified_power_spectrum(
-                f_nl, b_10, cosmo, redshift=_CURRENT_REDSHIFT
+                f_nl, b_10, cosmo, redshift=reshift
             )
         else:
             power_spectrum = modified_power_spectrum(
                 f_nl, b_10, cosmo,
-                redshift=_CURRENT_REDSHIFT,
+                redshift=reshift,
                 power_spectrum=power_spectrum
             )
         expected_power = power_spectrum(wavenumbers)
@@ -73,10 +71,7 @@ def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
         shot_noise = 1 / nbar
         if contrast is not None:
             shot_noise *= 1 + 1 / contrast
-    else:
-        shot_noise = 0.
-
-    expected_power += shot_noise
+        expected_power += shot_noise
 
     if mode_count is None:
         power_variance = None
@@ -86,8 +81,8 @@ def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
     return expected_power, power_variance
 
 
-def cartesian_map_likelihood(param_points, param_name, cartesian_data,
-                             nbar, cosmo=None, bias=None, f_nl=None,
+def cartesian_map_likelihood(param_points, param_name, cartesian_data, nbar,
+                             cosmo=None, redshift=0., bias=None, f_nl=None,
                              contrast=None, power_spectrum=None):
     """Evaluate the Cartesian map logarithmic likelihood.
 
@@ -107,6 +102,8 @@ def cartesian_map_likelihood(param_points, param_name, cartesian_data,
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating
         scale-dependent bias (default is `None`).
+    reshift : float, optional
+        Reshift at which models are evaluated (default is 0.).
     bias : float or None, optional
         Scale-independent linear bias at the current epoch (default is
         `None`).
@@ -158,35 +155,29 @@ def cartesian_map_likelihood(param_points, param_name, cartesian_data,
                 nbar=nbar,
                 f_nl=param,
                 cosmo=cosmo,
+                redshift=redshift,
                 mode_count=mode_count,
                 contrast=contrast,
                 power_spectrum=power_spectrum
             )
-
-            det_divider = - 1/2 * np.sum(np.log(variance_vector))
-            exponent = - 1/2 * np.sum(
-                (data_vector - mean_vector)**2 / variance_vector
+            log_likelihood[idx] = multivariate_normal_pdf(
+                data_vector, mean_vector, variance_vector
             )
-
-            log_likelihood[idx] = det_divider + exponent
     elif param_name == 'bias':
         for idx, param in enumerate(param_points):
             mean_vector, variance_vector = parametrised_moments(
                 wavenumbers,
                 param,
                 nbar=nbar,
-                f_nl=None,
+                f_nl=f_nl,
                 cosmo=cosmo,
+                redshift=redshift,
                 mode_count=mode_count,
                 contrast=contrast,
                 power_spectrum=power_spectrum
             )
-
-            det_divider = - 1/2 * np.sum(np.log(variance_vector))
-            exponent = - 1/2 * np.sum(
-                (data_vector - mean_vector)**2 / variance_vector
+            log_likelihood[idx] = multivariate_normal_pdf(
+                data_vector, mean_vector, variance_vector
             )
-
-            log_likelihood[idx] = det_divider + exponent
 
     return log_likelihood

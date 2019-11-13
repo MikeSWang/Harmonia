@@ -1,4 +1,4 @@
-"""Runtime configuration for spherical likelihood sampling.
+"""Runtime configuration for likelihood sampling.
 
 """
 import os
@@ -32,36 +32,36 @@ def parse_cli_args():
     """
     cli_parser = ArgumentParser()
 
-    cli_parser.add_argument('--pivot', default='natural')
-    cli_parser.add_argument('--kmax', type=float, default=0.1)
-    cli_parser.add_argument('--load-couplings', action='store_true')
-
     cli_parser.add_argument('--likelihood')
     cli_parser.add_argument(
         '--prior-range', type=float, nargs=2, default=[-200., 200.]
     )
     cli_parser.add_argument('--num-sample', type=int, default=100)
+    cli_parser.add_argument('--kmax', type=float, default=0.1)
     cli_parser.add_argument('--breakdown', action='store_true')
+
+    cli_parser.add_argument('--pivot', default='natural')
+    cli_parser.add_argument('--load-couplings', action='store_true')
 
     cli_parser.add_argument('--generator', default='nbodykit')
     cli_parser.add_argument('--rsd', action='store_true')
 
     cli_parser.add_argument('--nbar', type=float, default=1e-3)
     cli_parser.add_argument('--bias', type=float, default=2.)
-    cli_parser.add_argument('--growth-rate', type=float, default=None)
     cli_parser.add_argument('--redshift', type=float, default=0.)
+    cli_parser.add_argument('--growth-rate', type=float, default=None)
 
-    cli_parser.add_argument('--zmax', type=float, default=0.05)
     cli_parser.add_argument('--contrast', type=float, default=10.)
+    cli_parser.add_argument('--zmax', type=float, default=0.05)
+    cli_parser.add_argument('--dk', type=float, default=None)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--expand', type=float, default=2.)
-    cli_parser.add_argument('--dk', type=float, default=None)
     cli_parser.add_argument('--mesh-gen', type=int, default=256)
     cli_parser.add_argument('--mesh-cal', type=int, default=256)
 
     cli_parser.add_argument('--niter', type=int, default=10)
-    cli_parser.add_argument('--prog-id', default="")
-    cli_parser.add_argument('--input-file', default="halos-(NG=0.,z=1.)-0")
+    cli_parser.add_argument('--prog-id', required=False)
+    cli_parser.add_argument('--input-file', required=False)
 
     return cli_parser.parse_args()
 

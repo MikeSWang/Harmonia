@@ -1,10 +1,9 @@
-"""Spherical likelihood constructed from data realisation and covariance
-modelling.
+"""Spherical likelihood constructed from data realisation and modelling.
 
 """
 import numpy as np
 
-from complex_normal import complex_normal_log_pdf
+from harmonia.reader.distributions import complex_normal_pdf
 
 _OVERFLOW_DOWNSCALE = 10**4
 
@@ -171,11 +170,11 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
         if remove_degrees:
             sample_covar = sample_covar[:, ~excluded_deg][~excluded_deg, :]
 
-        log_likelihood[idx] = complex_normal_log_pdf(
+        log_likelihood[idx] = complex_normal_pdf(
             data_vector,
             sample_covar,
-            overflow_rescale=_OVERFLOW_DOWNSCALE,
-            breakdown=breakdown
+            downscale=_OVERFLOW_DOWNSCALE,
+            elementwise=breakdown
         )
 
     return log_likelihood

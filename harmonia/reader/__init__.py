@@ -8,7 +8,10 @@ cosmological parameter inference.
 
 """
 from .cartesian_model import *
-from .hybrid import *
+from .hybrid import (
+    complex_normal_pdf,
+    multivariate_normal_pdf,
+)
 from .spherical_model import (
     Couplings,
     TwoPointFunction,

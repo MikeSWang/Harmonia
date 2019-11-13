@@ -734,6 +734,9 @@ class TwoPointFunction(Couplings):
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
+    redshift : float, optional
+        Current redshift at which 2-point functions are modelled (default
+        is 0.).
     f_0 : float or None, optional
         Linear growth rate at the current epoch.  If `None` (default), this
         is set to zero and RSD calculations are neglected.
@@ -766,6 +769,8 @@ class TwoPointFunction(Couplings):
 
     Attributes
     ----------
+    redshift : float
+        Redshift at which the 2-point functions are modelled.
     growth_rate : float or None
         Linear growth rate at the current epoch.
     matter_power_spectrum : |linear_power|
@@ -793,11 +798,10 @@ class TwoPointFunction(Couplings):
     """
 
     _logger = logging.getLogger("TwoPointFunction")
-    _CURRENT_Z = 0.
 
-    def __init__(self, disc, f_0=None, power_spectrum=None, cosmo=None,
-                 survey_specs=None, cosmo_specs=None, couplings=None,
-                 comm=None):
+    def __init__(self, disc, redshift=0., f_0=None, power_spectrum=None,
+                 cosmo=None, survey_specs=None, cosmo_specs=None,
+                 couplings=None, comm=None):
 
         super().__init__(
             disc,
@@ -807,6 +811,7 @@ class TwoPointFunction(Couplings):
             logger=self._logger
         )
 
+        self.redshift = redshift
         self.growth_rate = f_0
         self.matter_power_spectrum = power_spectrum
 
@@ -814,7 +819,7 @@ class TwoPointFunction(Couplings):
             if self.matter_power_spectrum is None:
                 self.matter_power_spectrum = cosmology.LinearPower(
                     cosmo,
-                    redshift=self._CURRENT_Z,
+                    redshift=self.redshift,
                     transfer='CLASS'
                 )
             else:
@@ -826,7 +831,7 @@ class TwoPointFunction(Couplings):
                 )
             if self.growth_rate is not None:
                 cosmo_growth_rate = \
-                    cosmo.scale_independent_growth_rate(self._CURRENT_Z)
+                    cosmo.scale_independent_growth_rate(self.redshift)
                 if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
                         "`f_0` value is inconsistent with `cosmo` model: "
@@ -942,7 +947,7 @@ class TwoPointFunction(Couplings):
             raise ValueError("`cosmo` cannot be None for scale modification. ")
 
         scale_dependence_modification_kernel = \
-            scale_dependence_modification(self.cosmo, self._CURRENT_Z)
+            scale_dependence_modification(self.cosmo, self.redshift)
 
         self._mode_scale_dependence_modifications_ = {}
         for ell in self.disc.degrees:

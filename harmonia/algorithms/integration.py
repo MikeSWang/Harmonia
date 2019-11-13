@@ -91,7 +91,7 @@ def angular_spherical_integral(angular_func):
     Notes
     -----
     Arguments of `angular_func` must be in radians in the following order
-    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
+    and domain: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.
 
     Parameters
     ----------
@@ -151,7 +151,7 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
     Notes
     -----
     Arguments of `angular_func` must be in radians in the following order
-    and range: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.  By
+    and domain: :math:`(\theta, \phi) \in [0, \pi] \times [0, 2\pi]`.  By
     default integration is performed against the complex conjugated
     spherical harmonic function.
 

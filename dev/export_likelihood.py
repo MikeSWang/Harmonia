@@ -167,25 +167,25 @@ if __name__ == '__main__':
     ZMAX = None
     BOXSIZE = 1000.
 
-    MAP = "spherical"
+    MAP = "cartesian"
     PRIOR = "-800.0,800.0"
     PIVOT = "spectral"
     KMAX = 0.075
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.383,f0=none" # f_nl=0., b1=2.329
+    PARAM_TAG = "nbar=2.49e-4,b1=2.327,f0=none" # f_nl=0., b1=2.329
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
     # )
 
     output = read_data(
-        collate_data=True,
-        load_data=False,
+        collate_data=False,
+        load_data=True,
         save=True
     )
     view_data(
         output, # filter_data(output, remove_degrees=())
-        truth=0.,
+        truth=0,
         precision=0,
-        norm_range=()
+        norm_range=(-500, 600)
     )

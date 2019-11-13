@@ -13,15 +13,16 @@ from nbodykit import cosmology
 from .geometry import (
     fiducial_distance,
     redshift_to_distance,
+    differential_AP_distortion,
 )
 from .scale_dependence import (
-    scale_modification,
+    scale_dependence_modification,
     scale_dependent_bias,
-    scale_modified_power_spectrum,
+    modified_power_spectrum,
 )
 
 fiducial_cosmology = cosmology.Planck15
-""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default Planck15
+""":class:`nbodykit.cosmology.cosmology.Cosmology`: Default *Planck15*
 cosmology.
 
 """

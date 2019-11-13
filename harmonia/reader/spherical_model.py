@@ -143,11 +143,11 @@ from harmonia.algorithms.integration import (
 )
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import mpi_compute
-from harmonia.cosmology.scale_dependence import scale_modification
+from harmonia.cosmology.scale_dependence import scale_dependence_modification
 
 
 # KERNELS
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def _angular_kernel(theta, phi, mu, nu, mask=None):
     r"""Evaluate the angular coupling kernel.
@@ -837,7 +837,7 @@ class TwoPointFunction(Couplings):
 
         self._couplings = couplings
         self._mode_powers_ = None
-        self._mode_scale_modifications_ = None
+        self._mode_scale_dependence_modifications_ = None
 
     @property
     def couplings(self):
@@ -919,7 +919,7 @@ class TwoPointFunction(Couplings):
         return self._mode_powers_
 
     @property
-    def _mode_scale_modifications(self):
+    def _mode_scale_dependence_modifications(self):
         """Scale-dependent modification to the scale-independent linear
         bias at discretised Fourier modes to be modulated by local
         primordial non-Gaussianity and tracer parameter.
@@ -935,21 +935,23 @@ class TwoPointFunction(Couplings):
             If :attr:`cosmo` is `None`.
 
         """
-        if self._mode_scale_modifications_ is not None:
-            return self._mode_scale_modifications_
+        if self._mode_scale_dependence_modifications_ is not None:
+            return self._mode_scale_dependence_modifications_
 
         if self.cosmo is None:
             raise ValueError("`cosmo` cannot be None for scale modification. ")
 
-        scale_modification_kernel = \
-            scale_modification(self.cosmo, self._CURRENT_Z)
+        scale_dependence_modification_kernel = \
+            scale_dependence_modification(self.cosmo, self._CURRENT_Z)
 
-        self._mode_scale_modifications_ = {}
+        self._mode_scale_dependence_modifications_ = {}
         for ell in self.disc.degrees:
-            self._mode_scale_modifications_[ell] = \
-                scale_modification_kernel(self.disc.wavenumbers[ell])
+            self._mode_scale_dependence_modifications_[ell] = \
+                scale_dependence_modification_kernel(
+                    self.disc.wavenumbers[ell]
+                )
 
-        return self._mode_scale_modifications_
+        return self._mode_scale_dependence_modifications_
 
     def two_point_signal(self, mu, nu, b_10, f_nl=None,
                          tracer_parameter=1.):
@@ -1002,7 +1004,7 @@ class TwoPointFunction(Couplings):
                 b_0_k = b_10 * np.ones(nmax)
                 if f_nl is not None:
                     b_0_k += f_nl * (b_10 - tracer_parameter) \
-                        * self._mode_scale_modifications[ell]
+                        * self._mode_scale_dependence_modifications[ell]
 
                 if rsd_reduction:
                     radial_sum = np.sum(
@@ -1029,7 +1031,7 @@ class TwoPointFunction(Couplings):
                 b_0_k = b_10 * np.ones(nmax)
                 if f_nl is not None:
                     b_0_k += f_nl * (b_10 - tracer_parameter) \
-                        * self._mode_scale_modifications[ell]
+                        * self._mode_scale_dependence_modifications[ell]
 
                 if rsd_reduction:
                     radial_sum = np.sum(
@@ -1269,7 +1271,7 @@ class TwoPointFunction(Couplings):
                 b_0_k = b_10
                 if f_nl is not None:
                     b_0_k += f_nl * (b_10 - tracer_parameter) \
-                        * self._mode_scale_modifications[ell][n_idx]
+                        * self._mode_scale_dependence_modifications[ell][n_idx]
                 unnormalised_variance += b_0_k**2 * p_k[ell][n_idx]
             if part in ['shotnoise', 'both']:
                 unnormalised_variance += 1 / nbar

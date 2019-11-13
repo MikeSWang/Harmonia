@@ -3,8 +3,7 @@
 Core algorithms (:mod:`~harmonia.algorithms`)
 ***************************************************************************
 
-Cosmological field transformation and analysis algorithms employed in
-:mod:`~harmonia.mapper` and :mod:`~harmonia.reader`.
+Cosmological field transformation and analysis algorithms.
 
 """
 from .bases import (
@@ -20,6 +19,7 @@ from .integration import (
 )
 from .discretisation import DiscreteSpectrum
 from .fields import (
+    generate_regular_grid,
     generate_gaussian_random_field,
     generate_lognormal_random_field,
     lognormal_transform,

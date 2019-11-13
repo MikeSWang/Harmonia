@@ -5,7 +5,7 @@ modelling.
 import numpy as np
 from nbodykit.lab import cosmology
 
-from harmonia.cosmology import scale_modified_power_spectrum
+from harmonia.cosmology import modified_power_spectrum
 
 _OVERFLOW_DOWNSCALE = 10**4
 _CURRENT_REDSHIFT = 0.
@@ -58,11 +58,11 @@ def parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None, cosmo=None,
         expected_power = b_10**2 * power_spectrum(wavenumbers)
     else:
         if power_spectrum is None:
-            power_spectrum = scale_modified_power_spectrum(
+            power_spectrum = modified_power_spectrum(
                 f_nl, b_10, cosmo, redshift=_CURRENT_REDSHIFT
             )
         else:
-            power_spectrum = scale_modified_power_spectrum(
+            power_spectrum = modified_power_spectrum(
                 f_nl, b_10, cosmo,
                 redshift=_CURRENT_REDSHIFT,
                 power_spectrum=power_spectrum

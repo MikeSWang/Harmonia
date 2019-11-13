@@ -8,6 +8,7 @@ Perform geometrical calculations.
 
     fiducial_distance
     redshift_to_distance
+    differential_AP_distortion
 
 |
 
@@ -62,7 +63,7 @@ def redshift_to_distance(z, h0, O0_b, O0_cdm):
     return model.comoving_distance(z)
 
 
-def differential_distortion_from_AP(chi_z_fiducial, chi_z_cosmological):
+def differential_AP_distortion(chi_z_fiducial, chi_z_cosmological):
     """Compute the Alcock--Paczynski differential distortion between a
     fiducial and a cosmological redshift-to-distance conversion as a
     fuction of redshift.
@@ -79,6 +80,7 @@ def differential_distortion_from_AP(chi_z_fiducial, chi_z_cosmological):
     -------
     differential_distortion : callable
         Differential distortion as a fuction of redshift.
+
 
     .. todo:: Not yet implemented.
 

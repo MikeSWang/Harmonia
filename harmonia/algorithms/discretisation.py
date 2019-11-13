@@ -2,8 +2,8 @@
 Discrete Fourier spectrum (:mod:`~harmonia.algorithms.discretisation`)
 ===========================================================================
 
-Discretise the Fourier spectrum of cosmological fields by imposing
-spherical boundary conditions.
+Discretise the Fourier spectrum of cosmological fields by imposing boundary
+conditions.
 
 .. autosummary::
 
@@ -22,22 +22,22 @@ from .bases import spherical_besselj, spherical_besselj_root
 class DiscreteSpectrum:
     r"""Discrete Fourier spectrum for the given radial boundary condition,
     indexed by spherical degrees :math:`\ell` associated with the spherical
-    harmonic and Bessel functions.
+    harmonic and spherical Bessel functions.
 
     When a boundary condition is prescribed at some maximum radius
     :math:`r = R`, the allowed wavenumbers for the discretised spectrum
-    are indexed by :math:`(\ell, n)` doublet tuples
+    are indexed by tuples :math:`(\ell, n)` of double indices
 
     .. math::
 
         k_{\ell n} = \frac{u_{\ell n}}{R} \,,
             \quad \text{where} \quad
-        \{ u_{\ell n}: n = 1, \dots, n_{\mathrm{max},\ell} \}_{\ell}
+        \{ u_{\ell n}: n = 1, \dots, n_{\textrm{max},\ell} \}_{\ell}
 
-    are roots of the spherical Bessel functions of order :math:`\ell` if
-    the boundary condition is Dirichlet, or roots of their derivatives if
+    are zeros of the spherical Bessel functions of order :math:`\ell` if
+    the boundary condition is Dirichlet, or zeros of their derivatives if
     the boundary condition is Neumann.  The spherical depth
-    :math:`n_{\mathrm{max},\ell}` is the maximum number of radial
+    :math:`n_{\textrm{max},\ell}` is the maximum number of radial
     wavenumbers allowed in the scale cutoff range for each degree.  The
     normalisation coefficients derived from completeness relations are
 
@@ -45,10 +45,10 @@ class DiscreteSpectrum:
 
         \kappa_{\ell n} =
             \begin{cases}
-                \frac{2}{R^3} j_{\ell+1}^{-2}(u_{\ell n}) \,,
+               (2/R^3) j_{\ell+1}^{-2}(u_{\ell n}) \,,
                     \quad \text{for Dirichlet boundary conditions;} \\
-                \frac{2}{R^3} j_{\ell}^{-2}(u_{\ell n}) \left[
-                    1 - \frac{\ell(\ell + 1)}{u_{\ell n}^2} \right]^{-1}
+                (2/R^3) j_{\ell}^{-2}(u_{\ell n}) \left[
+                    1 - \ell(\ell + 1)/u_{\ell n}^2 \right]^{-1}
                     \,, \quad \text{for Neumann boundary conditions.}
             \end{cases}
 
@@ -136,29 +136,6 @@ class DiscreteSpectrum:
         )
 
     @property
-    def wavenumbers(self):
-        r"""Discrete wavenumbers :math:`k_{\ell n}`.
-
-        Returns
-        -------
-        dict of {int :code:`:` :class:`numpy.ndarray`}
-            Wavenumbers.
-
-        """
-        if self._wavenumbers is not None:
-            return self._wavenumbers
-
-        self._wavenumbers = {
-            ell : self.roots[ell] / self.attrs['boundary_radius']
-            for ell in self.degrees
-        }
-
-        if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Spectral wavenumbers computed. ")
-
-        return self._wavenumbers
-
-    @property
     def root_indices(self):
         r"""Doublet root indices :math:`(\ell, n)`.
 
@@ -180,6 +157,29 @@ class DiscreteSpectrum:
             self._logger.info("Spectral root indices compiled. ")
 
         return self._root_indices
+
+    @property
+    def wavenumbers(self):
+        r"""Discrete wavenumbers :math:`k_{\ell n}`.
+
+        Returns
+        -------
+        dict of {int :code:`:` :class:`numpy.ndarray`}
+            Wavenumbers.
+
+        """
+        if self._wavenumbers is not None:
+            return self._wavenumbers
+
+        self._wavenumbers = {
+            ell : self.roots[ell] / self.attrs['boundary_radius']
+            for ell in self.degrees
+        }
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Spectral wavenumbers computed. ")
+
+        return self._wavenumbers
 
     @property
     def normalisations(self):

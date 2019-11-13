@@ -704,7 +704,7 @@ def covar_to_corr(covar):
     Raises
     ------
     NotImplementedError
-        If `cov` data type is complex.
+        If `covar` data type is complex.
 
     """
     if np.iscomplexobj(covar):
@@ -719,7 +719,7 @@ def covar_to_corr(covar):
 
 
 def binary_search(func, a, b, maxnum=None, precision=1.e-5):
-    """Binary seach for all roots of a function in a real interval.
+    """Binary seach for all zeros of a function in a real interval.
 
     Parameters
     ----------
@@ -728,9 +728,9 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
     a, b : float
         Interval end points, ``a < b``.
     maxnum : int or None, optional
-        Maximum number of roots needed from below (default is `None`).
+        Maximum number of zeros needed from below (default is `None`).
     precision : float, optional
-        Desired precision of the root(s) (default is 1.0e-5).
+        Desired precision of the zeros (default is 1.0e-5).
 
     Returns
     -------

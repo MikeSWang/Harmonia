@@ -16,6 +16,7 @@ population.
 
 .. autosummary::
 
+    generate_regular_grid
     generate_gaussian_random_field
     generate_lognormal_random_field
 
@@ -37,7 +38,7 @@ import numpy as np
 import scipy.fftpack as fftp
 
 
-def _generate_regular_grid(cell_size, num_mesh, variable='norm'):
+def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     """Generate 3-d coordinate grids for the given cell size and mesh
     number per dimension.
 
@@ -145,7 +146,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     """
     vol, num_cell = boxsize**3, num_mesh**3
     k_vec, k_norm = \
-        _generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
+        generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
 
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
     amplitude = np.sqrt(power_spectrum(k_norm) / vol)
@@ -227,7 +228,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     """
     vol, num_cell = boxsize**3, num_mesh**3
     k_vec, k_norm = \
-        _generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
+        generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
 
     pk = power_spectrum(k_norm) / vol
 
@@ -412,7 +413,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
     num_mesh = max(sampled_field.shape)
     cell_size = boxsize / num_mesh
 
-    grid_coords = _generate_regular_grid(
+    grid_coords = generate_regular_grid(
         cell_size,
         num_mesh,
         variable='coords'
@@ -500,7 +501,7 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
     num_mesh = max(np.array(field).shape)
     vol, num_cell = boxsize**3, num_mesh**3
 
-    k_norm = _generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')
+    k_norm = generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')
     power_k = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / num_cell**2
 
     binning_args = (k_norm, power_k, num_bin, scaling)

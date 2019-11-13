@@ -24,9 +24,9 @@ computed by ``nbodykit`` with ``CLASS``.
 
 .. autosummary::
 
-    scale_modification
+    scale_dependence_modification
     scale_dependent_bias
-    scale_modified_power_spectrum
+    modified_power_spectrum
 
 |
 
@@ -34,7 +34,7 @@ computed by ``nbodykit`` with ``CLASS``.
 from nbodykit import cosmology
 
 
-def scale_modification(cosmo, redshift):
+def scale_dependence_modification(cosmo, redshift):
     r"""Return the scale-dependence modification kernel :math:`A(k,z)` for
     a given cosmological model.
 
@@ -97,14 +97,14 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0.,
     def b_k(k):
 
         b_of_k = b_1 + f_nl * (b_1 - tracer_parameter) \
-            * scale_modification(cosmo, redshift)(k)
+            * scale_dependence_modification(cosmo, redshift)(k)
 
         return b_of_k
 
     return b_k
 
 
-def scale_modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
+def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
                                   tracer_parameter=1., power_spectrum=None):
     """Return the biased power spectrum with non-Gaussianity
     scale-dependence modification.

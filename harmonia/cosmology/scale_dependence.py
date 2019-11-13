@@ -2,7 +2,7 @@ r"""
 Scale dependence (:mod:`~harmonia.cosmology.scale_dependence`)
 ===========================================================================
 
-Compute scale-dependent modifications to galaxy clustering from local
+Compute scale-dependence modifications to galaxy clustering from local
 primordial non-Gausianity :math:`f_\textrm{NL}`.
 
 The scale-independent linear bias is modified as

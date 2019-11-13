@@ -2,9 +2,9 @@
 Utilities (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
-Convenience system utilities for I/O handling, processing, formatting and
-data manipulation, and common algebraic, geometric and statistical
-computational algorithms.
+Provide convenience system utilities for I/O handling, processing,
+formatting and data manipulation, and common algebraic, geometric and
+statistical computational algorithms.
 
 System utilities
 ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ System utilities
 Computational utilities
 ---------------------------------------------------------------------------
 
-**Algebraic algorithms**
+**Algebraic utilities**
 
 .. autosummary::
 
@@ -55,7 +55,7 @@ Computational utilities
     covar_to_corr
     binary_search
 
-**Geometrical algorithms**
+**Geometrical utilities**
 
 .. autosummary::
 
@@ -64,7 +64,7 @@ Computational utilities
     cartesian_to_spherical
     spherical_to_cartesian
 
-**Statistical algorithms**
+**Statistical utilities**
 
 .. autosummary::
 
@@ -436,7 +436,7 @@ def clean_warning_format(message, category, filename, lineno, line=None):
 
 
 def format_float(x, case, use_sci_dp=3):
-    r"""Format float as a string.
+    r"""Format a float number as a string.
 
     Parameters
     ----------

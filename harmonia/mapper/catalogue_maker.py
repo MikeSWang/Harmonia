@@ -324,7 +324,7 @@ class GaussianCatalogue(CatalogSource):
     Warnings
     --------
     The field statistics may change after Poisson sampling to discrete
-    particles as the density contrast is clipped below at -1.
+    particles as the density contrast is clipped from below at -1.
 
     """
 

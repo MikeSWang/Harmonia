@@ -32,7 +32,7 @@ include the following factors:
       normalised to unity at the current epoch;
     * linear growth rate evolution :math:`F(z) = f(z) / f_0` normalised to
       unity at the current epoch, where :math:`f_0 \equiv f(0)`;
-    * Alcock--Paczynski distortion
+    * Alcock--Paczynski differential distortion
 
       .. math::
 
@@ -58,18 +58,18 @@ RSD coupling kernels
 .. math::
 
    \begin{align*}
-       M_{\mu\nu} &= \int \operatorname{d}^2\!\hat{\mathbf{r}}
+       M_{\mu\nu} &= \int \operatorname{d}^2\!\hat{\mathbf{r}} \,
            Y_{\ell_\mu m_\mu}^*(\hat{\mathbf{r}})
            M(\hat{\mathbf{r}})
            Y_{\ell_\nu m_\nu}(\hat{\mathbf{r}}) \,, \\
        \Phi_{\mu\nu} &= \kappa_{\ell_\nu n_\nu}
-           \int \operatorname{d}\!r r^2 w(\tilde{r})
+           \int \operatorname{d}\!r \, r^2 w(\tilde{r})
            j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
            j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
            G(z, k_{\ell_\nu n_\nu}) D(z) \phi(r) \,, \\
        \Upsilon_{\mu\nu} &=
            \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
-           \int \operatorname{d}\!r r^2
+           \int \operatorname{d}\!r \, r^2
            \frac{\operatorname{d}\!}{\operatorname{d}\!\tilde{r}}
            \left[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
                \right]

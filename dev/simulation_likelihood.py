@@ -14,8 +14,10 @@ from harmonia.collections import confirm_directory_path, format_float
 from harmonia.cosmology import fiducial_cosmology
 from harmonia.mapper import RandomCatalogue, SphericalMap
 from harmonia.reader import TwoPointFunction
-from cartesian_likelihood import cartesian_map_likelihood
-from spherical_likelihood import spherical_map_likelihood
+from hybrid_likelihoods import (
+    cartesian_map_likelihood,
+    spherical_map_likelihood,
+)
 
 PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
@@ -61,21 +63,20 @@ def initialise():
     """
     ini_params = {}
 
-    # Runtime set-up
-    ini_params['pivot'] = params.pivot
-    ini_params['kmax'] = params.kmax
-
     # Likelihood set-up
-    ini_params['likelihood'] = params.likelihood
+    ini_params['map'] = params.map
     ini_params['prior_range'] = params.prior_range
     ini_params['num_sample'] = params.num_sample
     ini_params['breakdown'] = params.breakdown
+    ini_params['kmax'] = params.kmax
+    ini_params['ksplit'] = params.ksplit
+    ini_params['pivot'] = params.pivot
 
     # Catalogue set-up
     ini_params['contrast'] = params.contrast
+    ini_params['dk'] = params.dk
     ini_params['boxsize'] = params.boxsize
     ini_params['input_file'] = params.input_file
-    ini_params['dk'] = params.dk
     ini_params['mesh_cal'] = params.mesh_cal
 
     # Cosmology set-up
@@ -88,6 +89,15 @@ def initialise():
     else:
         ini_params['growth_rate'] = params.growth_rate
         rsd_tag = "{:.2f}".format(ini_params['growth_rate'])
+
+    if params.likelihood == 'bias':
+        ini_params['param'] = 'bias'
+        ini_params['fixed'] = {'f_nl': ini_params['fnl']}
+        fixed_tag = 'fnl={}'.format(ini_params['fnl'])
+    elif params.likelihood == 'fnl':
+        ini_params['param'] = 'f_nl'
+        ini_params['fixed'] = {'bias': ini_params['bias']}
+        fixed_tag = 'b1={}'.format(ini_params['bias'])
 
     ini_params['matter_power_spectrum'] = interp1d(
         *np.loadtxt(
@@ -108,12 +118,13 @@ def initialise():
     else:
         ini_params['external_couplings'] = None
 
-    ini_info = "map={},prior={},pivot={},kmax={},nbar={},b1={},f0={}".format(
-        ini_params['likelihood'],
+    ini_info = "map={},prior={},pivot={},kmax={},nbar={},{},f0={}".format(
+        ini_params['map'],
         str(ini_params['prior_range']).replace(" ", ""),
         ini_params['pivot'],
         format_float(ini_params['kmax'], 'sci'),
         format_float(ini_params['nbar'], 'sci'),
+        fixed_tag,
         ini_params['bias'],
         rsd_tag,
     )
@@ -140,24 +151,20 @@ def process(runtime_params, runtime_info):
     print(runtime_info + "\n")
 
     disc = DiscreteSpectrum(
-        runtime_params['boxsize']/2, 'Dirichlet', runtime_params['kmax']
+        runtime_params['boxsize']/2, 'Dirichlet', runtime_params['ksplit']
     )
 
-    if runtime_params['likelihood'] == 'spherical':
-        index_vector = SphericalArray\
-            .build(disc=disc)\
-            .unfold(runtime_params['pivot'], return_only='index')
+    index_vector = SphericalArray\
+        .build(disc=disc)\
+        .unfold(runtime_params['pivot'], return_only='index')
 
-        two_point_model = TwoPointFunction(
-            disc,
-            f_0=runtime_params['growth_rate'],
-            power_spectrum=runtime_params['matter_power_spectrum'],
-            cosmo=fiducial_cosmology,
-            couplings=runtime_params['external_couplings']
-        )
-        log_likelihood = spherical_map_likelihood
-    elif runtime_params['likelihood'] == 'cartesian':
-        log_likelihood = cartesian_map_likelihood
+    two_point_model = TwoPointFunction(
+        disc,
+        f_0=runtime_params['growth_rate'],
+        power_spectrum=runtime_params['matter_power_spectrum'],
+        cosmo=fiducial_cosmology,
+        couplings=runtime_params['external_couplings']
+    )
 
     output_data = defaultdict(list)
 
@@ -172,109 +179,121 @@ def process(runtime_params, runtime_info):
         catalogue_path = "{}{}/{}{}.txt".format(
             PATHIN, script_name, runtime_params['input_file'], file_suffix
         )
-        catalogue = load_catalogue(catalogue_path, runtime_params['boxsize'])
 
-        if runtime_params['likelihood'] == 'spherical':
-            spherical_map = SphericalMap(
-                disc, catalogue, mean_density_data=runtime_params['nbar']
-            )
-            overdensity_field = SphericalArray.build(
-                filling=spherical_map.density_constrast(), disc=disc
-            )
+        data_catalogue = load_catalogue(
+            catalogue_path, runtime_params['boxsize']
+        )
 
-            log_likelihood_args = (
-                sample_parameters,
-                'f_nl', # 'bias', #
-                overdensity_field,
-                two_point_model,
-                runtime_params['pivot'],
-                runtime_params['nbar'],
-            )
-            log_likelihood_kwargs = dict(
-                bias=runtime_params['bias'], # f_nl=None, #
-                breakdown=runtime_params['breakdown'],
-                remove_degrees=(),
-                mode_indices=index_vector,
-                independence=True,
-            )
-        elif runtime_params['likelihood'] == 'cartesian':
+        # random_catalogue = RandomCatalogue(
+        #     runtime_params['contrast'] * runtime_params['nbar'],
+        #     runtime_params['boxsize']
+        # )
 
-            # random_catalogue = RandomCatalogue(
-            #     runtime_params['contrast'] * runtime_params['nbar'],
-            #     runtime_params['boxsize']
-            # )
+        mesh = data_catalogue.to_mesh(
+            Nmesh=runtime_params['mesh_cal'],
+            resampler='tsc',
+            compensated=True
+        )
 
-            # spherical_map = SphericalMap(
-            #     disc,
-            #     catalogue,
-            #     rand=random_catalogue,
-            #     mean_density_data=runtime_params['nbar'],
-            #     mean_density_rand=\
-            #         runtime_params['contrast']*runtime_params['nbar']
-            # )
+        spherical_map = SphericalMap(
+            disc,
+            data_catalogue,
+            mean_density_data=runtime_params['nbar']
+        )
 
-            # mesh = spherical_map.pair.to_mesh(
-            #     Nmesh=runtime_params['mesh_cal'],
-            #     resampler='tsc',
-            #     compensated=True
-            # )
-            # cartesian_power = ConvolvedFFTPower(
-            #     mesh,
-            #     poles=[0],
-            #     dk=runtime_params['dk'],
-            #     kmax=runtime_params['kmax']
-            # ).poles
+        # spherical_map = SphericalMap(
+        #     disc,
+        #     data_catalogue,
+        #     rand=random_catalogue,
+        #     mean_density_data=runtime_params['nbar'],
+        #     mean_density_rand=\
+        #         runtime_params['contrast']*runtime_params['nbar']
+        # )
 
-            mesh = catalogue.to_mesh(
-                Nmesh=runtime_params['mesh_cal'],
-                resampler='tsc',
-                compensated=True
-            )
+        # mesh = spherical_map.pair.to_mesh(
+        #     Nmesh=runtime_params['mesh_cal'],
+        #     resampler='tsc',
+        #     compensated=True
+        # )
 
-            cartesian_power = FFTPower(
-                mesh,
-                mode='1d',
-                dk=runtime_params['dk'],
-                kmax=runtime_params['kmax']
-            ).power
+        cartesian_power = FFTPower(
+            mesh,
+            mode='1d',
+            kmin=np.pi/runtime_params['boxsize'],
+            kmax=runtime_params['kmax']
+        ).power
 
-            spherical_map = SphericalMap(
-                disc,
-                catalogue,
-                mean_density_data=runtime_params['nbar']
-            )
+        # cartesian_power = ConvolvedFFTPower(
+        #     mesh,
+        #     poles=[0],
+        #     kmin=np.pi/runtime_params['boxsize'],
+        #     kmax=runtime_params['kmax']
+        # ).poles
 
-            if cartesian_power['k'][0] == 0.:
-                clean = slice(1, None)
-            else:
-                clean = slice(None, None)
-                if cartesian_power['modes'][0] % 2 == 1:
-                    cartesian_power['modes'][0] -= 1
-            compressed_data = {
-                'k': cartesian_power['k'][clean],
-                'Nk': cartesian_power['modes'][clean],
-                'Pk': cartesian_power['power'][clean].real,
-                'Pshot': cartesian_power.attrs['shotnoise'],
-            }
+        overdensity_field = SphericalArray.build(
+            filling=spherical_map.density_constrast(),
+            disc=disc
+        )
 
-            # output_data['k'].append(compressed_data['k'])
-            # output_data['Nk'].append(compressed_data['Nk'])
+        spherical_likelihood_args = (
+            sample_parameters,
+            runtime_params['param'],
+            overdensity_field,
+            two_point_model,
+            runtime_params['pivot'],
+            runtime_params['nbar'],
+        )
+        spherical_likelihood_kwargs = dict(
+            bias=runtime_params['bias'], # f_nl=None, #
+            breakdown=runtime_params['breakdown'],
+            remove_degrees=(),
+            mode_indices=index_vector,
+            independence=True,
+        )
 
-            log_likelihood_args = (
-                sample_parameters,
-                'f_nl', # 'bias', #
-                compressed_data,
-                runtime_params['nbar'],
-            )
-            log_likelihood_kwargs = dict(
-                cosmo=fiducial_cosmology,
-                bias=runtime_params['bias'], # f_nl=None, #
-                contrast=runtime_params['contrast'],
-                power_spectrum=runtime_params['matter_power_spectrum'],
-            )
+        output_data['spherical_likelihood'].append(
+            [
+                spherical_map_likelihood(
+                    *spherical_likelihood_args, **spherical_likelihood_kwargs
+                )
+            ]
+        )
 
-        output_data['likelihood'].append(
-            [log_likelihood(*log_likelihood_args, **log_likelihood_kwargs)]
+        if cartesian_power['k'][0] == 0.:
+            clean = slice(1, None)
+        else:
+            clean = slice(None, None)
+            if cartesian_power['modes'][0] % 2 == 1:
+                cartesian_power['modes'][0] -= 1
+        compressed_data = {
+            'k': cartesian_power['k'][clean],
+            'Nk': cartesian_power['modes'][clean],
+            'Pk': cartesian_power['power'][clean].real,
+            'Pshot': cartesian_power.attrs['shotnoise'],
+        }
+
+        output_data['k'].append(compressed_data['k'])
+        output_data['Nk'].append(compressed_data['Nk'])
+
+        log_likelihood_args = (
+            sample_parameters,
+            'f_nl', # 'bias', #
+            compressed_data,
+            runtime_params['nbar'],
+        )
+        log_likelihood_kwargs = dict(
+            cosmo=fiducial_cosmology,
+            bias=runtime_params['bias'], # f_nl=None, #
+            contrast=runtime_params['contrast'],
+            power_spectrum=runtime_params['matter_power_spectrum'],
+        )
+
+        output_data['spherical_likelihood'].append(
+            [
+                spherical_map_likelihood(
+                    *log_likelihood_args, **log_likelihood_kwargs
+                )
+            ]
         )
 
     return output_data

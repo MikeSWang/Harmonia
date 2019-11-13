@@ -53,7 +53,6 @@ def initialise():
 
     ini_params['rsd_flag'] = params.rsd
     ini_params['rmax'] = fiducial_distance(params.zmax)
-    ini_params['expand'] = params.expand
     ini_params['mesh_gen'] = params.mesh_gen
 
     # Cosmology set-up
@@ -97,9 +96,8 @@ def initialise():
                 format_float(ini_params['bias'], 'decdot'),
                 rsd_tag,
             ),
-            "rmax={},xpd={},mesh={}".format(
+            "rmax={},mesh={}".format(
                 format_float(ini_params['rmax'], 'intdot'),
-                format_float(ini_params['expand'], 'decdot'),
                 ini_params['mesh_gen'],
             ),
             "iter={})-[{}]".format(ini_params['niter'], ini_params['prog_id']),
@@ -153,7 +151,7 @@ def process(runtime_params, runtime_tag):
             runtime_params['matter_power_spectrum'],
             runtime_params['nbar'],
             bias=runtime_params['bias'],
-            boxsize=runtime_params['expand']*2*runtime_params['rmax'],
+            boxsize=2*runtime_params['rmax'],
             num_mesh=runtime_params['mesh_gen'],
             add_RSD=runtime_params['rsd_flag']
         )

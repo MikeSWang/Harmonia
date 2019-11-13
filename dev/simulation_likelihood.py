@@ -5,7 +5,7 @@ import warnings
 from collections import defaultdict
 
 import numpy as np
-from nbodykit.lab import CSVCatalog, ConvolvedFFTPower
+from nbodykit.lab import CSVCatalog, ConvolvedFFTPower, FFTPower
 from scipy.interpolate import interp1d
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
@@ -199,31 +199,50 @@ def process(runtime_params, runtime_info):
             )
         elif runtime_params['likelihood'] == 'cartesian':
 
-            random_catalogue = RandomCatalogue(
-                runtime_params['contrast'] * runtime_params['nbar'],
-                runtime_params['boxsize']
-            )
+            # random_catalogue = RandomCatalogue(
+            #     runtime_params['contrast'] * runtime_params['nbar'],
+            #     runtime_params['boxsize']
+            # )
 
-            spherical_map = SphericalMap(
-                disc,
-                catalogue,
-                rand=random_catalogue,
-                mean_density_data=runtime_params['nbar'],
-                mean_density_rand=\
-                    runtime_params['contrast']*runtime_params['nbar']
-            )
+            # spherical_map = SphericalMap(
+            #     disc,
+            #     catalogue,
+            #     rand=random_catalogue,
+            #     mean_density_data=runtime_params['nbar'],
+            #     mean_density_rand=\
+            #         runtime_params['contrast']*runtime_params['nbar']
+            # )
 
-            mesh = spherical_map.pair.to_mesh(
+            # mesh = spherical_map.pair.to_mesh(
+            #     Nmesh=runtime_params['mesh_cal'],
+            #     resampler='tsc',
+            #     compensated=True
+            # )
+            # cartesian_power = ConvolvedFFTPower(
+            #     mesh,
+            #     poles=[0],
+            #     dk=runtime_params['dk'],
+            #     kmax=runtime_params['kmax']
+            # ).poles
+
+            mesh = catalogue.to_mesh(
                 Nmesh=runtime_params['mesh_cal'],
                 resampler='tsc',
                 compensated=True
             )
-            cartesian_power = ConvolvedFFTPower(
+
+            cartesian_power = FFTPower(
                 mesh,
-                poles=[0],
+                mode='1d',
                 dk=runtime_params['dk'],
                 kmax=runtime_params['kmax']
-            ).poles
+            ).power
+
+            spherical_map = SphericalMap(
+                disc,
+                catalogue,
+                mean_density_data=runtime_params['nbar']
+            )
 
             if cartesian_power['k'][0] == 0.:
                 clean = slice(1, None)
@@ -234,12 +253,12 @@ def process(runtime_params, runtime_info):
             compressed_data = {
                 'k': cartesian_power['k'][clean],
                 'Nk': cartesian_power['modes'][clean],
-                'Pk': cartesian_power['power_0'][clean].real,
+                'Pk': cartesian_power['power'][clean].real,
                 'Pshot': cartesian_power.attrs['shotnoise'],
             }
 
-            output_data['k'].append(compressed_data['k'])
-            output_data['Nk'].append(compressed_data['Nk'])
+            # output_data['k'].append(compressed_data['k'])
+            # output_data['Nk'].append(compressed_data['Nk'])
 
             log_likelihood_args = (
                 sample_parameters,
@@ -255,7 +274,7 @@ def process(runtime_params, runtime_info):
             )
 
         output_data['likelihood'].append(
-            log_likelihood(*log_likelihood_args, **log_likelihood_kwargs)
+            [log_likelihood(*log_likelihood_args, **log_likelihood_kwargs)]
         )
 
     return output_data

@@ -83,6 +83,7 @@ def initialise():
     # Cosmology set-up
     ini_params['nbar'] = params.nbar
     ini_params['bias'] = params.bias
+    ini_params['fnl'] = params.fnl
 
     if params.growth_rate is None:
         ini_params['growth_rate'] = None

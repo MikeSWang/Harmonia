@@ -295,6 +295,14 @@ def process(runtime_params, runtime_info):
             ]
         )
 
+        output_data['data_vector'] = np.concatenate((
+            overdensity_field.unfold(
+                runtime_params['pivot'],
+                return_only='data'
+            ),
+            compressed_data['Pk']
+        ))
+
     return output_data
 
 

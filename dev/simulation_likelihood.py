@@ -3,6 +3,7 @@
 """
 import warnings
 from collections import defaultdict
+from pprint import pprint
 
 import numpy as np
 from nbodykit.lab import CSVCatalog, ConvolvedFFTPower, FFTPower
@@ -219,14 +220,14 @@ def process(runtime_params, runtime_info):
         cartesian_power = FFTPower(
             mesh,
             mode='1d',
-            kmin=np.pi/runtime_params['boxsize'],
+            kmin=runtime_params['ksplit'],
             kmax=runtime_params['kmax']
         ).power
 
         # cartesian_power = ConvolvedFFTPower(
         #     mesh,
         #     poles=[0],
-        #     kmin=np.pi/runtime_params['boxsize'],
+        #     kmin=runtime_params['ksplit'],
         #     kmax=runtime_params['kmax']
         # ).poles
 
@@ -244,54 +245,52 @@ def process(runtime_params, runtime_info):
             runtime_params['nbar'],
         )
         spherical_likelihood_kwargs = dict(
-            bias=runtime_params['bias'], # f_nl=None, #
             breakdown=runtime_params['breakdown'],
             remove_degrees=(),
             mode_indices=index_vector,
             independence=True,
         )
+        spherical_likelihood_kwargs.update(runtime_params['fixed'])
 
         output_data['spherical_likelihood'].append(
             [
                 spherical_map_likelihood(
-                    *spherical_likelihood_args, **spherical_likelihood_kwargs
+                    *spherical_likelihood_args,
+                    **spherical_likelihood_kwargs
                 )
             ]
         )
 
-        if cartesian_power['k'][0] == 0.:
-            clean = slice(1, None)
-        else:
-            clean = slice(None, None)
-            if cartesian_power['modes'][0] % 2 == 1:
-                cartesian_power['modes'][0] -= 1
         compressed_data = {
-            'k': cartesian_power['k'][clean],
-            'Nk': cartesian_power['modes'][clean],
-            'Pk': cartesian_power['power'][clean].real,
+            'k': cartesian_power['k'],
+            'Nk': cartesian_power['modes'],
+            'Pk': cartesian_power['power'].real,
             'Pshot': cartesian_power.attrs['shotnoise'],
         }
 
-        output_data['k'].append(compressed_data['k'])
-        output_data['Nk'].append(compressed_data['Nk'])
+        pprint(cartesian_power['k'])
+        pprint(cartesian_power['modes'])
+        # output_data['k'].append(cartesian_power['k'])
+        # output_data['Nk'].append(cartesian_power['modes'])
 
-        log_likelihood_args = (
+        cartesian_likelihood_args = (
             sample_parameters,
-            'f_nl', # 'bias', #
+            runtime_params['param'],
             compressed_data,
             runtime_params['nbar'],
         )
-        log_likelihood_kwargs = dict(
+        cartesian_likelihood_kwargs = dict(
             cosmo=fiducial_cosmology,
-            bias=runtime_params['bias'], # f_nl=None, #
             contrast=runtime_params['contrast'],
             power_spectrum=runtime_params['matter_power_spectrum'],
         )
+        cartesian_likelihood_kwargs.update(runtime_params['fixed'])
 
-        output_data['spherical_likelihood'].append(
+        output_data['cartesian_likelihood'].append(
             [
-                spherical_map_likelihood(
-                    *log_likelihood_args, **log_likelihood_kwargs
+                cartesian_map_likelihood(
+                    *cartesian_likelihood_args,
+                    **cartesian_likelihood_kwargs
                 )
             ]
         )

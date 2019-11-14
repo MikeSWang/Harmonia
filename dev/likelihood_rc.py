@@ -42,7 +42,7 @@ def parse_cli_args():
     cli_parser.add_argument('--ksplit', type=float, default=0.05)
     cli_parser.add_argument('--breakdown', action='store_true')
 
-    cli_parser.add_argument('--pivot', default='natural')
+    cli_parser.add_argument('--pivot', default='spectral')
     cli_parser.add_argument('--load-couplings', action='store_true')
 
     cli_parser.add_argument('--generator', default='nbodykit')

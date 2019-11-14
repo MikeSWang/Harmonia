@@ -176,6 +176,7 @@ def view_data(data, savefig=False, **plot_kwargs):
         r"$f_\mathrm{NL}$", # r"$b_1$", #
         r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         fig=fig,
+        truth=0,
         **plot_kwargs
     )
     if savefig:
@@ -203,7 +204,7 @@ if __name__ == '__main__':
     KSPLIT = 0.05
     KMAX = 0.1
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.4,f0=none" # f_nl=0., b1=2.329
+    PARAM_TAG = "nbar=2.49e-4,b1=[2.4,2.31],f0=none" # fnl=none, b1=2.4
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
@@ -216,7 +217,6 @@ if __name__ == '__main__':
     )
     view_data(
         filter_data(output, remove_degrees=()),
-        truth=0,
         precision=0,
         norm_range=(),
         scatter_plot=False

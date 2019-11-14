@@ -197,7 +197,7 @@ def spherical_map_likelihood(param_points, param_name, spherical_data,
 # ------------------------------------------------------------------------------
 
 def _cartesian_parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None,
-                                    cosmo=None, reshift=0., mode_count=None,
+                                    cosmo=None, redshift=0., mode_count=None,
                                     contrast=None, power_spectrum=None):
     """Compute the parametrised moment(s) of power spectrum realisations.
 
@@ -216,8 +216,8 @@ def _cartesian_parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None,
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating
         scale-dependent bias (default is `None`).
-    reshift : float, optional
-        Reshift at which models are evaluated (default is 0.).
+    redshift : float, optional
+        Redshift at which models are evaluated (default is 0.).
     mode_count : int, array_like or None, optional
         Number of grid modes for each wavenumber bin (default is `None`).
 
@@ -240,17 +240,17 @@ def _cartesian_parametrised_moments(wavenumbers, b_10, nbar=None, f_nl=None,
     """
     if f_nl is None:
         if power_spectrum is None:
-            power_spectrum = cosmology.LinearPower(cosmo, reshift)
+            power_spectrum = cosmology.LinearPower(cosmo, redshift)
         expected_power = b_10**2 * power_spectrum(wavenumbers)
     else:
         if power_spectrum is None:
             power_spectrum = modified_power_spectrum(
-                f_nl, b_10, cosmo, redshift=reshift
+                f_nl, b_10, cosmo, redshift=redshift
             )
         else:
             power_spectrum = modified_power_spectrum(
                 f_nl, b_10, cosmo,
-                redshift=reshift,
+                redshift=redshift,
                 power_spectrum=power_spectrum
             )
         expected_power = power_spectrum(wavenumbers)
@@ -290,8 +290,8 @@ def cartesian_map_likelihood(param_points, param_name, cartesian_data, nbar,
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating
         scale-dependent bias (default is `None`).
-    reshift : float, optional
-        Reshift at which models are evaluated (default is 0.).
+    redshift : float, optional
+        Redshift at which models are evaluated (default is 0.).
     bias : float or None, optional
         Scale-independent linear bias at the current epoch (default is
         `None`).

@@ -82,8 +82,8 @@ def initialise():
 
     # Cosmology set-up
     ini_params['nbar'] = params.nbar
-    ini_params['bias'] = params.bias
-    ini_params['fnl'] = params.fnl
+    ini_params['bias'] = dict(zip(['low', 'high'], params.bias))
+    ini_params['fnl'] = dict(zip(['low', 'high'], [params.fnl, params.fnl]))
 
     if params.growth_rate is None:
         ini_params['growth_rate'] = None
@@ -94,12 +94,24 @@ def initialise():
 
     if params.likelihood == 'bias':
         ini_params['param'] = 'bias'
-        ini_params['fixed'] = {'f_nl': ini_params['fnl']}
-        fixed_tag = 'fnl={}'.format(ini_params['fnl'])
+        ini_params['fixed'] = dict(zip(
+            ['low', 'high'],
+            [
+                {'f_nl': ini_params['fnl']['low']},
+                {'f_nl': ini_params['fnl']['high']},
+            ],
+        ))
+        fixed_tag = 'fnl={}'.format(params.fnl)
     elif params.likelihood == 'fnl':
         ini_params['param'] = 'f_nl'
-        ini_params['fixed'] = {'bias': ini_params['bias']}
-        fixed_tag = 'b1={}'.format(ini_params['bias'])
+        ini_params['fixed'] = dict(zip(
+            ['low', 'high'],
+            [
+                {'bias': ini_params['bias']['low']},
+                {'bias': ini_params['bias']['high']},
+            ],
+        ))
+        fixed_tag = 'b1={}'.format(str(ini_params['bias'].values()).replace(" ",""))
 
     ini_params['matter_power_spectrum'] = interp1d(
         *np.loadtxt(
@@ -120,16 +132,17 @@ def initialise():
     else:
         ini_params['external_couplings'] = None
 
-    ini_info = "map={},prior={},pivot={},kmax={},nbar={},{},f0={}".format(
-        ini_params['map'],
-        str(ini_params['prior_range']).replace(" ", ""),
-        ini_params['pivot'],
-        format_float(ini_params['kmax'], 'sci'),
-        format_float(ini_params['nbar'], 'sci'),
-        fixed_tag,
-        ini_params['bias'],
-        rsd_tag,
-    )
+    ini_info =\
+        "map={},prior={},pivot={},ksplit={},kmax={},nbar={},{},f0={}".format(
+            ini_params['map'],
+            str(ini_params['prior_range']).replace(" ", ""),
+            ini_params['pivot'],
+            format_float(ini_params['ksplit'], 'sci'),
+            format_float(ini_params['kmax'], 'sci'),
+            format_float(ini_params['nbar'], 'sci'),
+            fixed_tag,
+            rsd_tag,
+        )
 
     return ini_params, ini_info
 
@@ -251,7 +264,7 @@ def process(runtime_params, runtime_info):
             mode_indices=index_vector,
             independence=True,
         )
-        spherical_likelihood_kwargs.update(runtime_params['fixed'])
+        spherical_likelihood_kwargs.update(runtime_params['fixed']['low'])
 
         output_data['spherical_likelihood'].append(
             [
@@ -285,7 +298,7 @@ def process(runtime_params, runtime_info):
             contrast=runtime_params['contrast'],
             power_spectrum=runtime_params['matter_power_spectrum'],
         )
-        cartesian_likelihood_kwargs.update(runtime_params['fixed'])
+        cartesian_likelihood_kwargs.update(runtime_params['fixed']['high'])
 
         output_data['cartesian_likelihood'].append(
             [

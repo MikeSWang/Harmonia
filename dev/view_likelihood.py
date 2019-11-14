@@ -11,7 +11,7 @@ ONE_SIGMA_QUANTILES = [0.158655, 0.841345]
 
 def view_samples(samples, xlabel, ylabel, scaling='normalised', estimate='max',
                  truth=None, norm_range=(), precision=None, scatter_plot=True,
-                 xlim=None, ylim=None):
+                 xlim=None, ylim=None, fig=None):
     """View sampled likelihood-related values.
 
     Parameters
@@ -85,9 +85,12 @@ def view_samples(samples, xlabel, ylabel, scaling='normalised', estimate='max',
 
     sns.set(style='ticks', font='serif')
 
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+    else:
+        plt.figure(fig.number)
 
-    plt.plot(parameters, avg_likelihood, lw=2.)
+    main_line = plt.plot(parameters, avg_likelihood, lw=2.)
 
     if estimate == 'max':
         max_likelihood_parameter = parameters[np.argmax(avg_likelihood)]
@@ -114,14 +117,15 @@ def view_samples(samples, xlabel, ylabel, scaling='normalised', estimate='max',
         plt.axvline(
             x=max_likelihood_parameter,
             ls='--',
+            c=main_line[-1].get_color(),
             label=r"estimate ${{{}}}^{{+{}}}_{{-{}}}$".format(
                 max_likelihood_parameter,
                 upper_uncertainty,
                 lower_uncertainty
             )
         )
-        plt.axvline(x=lower_bound, ls='--')
-        plt.axvline(x=upper_bound, ls='--')
+        plt.axvline(x=lower_bound, ls='--', c=main_line[-1].get_color())
+        plt.axvline(x=upper_bound, ls='--', c=main_line[-1].get_color())
 
     if truth is not None:
         plt.axvline(x=truth, ls=':', label="truth {}".format(truth))

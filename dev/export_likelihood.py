@@ -60,9 +60,9 @@ def filter_data(full_data, remove_degrees=()):
 
     """
     if ZMAX is None and BOXSIZE is not None:
-        disc = DiscreteSpectrum(BOXSIZE/2, 'dirichlet', KMAX)
+        disc = DiscreteSpectrum(BOXSIZE/2, 'dirichlet', KSPLIT)
     elif ZMAX is not None and BOXSIZE is None:
-        disc = DiscreteSpectrum(fiducial_distance(ZMAX), 'dirichlet', KMAX)
+        disc = DiscreteSpectrum(fiducial_distance(ZMAX), 'dirichlet', KSPLIT)
 
     index_vector = SphericalArray\
         .build(disc=disc)\
@@ -73,14 +73,13 @@ def filter_data(full_data, remove_degrees=()):
         dtype=bool
     )
 
-    parameter_flat = full_data['parameters']
     likelihood_contributions = \
-        full_data['likelihood'][:, :, ~excluded_deg]
+        full_data['spherical_likelihood'][:, :, ~excluded_deg]
 
-    filtered_data = {
-        'parameters': parameter_flat,
-        'likelihood': np.sum(likelihood_contributions, axis=-1)
-    }
+    filtered_data = full_data
+    filtered_data.update({
+        'spherical_likelihood': np.sum(likelihood_contributions, axis=-1)
+    })
 
     return filtered_data
 
@@ -103,14 +102,17 @@ def read_data(collate_data=False, load_data=False, save=False):
     collate_path = scr_dir_path + "collated/"
 
     if collate_data:
-        search_root = \
-            f"map={MAP},prior=[[]{PRIOR}[]],pivot={PIVOT},kmax={KMAX}"
+        search_root = (
+            f"map={MAP},prior=[[]{PRIOR}[]],pivot={PIVOT},"
+            f"ksplit={KSPLIT},kmax={KMAX}"
+        )
         output, count, name_instance = collate_data_files(
             f"{scr_dir_path}{FILE_ROOT}-*{search_root}*.npy", 'npy'
         )
 
         output['parameters'] = output['parameters'][0]
-        output['likelihood'] = np.concatenate(output['likelihood'])
+        output['spherical_likelihood'] = np.squeeze(output['spherical_likelihood'])
+        output['cartesian_likelihood'] = np.squeeze(output['cartesian_likelihood'])
 
         if save:
             file_tag = "".join(name_instance.split("(")[-1].split(")")[:-1])
@@ -121,7 +123,10 @@ def read_data(collate_data=False, load_data=False, save=False):
             )
 
     if load_data:
-        program_root = f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
+        program_root = (
+            f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},"
+            f"ksplit={KSPLIT},kmax={KMAX}"
+        )
         output = np.load(
             f"{collate_path}{FILE_ROOT}-({program_root},{PARAM_TAG}).npy"
         ).item()
@@ -145,14 +150,39 @@ def view_data(data, savefig=False, **plot_kwargs):
     plt.close('all')
     plt.style.use(harmony)
 
-    view_samples(
+    visual_data = data
+
+    visual_data['likelihood'] = data['spherical_likelihood']
+    fig = view_samples(
         data,
         r"$f_\mathrm{NL}$", # r"$b_1$", #
         r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         **plot_kwargs
     )
+
+    visual_data['likelihood'] = data['cartesian_likelihood']
+    view_samples(
+        data,
+        r"$f_\mathrm{NL}$", # r"$b_1$", #
+        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
+        fig=fig,
+        **plot_kwargs
+    )
+
+    visual_data['likelihood'] = data['spherical_likelihood']\
+        + data['cartesian_likelihood']
+    view_samples(
+        data,
+        r"$f_\mathrm{NL}$", # r"$b_1$", #
+        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
+        fig=fig,
+        **plot_kwargs
+    )
     if savefig:
-        program_root = f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},kmax={KMAX}"
+        program_root = (
+            f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},"
+            f"ksplit={KSPLIT},kmax={KMAX}"
+        )
         plt.savefig(
             f"{PATHOUT}log_likelihood-"
             f"{FILE_ROOT}-({program_root},{PARAM_TAG}).pdf"
@@ -167,12 +197,13 @@ if __name__ == '__main__':
     ZMAX = None
     BOXSIZE = 1000.
 
-    MAP = "cartesian"
+    MAP = "hybrid"
     PRIOR = "-800.0,800.0"
     PIVOT = "spectral"
-    KMAX = 0.075
+    KSPLIT = 0.05
+    KMAX = 0.1
 
-    PARAM_TAG = "nbar=2.49e-4,b1=2.327,f0=none" # f_nl=0., b1=2.329
+    PARAM_TAG = "nbar=2.49e-4,b1=2.4,f0=none" # f_nl=0., b1=2.329
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
@@ -184,8 +215,9 @@ if __name__ == '__main__':
         save=True
     )
     view_data(
-        output, # filter_data(output, remove_degrees=())
+        filter_data(output, remove_degrees=()),
         truth=0,
         precision=0,
-        norm_range=(-500, 600)
+        norm_range=(),
+        scatter_plot=False
     )

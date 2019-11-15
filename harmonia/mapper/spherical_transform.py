@@ -51,9 +51,9 @@ class SphericalMap:
     mean_density_data, mean_density_rand : float or None, optional
         Mean particle number density (in cubic h/Mpc) of the data or
         random catalogue (default is `None`).
-    source : {'mock', 'survey'}, optional
-        Catalogue source, either ``'mock'`` simulations or ``'survey'``
-        data.
+    source : {'simulation', 'survey'}, optional
+        Catalogue source, either ``'simulation'`` for simulations or
+        ``'survey'`` data.
 
     Attributes
     ----------
@@ -99,7 +99,7 @@ class SphericalMap:
     }
 
     def __init__(self, disc, data, rand=None, mean_density_data=None,
-                 mean_density_rand=None, source='mock'):
+                 mean_density_rand=None, source='simulation'):
 
         self.disc = disc
         if np.min(disc.degrees) > 0:
@@ -112,7 +112,7 @@ class SphericalMap:
         radius = disc.attrs['boundary_radius']
         volume = disc.attrs['bounded_volume']
 
-        if source == 'mock':
+        if source == 'simulation':
             data_boxsize = data.attrs['BoxSize']
             if not np.allclose(data_boxsize, 2*radius):
                 self._logger.info(

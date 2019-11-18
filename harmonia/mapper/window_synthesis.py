@@ -150,7 +150,7 @@ class WindowFunction:
 
         Returns
         -------
-        :class:`nbodykit.binned_statistic.BinnedStatistic`
+        dict
             Binned power spectrum multipole statistics holding variables
             ``'modes'`` and ``'k'`` for the number of modes and the
             average wavenumber in each bin, as well as binned multipole
@@ -192,14 +192,18 @@ class WindowFunction:
                 "They are now being overwritten. "
             )
 
-        self.power_multipoles = ConvolvedFFTPower(
+        power_multipoles = ConvolvedFFTPower(
             synthetic_mesh, degrees, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
-        normalisation_amplitude = self.power_multipoles['power_0'][0].real
+        bin_cleansing = ~np.isnan(power_multipoles['k'])
+        normalisation_amplitude = power_multipoles['power_0'][0].real
 
+        self.power_multipoles = {}
+        self.power_multipoles['k'] = power_multipoles['k'][bin_cleansing]
         self.power_multipoles.update({
-            ell: self.power_multipoles['power_{:d}'.format(ell)].real \
+            'power_{:d}'.format(ell): \
+                power_multipoles['power_{:d}'.format(ell)][bin_cleansing].real\
                 / normalisation_amplitude
             for ell in degrees
         })
@@ -222,10 +226,10 @@ class WindowFunction:
 
         Returns
         -------
-        dict of {int :code:`:` tuple}
-            Hankel transformed pairs of separation values and corresponding
-            window correlation function multipoles for each of the degrees.
-            Also sets :attr:`correlation_multipoles`.
+        dict
+            Hankel transformed window correlation function multipoles for
+            each of the degrees at sampled separation values.  Also sets
+            :attr:`correlation_multipoles`.
 
         """
         K_MAX = 10.
@@ -239,22 +243,21 @@ class WindowFunction:
             )
 
         try:
-            assert 'power_{:d}'.format(max(degrees)) \
-                in self.power_multipoles.variables
+            assert hasattr(
+                self.power_multipoles, 'power_{:d}'.format(max(degrees))
+            )
             power_multipoles = self.power_multipoles
         except (AttributeError, AssertionError):
             power_multipoles = self.power_spectrum_multipoles(
                 degrees, **multipoles_kwargs
             )
 
-        bin_cleansing = ~np.isnan(power_multipoles['k'])
-        extension_padding = np.mean(np.diff(power_multipoles['k']))
-
-        k_samples = power_multipoles['k'][bin_cleansing]
+        k_samples = power_multipoles['k']
         pk_ell_samples = {
-            ell: power_multipoles[f'power_{ell}'][bin_cleansing].real
-            for ell in degrees
+            ell: power_multipoles['power_{:d}'.format(ell)] for ell in degrees
         }
+
+        extension_padding = np.mean(np.diff(power_multipoles['k']))
 
         k_extended = np.append(
             k_samples,

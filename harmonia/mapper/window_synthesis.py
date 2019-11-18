@@ -196,8 +196,11 @@ class WindowFunction:
             synthetic_mesh, degrees, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
+        normalisation_amplitude = self.power_multipoles['power_0'][0].real
+
         self.power_multipoles.update({
-            ell: self.power_multipoles['power_{:d}'.format(ell)].real
+            ell: self.power_multipoles['power_{:d}'.format(ell)].real \
+                / normalisation_amplitude
             for ell in degrees
         })
 
@@ -227,7 +230,7 @@ class WindowFunction:
         """
         K_MAX = 10.
         NUM_K_EXTENSION = 100
-        NUM_K_INTERPOL = 10000
+        NUM_INTERPOL = 10000
 
         if self.correlation_multipoles is not None:
             warnings.warn(
@@ -245,7 +248,6 @@ class WindowFunction:
             )
 
         bin_cleansing = ~np.isnan(power_multipoles['k'])
-        normalisation_amplitude = power_multipoles['power_0'][0].real
         extension_padding = np.mean(np.diff(power_multipoles['k']))
 
         k_samples = power_multipoles['k'][bin_cleansing]
@@ -269,21 +271,36 @@ class WindowFunction:
 
         k_interpol = np.logspace(
             *np.log10(k_extended[[0, -1]]),
-            num=NUM_K_INTERPOL
+            num=NUM_INTERPOL
         )
         pk_ell_interpol = {
-            ell: Spline(
-                k_extended,
-                pk_ell_extended[ell] / normalisation_amplitude,
-                k=1
-            )(k_interpol)
+            ell: Spline(k_extended, pk_ell_extended[ell], k=1)(k_interpol)
             for ell in degrees
         }
 
-        self.correlation_multipoles = {
-            'correlation_{:d}'.format(ell): \
-                P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
+        xi_ell = {
+            ell: P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
             for ell in degrees
         }
+
+        normalisation_amplitude = xi_ell[0][1][0]
+
+        r_interpol = np.logspace(
+            np.log10(max([xi_ell[ell][0][0] for ell in degrees])),
+            np.log10(min([xi_ell[ell][0][-1] for ell in degrees])),
+            num=NUM_INTERPOL
+        )
+        xi_ell_interpol = {
+            ell: Spline(*xi_ell[ell], k=1)(r_interpol)
+            for ell in degrees
+        }
+
+        self.correlation_multipoles = {}
+        self.correlation_multipoles['r'] = r_interpol
+        self.correlation_multipoles.update({
+            'correlation_{:d}'.format(ell): \
+                xi_ell_interpol[ell] / normalisation_amplitude
+            for ell in degrees
+        })
 
         return self.correlation_multipoles

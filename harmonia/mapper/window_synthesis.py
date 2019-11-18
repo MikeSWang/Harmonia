@@ -1,5 +1,5 @@
 """
-Window function (:mod:`~harmonia.mapper.window`)
+Window synthesis (:mod:`~harmonia.mapper.window_synthesis`)
 ===========================================================================
 
 Determine the window function for given survey specifications with
@@ -28,13 +28,13 @@ class WindowFunction:
     Parameters
     ----------
     mask, selection, weight : callable or None, optional
-        Survey specification functions (default is `None`).
+        Survey mask, selection or weight function (default is `None`).
     source : {'simulation', 'survey'}, optional
-        Source type of the catalogue.  If ``'simulation'`` (default),
-        `mask`, `selection` and `weight` are assumed to be functions of
-        Cartesian coordinates whose origin is the centre of the catalogue;
-        if ``'survey'``, `mask`, `selection` and `weight` are assumed to be
-        functions of spherical coordinates.
+        Catalogue source type.  If ``'simulation'`` (default), then `mask`,
+        `selection` and `weight` are assumed to be functions of Cartesian
+        coordinates whose origin is the centre of the catalogue; if
+        ``'survey'``, then `mask`, `selection` and `weight` are assumed to
+        be functions of spherical coordinates.
 
     Attributes
     ----------
@@ -48,14 +48,14 @@ class WindowFunction:
         Synthetic catalogue with the specified window.
     power_multipoles : |binned_stats| or None
         Power spectrum multipoles of the window.
-    correlation_multipoles : dict or None
-        Correlation function multipoles of the window.
+    correlation_multipoles : dict of {int: tuple} or None
+        Correlation function multipoles of the window at sampled
+        separations.
 
 
     .. |catalogue_source| replace::
 
         :class:`nbodykit.base.catalog.CatalogSource`
-
 
     .. |binned_stats| replace::
 
@@ -73,8 +73,8 @@ class WindowFunction:
         self.power_multipoles = None
         self.correlation_multipoles = None
 
-    def synthethise(self, number_density, boxsize, padding=80.):
-        """Synthethise a random catalogue with the specified window and
+    def synthesise(self, number_density, boxsize, padding=80.):
+        """Synthesise a random catalogue with the specified window and
         additional padding.
 
         Parameters
@@ -113,7 +113,7 @@ class WindowFunction:
                 "Unrecognised source type: '{}'. ".format(self.source)
             )
 
-        if callable(self.self.mask):
+        if callable(self.mask):
             catalogue['Weight'] *= self.mask(catalogue['Location'])
         if callable(self.selection):
             catalogue['Weight'] *= self.selection(catalogue['Location'])
@@ -135,77 +135,97 @@ class WindowFunction:
         ----------
         degrees : int, array_like
             Multipole degrees.
-        kmin, kmax, dk : float or None, optional
-            Maximum wavenumber, minimum wavenumber or wavenumber bin size
-            (default is `None`).
+        kmin : float, optional
+            Minimum wavenumber (default is 0.).
+        kmax, dk : float or None, optional
+            Maximum wavenumber or wavenumber bin size (default is `None`).
+            If `None`, `kmax` is bounded above the Nyquist wavenumber and
+            `dk` is twice the fundamental wavenumber.
         **mesh_kwargs
             Keyword arguments to be passed to
             :class:`nbodykit.source.mesh.catalog.CatalogMesh` for FFT
-            meshgrid painting.
+            meshgrid painting.  If not given, default settings are used
+            (512 meshes per dimension and triangular-shaped cloud
+            interpolation with compensation and interlacing).
 
         Returns
         -------
         :class:`nbodykit.binned_statistic.BinnedStatistic`
-            Binned power spectrum multipole statistics.  Also sets
-            :attr:`power_multipoles`.
+            Binned power spectrum multipole statistics holding variables
+            ``'modes'`` and ``'k'`` for the number of modes and the
+            average wavenumber in each bin, as well as binned multipole
+            values ``'power_0'`` etc.  Also sets :attr:`power_multipoles`.
+
+        Raises
+        ------
+        AttributeError
+            If :attr:`synthetic_catalogue` is missing and
+            :meth:`~WindowFunction.synthesise` needs to be called first.
 
         """
-        if self.power_multipoles is not None:
-            warnings.warn(
-                "Power spectrum multipoles have already been computed. "
-                "They are now being overwritten."
-            )
-
         if self.synthetic_catalogue is None:
             raise AttributeError(
-                "Atribute `synthetic_catalogue` is missing ."
-                "Please call `synthesise` method first. "
+                "Attribute `synthetic_catalogue` is missing ."
+                "Please call the `synthesise` method first. "
             )
+
+        if 'Nmesh' not in mesh_kwargs:
+            mesh_kwargs['Nmesh'] = 512
+        if 'resampler' not in mesh_kwargs:
+            mesh_kwargs['resampler'] = 'tsc'
+        if 'compensated' not in mesh_kwargs:
+            mesh_kwargs['compensated'] = True
+        if 'interlaced' not in mesh_kwargs:
+            mesh_kwargs['interlaced'] = True
+
+        synthetic_mesh = self.synthetic_catalogue.to_mesh(**mesh_kwargs)
 
         if kmax is None:
             kmax = np.pi * mesh_kwargs['Nmesh'] \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
         if dk is None:
-            dk = 2 * (2*np.pi / max(self.synthetic_catalogue.attrs['BoxSize']))
+            dk = 2*(2*np.pi / max(self.synthetic_catalogue.attrs['BoxSize']))
 
-        if 'Nmesh' not in mesh_kwargs:
-            mesh_kwargs['Nmesh'] = 256
-        if 'resampler' not in mesh_kwargs:
-            mesh_kwargs['resampler'] = 'tsc'
-        if 'compensated' not in mesh_kwargs:
-            mesh_kwargs['compensated'] = True
-
-        synthetic_mesh = self.synthetic_catalogue.to_mesh(**mesh_kwargs)
+        if self.power_multipoles is not None:
+            warnings.warn(
+                "Power spectrum multipoles have already been computed. "
+                "They are now being overwritten. "
+            )
 
         self.power_multipoles = ConvolvedFFTPower(
             synthetic_mesh, degrees, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
+        self.power_multipoles.update({
+            ell: self.power_multipoles['power_{:d}'.format(ell)].real
+            for ell in degrees
+        })
+
         return self.power_multipoles
 
-    def correlator_multipoles(self, degrees, **power_kwargs):
+    def correlation_function_multipoles(self, degrees, **multipoles_kwargs):
         """Determine window function 2-point correlator multipoles from the
-        synthetic catalogue.
+        synthetic catalogue by Hankel transform of the power spectrum
+        multipoles.
 
         Parameters
         ----------
         degrees : int, array_like
             Multipole degrees.
-        **power_kwargs
+        **multipoles_kwargs
             Keyword arguments to be passed to
-            :class:`~WindowFunction.power_spectrum_multipoles` for
+            :meth:`~WindowFunction.power_spectrum_multipoles` for
             computing multipoles of the synthetic catalogue.
 
         Returns
         -------
         dict of {int :code:`:` tuple}
-            Hankel transformed separation value and corresponding window
-            function correlation multipoles for each of the required
-            degrees.  Also sets :attr:`correlation_multipoles`.
+            Hankel transformed pairs of separation values and corresponding
+            window correlation function multipoles for each of the degrees.
+            Also sets :attr:`correlation_multipoles`.
 
         """
         K_MAX = 10.
-        K_EXTENSION_PAD = 1e-3
         NUM_K_EXTENSION = 100
         NUM_K_INTERPOL = 10000
 
@@ -215,31 +235,31 @@ class WindowFunction:
                 "They are now being overwritten."
             )
 
-        max_required_degree = max(degrees) + 4
-        required_degrees = list(range(0, max_required_degree+1, 2))
-
         try:
-            assert hasattr(
-                self.power_multipoles,
-                'power_{:d}'.format(max_required_degree)
-            )
+            assert 'power_{:d}'.format(max(degrees)) \
+                in self.power_multipoles.variables
             power_multipoles = self.power_multipoles
-        except AssertionError:
+        except (AttributeError, AssertionError):
             power_multipoles = self.power_spectrum_multipoles(
-                required_degrees, **power_kwargs
+                degrees, **multipoles_kwargs
             )
 
-        normalisation_amplitude = power_multipoles['power_0'][0]
+        bin_cleansing = ~np.isnan(power_multipoles['k'])
+        normalisation_amplitude = power_multipoles['power_0'][0].real
+        extension_padding = np.mean(np.diff(power_multipoles['k']))
 
-        k_samples = power_multipoles['k']
+        k_samples = power_multipoles['k'][bin_cleansing]
         pk_ell_samples = {
-            ell: power_multipoles[f'power_{ell}'] for ell in degrees
+            ell: power_multipoles[f'power_{ell}'][bin_cleansing].real
+            for ell in degrees
         }
 
         k_extended = np.append(
             k_samples,
             np.linspace(
-                k_samples[-1] + K_EXTENSION_PAD, K_MAX, num=NUM_K_EXTENSION
+                k_samples[-1] + extension_padding,
+                K_MAX,
+                num=NUM_K_EXTENSION
             )
         )
         pk_ell_extended = {
@@ -248,10 +268,11 @@ class WindowFunction:
         }
 
         k_interpol = np.logspace(
-            *np.log(k_extended[[0, -1]]), num=NUM_K_INTERPOL
+            *np.log10(k_extended[[0, -1]]),
+            num=NUM_K_INTERPOL
         )
         pk_ell_interpol = {
-            Spline(
+            ell: Spline(
                 k_extended,
                 pk_ell_extended[ell] / normalisation_amplitude,
                 k=1
@@ -260,7 +281,8 @@ class WindowFunction:
         }
 
         self.correlation_multipoles = {
-            ell: P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
+            'correlation_{:d}'.format(ell): \
+                P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
             for ell in degrees
         }
 

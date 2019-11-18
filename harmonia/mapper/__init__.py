@@ -3,7 +3,8 @@
 Fourier-space mapper (:mod:`~harmonia.mapper`)
 ***************************************************************************
 
-Build and process discrete catalogues into Fourier-space maps.
+Build and process discrete catalogues into Fourier-space maps, and probe
+the survey window.
 
 """
 from .cartesian_reduction import CartesianMap
@@ -14,3 +15,4 @@ from .catalogue_maker import (
     RandomCatalogue,
 )
 from .spherical_transform import SphericalMap
+from .window_synthesis import WindowFunction

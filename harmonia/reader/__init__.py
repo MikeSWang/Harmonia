@@ -8,7 +8,7 @@ cosmological parameter inference.
 
 """
 from .cartesian_model import *
-from .hybrid import (
+from .hybrid_likelihoods import (
     complex_normal_pdf,
     multivariate_normal_pdf,
 )

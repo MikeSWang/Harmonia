@@ -1,5 +1,5 @@
 """
-Hybrid likelihoods (:mod:`~harmonia.reader.hybrid`)
+Hybrid likelihoods (:mod:`~harmonia.reader.hybrid_likelihoods`)
 ===========================================================================
 
 Build hybrid likelihoods for cosmological parameter inference.

@@ -288,18 +288,18 @@ class WindowFunction:
 
         normalisation_amplitude = xi_ell[0][1][0]
 
-        r_interpol = np.logspace(
+        s_interpol = np.logspace(
             np.log10(max([xi_ell[ell][0][0] for ell in degrees])),
             np.log10(min([xi_ell[ell][0][-1] for ell in degrees])),
             num=NUM_INTERPOL
         )
         xi_ell_interpol = {
-            ell: Spline(*xi_ell[ell], k=1)(r_interpol)
+            ell: Spline(*xi_ell[ell], k=1)(s_interpol)
             for ell in degrees
         }
 
         self.correlation_multipoles = {}
-        self.correlation_multipoles['r'] = r_interpol
+        self.correlation_multipoles['s'] = s_interpol
         self.correlation_multipoles.update({
             'correlation_{:d}'.format(ell): \
                 xi_ell_interpol[ell] / normalisation_amplitude

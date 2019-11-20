@@ -23,8 +23,12 @@ Hybrid likelihood
 ---------------------------------------------------------------------------
 
 """
+import collections
+import itertools as it
+
 import numpy as np
 
+from harmonia.algorithms import SphericalArray
 from harmonia.collections import matrix_log_det
 
 
@@ -211,6 +215,149 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
 
 # Spherical likelihood
 # -----------------------------------------------------------------------------
+
+def spherical_parametrised_covariance(bias, non_gaussianity, nbar,
+                                      two_point_model, pivot,
+                                      independence=False, diag=False):
+    r"""Compute the parametrised covariance matrix given the 2-point
+    function base model and the pivot axis for data vectorisation of
+    transformed fields.
+
+    Parameters
+    ----------
+    bias : float
+        Scale-independent linear bias of the tracer particles.
+    non_gaussianity : float or None
+        Local primordial non-Gaussianity.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    two_point_model : :class:`~.spherical_model.TwoPointFunction`
+        2-point function base model.
+    pivot : {'natural', 'transposed', 'spectral'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+    independence : bool, optional
+        If `True` (default is `False`), independence amongst Fourier modes
+        is assumed and the diagonal covariance matrix is computed without
+        coupling coefficients.
+    diag : bool, optional
+        If `True` (default is `False`), only the diagonal elements of the
+        covariance matrix are computed by summation against of coupling
+        coefficients.
+
+    Returns
+    -------
+    covariance : complex or float :class:`numpy.ndarray`
+        Parametrised covariance matrix.
+
+    See Also
+    --------
+    :class:`~harmonia.reader.spherical_model.TwoPointFunction`
+
+    """
+    if independence:
+        variance = two_point_model.mode_variance(
+            pivot, nbar=nbar, b_1=bias, f_nl=non_gaussianity
+        )
+        covariance = np.diag(variance)
+    else:
+        covariance = two_point_model.two_point_covariance(
+            pivot, nbar=nbar, b_1=bias, f_nl=non_gaussianity, diag=diag
+        )
+
+    return covariance
+
+
+def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
+                                 spherical_data, pivot, breakdown=False,
+                                 exclude_degrees=(), **covariance_kwargs):
+    """Evaluate the spherical map logarithmic likelihood.
+
+    Parameters
+    ----------
+    bias : float, array_like
+        Scale-independent linear bias of the tracer particles.
+    non_gaussianity : float, array_like or None
+        Local primordial non-Gaussianity.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    two_point_model : |two_point_model| , array_like
+        2-point function base model.
+    spherical_data : :class:`~harmonia.algorithms.morph.SphericalArray`
+        Spherical data array of the transformed field.
+    pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
+        Pivot axis for unpacking indexed data into a 1-d vector.
+
+    Other parameters
+    ----------------
+    breakdown : bool, optional
+        If `True` (default is `False`), the contribution from each data
+        vector component is broken down assuming a diagonal covariance
+        matrix.
+    exclude_degrees : tuple of int, optional
+        If not ``()`` (default), modes whose spherical degree is an
+        element are removed from the likelihood.
+    **covariance_kwargs
+        Keyword arguments to be passed to
+         :func:`~.hybrid_likelihoods.spherical_parametrised_covariance`.
+
+    Returns
+    -------
+    log_likelihood : float :class:`numpy.ndarray`
+        Logarithmic likelihood evaluated at the parameter sampling points.
+
+
+    .. |two_point_model| replace::
+
+        :class:`~.spherical_model.TwoPointFunction`
+
+    """
+    _OVERFLOW_DOWNSCALE = 10**4
+
+    data_vector = spherical_data.unfold(pivot, return_only='data')
+
+    mode_indices = SphericalArray\
+        .build(disc=two_point_model.disc)\
+        .unfold(pivot, return_only='index')
+
+    excluded_deg = np.fromiter(
+        map(lambda index: index[0] in exclude_degrees, mode_indices),
+        dtype=bool
+    )
+
+    data_vector = data_vector[~excluded_deg]
+
+    axis_to_squeeze = ()
+    if not isinstance(bias, collections.Sequence):
+        bias = (bias,)
+        axis_to_squeeze += (0,)
+    if not isinstance(non_gaussianity, collections.Sequence):
+        non_gaussianity = (non_gaussianity,)
+        axis_to_squeeze += (1,)
+    if not isinstance(two_point_model, collections.Sequence):
+        two_point_model = (two_point_model,)
+        axis_to_squeeze += (2,)
+
+    out_shape = (len(bias), len(non_gaussianity), len(two_point_model))
+    if breakdown:
+        out_shape += len(data_vector)
+
+    log_likelihood = []
+    for (b_1, f_nl, tpm) in it.product(bias, non_gaussianity, two_point_model):
+        sample_covar = spherical_parametrised_covariance(
+            b_1, f_nl, nbar, tpm, pivot, **covariance_kwargs
+        )[:, ~excluded_deg][~excluded_deg, :]
+        sample_likelihood =  complex_normal_pdf(
+            data_vector, sample_covar,
+            downscale=_OVERFLOW_DOWNSCALE,
+            elementwise=breakdown
+        )
+        log_likelihood.append(sample_likelihood)
+
+    log_likelihood = np.reshape(log_likelihood, out_shape)
+    if axis_to_squeeze:
+        log_likelihood = np.squeeze(log_likelihood, axis=axis_to_squeeze)
+
+    return log_likelihood
 
 
 # Cartesian likelihood

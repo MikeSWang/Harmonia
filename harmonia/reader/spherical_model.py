@@ -727,8 +727,7 @@ class Couplings:
 
 class TwoPointFunction(Couplings):
     """Compute 2-point function values for given survey and cosmological
-    specifications from a biased power spectrum model, linear growth rate
-    and local primordial non-Gaussianity.
+    specifications.
 
     Parameters
     ----------
@@ -737,11 +736,11 @@ class TwoPointFunction(Couplings):
     redshift : float, optional
         Current redshift at which 2-point functions are modelled (default
         is 0.).
-    f_0 : float or None, optional
+    growth_rate : float or None, optional
         Linear growth rate at the current epoch.  If `None` (default), this
         is set to zero and RSD calculations are neglected.
     power_spectrum : callable or None
-        Linear matter power spectrum model.
+        Linear matter power spectrum model at the current epoch.
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
@@ -762,7 +761,8 @@ class TwoPointFunction(Couplings):
         normalised to unity today, ``'AP_distortion'`` for AP distortion.
         Default is `None`.
     couplings : dict of {str: dict of {tuple: dict}} or None, optional
-        Pre-computed couplings (default is `None`).
+        Pre-computed couplings (default is `None`) with consistent
+        cosmology and redshift as the other arguments.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -770,10 +770,10 @@ class TwoPointFunction(Couplings):
     Attributes
     ----------
     redshift : float
-        Redshift at which the 2-point functions are modelled.
+        Current redshift at which the 2-point functions are modelled.
     growth_rate : float or None
         Linear growth rate at the current epoch.
-    matter_power_spectrum : |linear_power|
+    matter_power_spectrum : callable
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/h).
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
@@ -785,11 +785,6 @@ class TwoPointFunction(Couplings):
         is invoked.
 
 
-    .. |linear_power| replace::
-
-         :class:`nbodykit.cosmology.power.linear.LinearPower`
-
-
     .. todo::
 
         Fully include evolution and AP effects by resolving the conflicts
@@ -799,9 +794,9 @@ class TwoPointFunction(Couplings):
 
     _logger = logging.getLogger("TwoPointFunction")
 
-    def __init__(self, disc, redshift=0., f_0=None, power_spectrum=None,
-                 cosmo=None, survey_specs=None, cosmo_specs=None,
-                 couplings=None, comm=None):
+    def __init__(self, disc, redshift=0., growth_rate=None,
+                 power_spectrum=None, cosmo=None, survey_specs=None,
+                 cosmo_specs=None, couplings=None, comm=None):
 
         super().__init__(
             disc,
@@ -812,15 +807,18 @@ class TwoPointFunction(Couplings):
         )
 
         self.redshift = redshift
-        self.growth_rate = f_0
+        self.growth_rate = growth_rate
         self.matter_power_spectrum = power_spectrum
 
-        if cosmo is not None:
+        if cosmo is None:
+            if self.matter_power_spectrum is None:
+                raise ValueError(
+                    "power_spectrum` cannot be None when `cosmo` is None. "
+                )
+        else:
             if self.matter_power_spectrum is None:
                 self.matter_power_spectrum = cosmology.LinearPower(
-                    cosmo,
-                    redshift=self.redshift,
-                    transfer='CLASS'
+                    cosmo, redshift=self.redshift, transfer='CLASS'
                 )
             else:
                 warnings.warn(
@@ -834,7 +832,7 @@ class TwoPointFunction(Couplings):
                     cosmo.scale_independent_growth_rate(self.redshift)
                 if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
-                        "`f_0` value is inconsistent with `cosmo` model: "
+                        "`growth_rate` value inconsistent with `cosmo` model: "
                         "input {}, model predicted value {}. "
                         .format(self.growth_rate, cosmo_growth_rate)
                     )
@@ -958,8 +956,7 @@ class TwoPointFunction(Couplings):
 
         return self._mode_scale_dependence_modifications_
 
-    def two_point_signal(self, mu, nu, b_10, f_nl=None,
-                         tracer_parameter=1.):
+    def two_point_signal(self, mu, nu, b_1, f_nl=None, tracer_parameter=1.):
         """Compute signal 2-point function for given triplet indices with
         or without scale-dependence modification by local primordial
         non-Gaussianity.
@@ -968,7 +965,7 @@ class TwoPointFunction(Couplings):
         ----------
         mu, nu : tuple or list of int
             Coefficient triplet index.
-        b_10 : float
+        b_1 : float
             Scale-independent linear bias of the tracer particles at the
             current epoch.
         f_nl : float or None, optional
@@ -995,7 +992,7 @@ class TwoPointFunction(Couplings):
         if not rsd_reduction:
             Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
 
-        f_0 = self.growth_rate
+        f = self.growth_rate
         p_k = self._mode_powers
         kappa = self.disc.normalisations
 
@@ -1006,20 +1003,20 @@ class TwoPointFunction(Couplings):
                 ell = mu[0]  # equivalently nu[0]
                 nmax = self.disc.depths[ell]
 
-                b_0_k = b_10 * np.ones(nmax)
+                b_k = b_1 * np.ones(nmax)
                 if f_nl is not None:
-                    b_0_k += f_nl * (b_10 - tracer_parameter) \
+                    b_k += f_nl * (b_1 - tracer_parameter) \
                         * self._mode_scale_dependence_modifications[ell]
 
                 if rsd_reduction:
                     radial_sum = np.sum(
                         Phi_mu[ell] * Phi_nu[ell]
-                        * b_0_k**2 * p_k[ell] / kappa[ell]
+                        * b_k**2 * p_k[ell] / kappa[ell]
                     )
                 else:
                     radial_sum = np.sum(
-                        (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
-                        * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
+                        (b_k * Phi_mu[ell] + f * Upsilon_mu[ell])
+                        * (b_k * Phi_nu[ell] + f * Upsilon_nu[ell])
                         * p_k[ell] / kappa[ell]
                     )
 
@@ -1033,27 +1030,27 @@ class TwoPointFunction(Couplings):
                     ]
                 )
 
-                b_0_k = b_10 * np.ones(nmax)
+                b_k = b_1 * np.ones(nmax)
                 if f_nl is not None:
-                    b_0_k += f_nl * (b_10 - tracer_parameter) \
+                    b_k += f_nl * (b_1 - tracer_parameter) \
                         * self._mode_scale_dependence_modifications[ell]
 
                 if rsd_reduction:
                     radial_sum = np.sum(
                         Phi_mu[ell] * Phi_nu[ell]
-                        * b_0_k**2 * p_k[ell] / kappa[ell]
+                        * b_k**2 * p_k[ell] / kappa[ell]
                     )
                 else:
                     radial_sum = np.sum(
-                        (b_0_k * Phi_mu[ell] + f_0 * Upsilon_mu[ell])
-                        * (b_0_k * Phi_nu[ell] + f_0 * Upsilon_nu[ell])
+                        (b_k * Phi_mu[ell] + f * Upsilon_mu[ell])
+                        * (b_k * Phi_nu[ell] + f * Upsilon_nu[ell])
                         * p_k[ell] / kappa[ell]
                     )
                 signal += angular_sum * radial_sum
 
         return signal
 
-    def two_point_shot_noise(self, mu, nu, nbar):
+    def two_point_shot_noise(self, mu, nu, nbar, contrast=np.inf):
         """Compute shot noise 2-point function for given triplet indices.
 
         Parameters
@@ -1062,6 +1059,9 @@ class TwoPointFunction(Couplings):
             Coefficient triplet index.
         nbar : float
             Mean particle number density (in cubic h/Mpc).
+        contrast : float, optional
+            Downscale `nbar` by ``1 + 1/constrast``.  Default is
+            ``numpy.inf``.
 
         Returns
         -------
@@ -1071,6 +1071,8 @@ class TwoPointFunction(Couplings):
         """
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
+
+        nbar = nbar / (1 + 1/contrast)
 
         if self.couplings['angular'] is None:
             if ell_mu != ell_nu or m_mu != m_nu:
@@ -1104,7 +1106,8 @@ class TwoPointFunction(Couplings):
         return shot_noise
 
     def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
-                             b_10=None, f_nl=None, tracer_parameter=1.):
+                             b_1=None, f_nl=None, tracer_parameter=1.,
+                             contrast=np.inf):
         """Compute 2-point signal, shot noise or full covariance matrix for
         given pivot axis for unpacking indices with or without
         scale-dependence modification by local primordial non-Gaussianity.
@@ -1123,7 +1126,7 @@ class TwoPointFunction(Couplings):
         nbar : float or None, optional
             Mean particle number density (in cubic h/Mpc).  If `part` is
             ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
-        b_10 : float or None, optional
+        b_1 : float or None, optional
             Scale-independent linear bias of the tracer particles at the
             current epoch.  If `part` is ``'signal'`` or ``'both'``, this
             cannot be `None` (default).
@@ -1132,6 +1135,9 @@ class TwoPointFunction(Couplings):
         tracer_parameter : float, optional
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
+        contrast : float, optional
+            Downscale `nbar` by ``1 + 1/constrast``.  Default is
+            ``numpy.inf``.
 
         Returns
         -------
@@ -1141,7 +1147,7 @@ class TwoPointFunction(Couplings):
         Raises
         ------
         ValueError
-            If `b_10` is `None` when `part` is ``'signal'`` or
+            If `b_1` is `None` when `part` is ``'signal'`` or
             ``'both'``, or `nbar` is `None` when `part` is ``'shotnoise'``
             or ``'both'``.
         ValueError
@@ -1150,9 +1156,9 @@ class TwoPointFunction(Couplings):
             If `pivot` is ``'root'`` or ``'scale'``.
 
         """
-        if b_10 is None and part in ['signal', 'both']:
+        if b_1 is None and part in ['signal', 'both']:
             raise ValueError(
-                "`b_10` cannot be None if `part` is 'signal' or 'both'. "
+                "`b_1` cannot be None if `part` is 'signal' or 'both'. "
             )
         if nbar is None and part in ['shotnoise', 'both']:
             raise ValueError(
@@ -1169,14 +1175,14 @@ class TwoPointFunction(Couplings):
         scale_mod_kwargs = dict(f_nl=f_nl, tracer_parameter=tracer_parameter)
         if part == 'both':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, b_10, **scale_mod_kwargs) \
-                + self.two_point_shot_noise(mu, nu, nbar)
+                self.two_point_signal(mu, nu, b_1, **scale_mod_kwargs) \
+                + self.two_point_shot_noise(mu, nu, nbar, contrast=contrast)
         elif part == 'signal':
             two_point_component = lambda mu, nu: \
-                self.two_point_signal(mu, nu, b_10, **scale_mod_kwargs)
+                self.two_point_signal(mu, nu, b_1, **scale_mod_kwargs)
         elif part == 'shotnoise':
             two_point_component = lambda mu, nu: \
-                self.two_point_shot_noise(mu, nu, nbar)
+                self.two_point_shot_noise(mu, nu, nbar, contrast=contrast)
         else:
             raise ValueError(f"Invalid covariance part: {part}. ")
 
@@ -1204,8 +1210,8 @@ class TwoPointFunction(Couplings):
 
         return two_point_covar
 
-    def mode_variance(self, pivot, part='both', nbar=None, b_10=None,
-                      f_nl=None, tracer_parameter=1.):
+    def mode_variance(self, pivot, part='both', nbar=None, b_1=None,
+                      f_nl=None, tracer_parameter=1., contrast=np.inf):
         """Compute the signal, shot noise or total mode variance for given
         pivot axis for unpacking indices, reduced to the simplest case of
         no masking, selection, weighting, evolution or geometrical effects
@@ -1223,7 +1229,7 @@ class TwoPointFunction(Couplings):
         nbar : float or None, optional
             Mean particle number density (in cubic h/Mpc).  If `part` is
             ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
-        b_10 : float or None, optional
+        b_1 : float or None, optional
             Scale-independent linear bias of the tracer particles at the
             current epoch.  If `part` is ``'signal'`` or ``'both'``, this
             cannot be `None` (default).
@@ -1232,6 +1238,9 @@ class TwoPointFunction(Couplings):
         tracer_parameter : float, optional
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
+        contrast : float, optional
+            Downscale `nbar` by ``1 + 1/constrast``.  Default is
+            ``numpy.inf``.
 
         Returns
         -------
@@ -1241,16 +1250,16 @@ class TwoPointFunction(Couplings):
         Raises
         ------
         ValueError
-            If `b_10` is `None` when `part` is ``'signal'`` or
+            If `b_1` is `None` when `part` is ``'signal'`` or
             ``'both'``, or `nbar` is `None` when `part` is ``'shotnoise'``
             or ``'both'``.
         ValueError
             If `part` is not a recognised 2-point covariance component.
 
         """
-        if b_10 is None and part in ['signal', 'both']:
+        if b_1 is None and part in ['signal', 'both']:
             raise ValueError(
-                "`b_10` cannot be None if `part` is 'signal' or 'both'. "
+                "`b_1` cannot be None if `part` is 'signal' or 'both'. "
             )
         if nbar is None and part in ['shotnoise', 'both']:
             raise ValueError(
@@ -1273,13 +1282,13 @@ class TwoPointFunction(Couplings):
 
             unnormalised_variance = 0.
             if part in ['signal', 'both']:
-                b_0_k = b_10
+                b_k = b_1
                 if f_nl is not None:
-                    b_0_k += f_nl * (b_10 - tracer_parameter) \
+                    b_k += f_nl * (b_1 - tracer_parameter) \
                         * self._mode_scale_dependence_modifications[ell][n_idx]
-                unnormalised_variance += b_0_k**2 * p_k[ell][n_idx]
+                unnormalised_variance += b_k**2 * p_k[ell][n_idx]
             if part in ['shotnoise', 'both']:
-                unnormalised_variance += 1 / nbar
+                unnormalised_variance += (1 + 1/contrast) / nbar
 
             mode_variance[idx] = unnormalised_variance / kappa[ell][n_idx]
 

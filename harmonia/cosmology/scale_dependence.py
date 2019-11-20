@@ -104,8 +104,8 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0.,
     return b_k
 
 
-def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
-                                  tracer_parameter=1., power_spectrum=None):
+def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,
+                            power_spectrum=None):
     """Return the biased power spectrum with non-Gaussianity
     scale-dependence modification.
 
@@ -132,7 +132,7 @@ def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
 
     Returns
     -------
-    modified_power_spectrum : callable
+    callable
         Non-Gaussianity modified biased power spectrum as a function of
         the Fourier scale (in h/Mpc).
 
@@ -140,16 +140,8 @@ def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0.,
     if power_spectrum is None:
         power_spectrum = cosmology.LinearPower(cosmo, redshift=redshift)
 
-    def modified_power_spectrum(k):
+    bias = scale_dependent_bias(
+        b_1, f_nl, cosmo, redshift=redshift, tracer_parameter=tracer_parameter
+    )
 
-        bias = scale_dependent_bias(
-            b_1,
-            f_nl,
-            cosmo,
-            redshift=redshift,
-            tracer_parameter=tracer_parameter
-        )
-
-        return bias(k)**2 * power_spectrum(k)
-
-    return modified_power_spectrum
+    return lambda k: bias(k)**2 * power_spectrum(k)

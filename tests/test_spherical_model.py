@@ -63,7 +63,7 @@ TWO_POINT_SURVEY_SPECS = {
 }
 TWO_POINT_TEST_PARAMS = dict(
     nbar=1e-3,
-    b_10=2.,
+    b_1=2.,
     f_nl=0.,
 )
 
@@ -74,7 +74,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
 
     two_point_model = TwoPointFunction(
         discrete_spectrum,
-        f_0=None,
+        growth_rate=None,
         cosmo=fiducial_cosmology,
         survey_specs=TWO_POINT_SURVEY_SPECS
     )
@@ -87,7 +87,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
 
     variance_model = TwoPointFunction(
         discrete_spectrum,
-        f_0=None,
+        growth_rate=None,
         cosmo=fiducial_cosmology,
     )
     variance_matrix = variance_model.mode_variance(
@@ -98,7 +98,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
 
     two_point_model_angular_reduction = TwoPointFunction(
         discrete_spectrum,
-        f_0=None,
+        growth_rate=None,
         cosmo=fiducial_cosmology
     )
     covariance_matrix_angular_reduction = \

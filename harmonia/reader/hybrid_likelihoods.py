@@ -16,19 +16,33 @@ Probability distributions
 Spherical likelihood
 ---------------------------------------------------------------------------
 
+.. autosummary::
+
+    spherical_parametrised_covariance
+    spherical_map_log_likelihood
+
+
 Cartesian likelihood
 ---------------------------------------------------------------------------
+
+.. autosummary::
+
+    cartesian_parametrised_moments
+    cartesian_map_likelihood
+
 
 Hybrid likelihood
 ---------------------------------------------------------------------------
 
+.. todo:: Implement or dismantle.
+
 """
-import collections
+import collections as coll
 import itertools as it
 
 import numpy as np
 
-from harmonia.algorithms import SphericalArray
+from harmonia.algorithms import CartesianArray, SphericalArray
 from harmonia.collections import matrix_log_det
 
 
@@ -216,21 +230,19 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
 # Spherical likelihood
 # -----------------------------------------------------------------------------
 
-def spherical_parametrised_covariance(bias, non_gaussianity, nbar,
-                                      two_point_model, pivot,
-                                      independence=False, diag=False):
-    r"""Compute the parametrised covariance matrix given the 2-point
-    function base model and the pivot axis for data vectorisation of
-    transformed fields.
+def spherical_parametrised_covariance(b_1, f_nl, two_point_model, pivot,
+                                      independence=False, diag=False,
+                                      **model_kwargs):
+    r"""Compute the parametrised covariance matrix given the spherical
+    2-point function base model and the pivot axis for data vectorisation
+    of transformed fields.
 
     Parameters
     ----------
-    bias : float
+    b_1 : float
         Scale-independent linear bias of the tracer particles.
-    non_gaussianity : float or None
+    f_nl : float or None
         Local primordial non-Gaussianity.
-    nbar : float
-        Mean particle number density (in cubic h/Mpc).
     two_point_model : :class:`~.spherical_model.TwoPointFunction`
         2-point function base model.
     pivot : {'natural', 'transposed', 'spectral'}
@@ -243,6 +255,11 @@ def spherical_parametrised_covariance(bias, non_gaussianity, nbar,
         If `True` (default is `False`), only the diagonal elements of the
         covariance matrix are computed by summation against of coupling
         coefficients.
+    **model_kwargs
+        Keyword arguments to be passed to `two_point_model` methods
+        :meth:`~.spherical_model.TwoPointFunction.two_point_covariance`
+        or :meth:`~.spherical_model.TwoPointFunction.mode_variance` (if
+        `independence` is `True`).
 
     Returns
     -------
@@ -256,12 +273,12 @@ def spherical_parametrised_covariance(bias, non_gaussianity, nbar,
     """
     if independence:
         variance = two_point_model.mode_variance(
-            pivot, nbar=nbar, b_1=bias, f_nl=non_gaussianity
+            pivot, b_1=b_1, f_nl=f_nl, **model_kwargs
         )
         covariance = np.diag(variance)
     else:
         covariance = two_point_model.two_point_covariance(
-            pivot, nbar=nbar, b_1=bias, f_nl=non_gaussianity, diag=diag
+            pivot, b_1=b_1, f_nl=f_nl, diag=diag, **model_kwargs
         )
 
     return covariance
@@ -327,13 +344,13 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
     data_vector = data_vector[~excluded_deg]
 
     axis_to_squeeze = ()
-    if not isinstance(bias, collections.Sequence):
+    if not isinstance(bias, coll.Sequence):
         bias = (bias,)
         axis_to_squeeze += (0,)
-    if not isinstance(non_gaussianity, collections.Sequence):
+    if not isinstance(non_gaussianity, coll.Sequence):
         non_gaussianity = (non_gaussianity,)
         axis_to_squeeze += (1,)
-    if not isinstance(two_point_model, collections.Sequence):
+    if not isinstance(two_point_model, coll.Sequence):
         two_point_model = (two_point_model,)
         axis_to_squeeze += (2,)
 
@@ -344,9 +361,9 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
     log_likelihood = []
     for (b_1, f_nl, tpm) in it.product(bias, non_gaussianity, two_point_model):
         sample_covar = spherical_parametrised_covariance(
-            b_1, f_nl, nbar, tpm, pivot, **covariance_kwargs
+            b_1, f_nl, tpm, pivot, nbar=nbar, **covariance_kwargs
         )[:, ~excluded_deg][~excluded_deg, :]
-        sample_likelihood =  complex_normal_pdf(
+        sample_likelihood = complex_normal_pdf(
             data_vector, sample_covar,
             downscale=_OVERFLOW_DOWNSCALE,
             elementwise=breakdown
@@ -362,6 +379,137 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
 
 # Cartesian likelihood
 # -----------------------------------------------------------------------------
+
+def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
+                                   window_corr_modeller, **model_kwargs):
+    """Compute the parametrised moment(s) of power spectrum multipoles.
+
+    Parameters
+    ----------
+    b_1 : float
+        Scale-independent linear bias of the tracer particles.
+    f_nl : float or None
+        Local primordial non-Gaussianity.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
+        Windowed power spectrum base model.
+    pivot : {'multipole', 'scale'}
+        Order in which the data is unpacked as a 1-d vector.
+    window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
+        Window-induced correlation modeller.  Must be pivoted at `pivot`,
+        i.e. its :attr:`pivot` attribute must agree with input `pivot`.
+    **model_kwargs
+        Keyword arguments to be passed to `windowed_power_model.conv`.
+
+    Returns
+    -------
+    expectation : float :class:`numpy.ndarray`
+        Power spectrum expectation at the specified wavenumbers.
+    covariance : float :class:`numpy.ndarray`
+        Power spectrum variance at the specified wavenumbers.
+
+    Raises
+    ------
+    AssertionError
+        If `window_corr_modeller.pivot` does not match input `pivot`.
+
+    """
+    assert window_corr_modeller.pivot == pivot,\
+        "`window_corr_modeller.pivot` must match input `pivot`. "
+
+    degrees = window_corr_modeller.multipoles
+    wavenumbers = window_corr_modeller.filling['k']
+
+    fiducial_expectation = window_corr_modeller.fiducial_diagonal_multipoles
+    fiducial_covariance = window_corr_modeller.window_correlation
+
+    expectation_filling = windowed_power_model.convolved_multipoles(
+        degrees, b_1, f_nl=f_nl, wavenumbers=wavenumbers, **model_kwargs
+    )
+
+    expectation_array = CartesianArray(
+        filling=expectation_filling,
+        coord_key='k',
+        var_key_root='power_'
+    )
+
+    if pivot == 'multipole':
+        expectation = expectation_array.unfold('variable', return_only='data')
+    if pivot == 'scale':
+        expectation = expectation_array.unfold('coord', return_only='data')
+
+    covariance = np.diag(expectation/fiducial_expectation) \
+        @ fiducial_covariance \
+        @ np.diag(expectation/fiducial_expectation)
+
+    return expectation, covariance
+
+
+def cartesian_map_likelihood(bias, non_gaussianity, nbar, windowed_power_model,
+                             cartesian_data, window_corr_modeller, pivot,
+                             **covariance_kwargs):
+    """Evaluate the Cartesian map logarithmic likelihood.
+
+    Parameters
+    ----------
+    bias : float, array_like
+        Scale-independent linear bias of the tracer particles.
+    non_gaussianity : float, array_like or None
+        Local primordial non-Gaussianity.
+    nbar : float
+        Mean particle number density (in cubic h/Mpc).
+    windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
+        Windowed power spectrum base model.
+    cartesian_data : :class:`~harmonia.algorithms.morph.CartesianArray`
+        Cartesian data array of the compressed field.
+    window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
+        Window-induced correlation modeller.  Must be pivoted at `pivot`,
+        i.e. its :attr:`pivot` attribute must agree with input `pivot`.
+    pivot : {'multipole', 'scale'}
+        Order in which the data is unpacked as a 1-d vector.
+    **covariance_kwargs
+        Keyword arguments to be passed to
+        :func:`~.reader.hybrid_likelihoods.cartesian_parametrised_moments`.
+
+    Returns
+    -------
+    log_likelihood : float :class:`numpy.ndarray`
+        Logarithmic likelihood evaluated at the parameter sampling points.
+
+    """
+    data_vector = cartesian_data.unfold(pivot, return_only='data')
+
+    axis_to_squeeze = ()
+    if not isinstance(bias, coll.Sequence):
+        bias = (bias,)
+        axis_to_squeeze += (0,)
+    if not isinstance(non_gaussianity, coll.Sequence):
+        non_gaussianity = (non_gaussianity,)
+        axis_to_squeeze += (1,)
+    if not isinstance(windowed_power_model, coll.Sequence):
+        windowed_power_model = (windowed_power_model,)
+        axis_to_squeeze += (2,)
+
+    out_shape = (len(bias), len(non_gaussianity), len(windowed_power_model))
+
+    log_likelihood = []
+    for (b_1, f_nl, wpm) \
+            in it.product(bias, non_gaussianity, windowed_power_model):
+        sample_mean, sample_covar = cartesian_parametrised_moments(
+            b_1, f_nl, wpm, pivot, window_corr_modeller,
+            nbar=nbar, **covariance_kwargs
+        )
+        sample_likelihood = multivariate_normal_pdf(
+            data_vector, sample_mean, sample_covar
+        )
+        log_likelihood.append(sample_likelihood)
+
+    log_likelihood = np.reshape(log_likelihood, out_shape)
+    if axis_to_squeeze:
+        log_likelihood = np.squeeze(log_likelihood, axis=axis_to_squeeze)
+
+    return log_likelihood
 
 
 # Hybrid likelihood

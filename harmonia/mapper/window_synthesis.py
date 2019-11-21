@@ -2,12 +2,12 @@
 Window synthesis (:mod:`~harmonia.mapper.window_synthesis`)
 ===========================================================================
 
-Determine the window function for given survey specifications with
-high-density synthetic catalogues.
+Determine the window function and induced correlation for given survey
+specifications with high-density synthetic catalogues.
 
 .. autosummary::
 
-    WindowFunction
+    SurveyWindow
 
 |
 
@@ -22,8 +22,8 @@ from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 from harmonia.collections.utils import cartesian_to_spherical as c2s
 
 
-class WindowFunction:
-    """Window function determined from high-density synthetic catalogues.
+class SurveyWindow:
+    """Survey window determined from high-density synthetic catalogues.
 
     Parameters
     ----------
@@ -73,7 +73,7 @@ class WindowFunction:
         self.power_multipoles = None
         self.correlation_multipoles = None
 
-    def synthesise(self, number_density, boxsize, padding=80.):
+    def synthesise(self, number_density, boxsize, padding=1.):
         """Synthesise a random catalogue with the specified window and
         additional padding.
 
@@ -86,7 +86,7 @@ class WindowFunction:
             scalars.
         padding : float, optional
             Additional box padding needed for accurate window function
-            determination (default is 80.).
+            determination (default is 1.).
 
         Returns
         -------
@@ -160,7 +160,7 @@ class WindowFunction:
         ------
         AttributeError
             If :attr:`synthetic_catalogue` is missing and
-            :meth:`~WindowFunction.synthesise` needs to be called first.
+            :meth:`~SurveyWindow.synthesise` needs to be called first.
 
         """
         if self.synthetic_catalogue is None:
@@ -221,7 +221,7 @@ class WindowFunction:
             Multipole degrees.
         **multipoles_kwargs
             Keyword arguments to be passed to
-            :meth:`~WindowFunction.power_spectrum_multipoles` for
+            :meth:`~SurveyWindow.power_spectrum_multipoles` for
             computing multipoles of the synthetic catalogue.
 
         Returns

@@ -596,3 +596,78 @@ class SphericalArray:
                 new_array.append(block)
             return new_array
         raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
+
+
+class CartesianArray:
+    r"""Structured Cartesian arrays.
+
+    Parameters
+    ----------
+    filling : dict
+        Dictionary holing both a coordinate array and data arrays.
+    coord_key, var_key_root : str
+        The key or the root string of the key corresponding to the
+        coordinate array or the data arrays.
+
+    Attributes
+    ----------
+    filling : dict
+        Data filled into the structure Cartesian array.
+    data_arrays : list of float :class:`numpy.ndarray`
+        Data arrays.
+    coord_array : float :class:`numpy.ndarray`
+        Coordinate array.
+    data_arrays : list of float :class:`numpy.ndarray`
+        Data arrays.x
+
+    """
+
+    def __init__(self, filling, coord_key, var_key_root):
+
+        self.filling = filling
+
+        self.sorted_vars = [
+            key.strip(var_key_root)
+            for key in sorted(filling) if var_key_root in key
+        ]
+
+        self.coord_array = filling[coord_key]
+        self.data_arrays = [filling[var] for var in self.sorted_vars]
+
+    def unfold(self, pivot, return_only=None):
+        """Flatten data and corresponding coordinate arrays in the
+        specified order.
+
+        Parameters
+        ----------
+        pivot : {'coord', 'variable'}
+            Order for array flattening.  If ``'coord'``, the arrays are
+            flattened in ascending order of the coordinate array; if
+            ``'variable'``, the arrays are flattened in ascending order of
+            the variable name (key).
+        return_only : {'coords', 'data', None}, optional
+            Only return the coordinate (``'coords'``) or data (``'data'``)
+            array(s) (default is `None`).
+
+        Returns
+        -------
+        data_flat : float array_like or None
+            Flattend 1-d data array.  Returned only if `return_only` is
+            `None` or ``'data'``.
+        coords_flat : list of tuple
+            Flattend 1-d index array.  Returned only if `return_only` is
+            `None` or ``'coords'``.
+
+        """
+        if pivot == 'variable':
+            coords_flat = np.tile(self.coord_array, len(self.data_arrays))
+            data_flat = np.concatenate([self.data_arrays])
+        elif pivot == 'coord':
+            coords_flat = np.repeat(self.coord_array, len(self.data_arrays))
+            data_flat = np.vstack([self.data_arrays]).flatten('F')
+
+        if return_only == 'data':
+            return data_flat
+        if return_only == 'coords':
+            return coords_flat
+        return data_flat, coords_flat

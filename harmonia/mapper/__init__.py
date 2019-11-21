@@ -15,4 +15,4 @@ from .catalogue_maker import (
     RandomCatalogue,
 )
 from .spherical_transform import SphericalMap
-from .window_synthesis import WindowFunction
+from .window_synthesis import SurveyWindow

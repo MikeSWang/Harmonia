@@ -27,4 +27,4 @@ from .fields import (
     populate_particles,
     threshold_clip,
 )
-from .morph import SphericalArray
+from .morph import CartesianArray, SphericalArray

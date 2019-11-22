@@ -25,7 +25,7 @@ import logging
 import numpy as np
 from nbodykit import CurrentMPIComm
 from nbodykit.base.catalog import CatalogSource, column
-from nbodykit.lab import LogNormalCatalog, UniformCatalog
+from nbodykit.lab import CSVCatalog, LogNormalCatalog, UniformCatalog
 
 from harmonia.algorithms.fields import (
     generate_gaussian_random_field as gen_gaussian_field,
@@ -36,6 +36,38 @@ from harmonia.algorithms.fields import (
 from harmonia.collections.utils import normalise_vector
 
 MAX_INT = 4294967295
+
+
+def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
+    """Load catalogue from files.
+
+    Parameters
+    ----------
+    file_path : str
+        Catalogue file path.
+    headings : list of str
+        Column headings of the catalogue file.
+    boxsize : float
+        Catalogue box size.
+    unit_scale : float, optional
+        Scaling factor for converting the length unit to Mpc/h (default is
+        1.), e.g. ``unit_scale = 1e-3`` for converting Kpc/h to Mpc/h.
+
+    Returns
+    -------
+    catalogue : :class:`nbodykit.base.catalog.CatalogSource`
+        Catalogue object.
+
+    """
+    catalogue = CSVCatalog(file_path, headings)
+
+    catalogue.attrs['BoxSize'] = boxsize
+    catalogue['Position'] = \
+        catalogue['x'][:, None] * [unit_scale, 0, 0] \
+        + catalogue['y'][:, None] * [0, unit_scale, 0] \
+        + catalogue['z'][:, None] * [0, 0, unit_scale]
+
+    return catalogue
 
 
 class RandomCatalogue(UniformCatalog):

@@ -1,4 +1,4 @@
-"""Sample spherical likelihood from simulations.
+"""Sample the hybrid likelihood from simulations.
 
 """
 import warnings
@@ -6,49 +6,29 @@ from collections import defaultdict
 from pprint import pprint
 
 import numpy as np
-from nbodykit.lab import CSVCatalog, ConvolvedFFTPower, FFTPower
+from nbodykit.lab import CSVCatalog, ConvolvedFFTPower
 from scipy.interpolate import interp1d
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path, format_float
 from harmonia.cosmology import fiducial_cosmology
-from harmonia.mapper import RandomCatalogue, SphericalMap
-from harmonia.reader import TwoPointFunction
+from harmonia.mapper import (
+    RandomCatalogue,
+    SphericalMap,
+    load_catalogue_from_file,
+)
+from harmonia.reader import TwoPointFunction, WindowedPowerSpectrum
 from hybrid_likelihoods import (
-    cartesian_map_likelihood,
-    spherical_map_likelihood,
+    cartesian_map_log_likelihood as cartesian_likelihood,
+    spherical_map_log_likelihood as spherical_likelihood,
 )
 
 PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
+COUPLINGS_FILEROOT = "{}{}"
+WINDOW_POLES_FILEROOT = "{}{}"
+WINDOW_CORRL_FILEROOT = "{}{}"
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-
-
-def load_catalogue(catalogue_path, boxsize):
-    """Load catalogue from files.
-
-    Parameters
-    ----------
-    catalogue_path : str
-        Catalogue file path.
-    boxsize : float
-        Catalogue box size.
-
-    Returns
-    -------
-    catalogue : :class:`nbodykit.base.catalog.CatalogSource`
-        Catalogue object.
-
-    """
-    catalogue = CSVCatalog(catalogue_path, CATALOGUE_HEADINGS)
-
-    catalogue.attrs['BoxSize'] = boxsize
-    catalogue['Position'] = \
-        catalogue['x'][:, None] * [1, 0, 0] \
-        + catalogue['y'][:, None] * [0, 1, 0] \
-        + catalogue['z'][:, None] * [0, 0, 1]
-
-    return catalogue
 
 
 def initialise():
@@ -66,94 +46,84 @@ def initialise():
 
     # Likelihood set-up
     ini_params['map'] = params.map
+    ini_params['sample_parameter'] = params.sample_param
+    ini_params['fixed_parameter'] = params.fixed_param
     ini_params['prior_range'] = params.prior_range
     ini_params['num_sample'] = params.num_sample
-    ini_params['breakdown'] = params.breakdown
-    ini_params['kmax'] = params.kmax
-    ini_params['ksplit'] = params.ksplit
-    ini_params['pivot'] = params.pivot
 
-    # Catalogue set-up
+    ini_params['ksplit'] = params.ksplit
+    ini_params['kmax'] = params.kmax
+    ini_params['breakdown'] = params.breakdown
+
+    # Data and modelling set-up
+    ini_params['spherical_pivot'] = params.spherical_pivot
+    ini_params['cartesian_pivot'] = params.cartesian_pivot
+
     ini_params['contrast'] = params.contrast
-    ini_params['dk'] = params.dk
     ini_params['boxsize'] = params.boxsize
+    ini_params['dk'] = params.dk
     ini_params['input_file'] = params.input_file
-    ini_params['mesh_cal'] = params.mesh_cal
+    ini_params['mesh'] = params.mesh
 
     # Cosmology set-up
     ini_params['nbar'] = params.nbar
     ini_params['bias'] = dict(zip(['low', 'high'], params.bias))
-    ini_params['fnl'] = dict(zip(['low', 'high'], [params.fnl, params.fnl]))
+    ini_params['fnl'] = params.fnl
 
-    if params.growth_rate is None:
-        ini_params['growth_rate'] = None
-        rsd_tag = 'none'
-    else:
-        ini_params['growth_rate'] = params.growth_rate
-        rsd_tag = "{:.2f}".format(ini_params['growth_rate'])
-
-    if params.likelihood == 'bias':
-        ini_params['param'] = 'bias'
-        ini_params['fixed'] = dict(zip(
-            ['low', 'high'],
-            [
-                {'f_nl': ini_params['fnl']['low']},
-                {'f_nl': ini_params['fnl']['high']},
-            ],
-        ))
+    if params.sample_param == 'bias':
         fixed_tag = 'fnl={}'.format(params.fnl)
-    elif params.likelihood == 'fnl':
-        ini_params['param'] = 'f_nl'
-        ini_params['fixed'] = dict(zip(
-            ['low', 'high'],
-            [
-                {'bias': ini_params['bias']['low']},
-                {'bias': ini_params['bias']['high']},
-            ],
-        ))
-        fixed_tag = 'b1={}'.format(str(ini_params['bias'].values()).replace(" ",""))
+    elif params.sample_param == 'fnl':
+        fixed_tag = 'b1={}'.format(str(params.prior_range).replace(" ", ""))
 
+    # External set-up
     ini_params['matter_power_spectrum'] = interp1d(
         *np.loadtxt(
-            "".join([PATHIN, script_name, "/", PK_FILENAME, ".txt"])
-        ).T,
+            "".join([PATHIN, script_name, "/", PK_FILENAME, ".txt"]),
+            unpack=True
+        ),
         assume_sorted=True
     )
 
     if params.load_couplings:
         ini_params['external_couplings'] = np.load(
-            f"{PATHIN}{script_name}/"
-            "nbodymod_twopt-(rmax={},kmax={})-couplings.npy"
-            .format(
-                format_float(params.boxsize/2, 'intdot'),
-                format_float(params.kmax, 'sci'),
+            "".join(
+                [
+                    PATHIN, script_name, "/",
+                    COUPLINGS_FILEROOT.format(
+                        format_float(params.boxsize/2, 'intdot'),
+                        format_float(params.kmax, 'sci'),
+                    ),
+                    ".txt"
+                ]
             )
         ).item()
     else:
         ini_params['external_couplings'] = None
 
     ini_info =\
-        "map={},prior={},pivot={},ksplit={},kmax={},nbar={},{},f0={}".format(
-            ini_params['map'],
-            str(ini_params['prior_range']).replace(" ", ""),
-            ini_params['pivot'],
+        "map={},prior={},pivots={},ks={},km={},nbar={},{}".format(
+            params.map,
+            str(params.prior_range).replace(" ", ""),
+            str(
+                [params.spherical_pivot, params.cartesian_pivot]
+            ).replace(" ", ""),
             format_float(ini_params['ksplit'], 'sci'),
             format_float(ini_params['kmax'], 'sci'),
             format_float(ini_params['nbar'], 'sci'),
             fixed_tag,
-            rsd_tag,
         )
+
+    for param_name, param_value in ini_params.items():
+        globals()[param_name] = param_value
 
     return ini_params, ini_info
 
 
-def process(runtime_params, runtime_info):
+def process(runtime_info):
     """Process program.
 
     Parameters
     ----------
-    runtime_params : dict
-        Runtime parameters.
     runtime_info : str
         Runtime information.
 
@@ -165,13 +135,12 @@ def process(runtime_params, runtime_info):
     """
     print(runtime_info + "\n")
 
-    disc = DiscreteSpectrum(
-        runtime_params['boxsize']/2, 'Dirichlet', runtime_params['ksplit']
-    )
+    disc = DiscreteSpectrum(boxsize/2, 'dirichlet', ksplit)
 
-    index_vector = SphericalArray\
-        .build(disc=disc)\
-        .unfold(runtime_params['pivot'], return_only='index')
+    window_multipoles = np.load(WINDOW_POLES_FILEROOT).item()
+    window_corrmat = np.load(WINDOW_CORRL_FILEROOT).item()
+
+    windowed_power_model = WindowedPowerSpectrum()
 
     two_point_model = TwoPointFunction(
         disc,
@@ -195,8 +164,8 @@ def process(runtime_params, runtime_info):
             PATHIN, script_name, runtime_params['input_file'], file_suffix
         )
 
-        data_catalogue = load_catalogue(
-            catalogue_path, runtime_params['boxsize']
+        data_catalogue = load_catalogue_from_file(
+            catalogue_path, CATALOGUE_HEADINGS, runtime_params['boxsize']
         )
 
         # random_catalogue = RandomCatalogue(

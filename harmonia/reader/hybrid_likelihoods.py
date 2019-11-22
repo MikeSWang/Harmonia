@@ -446,9 +446,10 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     return expectation, covariance
 
 
-def cartesian_map_likelihood(bias, non_gaussianity, nbar, windowed_power_model,
-                             cartesian_data, window_corr_modeller, pivot,
-                             **covariance_kwargs):
+def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
+                                 windowed_power_model, cartesian_data,
+                                 window_corr_modeller, pivot,
+                                 **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
     Parameters

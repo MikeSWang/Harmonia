@@ -13,6 +13,7 @@ from .catalogue_maker import (
     LogNormalCatalogue,
     NBKCatalogue,
     RandomCatalogue,
+    load_catalogue_from_file,
 )
 from .spherical_transform import SphericalMap
 from .window_synthesis import SurveyWindow

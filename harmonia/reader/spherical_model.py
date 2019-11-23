@@ -174,8 +174,7 @@ def _angular_kernel(theta, phi, mu, nu, mask=None):
         kernel *= mask(theta, phi)
     else:
         warnings.warn(
-            "Angular kernel evaluation is redundant as `mask` is None. ",
-            RuntimeWarning
+            "Angular kernel evaluation is redundant as `mask` is None. "
         )
 
     return kernel
@@ -375,7 +374,7 @@ def _shot_noise_kernel(r, mu, nu, k_mu, k_nu, selection=None, weight=None):
 
     """
     if selection is None and weight is None and mu[0] == nu[0]:
-        warnings.warn("Shot noise evaluation is redundant. ", RuntimeWarning)
+        warnings.warn("Shot noise evaluation is redundant. ")
 
     kernel = spherical_besselj(mu[0], k_mu*r) \
         * spherical_besselj(nu[0], k_nu*r)
@@ -495,7 +494,7 @@ class Couplings:
                         if attr_func is not None and not callable(attr_func):
                             raise TypeError(
                                 f"{specs_var_str} {func_attr} value "
-                                f"must be None or callable. "
+                                "must be None or callable. "
                             )
                 except KeyError as missing_func_attr:
                     raise KeyError(
@@ -686,14 +685,16 @@ class Couplings:
         """
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray.build(disc=self.disc)\
+            index_vector = SphericalArray\
+                .build(disc=self.disc)\
                 .unfold('natural', return_only='index')
 
         if self.comm is not None:
             coeff_processor = lambda mu: \
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
-            coeff_vector = \
-                mpi_compute(index_vector, coeff_processor, self.comm)
+            coeff_vector = mpi_compute(
+                index_vector, coeff_processor, self.comm
+            )
 
             if self.comm.rank == 0:
                 sequenced_couplings = dict(zip(index_vector, coeff_vector))
@@ -828,8 +829,9 @@ class TwoPointFunction(Couplings):
                     "are consistent. "
                 )
             if self.growth_rate is not None:
-                cosmo_growth_rate = \
-                    cosmo.scale_independent_growth_rate(self.redshift)
+                cosmo_growth_rate = cosmo.scale_independent_growth_rate(
+                    self.redshift
+                )
                 if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
                         "`growth_rate` value inconsistent with `cosmo` model: "
@@ -916,8 +918,9 @@ class TwoPointFunction(Couplings):
 
         self._mode_powers_ = {}
         for ell in self.disc.degrees:
-            self._mode_powers_[ell] = \
-                self.matter_power_spectrum(self.disc.wavenumbers[ell])
+            self._mode_powers_[ell] = self.matter_power_spectrum(
+                self.disc.wavenumbers[ell]
+            )
 
         return self._mode_powers_
 
@@ -1072,8 +1075,6 @@ class TwoPointFunction(Couplings):
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        nbar = nbar / (1 + 1/contrast)
-
         if self.couplings['angular'] is None:
             if ell_mu != ell_nu or m_mu != m_nu:
                 return 0.j
@@ -1097,11 +1098,10 @@ class TwoPointFunction(Couplings):
             args = mu, nu, k_mu, k_nu
             kwargs = dict(selection=self.selection, weight=self.weight)
             shot_noise = rad_int(
-                lambda r: _shot_noise_kernel(r, *args, **kwargs),
-                rmax
+                lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
             )
 
-        shot_noise *= M_mu_nu / nbar
+        shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar
 
         return shot_noise
 
@@ -1188,7 +1188,8 @@ class TwoPointFunction(Couplings):
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray.build(disc=self.disc)\
+            index_vector = SphericalArray\
+                .build(disc=self.disc)\
                 .unfold(pivot, return_only='index')
 
         dim_covar = len(index_vector)
@@ -1196,14 +1197,16 @@ class TwoPointFunction(Couplings):
         if diag:
             for diag_idx in range(dim_covar):
                 mu = index_vector[diag_idx]
-                two_point_covar[diag_idx, diag_idx] = \
-                    two_point_component(mu, mu)
+                two_point_covar[diag_idx, diag_idx] = two_point_component(
+                    mu, mu
+                )
         else:
             for row_idx in range(dim_covar):
                 for col_idx in range(row_idx+1):
                     mu, nu = index_vector[row_idx], index_vector[col_idx]
-                    two_point_covar[row_idx, col_idx] = \
-                        two_point_component(mu, nu)
+                    two_point_covar[row_idx, col_idx] = two_point_component(
+                        mu, nu
+                    )
 
             triu_indices = np.triu_indices(dim_covar, k=1)
             two_point_covar[triu_indices] = two_point_covar.T[triu_indices]

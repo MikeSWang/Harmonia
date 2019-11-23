@@ -202,7 +202,7 @@ class WindowedPowerSpectrum:
                     )(wavenumbers)
 
             pk_ell_convolved = {
-                "power_{}".format(ell): \
+                "power_{}".format(ell):
                     self.kaiser_factors(ell, b_k, self.growth_rate) \
                     * self.matter_power_spectrum(wavenumbers)
                 for ell in degrees
@@ -211,6 +211,8 @@ class WindowedPowerSpectrum:
             pk_ell_convolved['k'] = wavenumbers
 
             return pk_ell_convolved
+
+        required_degrees = list(range(0, max(degrees)+5, 2))
 
         k_interpol = np.logspace(*LOG_K_INTERPOL_RANGE, num=NUM_INTERPOL)
 
@@ -225,7 +227,7 @@ class WindowedPowerSpectrum:
         pk_ell_interpol = {
             ell: self.kaiser_factors(ell, b_k_interpol, self.growth_rate) \
                 * self.matter_power_spectrum(k_interpol)
-            for ell in degrees
+            for ell in required_degrees
         }
 
         s = self.window['s']
@@ -233,11 +235,11 @@ class WindowedPowerSpectrum:
         xi_ell = {
             ell: Spline(
                 *P2xi(k_interpol, l=ell, lowring=True)(
-                    pk_ell_interpol[ell], extrap=True
+                    pk_ell_interpol[ell], extrap=False
                 ),
                 k=1
             )(s)
-            for ell in degrees
+            for ell in required_degrees
         }
 
         xi_ell_convolved = {}
@@ -278,13 +280,13 @@ class WindowedPowerSpectrum:
         pk_ell_convolved_sampled = {
             ell: xi2P(s, l=ell, lowring=True)(
                 xi_ell_convolved[ell],
-                extrap=True
+                extrap=False
             )
             for ell in degrees
         }
 
         pk_ell_convolved = {
-            "power_{}".format(ell): \
+            "power_{}".format(ell):
                 Spline(*pk_ell_convolved_sampled[ell], k=1)(wavenumbers)
             for ell in degrees
         }

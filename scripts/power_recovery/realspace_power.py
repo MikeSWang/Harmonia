@@ -106,7 +106,7 @@ def initialise():
 
     iter_tag = "iter={}".format(niter)
 
-    part_tags = ["-(", gen_tag, param_tag, mesh_tag, iter_tag, ")-", "[", \
+    part_tags = ["-(", gen_tag, param_tag, mesh_tag, iter_tag, ")-", "[",
          prog_id, "]"]
 
     runtime_info = "".join(part_tags)

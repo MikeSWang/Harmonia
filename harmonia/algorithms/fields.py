@@ -145,8 +145,9 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
-    k_vec, k_norm = \
-        generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
+    k_vec, k_norm = generate_regular_grid(
+        2*np.pi/boxsize, num_mesh, variable='both'
+    )
 
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
     amplitude = np.sqrt(power_spectrum(k_norm) / vol)
@@ -156,13 +157,15 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
         bias = float(bias)
         if bias <= 0:
             raise ValueError("`bias` parameter must be positive. ")
-        overdensity = num_cell \
-            * np.real(fftp.ifftn(fftp.fftshift(bias * fourier_field)))
+        overdensity = num_cell * np.real(
+            fftp.ifftn(fftp.fftshift(bias * fourier_field))
+        )
     except TypeError:
         if callable(bias):
             bias_k = bias(k_norm)
-            overdensity = num_cell \
-                * np.real(fftp.ifftn(fftp.fftshift(bias_k * fourier_field)))
+            overdensity = num_cell * np.real(
+                fftp.ifftn(fftp.fftshift(bias_k * fourier_field))
+            )
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
 
@@ -227,8 +230,9 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
-    k_vec, k_norm = \
-        generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='both')
+    k_vec, k_norm = generate_regular_grid(
+        2*np.pi/boxsize, num_mesh, variable='both'
+    )
 
     pk = power_spectrum(k_norm) / vol
 
@@ -249,8 +253,9 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     whitenoise = _gen_circsym_whitenoise(num_mesh, seed=seed)
 
     fourier_field_generation = np.sqrt(pk_generation) * whitenoise
-    overdensity_generation = num_cell \
-        * np.real(fftp.ifftn(fftp.fftshift(fourier_field_generation)))
+    overdensity_generation = num_cell * np.real(
+        fftp.ifftn(fftp.fftshift(fourier_field_generation))
+    )
 
     overdensity = lognormal_transform(overdensity_generation, 'field')
 
@@ -426,8 +431,9 @@ def populate_particles(sampled_field, mean_density, boxsize,
     position = np.repeat(cell_pos, np.ravel(number_field), axis=0)
 
     np.random.seed(seed=seed)
-    position += cell_size \
-        * np.random.uniform(low=-0.5, high=0.5, size=position.shape)
+    position += cell_size * np.random.uniform(
+        low=-0.5, high=0.5, size=position.shape
+    )
 
     displacement = None
     if velocity_offset_fields is not None:
@@ -505,8 +511,9 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
     power_k = vol * np.abs(fftp.fftshift(fftp.fftn(field)))**2 / num_cell**2
 
     binning_args = (k_norm, power_k, num_bin, scaling)
-    powers, wavenumbers, mode_count = \
-        _radial_binning(*binning_args, low_edge=0., high_edge=kmax)
+    powers, wavenumbers, mode_count = _radial_binning(
+        *binning_args, low_edge=0., high_edge=kmax
+    )
 
     return wavenumbers, powers, mode_count
 

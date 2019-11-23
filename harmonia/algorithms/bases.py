@@ -119,9 +119,7 @@ def spherical_besselj_root(ell, maxnum, only=True, derivative=False):
     else:
         u_ell = binary_search(
             lambda x: spherical_besselj(ell, x, derivative=True),
-            ell + 1,
-            maxnum * max(4, ell),
-            maxnum=maxnum
+            ell+1, maxnum * max(4, ell), maxnum=maxnum
         )
         if only:
             u_ell = u_ell[-1]

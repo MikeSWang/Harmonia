@@ -398,8 +398,9 @@ def mpi_compute(data_array, mapping, comm, root=0):
         other than `root`.
 
     """
-    segments = \
-        allocate_segments(total_task=len(data_array), total_proc=comm.size)
+    segments = allocate_segments(
+        total_task=len(data_array), total_proc=comm.size
+    )
     data_chunk = data_array[segments[comm.rank]]
 
     output = [mapping(data_piece) for data_piece in data_chunk]
@@ -929,8 +930,9 @@ def cartesian_to_spherical(cartesian_coords):
     spherical_coords = np.zeros(c_coords.shape)
     spherical_coords[:, 0] = np.linalg.norm(c_coords, axis=1)
     spherical_coords[:, 1] = np.arccos(c_coords[:, 2] / spherical_coords[:, 0])
-    spherical_coords[:, 2] = \
-        np.mod(np.arctan2(c_coords[:, 1], c_coords[:, 0]), 2*np.pi)
+    spherical_coords[:, 2] = np.mod(
+        np.arctan2(c_coords[:, 1], c_coords[:, 0]), 2*np.pi
+    )
 
     return spherical_coords
 

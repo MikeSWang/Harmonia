@@ -109,9 +109,7 @@ class SurveyWindow:
         elif self.source == 'survey':
             catalogue['Location'] = c2s(catalogue['Location'])
         else:
-            raise ValueError(
-                "Unrecognised source type: '{}'. ".format(self.source)
-            )
+            raise ValueError(f"Unrecognised source type: '{self.source}'. ")
 
         if callable(self.mask):
             catalogue['Weight'] *= self.mask(catalogue['Location'])
@@ -202,7 +200,7 @@ class SurveyWindow:
         self.power_multipoles = {}
         self.power_multipoles['k'] = power_multipoles['k'][bin_cleansing]
         self.power_multipoles.update({
-            'power_{:d}'.format(ell): \
+            'power_{:d}'.format(ell):
                 power_multipoles['power_{:d}'.format(ell)][bin_cleansing].real\
                 / normalisation_amplitude
             for ell in degrees
@@ -301,7 +299,7 @@ class SurveyWindow:
         self.correlation_multipoles = {}
         self.correlation_multipoles['s'] = s_interpol
         self.correlation_multipoles.update({
-            'correlation_{:d}'.format(ell): \
+            'correlation_{:d}'.format(ell):
                 xi_ell_interpol[ell] / normalisation_amplitude
             for ell in degrees
         })

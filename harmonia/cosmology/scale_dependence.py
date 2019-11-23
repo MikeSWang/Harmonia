@@ -48,7 +48,7 @@ def scale_dependence_modification(cosmo, redshift):
 
     Returns
     -------
-    kernel : callable
+    callable
         Scale-dependence modification kernel as a function of the Fourier
         scale (in h/Mpc).
 
@@ -58,18 +58,12 @@ def scale_dependence_modification(cosmo, redshift):
 
     num_factors = 3 * (cosmo.h / SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S)**2 \
         * SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY * cosmo.Omega0_m
-    transfer_func = \
-        cosmology.power.transfers.CLASS(cosmo, redshift=redshift)
+    transfer_func =  cosmology.power.transfers.CLASS(cosmo, redshift=redshift)
 
-    def kernel(k):
-
-        return num_factors / (k**2 * transfer_func(k))
-
-    return kernel
+    return lambda k: num_factors / (k**2 * transfer_func(k))
 
 
-def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0.,
-                         tracer_parameter=1.):
+def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.):
     r"""Return the scale-dependent bias modulated by local primordial
     non-Gaussianity.
 

@@ -169,7 +169,7 @@ def view_data(data, savefig=False, **plot_kwargs):
         **plot_kwargs
     )
 
-    visual_data['likelihood'] = data['spherical_likelihood']\
+    visual_data['likelihood'] = data['spherical_likelihood'] \
         + data['cartesian_likelihood']
     view_samples(
         data,
@@ -202,21 +202,21 @@ if __name__ == '__main__':
     PRIOR = "-800.0,800.0"
     PIVOT = "spectral"
     KSPLIT = 0.05
-    KMAX = 0.1
+    KMAX = 0.075
 
-    PARAM_TAG = "nbar=2.49e-4,b1=[2.4,2.31],f0=none" # fnl=none, b1=2.4
+    PARAM_TAG = "nbar=2.49e-4,b1=[2.4,2.32],f0=none" # fnl=none, b1=2.4
     # PARAM_TAG = (
     #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
     #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
     # )
 
     output = read_data(
-        collate_data=False,
-        load_data=True,
-        save=True
+        collate_data=True,
+        load_data=False,
+        save=False
     )
     view_data(
-        filter_data(output, remove_degrees=()),
+        filter_data(output, remove_degrees=(0,)),
         precision=0,
         norm_range=(),
         scatter_plot=False

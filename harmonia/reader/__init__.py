@@ -9,7 +9,7 @@ cosmological parameter inference.
 """
 from .cartesian_model import WindowCorrelation, WindowedPowerSpectrum
 from .hybrid_likelihoods import (
-    cartesian_map_likelihood,
+    cartesian_map_log_likelihood,
     cartesian_parametrised_moments,
     complex_normal_pdf,
     multivariate_normal_pdf,

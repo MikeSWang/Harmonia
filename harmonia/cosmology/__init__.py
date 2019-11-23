@@ -12,7 +12,6 @@ from nbodykit import cosmology
 
 from .geometry import (
     fiducial_distance,
-    redshift_to_distance,
     differential_AP_distortion,
 )
 from .scale_dependence import (

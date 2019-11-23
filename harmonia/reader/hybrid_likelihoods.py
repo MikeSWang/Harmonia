@@ -191,11 +191,11 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
         are not consistent.
 
     """
-    data_vector, mean_vector, cov_matrix = np.squeeze(data_vector),\
+    data_vector, mean_vector, cov_matrix = np.squeeze(data_vector), \
         np.squeeze(mean_vector), np.squeeze(cov_matrix)
     if cov_matrix.ndim == 1:
         cov_matrix = np.diag(cov_matrix)
-    if np.size(data_vector) != np.size(data_vector)\
+    if np.size(data_vector) != np.size(data_vector) \
             or np.size(data_vector)**2 != np.size(cov_matrix):
         raise ValueError(
             "Dimensions of `data_vector`, `mean_vector` and `cov_matrix` "
@@ -415,7 +415,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         If `window_corr_modeller.pivot` does not match input `pivot`.
 
     """
-    assert window_corr_modeller.pivot == pivot,\
+    assert window_corr_modeller.pivot == pivot, \
         "`window_corr_modeller.pivot` must match input `pivot`. "
 
     degrees = window_corr_modeller.multipoles

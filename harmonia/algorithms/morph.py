@@ -7,6 +7,7 @@ Manipulate cosmological field data arrays.
 .. autosummary::
 
     SphericalArray
+    CartesianArray
 
 |
 
@@ -157,10 +158,7 @@ class SphericalArray:
         """
         if disc is not None:
             return cls(
-                disc.degrees,
-                disc.depths,
-                roots=disc.roots,
-                filling=filling
+                disc.degrees, disc.depths, roots=disc.roots, filling=filling
             )
         if filling is None:
             raise ValueError("`disc` and `filling` cannot both be None. ")
@@ -233,12 +231,14 @@ class SphericalArray:
         if collapse:
             square = (collapse == 'rms')
             if not empty_flag:
-                dat_arr = \
-                    self._collapse_subarray(dat_arr, 'data', square=square)
+                dat_arr = self._collapse_subarray(
+                    dat_arr, 'data', square=square
+                )
             idx_arr = self._collapse_subarray(idx_arr, 'index')
 
-        index_flat =  \
-            self._flatten(idx_arr, 'index', subarray_transpose=transpose)
+        index_flat = self._flatten(
+            idx_arr, 'index', subarray_transpose=transpose
+        )
         if not empty_flag:
             data_flat = np.array(
                 self._flatten(dat_arr, 'data', subarray_transpose=transpose)
@@ -247,8 +247,9 @@ class SphericalArray:
         if axis_order == 'k':
             roots = self.roots
             if not collapse:
-                roots = \
-                    self._repeat_subarray(roots, 'data', degrees=self.degrees)
+                roots =  self._repeat_subarray(
+                    roots, 'data', degrees=self.degrees
+                )
 
             flat_order = np.argsort(self._flatten(roots, 'data'))
             index_flat = [index_flat[order_idx] for order_idx in flat_order]
@@ -303,8 +304,7 @@ class SphericalArray:
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, n_idx = index[0], index[-1] - 1
                 array[ell_idx][n_idx] = entry
-            array = \
-                self._repeat_subarray(array, 'data', degrees=self.degrees)
+            array = self._repeat_subarray(array, 'data', degrees=self.degrees)
 
         return array
 
@@ -341,22 +341,18 @@ class SphericalArray:
             morphed_array = nat_arr
         if out_struct == 'lnm':
             morphed_array = self._transpose_subarray(
-                flat_array,
-                subarray_type=subarray_type
+                flat_array, subarray_type=subarray_type
             )
         if out_struct == 'ln':
             morphed_array = self._collapse_subarray(
-                flat_array,
-                subarray_type=subarray_type
+                flat_array, subarray_type=subarray_type
             )
         if out_struct == 'k':
             morphed_array = self._flatten(nat_arr, subarray_type)
             flat_order = np.argsort(
                 self._flatten(
                     self._repeat_subarray(
-                        self.roots,
-                        'data',
-                        degrees=self.degrees
+                        self.roots, 'data', degrees=self.degrees
                     ),
                     'data'
                 )
@@ -369,8 +365,7 @@ class SphericalArray:
                 ]
         if out_struct == 'u':
             morphed_array = self._flatten(
-                self._collapse_subarray(nat_arr, subarray_type),
-                subarray_type
+                self._collapse_subarray(nat_arr, subarray_type), subarray_type
             )
             flat_order = np.argsort(self._flatten(self.roots, 'data'))
             if subarray_type == 'data':
@@ -513,9 +508,7 @@ class SphericalArray:
             return [
                 np.sqrt(
                     np.mean(
-                        np.square(np.abs(ell_block)),
-                        axis=0,
-                        keepdims=True
+                        np.square(np.abs(ell_block)), axis=0, keepdims=True
                     )
                 )
                 for ell_block in array
@@ -604,7 +597,7 @@ class CartesianArray:
     Parameters
     ----------
     filling : dict
-        Dictionary holing both a coordinate array and data arrays.
+        Data dictionary holing both a coordinate array and data arrays.
     coord_key, var_key_root : str
         The key or the root string of the key corresponding to the
         coordinate array or the data arrays.
@@ -612,13 +605,13 @@ class CartesianArray:
     Attributes
     ----------
     filling : dict
-        Data filled into the structure Cartesian array.
-    data_arrays : list of float :class:`numpy.ndarray`
-        Data arrays.
+        Data filled into the structured Cartesian arrays.
+    sorted_vars : list of str
+        Sorted data variable names (keys).
     coord_array : float :class:`numpy.ndarray`
         Coordinate array.
     data_arrays : list of float :class:`numpy.ndarray`
-        Data arrays.x
+        Data arrays.
 
     """
 
@@ -642,7 +635,7 @@ class CartesianArray:
         ----------
         pivot : {'coord', 'variable'}
             Order for array flattening.  If ``'coord'``, the arrays are
-            flattened in ascending order of the coordinate array; if
+            flattened in ascending order of the coordinate; if
             ``'variable'``, the arrays are flattened in ascending order of
             the variable name (key).
         return_only : {'coords', 'data', None}, optional

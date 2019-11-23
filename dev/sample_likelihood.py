@@ -6,7 +6,7 @@ from collections import defaultdict
 from pprint import pprint
 
 import numpy as np
-from nbodykit.lab import CSVCatalog, ConvolvedFFTPower
+from nbodykit.lab import CSVCatalog, ConvolvedFFTPower, cosmology
 from scipy.interpolate import interp1d
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
@@ -18,7 +18,11 @@ from harmonia.mapper import (
     SphericalMap,
     load_catalogue_from_file,
 )
-from harmonia.reader import TwoPointFunction, WindowedPowerSpectrum
+from harmonia.reader import (
+    TwoPointFunction,
+    WindowedPowerSpectrum,
+    WindowCorrelation,
+)
 from hybrid_likelihoods import (
     cartesian_map_log_likelihood as cartesian_likelihood,
     spherical_map_log_likelihood as spherical_likelihood,
@@ -26,7 +30,7 @@ from hybrid_likelihoods import (
 
 PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 COUPLINGS_FILEROOT = "{}{}"
-WINDOW_POLES_FILEROOT = "{}{}"
+WINDOW_POLES_FILEROOT = "window_multipoles" # "{}{}"
 WINDOW_CORRL_FILEROOT = "{}{}"
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
@@ -100,18 +104,17 @@ def initialise():
     else:
         ini_params['external_couplings'] = None
 
-    ini_info =\
-        "map={},prior={},pivots={},ks={},km={},nbar={},{}".format(
-            params.map,
-            str(params.prior_range).replace(" ", ""),
-            str(
-                [params.spherical_pivot, params.cartesian_pivot]
-            ).replace(" ", ""),
-            format_float(ini_params['ksplit'], 'sci'),
-            format_float(ini_params['kmax'], 'sci'),
-            format_float(ini_params['nbar'], 'sci'),
-            fixed_tag,
-        )
+    ini_info = "map={},prior={},pivots={},ks={},km={},nbar={},{}".format(
+        params.map,
+        str(params.prior_range).replace(" ", ""),
+        str(
+            [params.spherical_pivot, params.cartesian_pivot]
+        ).replace(" ", ""),
+        format_float(ini_params['ksplit'], 'sci'),
+        format_float(ini_params['kmax'], 'sci'),
+        format_float(ini_params['nbar'], 'sci'),
+        fixed_tag,
+    )
 
     for param_name, param_value in ini_params.items():
         globals()[param_name] = param_value
@@ -137,10 +140,21 @@ def process(runtime_info):
 
     disc = DiscreteSpectrum(boxsize/2, 'dirichlet', ksplit)
 
-    window_multipoles = np.load(WINDOW_POLES_FILEROOT).item()
+    window_multipoles = np.load(WINDOW_POLES_FILEROOT + '.npy').item()
     window_corrmat = np.load(WINDOW_CORRL_FILEROOT).item()
 
-    windowed_power_model = WindowedPowerSpectrum()
+    windowed_power_model = WindowedPowerSpectrum(
+        power_spectrum=matter_power_spectrum,
+        cosmo=cosmology.Planck15,
+        window=window_multipoles
+    )
+
+    window_corr_modeller = WindowCorrelation(
+        {
+            'k':
+        }
+
+    )
 
     two_point_model = TwoPointFunction(
         disc,

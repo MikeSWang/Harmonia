@@ -116,10 +116,7 @@ class SphericalMap:
             data_boxsize = data.attrs['BoxSize']
             if not np.allclose(data_boxsize, 2*radius):
                 self._logger.info(
-                    self._msg['inscribing'],
-                    "data",
-                    data_boxsize,
-                    2*radius,
+                    self._msg['inscribing'], "data", data_boxsize, 2*radius
                 )
 
             data['Location'] = data['Position'] \
@@ -142,16 +139,12 @@ class SphericalMap:
                 rand_boxsize = rand.attrs['BoxSize']
                 if not np.allclose(data_boxsize, rand_boxsize):
                     warnings.warn(
-                        self._msg['boxsizes'],
-                        data_boxsize,
-                        rand_boxsize,
+                        self._msg['boxsizes'], data_boxsize, rand_boxsize
                     )
                 if not np.allclose(rand_boxsize, 2*radius):
                     self._logger.info(
                         self._msg['inscribing'],
-                        "random",
-                        rand_boxsize,
-                        2*radius,
+                        "random", rand_boxsize, 2*radius
                     )
 
                 rand['Location'] = rand['Position'] \
@@ -264,9 +257,7 @@ class SphericalMap:
                         nbar_ellmn = self.mean_density \
                             * ang_int_harmonic(unit_const, ell, m_ell) \
                             * rad_int_besselj(
-                                unit_const,
-                                ell,
-                                k_elln,
+                                unit_const, ell, k_elln,
                                 self.disc.attrs['boundary_radius']
                             )
 
@@ -413,8 +404,7 @@ class SphericalMap:
 
         return [
             normalisation[ell] * np.average(
-                np.abs(density_contrast_coeff[ell])**2,
-                axis=0
+                np.abs(density_contrast_coeff[ell])**2, axis=0
             )
             for ell in sorted_degrees
         ]
@@ -450,8 +440,7 @@ class SphericalMap:
 
         """
         delta_ellmn = SphericalArray.build(
-            disc=disc,
-            filling=density_contrast_coeff
+            disc=disc, filling=density_contrast_coeff
         )
 
         if order_collapse:
@@ -459,7 +448,8 @@ class SphericalMap:
         else:
             collapse = None
 
-        delta_ellmn_flat = \
-            delta_ellmn.unfold(pivot, collapse=collapse, return_only='data')
+        delta_ellmn_flat = delta_ellmn.unfold(
+            pivot, collapse=collapse, return_only='data'
+        )
 
         return np.outer(delta_ellmn_flat, np.conj(delta_ellmn_flat))

@@ -6,6 +6,7 @@ Make discrete catalogues from observed or simulated realisations.
 
 .. autosummary::
 
+    load_catalogue_from_file
     RandomCatalogue
     NBKCatalogue
     LogNormalCatalogue
@@ -35,11 +36,11 @@ from harmonia.algorithms.fields import (
 )
 from harmonia.collections.utils import normalise_vector
 
-MAX_INT = 4294967295
+_MAX_INT = 4294967295
 
 
 def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
-    """Load catalogue from files.
+    """Load catalogue from a file.
 
     Parameters
     ----------
@@ -101,9 +102,7 @@ class RandomCatalogue(UniformCatalog):
     def __str__(self):
 
         return "RandomCatalogue(nbar={0}, boxsize={1}, seed={2})".format(
-            self.attrs['nbar'],
-            self.attrs['BoxSize'],
-            self.attrs['seed'],
+            self.attrs['nbar'], self.attrs['BoxSize'], self.attrs['seed']
         )
 
 
@@ -155,10 +154,7 @@ class NBKCatalogue(LogNormalCatalog):
 
     def __str__(self):
 
-        return (
-            "LognormalCatalogue"
-            "(nbar={0}, bias={1}, RSD={2}, BoxSize={3}, Nmesh={4}, seed={5})"
-        ).format(
+        str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
             self.attrs['RSD_flag'],
@@ -166,6 +162,11 @@ class NBKCatalogue(LogNormalCatalog):
             self.attrs['Nmesh'],
             self.attrs['seed'],
         )
+
+        return (
+            "LognormalCatalogue"
+            "(nbar={0}, bias={1}, RSD={2}, BoxSize={3}, Nmesh={4}, seed={5})"
+        ).format(*str_args)
 
 
 class LogNormalCatalogue(CatalogSource):
@@ -212,7 +213,7 @@ class LogNormalCatalogue(CatalogSource):
         self.comm = comm
         if seed is None:
             if self.comm.rank == 0:
-                seed = np.random.randint(0, MAX_INT)
+                seed = np.random.randint(0, _MAX_INT)
             seed = self.comm.bcast(seed)
 
         self.power_spectrum = power_spectrum
@@ -293,10 +294,7 @@ class LogNormalCatalogue(CatalogSource):
 
     def __str__(self):
 
-        return (
-            "LogNormalCatalogue"
-            "(nbar={0}, b1={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
-        ).format(
+        str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
             self.attrs['growth_rate'],
@@ -304,6 +302,11 @@ class LogNormalCatalogue(CatalogSource):
             self.attrs['Nmesh'],
             self.attrs['seed'],
         )
+
+        return (
+            "LogNormalCatalogue"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
+        ).format(*str_args)
 
     @column
     def Position(self):
@@ -370,7 +373,7 @@ class GaussianCatalogue(CatalogSource):
         self.comm = comm
         if seed is None:
             if self.comm.rank == 0:
-                seed = np.random.randint(0, MAX_INT)
+                seed = np.random.randint(0, _MAX_INT)
             seed = self.comm.bcast(seed)
 
         self.power_spectrum = power_spectrum
@@ -451,10 +454,7 @@ class GaussianCatalogue(CatalogSource):
 
     def __str__(self):
 
-        return (
-            "GaussianCatalogue"
-            "(nbar={0}, b1={1}, f={2}, boxsize={3}, Nmesh={4}, seed={5})"
-        ).format(
+        str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
             self.attrs['growth_rate'],
@@ -462,6 +462,11 @@ class GaussianCatalogue(CatalogSource):
             self.attrs['Nmesh'],
             self.attrs['seed'],
         )
+
+        return (
+            "GaussianCatalogue"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, Nmesh={4}, seed={5})"
+        ).format(*str_args)
 
     @column
     def Position(self):

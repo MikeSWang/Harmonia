@@ -121,18 +121,20 @@ class DiscreteSpectrum:
         if self.comm is None or self.comm.rank == 0:
             self._logger.info(
                 "%s computed: %d degrees and %d modes in total. ",
-                self.__str__(),
-                len(self.degrees),
-                self.mode_count,
+                self.__str__(), len(self.degrees), self.mode_count
             )
 
     def __str__(self):
 
-        return "Spectrum({0}, boundary={1}, {2}<=wavenumber<={3})".format(
+        str_args = (
             self.attrs['boundary_condition'],
             self.attrs['boundary_radius'],
             self.attrs['min_wavenumber'],
             self.attrs['max_wavenumber'],
+        )
+
+        return "Spectrum({0}, boundary={1}, {2}<=wavenumber<={3})".format(
+            *str_args
         )
 
     @property
@@ -259,17 +261,13 @@ class DiscreteSpectrum:
 
             u_ell, n_ell = [], 0
             current_root = spherical_besselj_root(
-                ell,
-                n_ell + 1,
-                derivative=derivative
+                ell, n_ell+1, derivative=derivative
             )
             while kmin * radius <= current_root <= kmax * radius:
                 u_ell.append(current_root)
                 n_ell += 1
                 current_root = spherical_besselj_root(
-                    ell,
-                    n_ell + 1,
-                    derivative=derivative
+                    ell, n_ell+1, derivative=derivative
                 )
 
             if n_ell == 0:

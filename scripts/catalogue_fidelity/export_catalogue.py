@@ -82,8 +82,9 @@ def export_data(collate=False, load=False, save=False):
     collate_path = f"{outpath}collated/"
 
     if collate:
-        output, count, _ = \
-            collate_data(f"{outpath}*{NBAR}*{NUM_MESH}*.npy", 'npy')
+        output, count, _ = collate_data(
+            f"{outpath}*{NBAR}*{NUM_MESH}*.npy", 'npy'
+        )
         if save:
             assert confirm_dir(collate_path)
             assert overwrite_protection(f"{collate_path}", f"{outname}.npy")

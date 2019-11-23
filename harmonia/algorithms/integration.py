@@ -108,19 +108,15 @@ def angular_spherical_integral(angular_func):
     phi_range = (0, 2*np.pi)
 
     integral_real, _ = dblquad(
-        _angular_integrand,
-        *theta_range,
-        *phi_range,
+        _angular_integrand, *theta_range, *phi_range,
         args=(angular_func, 'real')
     )
     integral_imag, _ = dblquad(
-        _angular_integrand,
-        *theta_range,
-        *phi_range,
+        _angular_integrand, *theta_range, *phi_range,
         args=(angular_func, 'imag')
     )
 
-    return integral_real + 1j*integral_imag
+    return integral_real + 1j * integral_imag
 
 
 def radial_spherical_integral(radial_func, rmax):

@@ -2,8 +2,8 @@
 Window synthesis (:mod:`~harmonia.mapper.window_synthesis`)
 ===========================================================================
 
-Determine the window function and induced correlation for given survey
-specifications with high-density synthetic catalogues.
+Determine the window function for given survey specifications with
+high-density synthetic catalogues.
 
 .. autosummary::
 
@@ -16,7 +16,7 @@ import warnings
 
 import numpy as np
 from mcfit import P2xi
-from nbodykit.lab import ConvolvedFFTPower, UniformCatalog, FKPCatalog
+from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.collections.utils import cartesian_to_spherical as c2s
@@ -97,7 +97,7 @@ class SurveyWindow:
         if self.synthetic_catalogue is not None:
             warnings.warn(
                 "Synthetic catalogue has already been generated. "
-                "It is now being resynthesised."
+                "It is now being resynthesised. "
             )
 
         catalogue = UniformCatalog(number_density, boxsize)
@@ -109,7 +109,7 @@ class SurveyWindow:
         elif self.source == 'survey':
             catalogue['Location'] = c2s(catalogue['Location'])
         else:
-            raise ValueError(f"Unrecognised source type: '{self.source}'. ")
+            raise ValueError(f"Unrecognised source type: {self.source}. ")
 
         if callable(self.mask):
             catalogue['Weight'] *= self.mask(catalogue['Location'])
@@ -124,15 +124,15 @@ class SurveyWindow:
             catalogue, None, BoxSize=padding*boxsize
         )
 
-    def power_spectrum_multipoles(self, degrees, kmin=0., kmax=None, dk=None,
+    def power_spectrum_multipoles(self, orders, kmin=0., kmax=None, dk=None,
                                   **mesh_kwargs):
         """Determine window function power spectrum multipoles from the
         synthetic catalogue.
 
         Parameters
         ----------
-        degrees : int, array_like
-            Multipole degrees.
+        orders : int, array_like
+            Multipole orders.
         kmin : float, optional
             Minimum wavenumber (default is 0.).
         kmax, dk : float or None, optional
@@ -142,7 +142,7 @@ class SurveyWindow:
         **mesh_kwargs
             Keyword arguments to be passed to
             :class:`nbodykit.source.mesh.catalog.CatalogMesh` for FFT
-            meshgrid painting.  If not given, default settings are used
+            mesh painting.  If not given, default settings are used
             (512 meshes per dimension and triangular-shaped cloud
             interpolation with compensation and interlacing).
 
@@ -150,9 +150,8 @@ class SurveyWindow:
         -------
         dict
             Binned power spectrum multipole statistics holding variables
-            ``'modes'`` and ``'k'`` for the number of modes and the
-            average wavenumber in each bin, as well as binned multipole
-            values ``'power_0'`` etc.  Also sets :attr:`power_multipoles`.
+            ``'k'`` for the bin wavenumber and binned multipole values 
+            ``'power_0'`` etc.  Also sets :attr:`power_multipoles`.
 
         Raises
         ------
@@ -163,7 +162,7 @@ class SurveyWindow:
         """
         if self.synthetic_catalogue is None:
             raise AttributeError(
-                "Attribute `synthetic_catalogue` is missing ."
+                "Attribute `synthetic_catalogue` is missing. "
                 "Please call the `synthesise` method first. "
             )
 
@@ -191,7 +190,7 @@ class SurveyWindow:
             )
 
         power_multipoles = ConvolvedFFTPower(
-            synthetic_mesh, degrees, kmin=kmin, kmax=kmax, dk=dk
+            synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
         bin_cleansing = ~np.isnan(power_multipoles['k'])
@@ -199,24 +198,27 @@ class SurveyWindow:
 
         self.power_multipoles = {}
         self.power_multipoles['k'] = power_multipoles['k'][bin_cleansing]
-        self.power_multipoles.update({
-            'power_{:d}'.format(ell):
-                power_multipoles['power_{:d}'.format(ell)][bin_cleansing].real\
-                / normalisation_amplitude
-            for ell in degrees
-        })
+        self.power_multipoles.update(
+            {
+                'power_{:d}'.format(ell):
+                    power_multipoles\
+                        ['power_{:d}'.format(ell)][bin_cleansing].real\
+                    / normalisation_amplitude
+                for ell in orders
+            }
+        )
 
         return self.power_multipoles
 
-    def correlation_function_multipoles(self, degrees, **multipoles_kwargs):
+    def correlation_function_multipoles(self, orders, **multipoles_kwargs):
         """Determine window function 2-point correlator multipoles from the
         synthetic catalogue by Hankel transform of the power spectrum
         multipoles.
 
         Parameters
         ----------
-        degrees : int, array_like
-            Multipole degrees.
+        orders : int, array_like
+            Multipole orders.
         **multipoles_kwargs
             Keyword arguments to be passed to
             :meth:`~SurveyWindow.power_spectrum_multipoles` for
@@ -226,7 +228,7 @@ class SurveyWindow:
         -------
         dict
             Hankel transformed window correlation function multipoles for
-            each of the degrees at sampled separation values.  Also sets
+            each of the orders at sampled separation values.  Also sets
             :attr:`correlation_multipoles`.
 
         """
@@ -242,17 +244,18 @@ class SurveyWindow:
 
         try:
             assert hasattr(
-                self.power_multipoles, 'power_{:d}'.format(max(degrees))
+                self.power_multipoles, 'power_{:d}'.format(max(orders))
             )
             power_multipoles = self.power_multipoles
         except (AttributeError, AssertionError):
             power_multipoles = self.power_spectrum_multipoles(
-                degrees, **multipoles_kwargs
+                orders, **multipoles_kwargs
             )
 
         k_samples = power_multipoles['k']
         pk_ell_samples = {
-            ell: power_multipoles['power_{:d}'.format(ell)] for ell in degrees
+            ell: power_multipoles['power_{:d}'.format(ell)] 
+            for ell in orders
         }
 
         extension_padding = np.mean(np.diff(power_multipoles['k']))
@@ -260,14 +263,13 @@ class SurveyWindow:
         k_extended = np.append(
             k_samples,
             np.linspace(
-                k_samples[-1] + extension_padding,
-                K_MAX,
+                k_samples[-1] + extension_padding, K_MAX,
                 num=NUM_K_EXTENSION
             )
         )
         pk_ell_extended = {
             ell: np.append(pk_ell_samples[ell], np.zeros(NUM_K_EXTENSION))
-            for ell in degrees
+            for ell in orders
         }
 
         k_interpol = np.logspace(
@@ -276,32 +278,34 @@ class SurveyWindow:
         )
         pk_ell_interpol = {
             ell: Spline(k_extended, pk_ell_extended[ell], k=1)(k_interpol)
-            for ell in degrees
+            for ell in orders
         }
 
         xi_ell = {
             ell: P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
-            for ell in degrees
+            for ell in orders
         }
 
         normalisation_amplitude = xi_ell[0][1][0]
 
         s_interpol = np.logspace(
-            np.log10(max([xi_ell[ell][0][0] for ell in degrees])),
-            np.log10(min([xi_ell[ell][0][-1] for ell in degrees])),
+            np.log10(max([xi_ell[ell][0][0] for ell in orders])),
+            np.log10(min([xi_ell[ell][0][-1] for ell in orders])),
             num=NUM_INTERPOL
         )
         xi_ell_interpol = {
             ell: Spline(*xi_ell[ell], k=1)(s_interpol)
-            for ell in degrees
+            for ell in orders
         }
 
         self.correlation_multipoles = {}
         self.correlation_multipoles['s'] = s_interpol
-        self.correlation_multipoles.update({
-            'correlation_{:d}'.format(ell):
-                xi_ell_interpol[ell] / normalisation_amplitude
-            for ell in degrees
-        })
+        self.correlation_multipoles.update(
+            {
+                'correlation_{:d}'.format(ell):
+                    xi_ell_interpol[ell] / normalisation_amplitude
+                for ell in orders
+            }
+        )
 
         return self.correlation_multipoles

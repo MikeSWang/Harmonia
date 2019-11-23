@@ -3,7 +3,7 @@
 Miscellaneous collections (:mod:`~harmonia.collections`)
 ***************************************************************************
 
-Collect utility functions and settings.
+Collect pre-configured settings and utility functions .
 
 """
 from .style import harmony

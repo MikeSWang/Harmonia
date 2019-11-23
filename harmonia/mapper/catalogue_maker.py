@@ -28,12 +28,12 @@ from nbodykit import CurrentMPIComm
 from nbodykit.base.catalog import CatalogSource, column
 from nbodykit.lab import CSVCatalog, LogNormalCatalog, UniformCatalog
 
-from harmonia.algorithms.fields import (
-    generate_gaussian_random_field as gen_gaussian_field,
-    generate_lognormal_random_field as gen_lognormal_field,
-    poisson_sample as smp_field,
-    populate_particles as pop_field,
-)
+from harmonia.algorithms.fields import \
+    generate_gaussian_random_field as gen_gaussian_field
+from harmonia.algorithms.fields import \
+    generate_lognormal_random_field as gen_lognormal_field
+from harmonia.algorithms.fields import poisson_sample as smp_field
+from harmonia.algorithms.fields import populate_particles as pop_field
 from harmonia.collections.utils import normalise_vector
 
 _MAX_INT = 4294967295
@@ -52,7 +52,7 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
         Catalogue box size.
     unit_scale : float, optional
         Scaling factor for converting the length unit to Mpc/h (default is
-        1.), e.g. ``unit_scale = 1e-3`` for converting Kpc/h to Mpc/h.
+        1.), e.g. ``unit_scale = 1.e-3`` for converting Kpc/h to Mpc/h.
 
     Returns
     -------
@@ -154,6 +154,10 @@ class NBKCatalogue(LogNormalCatalog):
 
     def __str__(self):
 
+        str_root = (
+            "LognormalCatalogue"
+            "(nbar={0}, bias={1}, RSD={2}, BoxSize={3}, Nmesh={4}, seed={5})"
+        )
         str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
@@ -163,10 +167,7 @@ class NBKCatalogue(LogNormalCatalog):
             self.attrs['seed'],
         )
 
-        return (
-            "LognormalCatalogue"
-            "(nbar={0}, bias={1}, RSD={2}, BoxSize={3}, Nmesh={4}, seed={5})"
-        ).format(*str_args)
+        return str_root.format(*str_args)
 
 
 class LogNormalCatalogue(CatalogSource):
@@ -250,23 +251,16 @@ class LogNormalCatalogue(CatalogSource):
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
         field, vec_field = gen_lognormal_field(
-            boxsize,
-            num_mesh,
-            power_spectrum,
+            boxsize, num_mesh, power_spectrum,
             bias=bias,
             return_disp=add_RSD,
             seed=field_seed
         )
         sampled_field = smp_field(
-            field,
-            mean_density,
-            boxsize,
-            seed=sampling_seed
+            field, mean_density, boxsize, seed=sampling_seed
         )
         position, displacement = pop_field(
-            sampled_field,
-            mean_density,
-            boxsize,
+            sampled_field, mean_density, boxsize,
             velocity_offset_fields=vec_field,
             seed=drift_seed
         )
@@ -294,6 +288,10 @@ class LogNormalCatalogue(CatalogSource):
 
     def __str__(self):
 
+        str_root = (
+            "LogNormalCatalogue"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
+        )
         str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
@@ -303,10 +301,7 @@ class LogNormalCatalogue(CatalogSource):
             self.attrs['seed'],
         )
 
-        return (
-            "LogNormalCatalogue"
-            "(nbar={0}, b1={1}, f={2}, boxsize={3}, num_mesh={4}, seed={5})"
-        ).format(*str_args)
+        return str_root.format(*str_args)
 
     @column
     def Position(self):
@@ -410,23 +405,16 @@ class GaussianCatalogue(CatalogSource):
             np.random.RandomState(seed).randint(0, 0xfffffff, size=3)
 
         field, vec_field = gen_gaussian_field(
-            boxsize,
-            num_mesh,
-            power_spectrum,
+            boxsize, num_mesh, power_spectrum,
             bias=bias,
             return_disp=add_RSD,
             seed=field_seed
         )
         sampled_field = smp_field(
-            field,
-            mean_density,
-            boxsize,
-            seed=sampling_seed
-            )
+            field, mean_density, boxsize, seed=sampling_seed
+        )
         position, displacement = pop_field(
-            sampled_field,
-            mean_density,
-            boxsize,
+            sampled_field, mean_density, boxsize,
             velocity_offset_fields=vec_field,
             seed=drift_seed
         )
@@ -454,6 +442,10 @@ class GaussianCatalogue(CatalogSource):
 
     def __str__(self):
 
+        str_root = (
+            "GaussianCatalogue"
+            "(nbar={0}, b1={1}, f={2}, boxsize={3}, Nmesh={4}, seed={5})"
+        )
         str_args = (
             self.attrs['nbar'],
             self.attrs['bias'],
@@ -463,10 +455,7 @@ class GaussianCatalogue(CatalogSource):
             self.attrs['seed'],
         )
 
-        return (
-            "GaussianCatalogue"
-            "(nbar={0}, b1={1}, f={2}, boxsize={3}, Nmesh={4}, seed={5})"
-        ).format(*str_args)
+        return str_root.format(*str_args)
 
     @column
     def Position(self):

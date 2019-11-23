@@ -19,16 +19,14 @@ import numpy as np
 from nbodykit.lab import FKPCatalog
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
-from harmonia.algorithms.integration import (
-    angular_harmonic_integral as ang_int_harmonic,
-    radial_besselj_integral as rad_int_besselj,
-)
+from harmonia.algorithms.integration import \
+    angular_harmonic_integral as ang_int_harmonic
+from harmonia.algorithms.integration import \
+    radial_besselj_integral as rad_int_besselj
 from harmonia.algorithms.morph import SphericalArray
-from harmonia.collections.utils import (
-    cartesian_to_spherical as c2s,
-    spherical_indicator as spherical_cut,
-    unit_const,
-)
+from harmonia.collections.utils import cartesian_to_spherical as c2s
+from harmonia.collections.utils import spherical_indicator as spherical_cut
+from harmonia.collections.utils import unit_const
 
 
 class SphericalMap:
@@ -369,8 +367,7 @@ class SphericalMap:
         density_contrast_coeff = self.density_constrast(method=method)
 
         return self._compute_pivoted_two_points_from_coeff(
-            density_contrast_coeff,
-            self.disc,
+            density_contrast_coeff, self.disc,
             pivot=pivot,
             order_collapse=order_collapse
         )

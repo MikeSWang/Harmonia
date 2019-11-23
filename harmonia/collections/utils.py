@@ -2,7 +2,7 @@
 Utilities (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
-Provide convenience system utilities for I/O handling, processing,
+Provide convenience system utilities for input/output handling, processing,
 formatting and data manipulation, and common algebraic, geometric and
 statistical computational algorithms.
 
@@ -74,8 +74,8 @@ Computational utilities
 |
 
 """
-import warnings
 import os
+import warnings
 from collections import defaultdict
 from glob import glob
 
@@ -107,7 +107,7 @@ __all__ = [
     'smooth_by_bin_average',
 ]
 
-MAX_INT = np.iinfo(np.int64).max
+_MAX_INT = np.iinfo(np.int64).max
 
 
 # SYSTEM UTILITIES
@@ -637,15 +637,11 @@ def const_function(const):
 
     Returns
     -------
-    const_func : callable
+    callable
         Constant function.
 
     """
-    def const_func(*args, **kwargs):
-
-        return const
-
-    return const_func
+    return lambda *args, **kwargs: const
 
 
 def matrix_log_det(matrix, diag=False):
@@ -710,7 +706,7 @@ def covar_to_corr(covar):
     """
     if np.iscomplexobj(covar):
         raise NotImplementedError(
-            "Complex covariance matrices are not supprted. "
+            "Complex covariance matrices are not supported. "
         )
 
     inv_diag = np.diag(np.power(np.diag(covar), -1/2))
@@ -731,7 +727,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
     maxnum : int or None, optional
         Maximum number of zeros needed from below (default is `None`).
     precision : float, optional
-        Desired precision of the zeros (default is 1.0e-5).
+        Desired precision of the zeros (default is 1.e-5).
 
     Returns
     -------
@@ -745,7 +741,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
 
     """
     if maxnum is None:
-        maxnum = MAX_INT
+        maxnum = _MAX_INT
 
     if a == b:
         raise ValueError(
@@ -799,7 +795,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
             Initial interval end points.
         convergence : float, optional
             Convergence precision for setting maximum iteration number
-            (default is 1.0e-9).
+            (default is 1.e-9).
 
         Returns
         -------
@@ -1063,7 +1059,7 @@ def smooth_by_bin_average(data, bin_edges, x_coarse_key, y_coarse_key,
 
         which_bins = np.zeros(x_coarse.shape)
         for idx, val in enumerate(x_coarse):
-            which_bins[idx] = np.sum(val > bin_edges) - 1  # 0-indexed bins
+            which_bins[idx] = np.sum(val > bin_edges) - 1  # zero-indexed bins
 
         num_bin = len(bin_edges) - 1
         x_smooth, y_smooth, bin_count = np.zeros((3, num_bin))

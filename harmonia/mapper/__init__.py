@@ -9,9 +9,9 @@ the survey window.
 """
 from .cartesian_reduction import CartesianMap
 from .catalogue_maker import (
-    GaussianCatalogue,
+    GaussianCatalogue, 
     LogNormalCatalogue,
-    NBKCatalogue,
+    NBKCatalogue, 
     RandomCatalogue,
     load_catalogue_from_file,
 )

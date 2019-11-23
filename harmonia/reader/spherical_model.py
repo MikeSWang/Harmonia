@@ -137,14 +137,13 @@ import numpy as np
 from nbodykit.lab import cosmology
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
-from harmonia.algorithms.integration import (
-    angular_spherical_integral as ang_int,
-    radial_spherical_integral as rad_int,
-)
+from harmonia.algorithms.integration import \
+    angular_spherical_integral as ang_int
+from harmonia.algorithms.integration import \
+    radial_spherical_integral as rad_int
 from harmonia.algorithms.morph import SphericalArray
 from harmonia.collections.utils import mpi_compute
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
-
 
 # KERNELS
 # -----------------------------------------------------------------------------
@@ -719,7 +718,7 @@ class Couplings:
         if coupling_type.lower().startswith('rsd'):
             return 'RSD'
         raise ValueError(
-            "`coupling_type` can only be: 'angular', 'radial' or 'RSD'. "
+            f"Unrecognised `coupling_type`: {coupling_type}. "
         )
 
 
@@ -947,8 +946,9 @@ class TwoPointFunction(Couplings):
         if self.cosmo is None:
             raise ValueError("`cosmo` cannot be None for scale modification. ")
 
-        scale_dependence_modification_kernel = \
-            scale_dependence_modification(self.cosmo, self.redshift)
+        scale_dependence_modification_kernel = scale_dependence_modification(
+            self.cosmo, self.redshift
+        )
 
         self._mode_scale_dependence_modifications_ = {}
         for ell in self.disc.degrees:
@@ -1063,7 +1063,7 @@ class TwoPointFunction(Couplings):
         nbar : float
             Mean particle number density (in cubic h/Mpc).
         contrast : float, optional
-            Downscale `nbar` by ``1 + 1/constrast``.  Default is
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default is
             ``numpy.inf``.
 
         Returns
@@ -1136,8 +1136,8 @@ class TwoPointFunction(Couplings):
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Downscale `nbar` by ``1 + 1/constrast``.  Default is
-            ``numpy.inf``.
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default 
+            is ``numpy.inf``.
 
         Returns
         -------
@@ -1147,8 +1147,8 @@ class TwoPointFunction(Couplings):
         Raises
         ------
         ValueError
-            If `b_1` is `None` when `part` is ``'signal'`` or
-            ``'both'``, or `nbar` is `None` when `part` is ``'shotnoise'``
+            If `b_1` is `None` when `part` is ``'signal'`` or ``'both'``, 
+            or `nbar` is `None` when `part` is ``'shotnoise'``
             or ``'both'``.
         ValueError
             If `part` is not a recognised 2-point covariance component.
@@ -1242,8 +1242,8 @@ class TwoPointFunction(Couplings):
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Downscale `nbar` by ``1 + 1/constrast``.  Default is
-            ``numpy.inf``.
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default 
+            is ``numpy.inf``.
 
         Returns
         -------
@@ -1274,7 +1274,8 @@ class TwoPointFunction(Couplings):
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray.build(disc=self.disc)\
+            index_vector = SphericalArray\
+                .build(disc=self.disc)\
                 .unfold(pivot, return_only='index')
 
         collapse_dof_correction = (pivot in ['scale', 'root'])

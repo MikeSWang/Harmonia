@@ -2,10 +2,8 @@
 Fourier bases (:mod:`~harmonia.algorithms.bases`)
 ===========================================================================
 
-Evaluate Fourier basis functions and derived functions.
-
-Evaluation of spherical functions relies on :mod:`scipy.special` and
-:mod:`mpmath`.
+Evaluate Fourier basis functions and their derivatives, and determine their
+zeros.
 
 **Spherical basis functions**
 

@@ -99,10 +99,10 @@ class DiscreteSpectrum:
                  mindeg=0, comm=None):
 
         condition = self._alias(condition)
-        discretise_args = (radius, condition, cuton, cutoff, mindeg, maxdeg)
+        disc_args = (radius, condition, cuton, cutoff, mindeg, maxdeg)
 
         self.degrees, self.depths, self.roots, self.mode_count = \
-            self._discretise(*discretise_args, logger=self._logger, comm=comm)
+            self._discretise(*disc_args, logger=self._logger, comm=comm)
 
         self.comm = comm
 
@@ -126,6 +126,7 @@ class DiscreteSpectrum:
 
     def __str__(self):
 
+        str_root = "Spectrum({0}, boundary={1}, {2}<=wavenumber<={3})"
         str_args = (
             self.attrs['boundary_condition'],
             self.attrs['boundary_radius'],
@@ -133,9 +134,7 @@ class DiscreteSpectrum:
             self.attrs['max_wavenumber'],
         )
 
-        return "Spectrum({0}, boundary={1}, {2}<=wavenumber<={3})".format(
-            *str_args
-        )
+        return str_root.format(*str_args)
 
     @property
     def root_indices(self):

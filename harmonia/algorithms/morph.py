@@ -1,5 +1,5 @@
 """
-Array morphing (:mod:`~harmonia.algorithms.morph`)
+Morphable Arrays (:mod:`~harmonia.algorithms.morph`)
 ===========================================================================
 
 Manipulate cosmological field data arrays.
@@ -17,6 +17,7 @@ import warnings
 import numpy as np
 
 from harmonia.collections.utils import sort_dict_to_list
+
 from .bases import spherical_besselj_root
 
 
@@ -60,7 +61,7 @@ class SphericalArray:
         Roots corresponding to `degrees`, `depths` and wavenumbers of the
         discrete spherical spectrum.  If `None` (default), the roots are
         computed by calling
-        :func:`~harmonia.algorithms.bases.spherical_besselj_root`.
+        :func:`~.algorithms.bases.spherical_besselj_root`.
     filling : float array_like or None, optional
         Data to be filled in the spherical array (default is `None`).
 
@@ -203,10 +204,10 @@ class SphericalArray:
         Returns
         -------
         data_flat : float array_like or None
-            Flattend 1-d data array.  Returned only if `return_only` is
+            Flattened 1-d data array.  Returned only if `return_only` is
             `None` or ``'data'``.
         index_flat : list of tuple
-            Flattend 1-d index array.  Returned only if `return_only` is
+            Flattened 1-d index array.  Returned only if `return_only` is
             `None` or ``'index'``.
 
         """
@@ -594,13 +595,16 @@ class SphericalArray:
 class CartesianArray:
     r"""Structured Cartesian arrays.
 
+    This consists of a coordinate array and data array(s) for different 
+    variables corresponding to the coordinates.
+
     Parameters
     ----------
     filling : dict
-        Data dictionary holing both a coordinate array and data arrays.
+        Data to fill in holding both a coordinate array and data array(s).
     coord_key, var_key_root : str
         The key or the root string of the key corresponding to the
-        coordinate array or the data arrays.
+        coordinate array or the data array(s).
 
     Attributes
     ----------
@@ -608,10 +612,10 @@ class CartesianArray:
         Data filled into the structured Cartesian arrays.
     sorted_vars : list of str
         Sorted data variable names (keys).
-    coord_array : float :class:`numpy.ndarray`
+    coord_array : *float* :class:`numpy.ndarray`
         Coordinate array.
-    data_arrays : list of float :class:`numpy.ndarray`
-        Data arrays.
+    data_arrays : *list of float* :class:`numpy.ndarray`
+        Data arrays for each of the variable.
 
     """
 
@@ -624,8 +628,11 @@ class CartesianArray:
             for key in sorted(filling) if var_key_root in key
         ]
 
-        self.coord_array = filling[coord_key]
-        self.data_arrays = [filling[var] for var in self.sorted_vars]
+        self.coord_array = np.squeeze(filling[coord_key])
+        self.data_arrays = [
+            np.squeeze(filling[var_name]) 
+            for var_name in self.sorted_vars
+        ]
 
     def unfold(self, pivot, return_only=None):
         """Flatten data and corresponding coordinate arrays in the
@@ -645,18 +652,18 @@ class CartesianArray:
         Returns
         -------
         data_flat : float array_like or None
-            Flattend 1-d data array.  Returned only if `return_only` is
+            Flattened 1-d data array.  Returned only if `return_only` is
             `None` or ``'data'``.
         coords_flat : list of tuple
-            Flattend 1-d index array.  Returned only if `return_only` is
+            Flattened 1-d index array.  Returned only if `return_only` is
             `None` or ``'coords'``.
 
         """
         if pivot == 'variable':
-            coords_flat = np.tile(self.coord_array, len(self.data_arrays))
+            coords_flat = np.tile(self.coord_array, len(self.sorted_vars))
             data_flat = np.concatenate([self.data_arrays])
         elif pivot == 'coord':
-            coords_flat = np.repeat(self.coord_array, len(self.data_arrays))
+            coords_flat = np.repeat(self.coord_array, len(self.sorted_vars))
             data_flat = np.vstack([self.data_arrays]).flatten('F')
 
         if return_only == 'data':

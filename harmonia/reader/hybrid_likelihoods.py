@@ -28,7 +28,7 @@ Cartesian likelihood
 .. autosummary::
 
     cartesian_parametrised_moments
-    cartesian_map_likelihood
+    cartesian_map_log_likelihood
 
 
 Hybrid likelihood

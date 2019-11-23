@@ -10,14 +10,11 @@ results [`arXiv:1502.01589 <https://arxiv.org/abs/1502.01589>`_].
 """
 from nbodykit import cosmology
 
-from .geometry import (
-    fiducial_distance,
-    differential_AP_distortion,
-)
+from .geometry import differential_AP_distortion, fiducial_distance
 from .scale_dependence import (
+    modified_power_spectrum,
     scale_dependence_modification,
     scale_dependent_bias,
-    modified_power_spectrum,
 )
 
 fiducial_cosmology = cosmology.Planck15

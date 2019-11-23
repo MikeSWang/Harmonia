@@ -69,8 +69,8 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
         ``'coords'``, ``'norm'`` or ``'both'``.
 
     """
-    indices = np.indices((num_mesh,)*3)
-    origin = np.array([(num_mesh-1)/2]*3)
+    indices = np.indices((num_mesh,) * 3)
+    origin = np.array([(num_mesh-1)/2] * 3)
 
     grid_coords = [
         cell_size * (index - centre)
@@ -107,7 +107,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     .. math::
 
-        \mathbf{v}(\mathbf{k}) = faH \Psi(\mathbf{k}) \,.
+        \mathbf{v}(\mathbf{k}) = Haf \Psi(\mathbf{k}) \,.
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
 
     if clip:
-        overdensity = threshold_clip(overdensity)
+        overdensity = threshold_clip(overdensity, threshold=-1.)
 
     if return_disp:
         fourier_disp = [1j * ki / k_norm**2 * fourier_field for ki in k_vec]
@@ -246,6 +246,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
             pk_target = bias(k_norm)**2 * pk
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
+
     xi_target = num_cell * np.real(fftp.ifftn(fftp.fftshift(pk_target)))
     xi_generation = lognormal_transform(xi_target, 'correlation')
     pk_generation = fftp.fftshift(fftp.fftn(xi_generation)) / num_cell
@@ -331,9 +332,11 @@ def lognormal_transform(obj, obj_type):
 
     """
     if obj_type.lower().startswith('f'):
+
         density_field = np.exp(obj)
         density_mean = np.mean(density_field)
         transformed_field = density_field / density_mean - 1
+
         return transformed_field
 
     if obj_type.lower().startswith('c'):
@@ -418,11 +421,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
     num_mesh = max(sampled_field.shape)
     cell_size = boxsize / num_mesh
 
-    grid_coords = generate_regular_grid(
-        cell_size,
-        num_mesh,
-        variable='coords'
-    )
+    grid_coords = generate_regular_grid(cell_size, num_mesh, variable='coords')
     number_field = np.int64(
         0.5 + (1 + sampled_field) * mean_density * cell_size**3
     )
@@ -469,7 +468,7 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
 
     samples = np.random.RandomState(seed=seed).normal(size=size)
 
-    whitenoise = samples[0] + 1j*samples[1]
+    whitenoise = samples[0] + 1j * samples[1]
 
     return whitenoise
 

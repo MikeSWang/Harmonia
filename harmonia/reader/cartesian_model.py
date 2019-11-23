@@ -42,8 +42,8 @@ class WindowedPowerSpectrum:
     redshift : float
         Current redshift at which the model is evaluated (default is 0.).
     growth_rate : float or None
-        Linear growth rate at the current epoch.  If `None` (default), this
-        is set to zero and RSD calculations are neglected.
+        Linear growth rate at the current epoch.  If `None`, RSD 
+        calculations are neglected.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
     window : dict or None
@@ -53,6 +53,11 @@ class WindowedPowerSpectrum:
         growth rate and the transfer function for calculating the
         scale-dependent bias.
 
+    Raises
+    ------
+    ValueError
+        If `power_spectrum` is `None` when `cosmo` is.
+
 
     .. |window_function| replace::
 
@@ -60,14 +65,19 @@ class WindowedPowerSpectrum:
 
     """
 
-    def __init__(self, redshift=0., growth_rate=None,
-                 power_spectrum=None, cosmo=None, window=None):
+    def __init__(self, redshift=0., growth_rate=None, power_spectrum=None, 
+                 cosmo=None, window=None):
 
         self.redshift = redshift
         self.growth_rate = growth_rate
         self.matter_power_spectrum = power_spectrum
 
-        if cosmo is not None:
+        if cosmo is None:
+            if self.matter_power_spectrum is None:
+                raise ValueError(
+                    "`power_spectrum` cannot be None when `cosmo` is None. "
+                )
+        else:
             if self.matter_power_spectrum is None:
                 self.matter_power_spectrum = cosmology.LinearPower(
                     cosmo, redshift=self.redshift, transfer='CLASS'
@@ -80,8 +90,9 @@ class WindowedPowerSpectrum:
                     "are consistent. "
                 )
             if self.growth_rate is not None:
-                cosmo_growth_rate = \
-                    cosmo.scale_independent_growth_rate(self.redshift)
+                cosmo_growth_rate = cosmo.scale_independent_growth_rate(
+                    self.redshift
+                )
                 if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
                         "`growth_rate` value inconsistent with `cosmo` model: "
@@ -97,17 +108,18 @@ class WindowedPowerSpectrum:
                 assert window.correlation_multipoles is not None
                 self.window = window.correlation_multipoles
             except AssertionError:
-                default_required_degrees = [0, 2, 4, 6, 8]
+                default_required_orders = [0, 2, 4, 6, 8]
                 self.window = window.correlation_function_multipoles(
-                    default_required_degrees
+                    default_required_orders
                 )
                 warnings.warn(
-                    "Window correlation function multipoles have not been "
-                    "computed and are being evaluated now at default "
-                    "parameter settings. Results may not be accurate. "
-                    "Pass `window` with attribute `correlation_multipoles` "
-                    "comptued at pre-configured parameter settings for more"
-                    "reliable results. "
+                    "Window correlation function multipoles have "
+                    "not been computed and are being evaluated now "
+                    "at default parameter settings. "
+                    "Results may not be accurate. Pass `window` "
+                    "with attribute `correlation_multipoles` computed "
+                    "at pre-configured parameter settings "
+                    "for more reliable results. "
                 )
 
         self._wavenumbers = None
@@ -127,16 +139,16 @@ class WindowedPowerSpectrum:
     def wavenumbers(self, values):
         self._wavenumbers = values
 
-    def convolved_multipoles(self, degrees, b_1, f_nl=None, nbar=None,
+    def convolved_multipoles(self, orders, b_1, f_nl=None, nbar=None,
                              wavenumbers=None, tracer_parameter=1.,
                              contrast=np.inf):
         """Compute the convolved model of power spectrum multipoles.
 
         Parameters
         ----------
-        degrees : list or tuple of int
-            Order of the multipole, ``degrees \\in {0, 2, 4}``.  This is
-            sorted in ascending order.
+        orders : list or tuple of int
+            Order(s) of the multipole, in ``{0, 2, 4}``, sorted in
+            ascending order.
         b_1 : float
             Scale-independent linear bias.
         f_nl : float or None, optional
@@ -153,8 +165,8 @@ class WindowedPowerSpectrum:
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Downscale `nbar` (if not `None`) by ``1 + 1/constrast``.
-            Default is ``numpy.inf``.
+            Effectively downscale `nbar` (if not `None`) by 
+            ``1 + 1/constrast``.  Default is ``numpy.inf``.
 
         Returns
         -------
@@ -165,14 +177,20 @@ class WindowedPowerSpectrum:
         Raises
         ------
         ValueError
+            If `orders` contains an element not theoretically predicted,
+            i.e. not in ``{0, 2, 4}``.
+        ValueError
             If `wavenumbers` is `None` when :attr:`wavenumbers` property is
             also `None`.
 
         """
         LOG_K_INTERPOL_RANGE = -5, 1
         NUM_INTERPOL = 10000
+        PREDICTED_ORDERS = [0, 2, 4]
 
-        degrees = sorted(degrees)
+        if not set(orders).issubset(set(PREDICTED_ORDERS)):
+            raise ValueError("`orders` must be a subset of {0, 2, 4}. ")
+
         if wavenumbers is None:
             if self.wavenumbers is None:
                 raise ValueError(
@@ -181,38 +199,33 @@ class WindowedPowerSpectrum:
                 )
             wavenumbers = self.wavenumbers
 
-        if self.cosmo is None:
-            if f_nl is not None:
-                raise AttributeError(
-                    "Attribute `cosmo` cannot be None "
-                    "when scale-dependence is introduced by non-null `f_nl`. "
-                )
-            if self.matter_power_spectrum is None:
-                raise ValueError(
-                    "`power_spectrum` cannot be None when `cosmo` is None. "
-                )
+        if f_nl is not None and self.cosmo is None:
+            raise AttributeError(
+                "Attribute `cosmo` cannot be None "
+                "when scale-dependence is introduced by non-null `f_nl`. "
+            )
 
         if self.window is None:
             if f_nl is None:
                 b_k = b_1 * np.ones_like(wavenumbers)
             else:
                 b_k = b_1 + f_nl * (b_1 - tracer_parameter) \
-                    * scale_dependence_modification(
-                        self.cosmo, self.redshift
-                    )(wavenumbers)
+                    * scale_dependence_modification(self.cosmo, self.redshift)(
+                        wavenumbers
+                    )
 
             pk_ell_convolved = {
                 "power_{}".format(ell):
                     self.kaiser_factors(ell, b_k, self.growth_rate) \
                     * self.matter_power_spectrum(wavenumbers)
-                for ell in degrees
+                for ell in orders
             }
 
             pk_ell_convolved['k'] = wavenumbers
 
             return pk_ell_convolved
 
-        required_degrees = list(range(0, max(degrees)+5, 2))
+        s = self.window['s']
 
         k_interpol = np.logspace(*LOG_K_INTERPOL_RANGE, num=NUM_INTERPOL)
 
@@ -220,17 +233,15 @@ class WindowedPowerSpectrum:
             b_k_interpol = b_1 * np.ones_like(k_interpol)
         else:
             b_k_interpol = b_1 + f_nl * (b_1 - tracer_parameter) \
-                * scale_dependence_modification(
-                    self.cosmo, self.redshift
-                )(k_interpol)
+                * scale_dependence_modification(self.cosmo, self.redshift)(
+                    k_interpol
+                )
 
         pk_ell_interpol = {
             ell: self.kaiser_factors(ell, b_k_interpol, self.growth_rate) \
                 * self.matter_power_spectrum(k_interpol)
-            for ell in required_degrees
+            for ell in PREDICTED_ORDERS
         }
-
-        s = self.window['s']
 
         xi_ell = {
             ell: Spline(
@@ -239,16 +250,16 @@ class WindowedPowerSpectrum:
                 ),
                 k=1
             )(s)
-            for ell in required_degrees
+            for ell in PREDICTED_ORDERS
         }
 
         xi_ell_convolved = {}
-        if 0 in degrees:
+        if 0 in orders:
             xi_ell_convolved[0] = \
                 xi_ell[0] * self.window['correlation_0'] \
                 + 1/5 * xi_ell[2] * self.window['correlation_2'] \
                 + 1/9 * xi_ell[4] * self.window['correlation_4']
-        if 2 in degrees:
+        if 2 in orders:
             xi_ell_convolved[2] = \
                 xi_ell[0] * self.window['correlation_2'] \
                 + xi_ell[2] * (
@@ -261,7 +272,7 @@ class WindowedPowerSpectrum:
                     + 100/693 * self.window['correlation_4']
                     + 25/143 * self.window['correlation_6']
                 )
-        if 4 in degrees:
+        if 4 in orders:
             xi_ell_convolved[4] = \
                 xi_ell[0] * self.window['correlation_4'] \
                 + xi_ell[2] * (
@@ -279,28 +290,27 @@ class WindowedPowerSpectrum:
 
         pk_ell_convolved_sampled = {
             ell: xi2P(s, l=ell, lowring=True)(
-                xi_ell_convolved[ell],
-                extrap=False
+                xi_ell_convolved[ell], extrap=False
             )
-            for ell in degrees
+            for ell in orders
         }
 
         pk_ell_convolved = {
             "power_{}".format(ell):
                 Spline(*pk_ell_convolved_sampled[ell], k=1)(wavenumbers)
-            for ell in degrees
+            for ell in orders
         }
 
         pk_ell_convolved['k'] = wavenumbers
 
-        if nbar is not None and 0 in degrees:
-            pk_ell_convolved["power_0"] += np.ones_like(wavenumbers) \
-                * (1 + 1/contrast) / nbar
+        if nbar is not None and 0 in orders:
+            pk_ell_convolved["power_0"] += (1 + 1/contrast) / nbar \
+                * np.ones_like(wavenumbers)
 
         return pk_ell_convolved
 
     @staticmethod
-    def kaiser_factors(multipole, bias, growth_rate):
+    def kaiser_factors(order, bias, growth_rate):
         """Return the standard Kaiser power spectrum multipole as a
         multipole of the matter power spectrum.
 
@@ -310,11 +320,11 @@ class WindowedPowerSpectrum:
 
         Parameters
         ----------
-        multipole : int
-            Order of the multipole, ``multipole >= 0``.
+        order : int
+            Order of the multipole, ``order >= 0``.
         bias : float, array_like
             Scale-independent linear bias of the tracer particles.
-        growth_rate : float
+        growth_rate : float or None
             Linear growth rate.
 
         Returns
@@ -323,7 +333,11 @@ class WindowedPowerSpectrum:
             Standard Kaiser power spectrum multipole factor.
 
         """
-        ell, b, f = multipole, np.atleast_1d(bias), growth_rate
+        ell, b = order, np.atleast_1d(bias)
+        if growth_rate is None:
+            f = 0.
+        else:
+            f = growth_rate
 
         if ell == 0:
             kaiser_factor = b**2 + 2/3 * b * f + 1/5 * f**2
@@ -338,34 +352,34 @@ class WindowedPowerSpectrum:
 
 
 class WindowCorrelation:
-    """Window-induced correlation matrix for power spectrum multipoles
-    at given wavenumbers.
+    """Window-induced correlation matrix for power spectrum multipoles at
+    given wavenumbers.
 
     Parameters
     ----------
     fiducial_windowed_power_model : dict
         The fiducial windowed power spectrum model based at which the
-        window-induced correlation is being estimated, with the mandatory
+        window-induced correlation is estimated, with the mandatory
         key ``'k'`` for the wavenumbers corresponding to the correlation
         matrix components.
-    pivot : {'multipole', 'scale'}
+    pivot : {'orders', 'scale'}
         The order in which the correlation matrix components are arranged:
-        if ``'multipole'``, the compoenents are in ascending order of the
-        multipole order and then in ascending order of the wavenumber; if
-        ``'scale'``, the components are similarly ordered by the
-        wavenumber first and then the multipole order.
+        if ``'orders'``, the compoenents are in ascending multipole order 
+        and then in ascending order of the wavenumber; if ``'scale'``, the 
+        components are similarly ordered by the wavenumber first and then 
+        the multipole order.
 
     Attributes
     ----------
-    pivot : {'multipole', 'scale'}
+    pivot : {'orders', 'scale'}
         The same as the `pivot` argument.
-    multipoles : list of int
+    orders : list of int
         Order of the multipoles.
     wavenumbers : float :class:`numpy.ndarray`
         Wavenumbers to which the window correlation components correspond.
     fiducial_power_multipoles : float :class:`numpy.ndarray`
         Power multipoles to which the window correlation components
-        correspond and at which the window correlation is determined.
+        correspond and at which the window correlation is estimated.
 
     """
 
@@ -376,9 +390,9 @@ class WindowCorrelation:
         )
 
         self.pivot = pivot
-        self.multipoles = list(map(int, fiducial_model_array.sorted_vars))
+        self.orders = list(map(int, fiducial_model_array.sorted_vars))
 
-        if self.pivot == 'multipole':
+        if self.pivot == 'orders':
             self.fiducial_diagonal_multipoles, self.wavenumbers = \
                 fiducial_model_array.unfold('variable')
         elif self.pivot == 'scale':
@@ -411,8 +425,8 @@ class WindowCorrelation:
     def window_correlation(self, covar_estimate):
 
         covar_estimate = np.squeeze(np.array(covar_estimate))
-        if covar_estimate.ndim != 2 or covar_estimate.shape \
-                != (len(self.wavenumbers),) * 2:
+        if covar_estimate.ndim != 2 \
+                or covar_estimate.shape != (len(self.wavenumbers),) * 2:
             raise ValueError(
                 "The value of the `window_correlation` property "
                 "must be a matrix of dimensions consistent with the "

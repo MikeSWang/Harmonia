@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from harmonia.algorithms.discretisation import DiscreteSpectrum
-from harmonia.algorithms.morph import SphericalArray
+from harmonia.algorithms.morph import CartesianArray, SphericalArray
 
 TEST_PARAMS = dict(
     radius=100.,
@@ -217,3 +217,35 @@ def test_morph(spherical_array, in_structure, out_structure):
             )
         ]
     )
+
+
+TEST_DATA_DICT = {
+    'x': [0.0, 0.5, 1.0],
+    'y_0': [-1.5, -1., -0.5],
+    'y_1': [-0.25, 0., 0.25],
+    'y_2': [0.5, 1., 1.5],
+}
+
+@pytest.mark.parametrize(
+    'pivot,results',
+    [
+        (
+            'coord',
+            (
+                [-1.5, -0.25, 0.5, -1., 0., 1., -0.5, 0.25, 1.5], 
+                [0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
+            )
+        ),
+        (
+            'variable',
+            (
+                [-1.5, -1., -0.5, -0.25, 0., 0.25, 0.5, 1., 1.5],
+                [0.0, 0.5, 1.0] * 3
+            )
+        ),
+    ]    
+)
+def test_cartesianarray_unfold(pivot, results):
+    cartesian_array = CartesianArray(TEST_DATA_DICT, 'x', 'y_')
+    assert np.array_equal(cartesian_array.unfold(pivot)[-1], results[-1])
+    assert np.array_equal(cartesian_array.unfold(pivot)[0], results[0])

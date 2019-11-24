@@ -7,7 +7,9 @@ from harmonia.algorithms.integration import (
     radial_besselj_integral,
     radial_spherical_integral,
 )
-from . import NamedFunction, display_mathematica_query as show_query
+
+from . import NamedFunction
+from . import display_mathematica_query as show_query
 
 TEST_PARAMS = dict(rmax=100., ell=5, m=2, k=0.05)
 

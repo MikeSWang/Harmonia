@@ -624,8 +624,7 @@ class CartesianArray:
         self.filling = filling
 
         self.sorted_vars = [
-            key.strip(var_key_root)
-            for key in sorted(filling) if var_key_root in key
+            key for key in sorted(filling) if var_key_root in key
         ]
 
         self.coord_array = np.squeeze(filling[coord_key])
@@ -661,10 +660,10 @@ class CartesianArray:
         """
         if pivot == 'variable':
             coords_flat = np.tile(self.coord_array, len(self.sorted_vars))
-            data_flat = np.concatenate([self.data_arrays])
+            data_flat = np.concatenate(self.data_arrays)
         elif pivot == 'coord':
             coords_flat = np.repeat(self.coord_array, len(self.sorted_vars))
-            data_flat = np.vstack([self.data_arrays]).flatten('F')
+            data_flat = np.vstack(self.data_arrays).flatten('F')
 
         if return_only == 'data':
             return data_flat

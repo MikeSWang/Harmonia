@@ -2,9 +2,9 @@ import pytest
 
 from harmonia.cosmology import fiducial_cosmology
 from harmonia.cosmology.scale_dependence import (
+    modified_power_spectrum,
     scale_dependence_modification,
     scale_dependent_bias,
-    modified_power_spectrum,
 )
 
 

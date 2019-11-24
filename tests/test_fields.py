@@ -3,13 +3,13 @@ import pytest
 from nbodykit.lab import cosmology
 
 from harmonia.algorithms.fields import (
-    generate_regular_grid,
     generate_gaussian_random_field,
     generate_lognormal_random_field,
-    threshold_clip,
-    lognormal_transform,
+    generate_regular_grid,
+    lognormal_transform, 
     poisson_sample,
     populate_particles,
+    threshold_clip,
 )
 
 power_spectrum = cosmology.LinearPower(cosmology.Planck15, redshift=0.)

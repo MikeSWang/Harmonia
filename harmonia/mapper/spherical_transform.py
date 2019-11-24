@@ -166,6 +166,11 @@ class SphericalMap:
 
                 pair = FKPCatalog(data, rand)
                 alpha_ratio = float(mean_density_data/mean_density_rand)
+
+                pair['data/Location'] = pair['data/Position'] \
+                    - np.divide(data_boxsize, 2)
+                pair['randoms/Location'] = pair['randoms/Position'] \
+                    - np.divide(rand_boxsize, 2)
         # FIXME: Implement for survey input data.
         elif source == 'survey':
             raise NotImplementedError

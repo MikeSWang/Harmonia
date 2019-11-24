@@ -3,10 +3,9 @@
 """
 import warnings
 from collections import defaultdict
-from pprint import pprint
 
 import numpy as np
-from nbodykit.lab import CSVCatalog, ConvolvedFFTPower, cosmology
+from nbodykit.lab import ConvolvedFFTPower
 from scipy.interpolate import interp1d
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name

@@ -150,7 +150,7 @@ class SurveyWindow:
         -------
         dict
             Binned power spectrum multipole statistics holding variables
-            ``'k'`` for the bin wavenumber and binned multipole values 
+            ``'k'`` for the bin wavenumber and binned multipole values
             ``'power_0'`` etc.  Also sets :attr:`power_multipoles`.
 
         Raises
@@ -193,7 +193,9 @@ class SurveyWindow:
             synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
-        bin_cleansing = ~np.isnan(power_multipoles['k'])
+        bin_cleansing = ~np.isnan(power_multipoles['k']) \
+            & ~np.isclose(power_multipoles['k'], 0.)
+
         normalisation_amplitude = power_multipoles['power_0'][0].real
 
         self.power_multipoles = {}
@@ -254,7 +256,7 @@ class SurveyWindow:
 
         k_samples = power_multipoles['k']
         pk_ell_samples = {
-            ell: power_multipoles['power_{:d}'.format(ell)] 
+            ell: power_multipoles['power_{:d}'.format(ell)]
             for ell in orders
         }
 

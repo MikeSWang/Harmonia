@@ -154,7 +154,7 @@ def view_data(data, savefig=False, **plot_kwargs):
 
     visual_data['likelihood'] = data['spherical_likelihood']
     fig = view_samples(
-        data,
+        visual_data,
         r"$f_\mathrm{NL}$", # r"$b_1$", #
         r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         **plot_kwargs
@@ -162,7 +162,7 @@ def view_data(data, savefig=False, **plot_kwargs):
 
     visual_data['likelihood'] = data['cartesian_likelihood']
     view_samples(
-        data,
+        visual_data,
         r"$f_\mathrm{NL}$", # r"$b_1$", #
         r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         fig=fig,
@@ -172,7 +172,7 @@ def view_data(data, savefig=False, **plot_kwargs):
     visual_data['likelihood'] = data['spherical_likelihood'] \
         + data['cartesian_likelihood']
     view_samples(
-        data,
+        visual_data,
         r"$f_\mathrm{NL}$", # r"$b_1$", #
         r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         fig=fig,
@@ -202,13 +202,9 @@ if __name__ == '__main__':
     PRIOR = "-800.0,800.0"
     PIVOT = "spectral"
     KSPLIT = 0.05
-    KMAX = 0.075
+    KMAX = 0.1
 
     PARAM_TAG = "nbar=2.49e-4,b1=[2.4,2.32],f0=none" # fnl=none, b1=2.4
-    # PARAM_TAG = (
-    #     "gen=nbodykit,nbar=0.001,b1=2.,f0=none,"
-    #     "rmax=293.,xpd=2.,mesh=256,niter=1000"
-    # )
 
     output = read_data(
         collate_data=True,

@@ -400,7 +400,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
     **model_kwargs
-        Keyword arguments to be passed to `windowed_power_model.conv`.
+        Keyword arguments to be passed to `windowed_power_model`.
 
     Returns
     -------
@@ -418,14 +418,14 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     assert window_corr_modeller.pivot == pivot, \
         "`window_corr_modeller.pivot` must match input `pivot`. "
 
-    degrees = window_corr_modeller.multipoles
+    orders = window_corr_modeller.multipoles
     wavenumbers = window_corr_modeller.filling['k']
 
     fiducial_expectation = window_corr_modeller.fiducial_diagonal_multipoles
     fiducial_covariance = window_corr_modeller.window_correlation
 
     expectation_filling = windowed_power_model.convolved_multipoles(
-        degrees, b_1, f_nl=f_nl, wavenumbers=wavenumbers, **model_kwargs
+        orders, b_1, f_nl=f_nl, wavenumbers=wavenumbers, **model_kwargs
     )
 
     expectation_array = CartesianArray(

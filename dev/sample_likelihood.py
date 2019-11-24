@@ -11,8 +11,8 @@ from scipy.interpolate import interp1d
 
 from likelihood_rc import PATHIN, PATHOUT, params, script_name
 from harmonia.algorithms import (
-    DiscreteSpectrum, 
-    CartesianArray, 
+    DiscreteSpectrum,
+    CartesianArray,
     SphericalArray,
 )
 from harmonia.collections import confirm_directory_path, format_float
@@ -226,13 +226,13 @@ def process(runtime_info):
             coord_key='k',
             var_key_root='power_'
         )
-    
+
         fake_fiducial_model = modified_power_spectrum(
-            f_nl=fnl['high'], b_1=bias['high'], 
+            f_nl=fnl['high'], b_1=bias['high'],
             cosmo=fiducial_cosmology,
             power_spectrum=matter_power_spectrum
         )(cartesian_power['k'])
-    
+
         window_corr_modeller = WindowCorrelation(
             CartesianArray(
                 filling={
@@ -249,9 +249,9 @@ def process(runtime_info):
         )
 
         cartesian_likelihood_args = (
-            nbar, 
+            nbar,
             windowed_power_model,
-            cartesian_data, 
+            compressed_multipoles,
             window_corr_modeller,
             cartesian_pivot,
         )
@@ -308,5 +308,5 @@ if __name__ == '__main__':
     warnings.simplefilter("ignore", UserWarning)
 
     parameters, information = initialise()
-    output = process(parameters, information)
+    output = process(information)
     finalise(output, information)

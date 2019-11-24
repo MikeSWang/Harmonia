@@ -96,7 +96,7 @@ def process(runtime_info):
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     kwargs = dict(
-        f_0=growth_rate,
+        growth_rate=growth_rate,
         power_spectrum=Plin,
         comm=COMM,
         survey_specs=None,  # SURVEY_SPECS
@@ -110,8 +110,8 @@ def process(runtime_info):
         pivot: {
             part: two_points.two_point_covariance(
                 pivot,
+                b_1=bias,
                 nbar=nbar,
-                b_10=bias,
                 part=part
             )
             for part in ['signal', 'shotnoise', 'both']

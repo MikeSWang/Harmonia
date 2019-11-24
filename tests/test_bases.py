@@ -22,9 +22,7 @@ def test_spherical_besselj():
     show_query(f"SphericalBesselJ[{TEST_PARAMS['ell']}, {TEST_PARAMS['x']}]")
     assert np.isclose(
         spherical_besselj(
-            TEST_PARAMS['ell'],
-            TEST_PARAMS['x'],
-            derivative=False
+            TEST_PARAMS['ell'], TEST_PARAMS['x'], derivative=False
         ),
         -0.0555345116
     )
@@ -35,9 +33,7 @@ def test_spherical_besselj():
     )
     assert np.isclose(
         spherical_besselj(
-            TEST_PARAMS['ell'],
-            TEST_PARAMS['x'],
-            derivative=True
+            TEST_PARAMS['ell'], TEST_PARAMS['x'], derivative=True
         ),
         -0.0722685781
     )

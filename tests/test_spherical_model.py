@@ -79,34 +79,22 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
         survey_specs=TWO_POINT_SURVEY_SPECS
     )
     covariance_matrix = two_point_model.two_point_covariance(
-        pivot,
-        part=part,
-        diag=True,
-        **TWO_POINT_TEST_PARAMS
+        pivot, part=part, diag=True, **TWO_POINT_TEST_PARAMS
     )
 
     variance_model = TwoPointFunction(
-        discrete_spectrum,
-        growth_rate=None,
-        cosmo=fiducial_cosmology,
+        discrete_spectrum, growth_rate=None, cosmo=fiducial_cosmology,
     )
     variance_matrix = variance_model.mode_variance(
-        pivot,
-        part=part,
-        **TWO_POINT_TEST_PARAMS
+        pivot, part=part, **TWO_POINT_TEST_PARAMS
     )
 
     two_point_model_angular_reduction = TwoPointFunction(
-        discrete_spectrum,
-        growth_rate=None,
-        cosmo=fiducial_cosmology
+        discrete_spectrum, growth_rate=None, cosmo=fiducial_cosmology
     )
     covariance_matrix_angular_reduction = \
         two_point_model_angular_reduction.two_point_covariance(
-            pivot,
-            part=part,
-            diag=True,
-            **TWO_POINT_TEST_PARAMS
+            pivot, part=part, diag=True, **TWO_POINT_TEST_PARAMS
         )
 
     assert np.diag(covariance_matrix) == pytest.approx(variance_matrix)

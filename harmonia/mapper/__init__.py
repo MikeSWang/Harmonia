@@ -1,6 +1,6 @@
 """
 ***************************************************************************
-Fourier-space mapper (:mod:`~harmonia.mapper`)
+Catalogue mapper (:mod:`~harmonia.mapper`)
 ***************************************************************************
 
 Build and process discrete catalogues into Fourier-space maps, and probe

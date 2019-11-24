@@ -1,5 +1,5 @@
 """
-Morphable Arrays (:mod:`~harmonia.algorithms.morph`)
+Morphable arrays (:mod:`~harmonia.algorithms.morph`)
 ===========================================================================
 
 Manipulate cosmological field data arrays.

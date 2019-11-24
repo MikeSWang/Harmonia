@@ -1,6 +1,6 @@
 """
 ***************************************************************************
-Algorithms (:mod:`~harmonia.algorithms`)
+Core Algorithms (:mod:`~harmonia.algorithms`)
 ***************************************************************************
 
 Construction, decomposition and transformation algorithms for cosmological

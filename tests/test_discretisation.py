@@ -28,9 +28,7 @@ def test_DiscreteSpectrum(discrete_spectrum, caplog):
 
     with caplog.at_level(logging.DEBUG):
         DiscreteSpectrum(**TEST_ARGS)
-        assert caplog.records[0].message.startswith(
-            "Roots for degree"
-        )
+        assert caplog.records[0].message.startswith("Roots for degree")
         assert caplog.records[-2].message.startswith(
             "No more modes. Last degree"
         )
@@ -45,8 +43,7 @@ def test_DiscreteSpectrum(discrete_spectrum, caplog):
         [
             (2*ell + 1) * nmax
             for ell, nmax in zip(
-                discrete_spectrum.degrees,
-                discrete_spectrum.depths
+                discrete_spectrum.degrees, discrete_spectrum.depths
             )
         ]
     )

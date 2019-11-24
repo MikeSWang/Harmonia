@@ -195,10 +195,7 @@ def test_morph(spherical_array, in_structure, out_structure):
             for out_subarr, morphed_subarr in zip(
                 out_array,
                 spherical_array.morph(
-                    in_array,
-                    in_structure,
-                    out_structure,
-                    'data'
+                    in_array, in_structure, out_structure, 'data'
                 )
             )
         ]
@@ -209,10 +206,7 @@ def test_morph(spherical_array, in_structure, out_structure):
             for out_subarr, morphed_subarr in zip(
                 out_indices,
                 spherical_array.morph(
-                    in_indices,
-                    in_structure,
-                    out_structure,
-                    'index'
+                    in_indices, in_structure, out_structure, 'index'
                 )
             )
         ]

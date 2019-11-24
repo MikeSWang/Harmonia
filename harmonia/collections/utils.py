@@ -1,5 +1,5 @@
 """
-Utilities (:mod:`~harmonia.collections.utils`)
+Utility tools (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
 Provide convenience system utilities for input/output handling, processing,

@@ -29,9 +29,7 @@ def test_generate_regular_grid(cell_size, num_mesh):
 def test_generate_gaussian_random_field(boxsize, num_mesh):
 
     field, vector_field = generate_gaussian_random_field(
-        boxsize,
-        num_mesh,
-        power_spectrum,
+        boxsize, num_mesh, power_spectrum,
         clip=False,
         return_disp=True
     )
@@ -45,10 +43,7 @@ def test_generate_gaussian_random_field(boxsize, num_mesh):
 def test_generate_lognormal_random_field(boxsize, num_mesh):
 
     field, vector_field = generate_lognormal_random_field(
-        boxsize,
-        num_mesh,
-        power_spectrum,
-        return_disp=True
+        boxsize, num_mesh, power_spectrum, return_disp=True
     )
 
     assert np.shape(field) == (num_mesh,) * 3
@@ -89,9 +84,7 @@ def test_populate_particles(num_mesh, mean_density, boxsize):
     fake_velocity_offset_fields = [fake_sampled_field] * 3
 
     pos, disp = populate_particles(
-        fake_sampled_field,
-        mean_density,
-        boxsize,
+        fake_sampled_field, mean_density, boxsize,
         velocity_offset_fields=fake_velocity_offset_fields
     )
 

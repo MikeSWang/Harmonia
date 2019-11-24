@@ -69,9 +69,7 @@ def test_angular_harmonic_integral():
     )
     assert np.isclose(
         angular_harmonic_integral(
-            angular_func,
-            TEST_PARAMS['ell'],
-            TEST_PARAMS['m'],
+            angular_func, TEST_PARAMS['ell'], TEST_PARAMS['m'],
         ),
         0.
     )

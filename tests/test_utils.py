@@ -252,17 +252,11 @@ def test_smooth_by_bin_average():
 
     with pytest.raises(NotImplementedError):
         utils.smooth_by_bin_average(
-            [1, 2, 3],
-            [0, 0.005, 0.05, 0.1],
-            'kln',
-            'Pln'
+            [1, 2, 3], [0, 0.005, 0.05, 0.1], 'kln', 'Pln'
         )
 
     smoothed_data, count_in_bins = utils.smooth_by_bin_average(
-        TMP_COARSE_DATA,
-        TEST_BIN_EDEGS,
-        'x',
-        'y',
+        TMP_COARSE_DATA, TEST_BIN_EDEGS, 'x', 'y',
         dx_coarse_key='dx',
         dy_coarse_key='dy'
     )

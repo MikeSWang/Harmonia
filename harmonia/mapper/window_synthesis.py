@@ -185,9 +185,20 @@ class SurveyWindow:
                 "They are now being overwritten. "
             )
 
-        power_multipoles = ConvolvedFFTPower(
-            synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
-        ).poles
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                category=RuntimeWarning,
+                message="*invalid value encountered*"
+            )
+            warnings.filterwarnings(
+                'ignore',
+                category=RuntimeWarning,
+                message="divide by zero encountered in double_scalars"
+            )
+            power_multipoles = ConvolvedFFTPower(
+                synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
+            ).poles
 
         valid_bins = ~np.isnan(power_multipoles['modes']) \
             & ~np.equal(power_multipoles['modes'], 0) \

@@ -250,15 +250,23 @@ class WindowedPowerSpectrum:
             for ell in PREDICTED_ORDERS
         }
 
-        xi_ell = {
-            ell: Spline(
-                *P2xi(k_interpol, l=ell, lowring=True)(
-                    pk_ell_interpol[ell], extrap=False
-                ),
-                k=1
-            )(s)
-            for ell in PREDICTED_ORDERS
-        }
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The default value of extrap has been changed to False, "
+                    "set it to True if you cannot reproduce previous results"
+                )
+            )
+            xi_ell = {
+                ell: Spline(
+                    *P2xi(k_interpol, l=ell, lowring=True)(
+                        pk_ell_interpol[ell], extrap=False
+                    ),
+                    k=1
+                )(s)
+                for ell in PREDICTED_ORDERS
+            }
 
         xi_ell_convolved = {}
         if 0 in orders:
@@ -295,12 +303,20 @@ class WindowedPowerSpectrum:
                     + 490/2431 * self.window['correlation_8']
                 )
 
-        pk_ell_convolved_sampled = {
-            ell: xi2P(s, l=ell, lowring=True)(
-                xi_ell_convolved[ell], extrap=False
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The default value of extrap has been changed to False, "
+                    "set it to True if you cannot reproduce previous results"
+                )
             )
-            for ell in orders
-        }
+            pk_ell_convolved_sampled = {
+                ell: xi2P(s, l=ell, lowring=True)(
+                    xi_ell_convolved[ell], extrap=False
+                )
+                for ell in orders
+            }
 
         pk_ell_convolved = {
             "power_{}".format(ell):

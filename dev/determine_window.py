@@ -81,7 +81,7 @@ def determine(window):
 
 if __name__ == '__main__':
 
-    PATHOUT = "./data/output"
+    PATHOUT = "./data/output/"
 
     SKY_FRAC = 1/3
     NBAR = 5e-2

@@ -10,7 +10,6 @@ import itertools.product as iterprod
 import numpy as np
 from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
 
-from likelihood_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import cartesian_to_spherical, confirm_directory_path
 from harmonia.mapper import (
@@ -18,6 +17,9 @@ from harmonia.mapper import (
     SphericalMap,
     load_catalogue_from_file,
 )
+
+PATHIN, PATHOUT = "./data/input/", "./data/output/"
+SCRIPT_NAME = "window_effects"
 
 INPUT_FILE_ROOT = "halos-(NG=0.,z=1.)-"
 PAIR_NUMS = list(range(0, 11)) + list(range(12, 22))
@@ -154,17 +156,17 @@ if __name__ == '__main__':
     # Process catalogues.
     no_window_output, windowed_output = process()
 
-    confirm_directory_path(PATHOUT + script_name + "/")
+    confirm_directory_path(PATHOUT + SCRIPT_NAME + "/")
     np.save(
         "".join([
-            PATHOUT, script_name, "/",
+            PATHOUT, SCRIPT_NAME, "/",
             "no_window_measurements", "-(", script_tag, f").npy"
         ]),
         no_window_output
     )
     np.save(
         "".join([
-            PATHOUT, script_name, "/",
+            PATHOUT, SCRIPT_NAME, "/",
             "windowed_measurements", "-(", script_tag, f").npy"
         ]),
         windowed_output

@@ -261,7 +261,7 @@ class SurveyWindow:
             for ell in orders
         }
 
-        extension_padding = np.mean(np.diff(power_multipoles['k']))
+        extension_padding = (K_MAX - k_samples[-1]) / NUM_K_EXTENSION
 
         k_extended = np.append(
             k_samples,

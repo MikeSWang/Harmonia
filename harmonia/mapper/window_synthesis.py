@@ -284,10 +284,20 @@ class SurveyWindow:
             for ell in orders
         }
 
-        xi_ell = {
-            ell: P2xi(k_interpol, l=ell, lowring=True)(pk_ell_interpol[ell])
-            for ell in orders
-        }
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The default value of extrap has been changed to False, "
+                    "set it to True if you cannot reproduce previous results"
+                )
+            )
+            xi_ell = {
+                ell: P2xi(k_interpol, l=ell, lowring=True)(
+                    pk_ell_interpol[ell]
+                )
+                for ell in orders
+            }
 
         normalisation_amplitude = xi_ell[0][-1][0]
 

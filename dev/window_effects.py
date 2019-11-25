@@ -7,34 +7,22 @@ from collections import defaultdict
 from pprint import pprint
 import itertools.product as iterprod
 
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
 
 from likelihood_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
-from harmonia.collections import (
-    cartesian_to_spherical,
-    confirm_directory_path,
-    harmony,
-)
+from harmonia.collections import cartesian_to_spherical, confirm_directory_path
 from harmonia.mapper import (
     RandomCatalogue,
     SphericalMap,
     load_catalogue_from_file,
 )
 
-plt.style.use(harmony)
-sns.set(style='ticks', font='serif')
-
 INPUT_FILE_ROOT = "halos-(NG=0.,z=1.)-"
 PAIR_NUMS = list(range(0, 11)) + list(range(12, 22))
 PAIR_SUFFICES = ["L", "R"]
-
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-
-PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
 
 def parse_cli_args():
@@ -96,7 +84,7 @@ def process():
         no_window_suite['modes'].append([
             no_window_power['modes'][valid_bins]
         ])
-        no_window_suite['Pshot'].append([
+        no_window_suite['shotnoise'].append([
             no_window_power.attrs['shotnoise']
         ])
         for ell in ORDERS:
@@ -106,10 +94,10 @@ def process():
 
         # With window
         data_catalogue['Weight'] *= sky_mask(
-            data_catalogue['Position'] - boxsize/2, eval(fsky)
+            data_catalogue['Position'] - boxsize/2, fsky
         )
         random_catalogue['Weight'] *= sky_mask(
-            random_catalogue['Position'] - boxsize/2, eval(fsky)
+            random_catalogue['Position'] - boxsize/2, fsky
         )
 
         spherical_map = SphericalMap(
@@ -134,7 +122,7 @@ def process():
         windowed_suite['modes'].append([
             windowed_power['modes'][valid_bins]
         ])
-        windowed_suite['Pshot'].append([
+        windowed_suite['shotnoise'].append([
             windowed_power.attrs['shotnoise']
         ])
         for ell in ORDERS:

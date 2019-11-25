@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from likelihood_rc import PATHOUT, script_name
 from harmonia.mapper import SurveyWindow
 from harmonia.collections import (
     cartesian_to_spherical,
@@ -75,12 +74,14 @@ def determine(window):
     xi_ell = window.correlation_function_multipoles([0, 2, 4, 6, 8])
     pk_ell = window.power_multipoles
 
-    np.save(f"{PATHOUT}{script_name}-{{:.2f}}.npy".format(SKY_FRAC), xi_ell)
+    np.save(f"{PATHOUT}window-{{:.2f}}.npy".format(SKY_FRAC), xi_ell)
 
     return xi_ell, pk_ell
 
 
 if __name__ == '__main__':
+
+    PATHOUT = "./data/output"
 
     SKY_FRAC = 1/3
     NBAR = 5e-2

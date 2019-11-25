@@ -83,9 +83,9 @@ def determine(window):
 if __name__ == '__main__':
 
     SKY_FRAC = 1/3
-    NBAR = 1e-2
+    NBAR = 5e-2
     BOXSIZE = 1000.
-    PADDING = 75.
+    PADDING = 80.
 
     window = synthesise()
     xi_ell, pk_ell = determine(window)

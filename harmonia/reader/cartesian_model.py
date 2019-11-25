@@ -49,7 +49,7 @@ class WindowedPowerSpectrum:
     redshift : float
         Current redshift at which the model is evaluated (default is 0.).
     growth_rate : float or None
-        Linear growth rate at the current epoch.  If `None`, RSD 
+        Linear growth rate at the current epoch.  If `None`, RSD
         calculations are neglected.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
@@ -72,7 +72,7 @@ class WindowedPowerSpectrum:
 
     """
 
-    def __init__(self, redshift=0., growth_rate=None, power_spectrum=None, 
+    def __init__(self, redshift=0., growth_rate=None, power_spectrum=None,
                  cosmo=None, window=None):
 
         self.redshift = redshift
@@ -172,7 +172,7 @@ class WindowedPowerSpectrum:
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Effectively downscale `nbar` (if not `None`) by 
+            Effectively downscale `nbar` (if not `None`) by
             ``1 + 1/constrast``.  Default is ``numpy.inf``.
 
         Returns
@@ -371,9 +371,9 @@ class WindowCorrelation:
         matrix components.
     pivot : {'orders', 'scale'}
         The order in which the correlation matrix components are arranged:
-        if ``'orders'``, the compoenents are in ascending multipole order 
-        and then in ascending order of the wavenumber; if ``'scale'``, the 
-        components are similarly ordered by the wavenumber first and then 
+        if ``'orders'``, the compoenents are in ascending multipole order
+        and then in ascending order of the wavenumber; if ``'scale'``, the
+        components are similarly ordered by the wavenumber first and then
         the multipole order.
 
     Attributes

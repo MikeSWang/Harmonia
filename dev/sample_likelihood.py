@@ -87,7 +87,7 @@ def initialise():
     # External set-up
     ini_params['matter_power_spectrum'] = interp1d(
         *np.loadtxt(
-            "".join([PATHIN, script_name, "/", PK_FILENAME, ".txt"]),
+            "".join([PATHIN, "cosmology", "/", PK_FILENAME, ".txt"]),
             unpack=True
         ),
         assume_sorted=True
@@ -166,7 +166,7 @@ def process(runtime_info):
 
     for file_suffix in ["L", "R"]:
         catalogue_path = "{}{}/{}{}.txt".format(
-            PATHIN, script_name, input_file, file_suffix
+            PATHIN, "catalogues", input_file, file_suffix
         )
 
         data_catalogue = load_catalogue_from_file(

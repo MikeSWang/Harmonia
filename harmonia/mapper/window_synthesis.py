@@ -189,7 +189,7 @@ class SurveyWindow:
             warnings.filterwarnings(
                 'ignore',
                 category=RuntimeWarning,
-                message="*invalid value encountered*"
+                message=".*invalid value encountered.*"
             )
             warnings.filterwarnings(
                 'ignore',

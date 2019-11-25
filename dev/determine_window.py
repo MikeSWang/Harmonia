@@ -1,9 +1,15 @@
 """Calculate the survey window function.
 
 """
+import os
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+
+_cwd = os.path.dirname(__file__)
+sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 from harmonia.mapper import SurveyWindow
 from harmonia.collections import (

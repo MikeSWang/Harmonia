@@ -2,13 +2,18 @@
 catalogues.
 
 """
+import os
+import sys
 from argparse import ArgumentParser
 from collections import defaultdict
+from itertools import product as iterprod
 from pprint import pprint
-import itertools.product as iterprod
 
 import numpy as np
 from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
+
+_cwd = os.path.dirname(__file__)
+sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import cartesian_to_spherical, confirm_directory_path
@@ -90,7 +95,7 @@ def process():
             no_window_power.attrs['shotnoise']
         ])
         for ell in ORDERS:
-            no_window_power[f'power_{ell}'].append([
+            no_window_suite[f'power_{ell}'].append([
                 no_window_power[f'power_{ell}'][valid_bins].real
             ])
 

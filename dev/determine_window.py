@@ -12,7 +12,6 @@ from harmonia.collections import (
     harmony,
     spherical_indicator,
 )
-from harmonia.cosmology import fiducial_cosmology
 
 plt.style.use(harmony)
 sns.set(style='ticks', font='serif')
@@ -76,7 +75,7 @@ def determine(window):
     xi_ell = window.correlation_function_multipoles([0, 2, 4, 6, 8])
     pk_ell = window.power_multipoles
 
-    np.save(f"{PATHOUT}{scriptname}-{{:.2f}}.npy".format(SKY_FRAC), xi_ell)
+    np.save(f"{PATHOUT}{script_name}-{{:.2f}}.npy".format(SKY_FRAC), xi_ell)
 
     return xi_ell, pk_ell
 
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     plt.ylabel(r"$Q_\ell(k)$")
     plt.legend()
 
-    plt.savefig(f"{PATHOUT}wpower_skymask-{{:.2f}}.pdf".format(SKY_FRAC))
+    plt.savefig(f"{PATHOUT}window_power_{{:.2f}}sky.pdf".format(SKY_FRAC))
 
     plt.figure()
 
@@ -115,4 +114,4 @@ if __name__ == '__main__':
     plt.ylabel(r"$Q_\ell(r)$")
     plt.legend()
 
-    plt.savefig(f"{PATHOUT}wcorr_skymask-{{:.2f}}.pdf".format(SKY_FRAC))
+    plt.savefig(f"{PATHOUT}window_corr_{{:.2f}}sky.pdf".format(SKY_FRAC))

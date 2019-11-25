@@ -46,9 +46,9 @@ class SurveyWindow:
         Survey weighting.
     synthetic_catalogue : |catalogue_source| or None
         Synthetic catalogue with the specified window.
-    power_multipoles : |binned_stats| or None
+    power_multipoles : dict or None
         Power spectrum multipoles of the window.
-    correlation_multipoles : dict of {int: tuple} or None
+    correlation_multipoles : dict or None
         Correlation function multipoles of the window at sampled
         separations.
 
@@ -56,10 +56,6 @@ class SurveyWindow:
     .. |catalogue_source| replace::
 
         :class:`nbodykit.base.catalog.CatalogSource`
-
-    .. |binned_stats| replace::
-
-        :class:`nbodykit.binned_statistic.BinnedStatistic`
 
     """
 
@@ -96,7 +92,7 @@ class SurveyWindow:
         """
         if self.synthetic_catalogue is not None:
             warnings.warn(
-                "Synthetic catalogue has already been generated. "
+                "Synthetic catalogue already exists. "
                 "It is now being resynthesised. "
             )
 
@@ -137,13 +133,13 @@ class SurveyWindow:
             Minimum wavenumber (default is 0.).
         kmax, dk : float or None, optional
             Maximum wavenumber or wavenumber bin size (default is `None`).
-            If `None`, `kmax` is bounded above the Nyquist wavenumber and
-            `dk` is twice the fundamental wavenumber.
+            If `None`, `kmax` is the Nyquist wavenumber determined from
+            ``**mesh_kwargs`` and `dk` is the fundamental wavenumber.
         **mesh_kwargs
             Keyword arguments to be passed to
             :class:`nbodykit.source.mesh.catalog.CatalogMesh` for FFT
-            mesh painting.  If not given, default settings are used
-            (512 meshes per dimension and triangular-shaped cloud
+            mesh conversion.  If not given, default settings are used
+            (512 meshes per dimension and triangular-shaped cloud ``'tsc'``
             interpolation with compensation and interlacing).
 
         Returns
@@ -181,7 +177,7 @@ class SurveyWindow:
             kmax = np.pi * mesh_kwargs['Nmesh'] \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
         if dk is None:
-            dk = 2*(2*np.pi / max(self.synthetic_catalogue.attrs['BoxSize']))
+            dk = 2*np.pi / min(self.synthetic_catalogue.attrs['BoxSize'])
 
         if self.power_multipoles is not None:
             warnings.warn(
@@ -193,20 +189,25 @@ class SurveyWindow:
             synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
-        bin_cleansing = ~np.isnan(power_multipoles['k']) \
-            & ~np.isclose(power_multipoles['k'], 0.)
+        valid_bins = ~np.isnan(power_multipoles['modes']) \
+            & ~np.equal(power_multipoles['modes'], 0) \
+            & ~np.equal(power_multipoles['modes'], 1)
 
-        normalisation_amplitude = power_multipoles['power_0'][0].real
-
-        self.power_multipoles = {}
-        self.power_multipoles['k'] = power_multipoles['k'][bin_cleansing]
+        self.power_multipoles = {'k': power_multipoles['k'][valid_bins]}
         self.power_multipoles.update(
             {
                 'power_{:d}'.format(ell):
-                    power_multipoles\
-                        ['power_{:d}'.format(ell)][bin_cleansing].real\
-                    / normalisation_amplitude
+                    power_multipoles['power_{:d}'.format(ell)][valid_bins].real
                 for ell in orders
+            }
+        )
+
+        normalisation_amplitude = self.power_multipoles['power_0'][0].real
+        self.power_multipoles.update(
+            {
+                var_name: var_vals / normalisation_amplitude
+                for var_name, var_vals in self.power_multipoles.items()
+                if 'power_' in var_name
             }
         )
 
@@ -223,7 +224,7 @@ class SurveyWindow:
             Multipole orders.
         **multipoles_kwargs
             Keyword arguments to be passed to
-            :meth:`~SurveyWindow.power_spectrum_multipoles` for
+            :meth:`~.SurveyWindow.power_spectrum_multipoles` for
             computing multipoles of the synthetic catalogue.
 
         Returns
@@ -240,8 +241,8 @@ class SurveyWindow:
 
         if self.correlation_multipoles is not None:
             warnings.warn(
-                "2-point correlator multipoles have already been computed. "
-                "They are now being overwritten."
+                "Correlation function multipoles have already been computed. "
+                "They are now being overwritten. "
             )
 
         try:
@@ -288,7 +289,7 @@ class SurveyWindow:
             for ell in orders
         }
 
-        normalisation_amplitude = xi_ell[0][1][0]
+        normalisation_amplitude = xi_ell[0][-1][0]
 
         s_interpol = np.logspace(
             np.log10(max([xi_ell[ell][0][0] for ell in orders])),
@@ -300,8 +301,7 @@ class SurveyWindow:
             for ell in orders
         }
 
-        self.correlation_multipoles = {}
-        self.correlation_multipoles['s'] = s_interpol
+        self.correlation_multipoles = {'s': s_interpol}
         self.correlation_multipoles.update(
             {
                 'correlation_{:d}'.format(ell):

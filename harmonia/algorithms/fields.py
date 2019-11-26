@@ -155,11 +155,6 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     try:
         bias = float(bias)
-        if bias <= 0:
-            raise ValueError("`bias` parameter must be positive. ")
-        overdensity = num_cell * np.real(
-            fftp.ifftn(fftp.fftshift(bias * fourier_field))
-        )
     except TypeError:
         if callable(bias):
             bias_k = bias(k_norm)
@@ -168,6 +163,12 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
             )
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
+    else:
+        if bias <= 0:
+            raise ValueError("`bias` parameter must be positive. ")
+        overdensity = num_cell * np.real(
+            fftp.ifftn(fftp.fftshift(bias * fourier_field))
+        )
 
     if clip:
         overdensity = threshold_clip(overdensity, threshold=-1.)
@@ -238,14 +239,15 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     try:
         bias = float(bias)
-        if bias <= 0:
-            raise ValueError("`bias` parameter must be positive. ")
-        pk_target = bias**2 * pk
     except TypeError:
         if callable(bias):
             pk_target = bias(k_norm)**2 * pk
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
+    else:
+        if bias <= 0:
+            raise ValueError("`bias` parameter must be positive. ")
+        pk_target = bias**2 * pk
 
     xi_target = num_cell * np.real(fftp.ifftn(fftp.fftshift(pk_target)))
     xi_generation = lognormal_transform(xi_target, 'correlation')

@@ -268,8 +268,6 @@ def overwrite_protection(outpath, outname, save=True):
             if not overwrite_permission:
                 if os.path.exists(outpath + outname):
                     raise FileExistsError
-            overwrite_permission = True
-            break
         except FileExistsError:
             grant_permission = input(
                 "Saving would overwrite existing file at destination. "
@@ -283,6 +281,9 @@ def overwrite_protection(outpath, outname, save=True):
                 raise FileExistsError(
                     "Overwrite permission denied. File not saved. "
                 )
+        else:
+            overwrite_permission = True
+            break
 
     return overwrite_permission
 

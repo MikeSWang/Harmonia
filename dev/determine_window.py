@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 from harmonia.mapper import SurveyWindow
 from harmonia.collections import (
     cartesian_to_spherical,
+    confirm_directory_path,
     harmony,
     spherical_indicator,
 )
@@ -98,6 +99,8 @@ if __name__ == '__main__':
 
     PATHOUT = "./data/output/"
     SCRIPT_NAME = "window_multipoles"
+
+    confirm_directory_path(f"{PATHOUT}{SCRIPT_NAME}/")
 
     params = parse_cli_args()
     pprint(params.__dict__)

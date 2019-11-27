@@ -16,10 +16,11 @@ import warnings
 
 import numpy as np
 from mcfit import P2xi
-from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
+from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.collections.utils import cartesian_to_spherical as c2s
+from harmonia.mapper.catalogue_maker import  UniformCatalogue
 
 
 class SurveyWindow:
@@ -96,7 +97,7 @@ class SurveyWindow:
                 "It is now being resynthesised. "
             )
 
-        catalogue = UniformCatalog(number_density, boxsize)
+        catalogue = UniformCatalogue(number_density, boxsize)
 
         catalogue['Location'] = catalogue['Position'] - np.divide(boxsize, 2)
 
@@ -174,10 +175,11 @@ class SurveyWindow:
         synthetic_mesh = self.synthetic_catalogue.to_mesh(**mesh_kwargs)
 
         if kmax is None:
-            kmax = np.pi * mesh_kwargs['Nmesh'] \
+            kmax = 0.8 * np.pi * mesh_kwargs['Nmesh'] \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
         if dk is None:
-            dk = 2*np.pi / min(self.synthetic_catalogue.attrs['BoxSize'])
+            dk = np.sqrt(3) * 2*np.pi \
+                / min(self.synthetic_catalogue.attrs['BoxSize'])
 
         if self.power_multipoles is not None:
             warnings.warn(
@@ -200,9 +202,11 @@ class SurveyWindow:
                 synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
             ).poles
 
-        valid_bins = ~np.isnan(power_multipoles['modes']) \
-            & ~np.equal(power_multipoles['modes'], 0) \
-            & ~np.equal(power_multipoles['modes'], 1)
+        valid_bins = (
+            ~np.isnan(power_multipoles['modes'])
+            & ~np.equal(power_multipoles['modes'], 0)
+            & ~(power_multipoles['modes'] % 2)
+        ).astype(bool)
 
         self.power_multipoles = {'k': power_multipoles['k'][valid_bins]}
         self.power_multipoles.update(
@@ -246,9 +250,9 @@ class SurveyWindow:
             :attr:`correlation_multipoles`.
 
         """
-        K_MAX = 10.
-        NUM_K_EXTENSION = 100
-        NUM_INTERPOL = 10000
+        LOG10_K_MAX = 1.
+        NUM_K_EXTENSION = 1000
+        NUM_INTERPOL = pow(2, 14)
 
         if self.correlation_multipoles is not None:
             warnings.warn(
@@ -272,23 +276,25 @@ class SurveyWindow:
             for ell in orders
         }
 
-        extension_padding = (K_MAX - k_samples[-1]) / NUM_K_EXTENSION
+        extension_padding = np.mean(np.abs(np.diff(k_samples)))
+        extension_first_leg = np.max(k_samples) \
+            + extension_padding * np.arange(1, NUM_K_EXTENSION)
+        extension_second_leg = np.logspace(
+            np.log10(np.max(k_samples) + NUM_K_EXTENSION*extension_padding),
+            LOG10_K_MAX,
+            num=NUM_K_EXTENSION
+        )
 
         k_extended = np.append(
-            k_samples,
-            np.linspace(
-                k_samples[-1] + extension_padding, K_MAX,
-                num=NUM_K_EXTENSION
-            )
+            k_samples, np.append(extension_first_leg, extension_second_leg)
         )
         pk_ell_extended = {
-            ell: np.append(pk_ell_samples[ell], np.zeros(NUM_K_EXTENSION))
+            ell: np.append(pk_ell_samples[ell], np.zeros(2*NUM_K_EXTENSION-1))
             for ell in orders
         }
 
         k_interpol = np.logspace(
-            *np.log10(k_extended[[0, -1]]),
-            num=NUM_INTERPOL
+            *np.log10(k_extended[[0, -1]]), num=NUM_INTERPOL
         )
         pk_ell_interpol = {
             ell: Spline(k_extended, pk_ell_extended[ell], k=1)(k_interpol)
@@ -305,7 +311,7 @@ class SurveyWindow:
             )
             xi_ell = {
                 ell: P2xi(k_interpol, l=ell, lowring=True)(
-                    pk_ell_interpol[ell]
+                    pk_ell_interpol[ell], extrap=False
                 )
                 for ell in orders
             }

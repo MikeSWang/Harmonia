@@ -3,6 +3,8 @@
 """
 import os
 import sys
+from argparse import ArgumentParser
+from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,6 +22,20 @@ from harmonia.collections import (
 
 plt.style.use(harmony)
 sns.set(style='ticks', font='serif')
+
+
+def parse_cli_args():
+    """Parse command-line argument inputs.
+
+    """
+    cli_parser = ArgumentParser()
+
+    cli_parser.add_argument('--fsky', type=float, default=1/3)
+    cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
+    cli_parser.add_argument('--boxsize', type=float, default=1000.)
+    cli_parser.add_argument('--padding', type=float, default=70.)
+
+    return cli_parser.parse_args()
 
 
 def sky_mask(cartesian_position, fraction):
@@ -50,75 +66,87 @@ def synthesise():
 
     Returns
     -------
-    window: :class:`harmonia.mapper.window_synthesis.SurveyWindow`
+    :class:`harmonia.mapper.window_synthesis.SurveyWindow`
         Survey window.
 
     """
-    window = SurveyWindow(
+    _window = SurveyWindow(
         mask=lambda pos:\
-            spherical_indicator(pos, BOXSIZE/2) * sky_mask(pos, SKY_FRAC)
+            spherical_indicator(pos, boxsize/2) * sky_mask(pos, fsky)
     )
-    window.synthesise(NBAR, BOXSIZE, padding=PADDING)
+    _window.synthesise(nbar, boxsize, padding=padding)
 
-    return window
+    return _window
 
 
-def determine(window):
+def determine_window():
     """Determine window multipoles from the synthetic catalogue.
-
-    Parameters
-    ----------
-    window: :class:`harmonia.mapper.window_synthesis.SurveyWindow`
-        Survey window.
 
     Returns
     -------
-    xi_ell, pk_ell: dict
+    tuple of dict
         Survey window correlation and power multipoles.
 
     """
-    xi_ell = window.correlation_function_multipoles([0, 2, 4, 6, 8])
-    pk_ell = window.power_multipoles
+    _xi_ell = window.correlation_function_multipoles(ORDERS)
+    _pk_ell = window.power_multipoles
 
-    np.save(f"{PATHOUT}window-{{:.2f}}.npy".format(SKY_FRAC), xi_ell)
-
-    return xi_ell, pk_ell
+    return _xi_ell, _pk_ell
 
 
 if __name__ == '__main__':
 
     PATHOUT = "./data/output/"
 
-    SKY_FRAC = 1/3
-    NBAR = 5e-2
-    BOXSIZE = 1000.
-    PADDING = 80.
+    params = parse_cli_args()
+    pprint(params.__dict__)
+
+    fsky = params.fsky
+    nbar = params.nbar
+    boxsize = params.boxsize
+    padding = params.padding
+
+    ORDERS = [0, 2, 4, 6, 8]
 
     window = synthesise()
-    xi_ell, pk_ell = determine(window)
+    xi_ell, pk_ell = determine_window()
+
+    np.save(
+        f"{PATHOUT}mask_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
+        .format(fsky, padding),
+        xi_ell
+    )
 
     plt.close('all')
 
     plt.figure()
 
-    plt.semilogx(pk_ell['k'], pk_ell['power_0'], label='monopole')
-    plt.semilogx(pk_ell['k'], pk_ell['power_2'], label='quadrupole')
-    plt.semilogx(pk_ell['k'], pk_ell['power_4'], label='hexadecapole')
+    for ell in ORDERS:
+        plt.semilogx(
+            pk_ell['k'], pk_ell[f'power_{ell}'],
+            label=r'$\ell={}$'.format(ell)
+        )
 
     plt.xlabel(r"$k$")
     plt.ylabel(r"$Q_\ell(k)$")
     plt.legend()
 
-    plt.savefig(f"{PATHOUT}window_power_{{:.2f}}sky.pdf".format(SKY_FRAC))
+    plt.savefig(
+        f"{PATHOUT}window-{{:.2f}}sky-{{:.0f}}pad.pdf".format(fsky, padding)
+    )
 
     plt.figure()
 
-    plt.semilogx(xi_ell['s'], xi_ell['correlation_0'], label='monopole')
-    plt.semilogx(xi_ell['s'], xi_ell['correlation_2'], label='quadrupole')
-    plt.semilogx(xi_ell['s'], xi_ell['correlation_4'], label='hexadecapole')
+    for ell in ORDERS:
+        plt.semilogx(
+            xi_ell['s'], xi_ell[f'correlation_{ell}'],
+            label=r'$\ell={}$'.format(ell)
+        )
 
-    plt.xlabel(r"$r$")
-    plt.ylabel(r"$Q_\ell(r)$")
+    plt.xlabel(r"$s$")
+    plt.ylabel(r"$Q_\ell(s)$")
     plt.legend()
 
-    plt.savefig(f"{PATHOUT}window_corr_{{:.2f}}sky.pdf".format(SKY_FRAC))
+    plt.savefig(
+        f"{PATHOUT}mask-{{:.2f}}sky-{{:.0f}}pad.pdf".format(fsky, padding)
+    )

@@ -81,9 +81,11 @@ def process():
             )
         no_window_power = ConvolvedFFTPower(no_window_mesh, ORDERS, dk=dk).poles
 
-        valid_bins = ~np.isnan(no_window_power['modes']) \
+        valid_bins = (
+            ~np.isnan(no_window_power['modes']) \
             & ~np.equal(no_window_power['modes'], 0) \
-            & ~np.equal(no_window_power['modes'], 1)
+            & ~(no_window_power['modes'] % 2)
+        ).astype(bool)
 
         no_window_suite['k'].append([
             no_window_power['k'][valid_bins]
@@ -119,9 +121,11 @@ def process():
         )
         windowed_power = ConvolvedFFTPower(windowed_mesh, ORDERS, dk=dk).poles
 
-        valid_bins = ~np.isnan(windowed_power['modes']) \
+        valid_bins = (
+            ~np.isnan(windowed_power['modes']) \
             & ~np.equal(windowed_power['modes'], 0) \
-            & ~np.equal(windowed_power['modes'], 1)
+            & ~(windowed_power['modes'] % 2)
+        ).astype(bool)
 
         windowed_suite['k'].append([
             windowed_power['k'][valid_bins]

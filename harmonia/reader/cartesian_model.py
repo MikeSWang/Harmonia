@@ -192,7 +192,7 @@ class WindowedPowerSpectrum:
 
         """
         LOG_K_INTERPOL_RANGE = -5, 1
-        NUM_INTERPOL = 10000
+        NUM_INTERPOL = pow(2, 14)
         PREDICTED_ORDERS = [0, 2, 4]
 
         if not set(orders).issubset(set(PREDICTED_ORDERS)):

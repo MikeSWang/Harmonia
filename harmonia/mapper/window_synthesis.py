@@ -156,6 +156,9 @@ class SurveyWindow:
             :meth:`~SurveyWindow.synthesise` needs to be called first.
 
         """
+        LOG10_K_MAX = 1.
+        NUM_K_EXTENSION = 1000
+
         if self.synthetic_catalogue is None:
             raise AttributeError(
                 "Attribute `synthetic_catalogue` is missing. "
@@ -207,19 +210,38 @@ class SurveyWindow:
             & ~(power_multipoles['modes'] % 2)
         ).astype(bool)
 
-        self.power_multipoles = {'k': power_multipoles['k'][valid_bins]}
-        self.power_multipoles.update(
-            {
-                'power_{:d}'.format(ell):
-                    power_multipoles['power_{:d}'.format(ell)][valid_bins].real
-                for ell in orders
-            }
-        )
+        k_samples = power_multipoles['k'][valid_bins]
+
+        self.power_multipoles= {
+            'power_{:d}'.format(ell):
+                power_multipoles['power_{:d}'.format(ell)][valid_bins].real
+            for ell in orders
+        }
 
         normalisation_amplitude = self.power_multipoles['power_0'][0].real
         self.power_multipoles.update(
             {
                 var_name: var_vals / normalisation_amplitude
+                for var_name, var_vals in self.power_multipoles.items()
+                if 'power_' in var_name
+            }
+        )
+
+        extension_padding = np.mean(np.abs(np.diff(k_samples)))
+        extension_first_leg = np.max(k_samples) \
+            + extension_padding * np.arange(1, NUM_K_EXTENSION)
+        extension_second_leg = np.logspace(
+            np.log10(np.max(k_samples) + NUM_K_EXTENSION*extension_padding),
+            LOG10_K_MAX,
+            num=NUM_K_EXTENSION
+        )
+
+        self.power_multipoles['k'] = np.append(
+            k_samples, np.append(extension_first_leg, extension_second_leg)
+        )
+        self.power_multipoles.update(
+            {
+                var_name: np.append(var_vals, np.zeros(2*NUM_K_EXTENSION-1))
                 for var_name, var_vals in self.power_multipoles.items()
                 if 'power_' in var_name
             }
@@ -249,8 +271,6 @@ class SurveyWindow:
             :attr:`correlation_multipoles`.
 
         """
-        LOG10_K_MAX = 1.
-        NUM_K_EXTENSION = 1000
         NUM_INTERPOL = pow(2, 14)
 
         if self.correlation_multipoles is not None:
@@ -269,34 +289,15 @@ class SurveyWindow:
                 orders, **multipoles_kwargs
             )
 
-        k_samples = power_multipoles['k']
-        pk_ell_samples = {
+        k = power_multipoles['k']
+        pk_ell = {
             ell: power_multipoles['power_{:d}'.format(ell)]
             for ell in orders
         }
 
-        extension_padding = np.mean(np.abs(np.diff(k_samples)))
-        extension_first_leg = np.max(k_samples) \
-            + extension_padding * np.arange(1, NUM_K_EXTENSION)
-        extension_second_leg = np.logspace(
-            np.log10(np.max(k_samples) + NUM_K_EXTENSION*extension_padding),
-            LOG10_K_MAX,
-            num=NUM_K_EXTENSION
-        )
-
-        k_extended = np.append(
-            k_samples, np.append(extension_first_leg, extension_second_leg)
-        )
-        pk_ell_extended = {
-            ell: np.append(pk_ell_samples[ell], np.zeros(2*NUM_K_EXTENSION-1))
-            for ell in orders
-        }
-
-        k_interpol = np.logspace(
-            *np.log10(k_extended[[0, -1]]), num=NUM_INTERPOL
-        )
+        k_interpol = np.logspace(*np.log10(k[[0, -1]]), num=NUM_INTERPOL)
         pk_ell_interpol = {
-            ell: Spline(k_extended, pk_ell_extended[ell], k=1)(k_interpol)
+            ell: Spline(k, pk_ell[ell], k=1)(k_interpol)
             for ell in orders
         }
 

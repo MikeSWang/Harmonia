@@ -120,6 +120,11 @@ if __name__ == '__main__':
         .format(fsky, padding),
         xi_ell
     )
+    np.save(
+        f"{PATHOUT}{SCRIPT_NAME}/window_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
+        .format(fsky, padding),
+        pk_ell
+    )
 
     plt.close('all')
     plt.figure(figsize=(8, 11))

@@ -9,27 +9,28 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from nbodykit.lab import cosmology
+from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 _cwd = os.path.dirname(__file__)
 sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
-from harmonia.collections import harmony
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.collections import confirm_directory_path, harmony
 from harmonia.reader import WindowedPowerSpectrum
 
 plt.style.use(harmony)
 sns.set(style='ticks', font='serif')
+
+PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
 
 def parse_cli_args():
 
     cli_parser = ArgumentParser()
 
-    cli_parser.add_argument('--fsky', default="1/3")
-    cli_parser.add_argument('--nbar', type=float, default=2.5e-4)
-    cli_parser.add_argument('--contrast', type=float, default=10.)
-    cli_parser.add_argument('--bias', type=float, default=2.)
+    cli_parser.add_argument('--fsky', type=float, default=0.33)
+    cli_parser.add_argument('--bias', type=float, default=2.33)
+    cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
+    cli_parser.add_argument('--contrast', type=float, default=20.)
 
     return cli_parser.parse_args()
 
@@ -40,96 +41,100 @@ if __name__ == '__main__':
 
     PATHIN = "./data/input/"
     PATHOUT = "./data/output/"
+    SCRIPT_NAME = "window_convolution"
+    confirm_directory_path(f"{PATHOUT}{SCRIPT_NAME}/")
 
     REDSHIFT = 0.
     ORDERS = [0, 2, 4]
 
-    fsky = eval(params.fsky)
+    fsky = params.fsky
+    bias = params.bias
     nbar = params.nbar
     contrast = params.contrast
-    bias = params.bias
 
-    # No window
-    matter_power_spectrum = cosmology.LinearPower(
-        fiducial_cosmology, redshift=REDSHIFT
+    # Underlying power spectrum.
+    matter_power_spectrum = Spline(
+        *np.loadtxt(f"{PATHIN}cosmology/{PK_FILENAME}.txt", unpack=True), k=1
     )
-    true_power_spectrum = lambda k: bias**2 * matter_power_spectrum(k) \
-        + (1 + 1/contrast) / nbar
+
+    # Window function.
+    mask_multipoles = np.load(
+        f"{PATHOUT}window_multipoles/mask_multipoles-{{:.2f}}sky-70pad.npy"
+        .format(fsky)
+    ).item()
+    try:
+        window_multipoles = np.load(
+            f"{PATHOUT}window_multipoles/window_multipoles-{{:.2f}}sky-70pad.npy"
+            .format(fsky)
+        ).item()
+    except FileNotFoundError:
+        window_multipoles = None
 
     # Measurements
     measurements = np.load(
-        f"{PATHIN}"
-        "window_effects-(fsky=0.33,nbar=0.001,contrast=10.0,boxsize=1000.0,mesh=256,niter=25).npy"
+        f"{PATHOUT}window_effects/windowed_measurements"
+        "-(fsky={:.2f},contrast={:.1f},mesh=256).npy"
+        .format(fsky, contrast)
     ).item()
 
-    measurements = {
-        'k': measurements['k_win'],
-        'modes': measurements['Nk_win'],
-        'power_0': measurements['Pk_0_win'],
-        'power_2': measurements['Pk_2_win'],
-        'power_4': measurements['Pk_4_win'],
+    measured_multipoles = {
+        'k': np.mean(np.concatenate(measurements['k']), axis=0),
+        'modes': np.sum(np.concatenate(measurements['modes']), axis=0),
     }
 
-    measured_multipoles = {
-        key: np.mean(val, axis=0) for key, val in measurements.items()
-    }
     measured_multipoles.update({
-        'd_' + key: np.std(val, axis=0, ddof=1)
+        key: np.mean(np.concatenate(val), axis=0)
+        for key, val in measurements.items()
+        if 'power_' in key
+    })
+    measured_multipoles.update({
+        'd' + key: np.std(np.concatenate(val), axis=0, ddof=1)
         for key, val in measurements.items()
         if 'power_' in key
     })
 
-
     k_universal = measured_multipoles['k']
 
     # Model
-    window_multipoles = np.load(
-        f"{PATHIN}window_{{:.2f}}sky.npy".format(fsky)
-    ).item()
-
     windowed_model = WindowedPowerSpectrum(
         redshift=REDSHIFT,
         power_spectrum=matter_power_spectrum,
-        cosmo=fiducial_cosmology,
-        window=window_multipoles
+        mask_multipoles=mask_multipoles,
+        window_multipoles=window_multipoles
     )
 
-    windowed_multipoles = windowed_model.convolved_multipoles(
+    windowed_multipoles, arr = windowed_model.convolved_multipoles(
         ORDERS, bias, nbar=nbar, contrast=contrast, wavenumbers=k_universal
-    )
-
-    np.save(
-        f"{PATHOUT}predicted_multipoles_{{:.2f}}sky.npy".format(fsky),
-        windowed_multipoles
     )
 
     # Comparison
     plt.close('all')
-    plt.figure("Window-convolved Power")
+    plt.figure("Window-convolved Power", figsize=(7, 5))
 
-    for degree in ORDERS:
-        if degree == 0:
-            plt.semilogx(
-                k_universal,
-                true_power_spectrum(k_universal),
-                c='k', ls='--', label="isotropic model"
-            )
-        plt.errorbar(
+    plt.semilogx(
+        k_universal, bias**2 * matter_power_spectrum(k_universal) + 1/nbar,
+        c='k', ls=':', label="isotropic model"
+    )
+    for ell in ORDERS:
+        measurement_plot = plt.errorbar(
             k_universal,
-            measured_multipoles['power_{}'.format(degree)],
-            #measured_multipoles['d_power_{}'.format(degree)],
-            label=r"windowed measurements $\ell={}$".format(degree),
-            ls='-.'
+            measured_multipoles['power_{}'.format(ell)],
+            measured_multipoles['dpower_{}'.format(ell)],
+            fmt='o', markersize=2.75, capsize=0., alpha=2/3,
+            label=r"measurements $\ell={}$".format(ell)
         )
         plt.semilogx(
             k_universal,
-            windowed_multipoles['power_{}'.format(degree)],
-            label=r"convolved model $\ell={}$".format(degree)
+            windowed_multipoles['power_{}'.format(ell)],
+            color=measurement_plot[0].get_color(),
+            linestyle='--', label=r"model $\ell={}$".format(ell)
         )
 
     plt.legend()
+    plt.title(r"$f_\mathrm{{sky}} = {:.2f}$".format(fsky))
 
+    plt.xlim(0.005, 0.1)
+    plt.ylim(-10**5, 10**5)
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
     plt.ylabel(r"$P_\ell(k)$")
-
-    plt.savefig(f"{PATHOUT}convolved_power_{{:.2f}}sky.pdf".format(fsky))
+    plt.subplots_adjust(hspace=0., wspace=0.)

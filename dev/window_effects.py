@@ -57,7 +57,6 @@ def sky_mask(cartesian_position, fraction):
 def process():
 
     disc = DiscreteSpectrum(boxsize/2, 'dirichlet', KMAX)
-    dk = 2*np.pi / boxsize
 
     no_window_suite = defaultdict(list)
     windowed_suite = defaultdict(list)
@@ -79,7 +78,7 @@ def process():
             .to_mesh(
                 Nmesh=mesh, resampler='tsc', compensated=True, interlaced=True
             )
-        no_window_power = ConvolvedFFTPower(no_window_mesh, ORDERS, dk=dk).poles
+        no_window_power = ConvolvedFFTPower(no_window_mesh, ORDERS, kmax=KMAX).poles
 
         valid_bins = (
             ~np.isnan(no_window_power['modes']) \
@@ -119,12 +118,12 @@ def process():
         windowed_mesh = spherical_map.pair.to_mesh(
             Nmesh=mesh, resampler='tsc', compensated=True, interlaced=True
         )
-        windowed_power = ConvolvedFFTPower(windowed_mesh, ORDERS, dk=dk).poles
+        windowed_power = ConvolvedFFTPower(windowed_mesh, ORDERS, kmax=KMAX).poles
 
         valid_bins = (
             ~np.isnan(windowed_power['modes']) \
             & ~np.equal(windowed_power['modes'], 0) \
-            & ~(windowed_power['modes'] % 2)
+            & ~np.equal(windowed_power['modes'], 1)
         ).astype(bool)
 
         windowed_suite['k'].append([

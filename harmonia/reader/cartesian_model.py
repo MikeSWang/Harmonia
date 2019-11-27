@@ -40,9 +40,13 @@ class WindowedPowerSpectrum:
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
         scale-dependent bias.
-    window : |window_function|, dict or None, optional
-        Window correlation function multipoles (or given at sampled
-        separations).
+    mask_multipoles : dict or None, optional
+        Window correlation function multipoles given at sampled
+        separations (default is `None`).
+    window_multipoles : dict or None, optional
+        Window power spectrum multipoles given at sampled wavenumbers
+        (default is `None`).  If `None`, no integral constraint is
+        corrected.
 
     Attributes
     ----------
@@ -53,8 +57,11 @@ class WindowedPowerSpectrum:
         calculations are neglected.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
-    window : dict or None
-        Window correlation function multipoles.
+    mask_multipoles : dict or None, optional
+        Window correlation function multipoles given at sampled
+        separations.
+    window_multipoles : dict or None, optional
+        Window power spectrum multipoles given at sampled wavenumbers.
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
@@ -73,7 +80,7 @@ class WindowedPowerSpectrum:
     """
 
     def __init__(self, redshift=0., growth_rate=None, power_spectrum=None,
-                 cosmo=None, window=None):
+                 cosmo=None, mask_multipoles=None, window_multipoles=None):
 
         self.redshift = redshift
         self.growth_rate = growth_rate
@@ -107,27 +114,8 @@ class WindowedPowerSpectrum:
                         .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
-
-        if window is None or isinstance(window, dict):
-            self.window = window
-        else:
-            try:
-                assert window.correlation_multipoles is not None
-                self.window = window.correlation_multipoles
-            except AssertionError:
-                default_required_orders = [0, 2, 4, 6, 8]
-                self.window = window.correlation_function_multipoles(
-                    default_required_orders
-                )
-                warnings.warn(
-                    "Window correlation function multipoles have "
-                    "not been computed and are being evaluated now "
-                    "at default parameter settings. "
-                    "Results may not be accurate. Pass `window` "
-                    "with attribute `correlation_multipoles` computed "
-                    "at pre-configured parameter settings "
-                    "for more reliable results. "
-                )
+        self.mask_multipoles = mask_multipoles
+        self.window_multipoles = window_multipoles
 
         self._wavenumbers = None
 
@@ -212,7 +200,7 @@ class WindowedPowerSpectrum:
                 "when scale-dependence is introduced by non-null `f_nl`. "
             )
 
-        if self.window is None:
+        if self.mask_multipoles is None:
             if f_nl is None:
                 b_k = b_1 * np.ones_like(wavenumbers)
             else:
@@ -222,7 +210,7 @@ class WindowedPowerSpectrum:
                     )
 
             pk_ell_convolved = {
-                "power_{}".format(ell):
+                'power_{}'.format(ell):
                     self.kaiser_factors(ell, b_k, self.growth_rate) \
                     * self.matter_power_spectrum(wavenumbers)
                 for ell in orders
@@ -232,7 +220,7 @@ class WindowedPowerSpectrum:
 
             return pk_ell_convolved
 
-        s = self.window['s']
+        s = self.mask_multipoles['s']
 
         k_interpol = np.logspace(*LOG_K_INTERPOL_RANGE, num=NUM_INTERPOL)
 
@@ -271,36 +259,36 @@ class WindowedPowerSpectrum:
         xi_ell_convolved = {}
         if 0 in orders:
             xi_ell_convolved[0] = \
-                xi_ell[0] * self.window['correlation_0'] \
-                + 1/5 * xi_ell[2] * self.window['correlation_2'] \
-                + 1/9 * xi_ell[4] * self.window['correlation_4']
+                xi_ell[0] * self.mask_multipoles['correlation_0'] \
+                + 1/5 * xi_ell[2] * self.mask_multipoles['correlation_2'] \
+                + 1/9 * xi_ell[4] * self.mask_multipoles['correlation_4']
         if 2 in orders:
             xi_ell_convolved[2] = \
-                xi_ell[0] * self.window['correlation_2'] \
+                xi_ell[0] * self.mask_multipoles['correlation_2'] \
                 + xi_ell[2] * (
-                    self.window['correlation_0']
-                    + 2/7 * self.window['correlation_2']
-                    + 2/7 * self.window['correlation_4']
+                    self.mask_multipoles['correlation_0']
+                    + 2/7 * self.mask_multipoles['correlation_2']
+                    + 2/7 * self.mask_multipoles['correlation_4']
                 ) \
                 + xi_ell[4] * (
-                    2/7 * self.window['correlation_2']
-                    + 100/693 * self.window['correlation_4']
-                    + 25/143 * self.window['correlation_6']
+                    2/7 * self.mask_multipoles['correlation_2']
+                    + 100/693 * self.mask_multipoles['correlation_4']
+                    + 25/143 * self.mask_multipoles['correlation_6']
                 )
         if 4 in orders:
             xi_ell_convolved[4] = \
-                xi_ell[0] * self.window['correlation_4'] \
+                xi_ell[0] * self.mask_multipoles['correlation_4'] \
                 + xi_ell[2] * (
-                    18/35 * self.window['correlation_2']
-                    + 20/77 * self.window['correlation_4']
-                    + 45/143 * self.window['correlation_6']
+                    18/35 * self.mask_multipoles['correlation_2']
+                    + 20/77 * self.mask_multipoles['correlation_4']
+                    + 45/143 * self.mask_multipoles['correlation_6']
                 ) \
                 + xi_ell[4] * (
-                    self.window['correlation_0']
-                    + 20/77 * self.window['correlation_2']
-                    + 162/1001 * self.window['correlation_4']
-                    + 20/143 * self.window['correlation_6']
-                    + 490/2431 * self.window['correlation_8']
+                    self.mask_multipoles['correlation_0']
+                    + 20/77 * self.mask_multipoles['correlation_2']
+                    + 162/1001 * self.mask_multipoles['correlation_4']
+                    + 20/143 * self.mask_multipoles['correlation_6']
+                    + 490/2431 * self.mask_multipoles['correlation_8']
                 )
 
         with warnings.catch_warnings():
@@ -319,7 +307,7 @@ class WindowedPowerSpectrum:
             }
 
         pk_ell_convolved = {
-            "power_{}".format(ell):
+            'power_{}'.format(ell):
                 Spline(*pk_ell_convolved_sampled[ell], k=1)(wavenumbers)
             for ell in orders
         }
@@ -327,10 +315,37 @@ class WindowedPowerSpectrum:
         pk_ell_convolved['k'] = wavenumbers
 
         if nbar is not None and 0 in orders:
-            pk_ell_convolved["power_0"] += (1 + 1/contrast) / nbar \
+            pk_ell_convolved['power_0'] += (1 + 1/contrast) / nbar \
                 * np.ones_like(wavenumbers)
 
-        return pk_ell_convolved
+        if self.window_multipoles is not None:
+            window_multipoles = {
+                pole: Spline(
+                    self.window_multipoles['k'],
+                    self.window_multipoles[pole]
+                )(wavenumbers)
+                for pole in pk_ell_convolved
+                if 'power_' in pole
+            }
+            convolved_zero_scale_power = Spline(
+                *pk_ell_convolved_sampled[0], k=1
+            )(0)
+
+            pk_ell_convolved.update(
+                {
+                    pole: pk_ell_convolved[pole] - convolved_zero_scale_power \
+                        * window_multipoles[pole]
+                    for pole in pk_ell_convolved
+                    if 'power_' in pole
+                }
+            )
+        else:
+            warnings.warn(
+                "`window_multipoles` attribute is missing. "
+                "Integral constraint is not corrected. "
+            )
+
+        return pk_ell_convolved, window_multipoles
 
     @staticmethod
     def kaiser_factors(order, bias, growth_rate):

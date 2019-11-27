@@ -30,8 +30,8 @@ def parse_cli_args():
     """
     cli_parser = ArgumentParser()
 
-    cli_parser.add_argument('--fsky', type=float, default=1/3)
-    cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
+    cli_parser.add_argument('--fsky', type=float, default=1.)
+    cli_parser.add_argument('--nbar', type=float, default=5e-2)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--padding', type=float, default=70.)
 
@@ -97,6 +97,7 @@ def determine_window():
 if __name__ == '__main__':
 
     PATHOUT = "./data/output/"
+    SCRIPT_NAME = "window_multipoles"
 
     params = parse_cli_args()
     pprint(params.__dict__)
@@ -112,41 +113,35 @@ if __name__ == '__main__':
     xi_ell, pk_ell = determine_window()
 
     np.save(
-        f"{PATHOUT}mask_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
+        f"{PATHOUT}{SCRIPT_NAME}/mask_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
         .format(fsky, padding),
         xi_ell
     )
 
     plt.close('all')
+    plt.figure(figsize=(8, 11))
 
-    plt.figure()
-
+    plt.subplot2grid((2, 1), (0, 0))
     for ell in ORDERS:
         plt.semilogx(
             pk_ell['k'], pk_ell[f'power_{ell}'],
             label=r'$\ell={}$'.format(ell)
         )
-
     plt.xlabel(r"$k$")
     plt.ylabel(r"$Q_\ell(k)$")
     plt.legend()
 
-    plt.savefig(
-        f"{PATHOUT}window-{{:.2f}}sky-{{:.0f}}pad.pdf".format(fsky, padding)
-    )
-
-    plt.figure()
-
+    plt.subplot2grid((2, 1), (1, 0))
     for ell in ORDERS:
         plt.semilogx(
             xi_ell['s'], xi_ell[f'correlation_{ell}'],
             label=r'$\ell={}$'.format(ell)
         )
-
     plt.xlabel(r"$s$")
     plt.ylabel(r"$Q_\ell(s)$")
     plt.legend()
 
     plt.savefig(
-        f"{PATHOUT}mask-{{:.2f}}sky-{{:.0f}}pad.pdf".format(fsky, padding)
+        f"{PATHOUT}window_multipoles-{{:.2f}}sky-{{:.0f}}pad.pdf"
+        .format(fsky, padding)
     )

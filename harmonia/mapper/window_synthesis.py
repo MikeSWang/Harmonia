@@ -16,11 +16,10 @@ import warnings
 
 import numpy as np
 from mcfit import P2xi
-from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
+from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.collections.utils import cartesian_to_spherical as c2s
-from harmonia.mapper.catalogue_maker import  UniformCatalogue
 
 
 class SurveyWindow:
@@ -97,7 +96,7 @@ class SurveyWindow:
                 "It is now being resynthesised. "
             )
 
-        catalogue = UniformCatalogue(number_density, boxsize)
+        catalogue = UniformCatalog(number_density, boxsize)
 
         catalogue['Location'] = catalogue['Position'] - np.divide(boxsize, 2)
 

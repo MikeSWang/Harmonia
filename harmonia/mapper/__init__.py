@@ -13,7 +13,6 @@ from .catalogue_maker import (
     LogNormalCatalogue,
     NBKCatalogue,
     RandomCatalogue,
-    UniformCatalogue,
     load_catalogue_from_file,
 )
 from .spherical_transform import SphericalMap

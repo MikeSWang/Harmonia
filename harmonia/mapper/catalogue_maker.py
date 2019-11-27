@@ -8,7 +8,6 @@ Make discrete catalogues from observed or simulated realisations.
 
     load_catalogue_from_file
     RandomCatalogue
-    UniformCatalogue
     NBKCatalogue
     LogNormalCatalogue
     GaussianCatalogue
@@ -105,60 +104,6 @@ class RandomCatalogue(UniformCatalog):
         return "RandomCatalogue(nbar={0}, boxsize={1}, seed={2})".format(
             self.attrs['nbar'], self.attrs['BoxSize'], self.attrs['seed']
         )
-
-
-class UniformCatalogue(CatalogSource):
-    """Uniform random catalogue of given mean particle number density and
-    box size.
-
-    Parameters
-    ----------
-    mean_density : float
-        Desired mean particle number density (in cubic h/Mpc).
-    boxsize : float, array_like
-        Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
-    seed : int or None, optional
-        Random seed of the catalogue (default is `None`).
-
-    """
-
-    _logger = logging.getLogger('UniformCatalogue')
-
-    @CurrentMPIComm.enable
-    def __init__(self, mean_density, boxsize, seed=None, comm=None):
-
-        self.comm = comm
-        if seed is None:
-            if self.comm.rank == 0:
-                seed = np.random.randint(0, _MAX_INT)
-            seed = self.comm.bcast(seed)
-
-        num_particles = int(mean_density * boxsize**3)
-        position = boxsize * np.random.rand(num_particles, 3)
-
-        self._size = len(num_particles)
-        self._pos = position
-
-        self.attrs.update(
-            {
-                'nbar': num_particles / boxsize**3,
-                'BoxSize': [boxsize] * 3,
-                'seed': seed,
-            }
-        )
-
-    def __str__(self):
-
-        return "UniformCatalogue(nbar={0}, boxsize={1}, seed={2})".format(
-            self.attrs['nbar'], self.attrs['BoxSize'], self.attrs['seed']
-        )
-
-    @column
-    def Position(self):
-        """Particle positions (in Mpc/h).
-
-        """
-        return self.make_column(self._pos)
 
 
 class NBKCatalogue(LogNormalCatalog):

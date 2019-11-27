@@ -321,19 +321,19 @@ class WindowedPowerSpectrum:
         if self.window_multipoles is not None:
             window_multipoles = {
                 pole: Spline(
-                    self.window_multipoles['k'],
-                    self.window_multipoles[pole]
+                    self.window_multipoles['k'], self.window_multipoles[pole]
                 )(wavenumbers)
                 for pole in pk_ell_convolved
                 if 'power_' in pole
             }
-            convolved_zero_scale_power = Spline(
+
+            integral_constraint_power = Spline(
                 *pk_ell_convolved_sampled[0], k=1
             )(0)
 
             pk_ell_convolved.update(
                 {
-                    pole: pk_ell_convolved[pole] - convolved_zero_scale_power \
+                    pole: pk_ell_convolved[pole] - integral_constraint_power \
                         * window_multipoles[pole]
                     for pole in pk_ell_convolved
                     if 'power_' in pole
@@ -345,7 +345,7 @@ class WindowedPowerSpectrum:
                 "Integral constraint is not corrected. "
             )
 
-        return pk_ell_convolved, window_multipoles
+        return pk_ell_convolved
 
     @staticmethod
     def kaiser_factors(order, bias, growth_rate):

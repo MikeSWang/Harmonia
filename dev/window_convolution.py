@@ -27,7 +27,7 @@ def parse_cli_args():
 
     cli_parser = ArgumentParser()
 
-    cli_parser.add_argument('--fsky', type=float, default=0.33)
+    cli_parser.add_argument('--fsky', type=float, default=1.)
     cli_parser.add_argument('--bias', type=float, default=2.33)
     cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
     cli_parser.add_argument('--contrast', type=float, default=20.)
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         window_multipoles=window_multipoles
     )
 
-    windowed_multipoles, arr = windowed_model.convolved_multipoles(
+    windowed_multipoles = windowed_model.convolved_multipoles(
         ORDERS, bias, nbar=nbar, contrast=contrast, wavenumbers=k_universal
     )
 

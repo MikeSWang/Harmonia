@@ -35,6 +35,26 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
+def shift_x_coord(degree):
+
+    if degree == 0:
+        return 1.
+    if degree == 2:
+        return 0.996
+    if degree == 4:
+        return 1.004
+
+
+def shift_y_coord(degree):
+
+    if degree == 0:
+        return 0.
+    if degree == 2:
+        return 250.
+    if degree == 4:
+        return -250.
+
+
 params = parse_cli_args()
 
 if __name__ == '__main__':
@@ -64,7 +84,8 @@ if __name__ == '__main__':
     ).item()
     try:
         window_multipoles = np.load(
-            f"{PATHOUT}window_multipoles/window_multipoles-{{:.2f}}sky-70pad.npy"
+            f"{PATHOUT}window_multipoles/"
+            "window_multipoles-{:.2f}sky-70pad.npy"
             .format(fsky)
         ).item()
     except FileNotFoundError:
@@ -93,9 +114,10 @@ if __name__ == '__main__':
         if 'power_' in key
     })
 
-    k_universal = measured_multipoles['k']
-
     # Model
+    k_data = measured_multipoles['k']
+    k_model = np.linspace(np.min(k_data), np.max(k_data), num=1024)
+
     windowed_model = WindowedPowerSpectrum(
         redshift=REDSHIFT,
         power_spectrum=matter_power_spectrum,
@@ -104,7 +126,7 @@ if __name__ == '__main__':
     )
 
     windowed_multipoles = windowed_model.convolved_multipoles(
-        ORDERS, bias, nbar=nbar, contrast=contrast, wavenumbers=k_universal
+        ORDERS, bias, nbar=nbar, contrast=contrast, wavenumbers=k_model
     )
 
     # Comparison
@@ -112,20 +134,20 @@ if __name__ == '__main__':
     plt.figure("Window-convolved Power", figsize=(7, 5))
 
     plt.semilogx(
-        k_universal, bias**2 * matter_power_spectrum(k_universal) + 1/nbar,
+        k_model, bias**2 * matter_power_spectrum(k_model) + 1/nbar,
         c='k', ls=':', label="isotropic model"
     )
     for ell in ORDERS:
         measurement_plot = plt.errorbar(
-            k_universal,
+            measured_multipoles['k'] * shift_x_coord(ell),
             measured_multipoles['power_{}'.format(ell)],
             measured_multipoles['dpower_{}'.format(ell)],
-            fmt='o', markersize=2.75, capsize=0., alpha=2/3,
+            fmt='o', markersize=3., capsize=0., alpha=2/3,
             label=r"measurements $\ell={}$".format(ell)
         )
         plt.semilogx(
-            k_universal,
-            windowed_multipoles['power_{}'.format(ell)],
+            k_model,
+            windowed_multipoles['power_{}'.format(ell)] + shift_y_coord(ell),
             color=measurement_plot[0].get_color(),
             linestyle='--', label=r"model $\ell={}$".format(ell)
         )
@@ -133,8 +155,8 @@ if __name__ == '__main__':
     plt.legend()
     plt.title(r"$f_\mathrm{{sky}} = {:.2f}$".format(fsky))
 
-    plt.xlim(0.005, 0.1)
-    plt.ylim(-10**5, 10**5)
+    plt.xlim(0.008, 0.1)
+    plt.ylim(-3*10**4, .9*10**5)
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
     plt.ylabel(r"$P_\ell(k)$")
     plt.subplots_adjust(hspace=0., wspace=0.)

@@ -36,6 +36,7 @@ def parse_cli_args():
     cli_parser.add_argument('--nbar', type=float, default=5e-2)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--padding', type=float, default=70.)
+    cli_parser.add_argument('--mesh', type=int, default=512)
 
     return cli_parser.parse_args()
 
@@ -104,7 +105,7 @@ def determine_window():
         Survey window correlation and power multipoles.
 
     """
-    _xi_ell = window.correlation_function_multipoles(ORDERS)
+    _xi_ell = window.correlation_function_multipoles(ORDERS, Nmesh=mesh)
     _pk_ell = window.power_multipoles
 
     return _xi_ell, _pk_ell
@@ -125,6 +126,7 @@ if __name__ == '__main__':
     nbar = params.nbar
     boxsize = params.boxsize
     padding = params.padding
+    mesh = params.mesh
 
     ORDERS = [0, 2, 4, 6, 8]
 

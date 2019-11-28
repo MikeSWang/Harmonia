@@ -1136,7 +1136,7 @@ class TwoPointFunction(Couplings):
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default 
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default
             is ``numpy.inf``.
 
         Returns
@@ -1147,7 +1147,7 @@ class TwoPointFunction(Couplings):
         Raises
         ------
         ValueError
-            If `b_1` is `None` when `part` is ``'signal'`` or ``'both'``, 
+            If `b_1` is `None` when `part` is ``'signal'`` or ``'both'``,
             or `nbar` is `None` when `part` is ``'shotnoise'``
             or ``'both'``.
         ValueError
@@ -1242,7 +1242,7 @@ class TwoPointFunction(Couplings):
             Tracer species--dependent parameter for bias modulation
             (default is 1.).
         contrast : float, optional
-            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default 
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default
             is ``numpy.inf``.
 
         Returns

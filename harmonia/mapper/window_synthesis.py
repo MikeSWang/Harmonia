@@ -212,7 +212,7 @@ class SurveyWindow:
 
         k_samples = power_multipoles['k'][valid_bins]
 
-        self.power_multipoles= {
+        self.power_multipoles = {
             'power_{:d}'.format(ell):
                 power_multipoles['power_{:d}'.format(ell)][valid_bins].real
             for ell in orders

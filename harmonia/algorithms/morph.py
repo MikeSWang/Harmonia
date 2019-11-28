@@ -248,7 +248,7 @@ class SphericalArray:
         if axis_order == 'k':
             roots = self.roots
             if not collapse:
-                roots =  self._repeat_subarray(
+                roots = self._repeat_subarray(
                     roots, 'data', degrees=self.degrees
                 )
 
@@ -595,7 +595,7 @@ class SphericalArray:
 class CartesianArray:
     r"""Structured Cartesian arrays.
 
-    This consists of a coordinate array and data array(s) for different 
+    This consists of a coordinate array and data array(s) for different
     variables corresponding to the coordinates.
 
     Parameters
@@ -629,7 +629,7 @@ class CartesianArray:
 
         self.coord_array = np.squeeze(filling[coord_key])
         self.data_arrays = [
-            np.squeeze(filling[var_name]) 
+            np.squeeze(filling[var_name])
             for var_name in self.sorted_vars
         ]
 

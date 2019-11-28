@@ -32,6 +32,7 @@ def parse_cli_args():
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--fsky', type=float, default=1.)
+    cli_parser.add_argument('--split', action='store_true')
     cli_parser.add_argument('--nbar', type=float, default=5e-2)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--padding', type=float, default=70.)
@@ -39,7 +40,7 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def sky_mask(cartesian_position, fraction):
+def sky_mask(cartesian_position, fraction, split=False):
     """Define the sky mask.
 
     Parameters
@@ -55,9 +56,22 @@ def sky_mask(cartesian_position, fraction):
         Sky mask.
 
     """
+
     spherical_position = cartesian_to_spherical(cartesian_position)
 
-    mask = spherical_position[..., -1] <= fraction * (2*np.pi)
+    if split:
+        mask = np.logical_or(
+            np.logical_and(
+                spherical_position[..., -1] <= fraction * (2*np.pi),
+                spherical_position[:, 1] < np.pi/2
+            ),
+            np.logical_and(
+                spherical_position[..., -1] >= (1 - fraction) * (2*np.pi),
+                spherical_position[:, 1] >= np.pi/2
+            )
+        )
+    else:
+        mask = spherical_position[..., -1] <= fraction * (2*np.pi)
 
     return mask
 
@@ -73,7 +87,8 @@ def synthesise():
     """
     _window = SurveyWindow(
         mask=lambda pos:\
-            spherical_indicator(pos, boxsize/2) * sky_mask(pos, fsky)
+            spherical_indicator(pos, boxsize/2) \
+            * sky_mask(pos, fsky, split=split)
     )
     _window.synthesise(nbar, boxsize, padding=padding)
 
@@ -106,6 +121,7 @@ if __name__ == '__main__':
     pprint(params.__dict__)
 
     fsky = params.fsky
+    split = params.split
     nbar = params.nbar
     boxsize = params.boxsize
     padding = params.padding
@@ -116,13 +132,13 @@ if __name__ == '__main__':
     xi_ell, pk_ell = determine_window()
 
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/mask_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
-        .format(fsky, padding),
+        f"{PATHOUT}{SCRIPT_NAME}/mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
+        .format(fsky, split*"-split", padding),
         xi_ell
     )
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/window_multipoles-{{:.2f}}sky-{{:.0f}}pad.npy"
-        .format(fsky, padding),
+        f"{PATHOUT}{SCRIPT_NAME}/window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
+        .format(fsky, split*"-split", padding),
         pk_ell
     )
 

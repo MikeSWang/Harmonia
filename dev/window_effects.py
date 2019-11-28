@@ -37,6 +37,7 @@ def parse_cli_args():
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--fsky', type=float, default=1/3)
+    cli_parser.add_argument('--split', action='store_true')
     cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
     cli_parser.add_argument('--contrast', type=float, default=40.)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
@@ -45,11 +46,23 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def sky_mask(cartesian_position, fraction):
+def sky_mask(cartesian_position, fraction, split=False):
 
     spherical_position = cartesian_to_spherical(cartesian_position)
 
-    mask = spherical_position[..., -1] <= fraction * (2*np.pi)
+    if split:
+        mask = np.logical_or(
+            np.logical_and(
+                spherical_position[..., -1] <= fraction * (2*np.pi),
+                spherical_position[:, 1] < np.pi/2
+            ),
+            np.logical_and(
+                spherical_position[..., -1] >= (1 - fraction) * (2*np.pi),
+                spherical_position[:, 1] >= np.pi/2
+            )
+        )
+    else:
+        mask = spherical_position[..., -1] <= fraction * (2*np.pi)
 
     return mask
 
@@ -102,10 +115,10 @@ def process():
 
         # With window
         data_catalogue['Weight'] *= sky_mask(
-            data_catalogue['Position'] - boxsize/2, fsky
+            data_catalogue['Position'] - boxsize/2, fsky, split=split
         )
         random_catalogue['Weight'] *= sky_mask(
-            random_catalogue['Position'] - boxsize/2, fsky
+            random_catalogue['Position'] - boxsize/2, fsky, split=split
         )
 
         spherical_map = SphericalMap(
@@ -153,13 +166,16 @@ if __name__ == '__main__':
     params = parse_cli_args()
 
     fsky = params.fsky
+    split = params.split
     nbar = params.nbar
     contrast = params.contrast
     boxsize = params.boxsize
     mesh = params.mesh
 
     pprint(params.__dict__)
-    script_tag = "fsky={:.2f},contrast={},mesh={}".format(fsky, contrast, mesh)
+    script_tag = "fsky={:.2f}{},contrast={},mesh={}".format(
+        fsky, split*"s", contrast, mesh
+    )
 
     # Process catalogues.
     no_window_output, windowed_output = process()

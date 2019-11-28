@@ -27,7 +27,7 @@ def parse_cli_args():
 
     cli_parser = ArgumentParser()
 
-    cli_parser.add_argument('--fsky', type=float, default=1.)
+    cli_parser.add_argument('--fsky', type=float, default=.33)
     cli_parser.add_argument('--bias', type=float, default=2.33)
     cli_parser.add_argument('--nbar', type=float, default=2.4883e-4)
     cli_parser.add_argument('--contrast', type=float, default=20.)
@@ -97,6 +97,12 @@ if __name__ == '__main__':
         "-(fsky={:.2f},contrast={:.1f},mesh=256).npy"
         .format(fsky, contrast)
     ).item()
+
+#    for var_name, var_results in measurements.items():
+#        if var_name != 'shotnoise':
+#            measurements[var_name] = [
+#                [var_array[0][-15:] for var_array in var_results]
+#            ]
 
     measured_multipoles = {
         'k': np.mean(np.concatenate(measurements['k']), axis=0),

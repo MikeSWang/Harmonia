@@ -91,7 +91,7 @@ def process():
             .to_mesh(
                 Nmesh=mesh, resampler='tsc', compensated=True, interlaced=True
             )
-        no_window_power = ConvolvedFFTPower(no_window_mesh, ORDERS, kmax=KMAX).poles
+        no_window_power = ConvolvedFFTPower(no_window_mesh, ORDERS).poles
 
         valid_bins = (
             ~np.isnan(no_window_power['modes']) \
@@ -131,7 +131,7 @@ def process():
         windowed_mesh = spherical_map.pair.to_mesh(
             Nmesh=mesh, resampler='tsc', compensated=True, interlaced=True
         )
-        windowed_power = ConvolvedFFTPower(windowed_mesh, ORDERS, kmax=KMAX).poles
+        windowed_power = ConvolvedFFTPower(windowed_mesh, ORDERS).poles
 
         valid_bins = (
             ~np.isnan(windowed_power['modes']) \

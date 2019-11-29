@@ -130,14 +130,14 @@ def process():
     )
 
     windowed_power_model = WindowedPowerSpectrum(
-        power_spectrum=matter_power_spectrum,
+        redshift=params['redshift'],
         cosmo=simu_cosmo,
         mask_multipoles=mask_multipoles,
         window_multipoles=window_multipoles
     )
     two_point_model = TwoPointFunction(
         disc,
-        power_spectrum=matter_power_spectrum,
+        redshift=params['redshift'],
         cosmo=simu_cosmo,
         couplings=external_couplings
     )

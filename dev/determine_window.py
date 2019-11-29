@@ -50,14 +50,16 @@ def sky_mask(cartesian_position, fraction, split=False):
         Cartesian positions.
     fraction : float
         Sky fraction.
+    split : bool, optional
+        If `True` (default is `False`), the mask is split between north and
+        south polar caps in antipodal regions.
 
     Returns
     -------
-    mask: bool :class:`numpy.ndarray`
+    mask : bool :class:`numpy.ndarray`
         Sky mask.
 
     """
-
     spherical_position = cartesian_to_spherical(cartesian_position)
 
     if split:
@@ -78,7 +80,7 @@ def sky_mask(cartesian_position, fraction, split=False):
 
 
 def synthesise():
-    """Synthesise a high-density random catalogue with the surveywindow.
+    """Synthesise a high-density random catalogue with the survey window.
 
     Returns
     -------
@@ -134,12 +136,14 @@ if __name__ == '__main__':
     xi_ell, pk_ell = determine_window()
 
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
+        f"{PATHOUT}{SCRIPT_NAME}/"
+        f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
         .format(fsky, split*"-split", padding),
         xi_ell
     )
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
+        f"{PATHOUT}{SCRIPT_NAME}/"
+        f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
         .format(fsky, split*"-split", padding),
         pk_ell
     )

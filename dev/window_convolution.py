@@ -24,7 +24,9 @@ PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
 
 def parse_cli_args():
+    """Parse command-line argument inputs.
 
+    """
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--fsky', type=float, default=.33)
@@ -35,24 +37,50 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def shift_x_coord(degree):
+def shift_x_coord(degree, amount=0.004):
+    """Shift horizontal coordinate depending on the 'degree' of plotted
+    line to distinguish them.
 
+    Parameters
+    ----------
+    degree : int
+        Degree of the plot.
+
+    Returns
+    -------
+    float
+        Multiplicative shift.
+
+    """
     if degree == 0:
         return 1.
     if degree == 2:
-        return 0.996
+        return 1. - amount
     if degree == 4:
-        return 1.004
+        return 1. + amount
 
 
-def shift_y_coord(degree):
+def shift_y_coord(degree, amount=250.):
+    """Shift vertical coordinate depending on the 'degree' of plotted
+    line to distinguish them.
 
+    Parameters
+    ----------
+    degree : int
+        Degree of the plot.
+
+    Returns
+    -------
+    float
+        Additive shift.
+
+    """
     if degree == 0:
         return 0.
     if degree == 2:
-        return 250.
+        return amount
     if degree == 4:
-        return -250.
+        return - amount
 
 
 params = parse_cli_args()
@@ -145,7 +173,8 @@ if __name__ == '__main__':
     )
     for ell in ORDERS:
         measurement_plot = plt.errorbar(
-            measured_multipoles['k'] * shift_x_coord(ell),
+            measured_multipoles['k'] \
+                * shift_x_coord(ell, amount=0.04),
             measured_multipoles['power_{}'.format(ell)],
             measured_multipoles['dpower_{}'.format(ell)],
             fmt='o', markersize=3., capsize=0., alpha=2/3,
@@ -153,16 +182,18 @@ if __name__ == '__main__':
         )
         plt.semilogx(
             k_model,
-            windowed_multipoles['power_{}'.format(ell)] + shift_y_coord(ell),
+            windowed_multipoles['power_{}'.format(ell)] \
+                + shift_y_coord(ell, amount=250.),
             color=measurement_plot[0].get_color(),
             linestyle='--', label=r"model $\ell={}$".format(ell)
         )
 
-    plt.legend()
-    plt.title(r"$f_\mathrm{{sky}} = {:.2f}$".format(fsky))
-
     plt.xlim(0.008, 0.1)
-    plt.ylim(-3*10**4, .9*10**5)
+    plt.ylim(-3*1e4, .9*1e5)
+
     plt.xlabel(r"$k$ [$h/\textrm{Mpc}$]")
     plt.ylabel(r"$P_\ell(k)$")
+    plt.legend()
+    plt.title(r"$b_1 = {:.2f}, f_\mathrm{{sky}} = {:.2f}$".format(bias, fsky))
+
     plt.subplots_adjust(hspace=0., wspace=0.)

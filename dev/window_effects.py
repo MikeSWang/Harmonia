@@ -33,7 +33,9 @@ CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 
 def parse_cli_args():
+    """Parse command-line argument inputs.
 
+    """
     cli_parser = ArgumentParser()
 
     cli_parser.add_argument('--fsky', type=float, default=1/3)
@@ -47,7 +49,24 @@ def parse_cli_args():
 
 
 def sky_mask(cartesian_position, fraction, split=False):
+    """Define the sky mask.
 
+    Parameters
+    ----------
+    cartesian_position : float array_like
+        Cartesian positions.
+    fraction : float
+        Sky fraction.
+    split : bool, optional
+        If `True` (default is `False`), the mask is split between north and
+        south polar caps in antipodal regions.
+
+    Returns
+    -------
+    mask : bool :class:`numpy.ndarray`
+        Sky mask.
+
+    """
     spherical_position = cartesian_to_spherical(cartesian_position)
 
     if split:
@@ -68,7 +87,14 @@ def sky_mask(cartesian_position, fraction, split=False):
 
 
 def process():
+    """Process the input catalogues.
 
+    Returns
+    -------
+    dict
+        Windowed measurements.
+
+    """
     disc = DiscreteSpectrum(boxsize/2, 'dirichlet', KMAX)
 
     no_window_suite = defaultdict(list)

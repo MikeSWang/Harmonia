@@ -125,10 +125,6 @@ def process():
     """
     disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['khyb'])
 
-    matter_power_spectrum = cosmology.LinearPower(
-        simu_cosmo, params['redshift']
-    )
-
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
         cosmo=simu_cosmo,

@@ -34,7 +34,7 @@ MASK_MULTIPOLES_FILE = PATHIN/"survey"/"mask_multipoles-1.00sky.npy"
 WINDOW_MULTIPOLES_FILE = PATHIN/"survey"/"window_multipoles-1.00sky.npy"
 FIDUCIAL_FILE = PATHIN/"survey"/"estimation_fiducial-1.00sky.npy"
 COVAR_ESTIMATE_FILE = PATHIN/"survey"/"window_correlation-1.00sky.npy"
-COUPLINGS_FILE = PATHIN/"survey"/None
+COUPLINGS_FILE = PATHIN/"survey"
 
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 TO_MESH_KWARGS = dict(resampler='tsc', compensated=True, interlaced=True)

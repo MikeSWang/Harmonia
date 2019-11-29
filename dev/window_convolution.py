@@ -107,13 +107,12 @@ if __name__ == '__main__':
 
     # Window function.
     mask_multipoles = np.load(
-        f"{PATHOUT}window_multipoles/mask_multipoles-{{:.2f}}sky-70pad.npy"
+        f"{PATHOUT}window_multipoles/mask_multipoles-{{:.2f}}sky.npy"
         .format(fsky)
     ).item()
     try:
         window_multipoles = np.load(
-            f"{PATHOUT}window_multipoles/"
-            "window_multipoles-{:.2f}sky-70pad.npy"
+            f"{PATHOUT}window_multipoles/window_multipoles-{{:.2f}}sky.npy"
             .format(fsky)
         ).item()
     except FileNotFoundError:

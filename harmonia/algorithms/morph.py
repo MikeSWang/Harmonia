@@ -12,8 +12,6 @@ Manipulate cosmological field data arrays.
 |
 
 """
-import warnings
-
 import numpy as np
 
 from harmonia.collections.utils import sort_dict_to_list
@@ -216,7 +214,6 @@ class SphericalArray:
         empty_flag = (dat_arr is None)
         if empty_flag:
             data_flat = None
-            warnings.warn("`data_array` is None and thus not flattened. ")
 
         axis_order = self._alias(axis_order)
         if axis_order == 'ln':

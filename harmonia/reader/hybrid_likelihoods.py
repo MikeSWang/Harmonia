@@ -381,7 +381,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
 # -----------------------------------------------------------------------------
 
 def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
-                                   window_corr_modeller, **model_kwargs):
+                                   orders, window_corr_modeller,
+                                   **model_kwargs):
     """Compute the parametrised moment(s) of power spectrum multipoles.
 
     Parameters
@@ -396,6 +397,8 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         Windowed power spectrum base model.
     pivot : {'multipole', 'scale'}
         Order in which the data is unpacked as a 1-d vector.
+    orders : list of int
+        Order(s) of the power spectrum multipoles.
     window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
@@ -418,14 +421,11 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     assert window_corr_modeller.pivot == pivot, \
         "`window_corr_modeller.pivot` must match input `pivot`. "
 
-    orders = window_corr_modeller.multipoles
-    wavenumbers = window_corr_modeller.filling['k']
-
     fiducial_expectation = window_corr_modeller.fiducial_diagonal_multipoles
     fiducial_covariance = window_corr_modeller.window_correlation
 
     expectation_filling = windowed_power_model.convolved_multipoles(
-        orders, b_1, f_nl=f_nl, wavenumbers=wavenumbers, **model_kwargs
+        orders, b_1, f_nl=f_nl, **model_kwargs
     )
 
     expectation_array = CartesianArray(
@@ -448,7 +448,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
 
 def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
                                  windowed_power_model, cartesian_data,
-                                 window_corr_modeller, pivot,
+                                 window_corr_modeller, pivot, orders,
                                  **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
@@ -498,7 +498,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
     for (b_1, f_nl, wpm) \
             in it.product(bias, non_gaussianity, windowed_power_model):
         sample_mean, sample_covar = cartesian_parametrised_moments(
-            b_1, f_nl, wpm, pivot, window_corr_modeller,
+            b_1, f_nl, wpm, pivot, orders, window_corr_modeller,
             nbar=nbar, **covariance_kwargs
         )
         sample_likelihood = multivariate_normal_pdf(

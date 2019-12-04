@@ -1,6 +1,8 @@
 """Export catalogue summary data.
 
 """
+from __future__ import division
+
 import numpy as np
 from matplotlib import pyplot as plt
 from nbodykit import cosmology

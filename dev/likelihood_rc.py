@@ -7,16 +7,8 @@ import warnings
 from argparse import ArgumentParser
 from pathlib import Path
 
-PATHIN = Path("./data/input/")
-PATHOUT = Path("./data/output/")
-
-
-def import_local_package():
-    """Add package to Python module path.
-
-    """
-    _cwd = os.path.dirname(__file__)
-    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
+_cwd = os.path.dirname(__file__)
+sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 
 def parse_external_args():
@@ -30,17 +22,13 @@ def parse_external_args():
     """
     parser = ArgumentParser()
 
-    parser.add_argument('--map', required=True)
-
-    parser.add_argument('--sample-param', type=str, nargs='+')
-    parser.add_argument('--fixed-param', type=str, nargs='+')
-    parser.add_argument('--num-sample', type=int, default=500)
-
-    parser.add_argument('--khyb', type=float, default=0.05)
-    parser.add_argument('--kmax', type=float, default=0.1)
+    parser.add_argument('--breakdown', action='store_true')
     parser.add_argument('--spherical-pivot', default='spectral')
     parser.add_argument('--cartesian-pivot', default='multipole')
-    parser.add_argument('--breakdown', action='store_true')
+
+    parser.add_argument('--map', required=True)
+    parser.add_argument('--khyb', type=float, default=0.05)
+    parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--multipoles', type=int, nargs='+', default=[0, 2])
 
     parser.add_argument('--nbar', type=float, default=2.4883e-4)
@@ -58,14 +46,14 @@ def parse_external_args():
     return parser.parse_args()
 
 
-if __name__ != '__main__':
+PATHIN = Path("./data/input/")
+PATHOUT = Path("./data/output/")
 
-    import_local_package()
+if __name__ != '__main__':
 
     from harmonia.collections import clean_warning_format, get_filename
 
     warnings.formatwarning = clean_warning_format
 
     script_name = get_filename(sys.argv[0])
-
     parsed_params = parse_external_args()

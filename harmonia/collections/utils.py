@@ -6,6 +6,7 @@ Provide convenience system utilities for input/output handling, processing,
 formatting and data manipulation, and common algebraic, geometric and
 statistical computational algorithms.
 
+
 System utilities
 ---------------------------------------------------------------------------
 
@@ -74,6 +75,8 @@ Computational utilities
 |
 
 """
+from __future__ import division
+
 import os
 import warnings
 from collections import defaultdict

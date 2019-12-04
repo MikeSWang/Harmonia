@@ -1,6 +1,8 @@
 """Recover real-space power spectrum from paired N-body simulations.
 
 """
+from __future__ import division
+
 from collections import defaultdict
 
 import numpy as np

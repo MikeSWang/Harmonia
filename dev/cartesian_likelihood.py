@@ -34,10 +34,9 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-COUPLINGS_FILE = SPECS_PATH/""
 MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles-1.00sky.npy"
 WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles-1.00sky.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimation-1.00sky.npy"
+FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/""
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -48,10 +47,9 @@ CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 # Global quantities.
 simu_cosmo = None
-external_couplings = None
 mask_multipoles = None
 window_multipoles = None
-window_correlation = None
+window_correlator = None
 
 
 def initialise():
@@ -107,8 +105,6 @@ def initialise():
             Omega0_b=cosmological_parameters['Omega0_b'],
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
-
-    external_couplings = np.load(COUPLINGS_FILE).item()
 
     mask_multipoles = np.load(MASK_MULTIPOLES_FILE).item()
     window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()
@@ -225,19 +221,6 @@ def process():
 
         output_data['cartesian_likelihood'].append(
             [cart_likelihood(**cart_likelihood_kwargs)]
-        )
-
-        output_data['data_vector'].append(
-            np.concatenate(
-                (
-                    spherical_data.unfold(
-                        params['spherical_pivot'], return_only='data'
-                    ),
-                    cartesian_data.unfold(
-                        params['cartesian_pivot'], return_only='data'
-                    ),
-                )
-            )
         )
 
     return output_data

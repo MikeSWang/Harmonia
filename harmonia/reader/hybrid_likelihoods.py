@@ -4,6 +4,7 @@ Hybrid likelihoods (:mod:`~harmonia.reader.hybrid_likelihoods`)
 
 Build hybrid likelihoods for cosmological parameter inference.
 
+
 Probability distributions
 ---------------------------------------------------------------------------
 
@@ -29,12 +30,6 @@ Cartesian likelihood
 
     cartesian_parametrised_moments
     cartesian_map_log_likelihood
-
-
-Hybrid likelihood
----------------------------------------------------------------------------
-
-.. todo:: Implement or dismantle.
 
 """
 import collections as coll
@@ -381,7 +376,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
 # -----------------------------------------------------------------------------
 
 def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
-                                   orders, window_corr_modeller,
+                                   orders, correlation_modeller,
                                    **model_kwargs):
     """Compute the parametrised moment(s) of power spectrum multipoles.
 
@@ -395,11 +390,11 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         Mean particle number density (in cubic h/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
-    pivot : {'multipole', 'scale'}
+    pivot : {'orders', 'scale'}
         Order in which the data is unpacked as a 1-d vector.
     orders : list of int
         Order(s) of the power spectrum multipoles.
-    window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
+    correlation_modeller : :class:`~.cartesian_model.WindowCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
     **model_kwargs
@@ -415,14 +410,25 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     Raises
     ------
     AssertionError
-        If `window_corr_modeller.pivot` does not match input `pivot`.
+        If the :attr:`wavenumbers` attribute of `windowed_power_model`
+        does not match the wavenumbers of `correlation_modeller`.
 
     """
-    assert window_corr_modeller.pivot == pivot, \
-        "`window_corr_modeller.pivot` must match input `pivot`. "
+    fiducial_wavenumbers = correlation_modeller.power_multipoles['k']
+    fiducial_expectation = correlation_modeller.fiducial_vector(pivot)
+    fiducial_covariance = correlation_modeller.windowed_correlation
 
-    fiducial_expectation = window_corr_modeller.fiducial_diagonal_multipoles
-    fiducial_covariance = window_corr_modeller.window_correlation
+    assert np.shape(np.squeeze(fiducial_wavenumbers)) \
+        == np.shape(np.squeeze(windowed_power_model.wavenumbers)), (
+        "The wavenumbers at which the power spectrum model is evaluated "
+        "do not match the wavenumbers at which "
+        "the fiducial covariance matrix is estimated. "
+    )
+    assert len(orders) == len(correlation_modeller.orders), (
+        "The multipoles for which the fiducial covariance matrix is estimated "
+        "do not match the multipoles for which "
+        "the power spectrum model is evaluated. "
+    )
 
     expectation_filling = windowed_power_model.convolved_multipoles(
         orders, b_1, f_nl=f_nl, **model_kwargs
@@ -434,7 +440,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         var_key_root='power_'
     )
 
-    if pivot == 'multipole':
+    if pivot == 'orders':
         expectation = expectation_array.unfold('variable', return_only='data')
     if pivot == 'scale':
         expectation = expectation_array.unfold('coord', return_only='data')
@@ -467,7 +473,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
     window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
-    pivot : {'multipole', 'scale'}
+    pivot : {'orders', 'scale'}
         Order in which the data is unpacked as a 1-d vector.
     **covariance_kwargs
         Keyword arguments to be passed to
@@ -511,7 +517,3 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
         log_likelihood = np.squeeze(log_likelihood, axis=axis_to_squeeze)
 
     return log_likelihood
-
-
-# Hybrid likelihood
-# -----------------------------------------------------------------------------

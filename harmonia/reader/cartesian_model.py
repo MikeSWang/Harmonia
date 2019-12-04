@@ -7,11 +7,13 @@ Compute Fourier-space :math:`n`-point functions in the Cartesian basis.
 .. autosummary::
 
     WindowedPowerSpectrum
-    WindowCorrelation
+    WindowedCorrelation
 
 |
 
 """
+from __future__ import division
+
 import warnings
 
 import numpy as np
@@ -389,58 +391,78 @@ class WindowedPowerSpectrum:
         return np.squeeze(kaiser_factor)
 
 
-class WindowCorrelation:
+class WindowedCorrelation:
     """Window-induced correlation matrix for power spectrum multipoles at
     given wavenumbers.
 
     Parameters
     ----------
-    fiducial_windowed_power_model : dict
-        The fiducial windowed power spectrum model based at which the
+    fiducial_multipoles : dict
+        The fiducial windowed power multipoles based at which the
         window-induced correlation is estimated, with the mandatory
         key ``'k'`` for the wavenumbers corresponding to the correlation
         matrix components.
-    pivot : {'orders', 'scale'}
-        The order in which the correlation matrix components are arranged:
-        if ``'orders'``, the compoenents are in ascending multipole order
-        and then in ascending order of the wavenumber; if ``'scale'``, the
-        components are similarly ordered by the wavenumber first and then
-        the multipole order.
 
     Attributes
     ----------
-    pivot : {'orders', 'scale'}
-        The same as the `pivot` argument.
+    fiducial_multipoles : dict
+        The fiducial windowed power multipoles based at which the
+        window-induced correlation is estimated, with the mandatory
+        key ``'k'`` for the wavenumbers corresponding to the correlation
+        matrix components.
     orders : list of int
-        Order of the multipoles.
-    wavenumbers : float :class:`numpy.ndarray`
-        Wavenumbers to which the window correlation components correspond.
-    fiducial_power_multipoles : float :class:`numpy.ndarray`
-        Power multipoles to which the window correlation components
-        correspond and at which the window correlation is estimated.
+        Order of the power multipoles.
 
     """
 
-    def __init__(self, fiducial_windowed_power_model, pivot):
+    def __init__(self, fiducial_multipoles):
 
-        fiducial_model_array = CartesianArray(
-            fiducial_windowed_power_model, "k", "power_"
+        self.fiducial_multipoles = CartesianArray(
+            fiducial_multipoles, "k", "power_"
         )
 
-        self.pivot = pivot
-        self.orders = list(map(int, fiducial_model_array.sorted_vars))
-
-        if self.pivot == 'orders':
-            self.fiducial_diagonal_multipoles, self.wavenumbers = \
-                fiducial_model_array.unfold('variable')
-        elif self.pivot == 'scale':
-            self.fiducial_diagonal_multipoles, self.wavenumbers = \
-                fiducial_model_array.unfold('coord')
+        self.orders = list(
+            map(
+                lambda var_name: int(var_name.split()[-1]),
+                fiducial_multipoles.sorted_vars
+            )
+        )
 
         self._window_correlation = None
 
+    def fiducial_vector(self, pivot):
+        """Returned flattened vector of fiducial power.
+
+        Parameters
+        ----------
+        pivot : {'orders', 'scale'}
+            The order in which the correlation matrix components are
+            arranged: if ``'orders'``, the compoenents are in ascending
+            multipole order and then in ascending order of the wavenumber;
+            if ``'scale'``, the components are similarly ordered by the
+            wavenumber first and then the multipole order.
+
+        Returns
+        -------
+        fiducial_power : :class:`numpy.ndarray`
+            Fiducial vector of power multipoles to which the windowed
+            correlation components correspond and at which the windowed
+            correlation is estimated.
+
+        """
+        if self.pivot == 'orders':
+            fiducial_power = self.fiducial_multipoles.unfold(
+                'variable', return_only='data'
+            )
+        elif self.pivot == 'scale':
+            fiducial_power = self.fiducial_multipoles.unfold(
+                'coord', return_only='data'
+            )
+
+        return fiducial_power
+
     @property
-    def window_correlation(self):
+    def windowed_correlation(self):
         """Covariance matrix induced by the window at
         :attr:`fiducial_power_multipoles`.
 
@@ -459,8 +481,8 @@ class WindowCorrelation:
         """
         return self._window_correlation
 
-    @window_correlation.setter
-    def window_correlation(self, covar_estimate):
+    @windowed_correlation.setter
+    def windowed_correlation(self, covar_estimate):
 
         covar_estimate = np.squeeze(np.array(covar_estimate))
         if covar_estimate.ndim != 2 \

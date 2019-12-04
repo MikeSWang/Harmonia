@@ -1,6 +1,8 @@
 """Visualise recovered power spectra.
 
 """
+from __future__ import division
+
 from matplotlib import pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline as IUSpline
 

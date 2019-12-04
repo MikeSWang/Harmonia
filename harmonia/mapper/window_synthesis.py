@@ -16,10 +16,11 @@ import warnings
 
 import numpy as np
 from mcfit import P2xi
-from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
+from nbodykit.lab import FKPCatalog, UniformCatalog
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.collections.utils import cartesian_to_spherical as c2s
+from harmonia.mapper.cartesian_reduction import CartesianMap
 
 
 class SurveyWindow:
@@ -136,8 +137,7 @@ class SurveyWindow:
             If `None`, `kmax` is the Nyquist wavenumber determined from
             ``**mesh_kwargs`` and `dk` is the fundamental wavenumber.
         **mesh_kwargs
-            Keyword arguments to be passed to
-            :class:`nbodykit.source.mesh.catalog.CatalogMesh` for FFT
+            Keyword arguments to be passed to |map_multipoles| for FFT
             mesh conversion.  If not given, default settings are used
             (512 meshes per dimension and triangular-shaped cloud ``'tsc'``
             interpolation with compensation and interlacing).
@@ -155,6 +155,11 @@ class SurveyWindow:
             If :attr:`synthetic_catalogue` is missing and
             :meth:`~SurveyWindow.synthesise` needs to be called first.
 
+
+        .. |map_multipoles| replace::
+
+            :meth:`~.cartesian_reduction.CartesianMap.power_multipoles`
+
         """
         LOG10_K_MAX = 1.
         NUM_K_EXTENSION = 1000
@@ -165,19 +170,13 @@ class SurveyWindow:
                 "Please call the `synthesise` method first. "
             )
 
-        if 'Nmesh' not in mesh_kwargs:
-            mesh_kwargs['Nmesh'] = 512
-        if 'resampler' not in mesh_kwargs:
-            mesh_kwargs['resampler'] = 'tsc'
-        if 'compensated' not in mesh_kwargs:
-            mesh_kwargs['compensated'] = True
-        if 'interlaced' not in mesh_kwargs:
-            mesh_kwargs['interlaced'] = True
+        if 'num_mesh' not in mesh_kwargs:
+            mesh_kwargs['num_mesh'] = 512
 
-        synthetic_mesh = self.synthetic_catalogue.to_mesh(**mesh_kwargs)
+        cartesian_map = CartesianMap(self.synthetic_catalogue, **mesh_kwargs)
 
         if kmax is None:
-            kmax = 0.8 * np.pi * mesh_kwargs['Nmesh'] \
+            kmax = 0.8 * np.pi * mesh_kwargs['num_mesh'] \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
         if dk is None:
             dk = np.sqrt(3) * 2*np.pi \
@@ -200,21 +199,15 @@ class SurveyWindow:
                 category=RuntimeWarning,
                 message="divide by zero encountered in double_scalars"
             )
-            power_multipoles = ConvolvedFFTPower(
-                synthetic_mesh, orders, kmin=kmin, kmax=kmax, dk=dk
-            ).poles
+            power_multipoles = cartesian_map.power_multipoles(
+                orders, kmin=kmin, kmax=kmax, dk=dk
+            )
 
-        valid_bins = (
-            ~np.isnan(power_multipoles['modes'])
-            & ~np.equal(power_multipoles['modes'], 0)
-            & ~(power_multipoles['modes'] % 2)
-        ).astype(bool)
-
-        k_samples = power_multipoles['k'][valid_bins]
+        k_samples = power_multipoles['k']
 
         self.power_multipoles = {
             'power_{:d}'.format(ell):
-                power_multipoles['power_{:d}'.format(ell)][valid_bins].real
+                power_multipoles['power_{:d}'.format(ell)]
             for ell in orders
         }
 

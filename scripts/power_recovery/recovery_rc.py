@@ -1,6 +1,8 @@
 """Runtime configuration for power spectrum recovery in spherical basis.
 
 """
+from __future__ import division
+
 import os
 import sys
 from argparse import ArgumentParser

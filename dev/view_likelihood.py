@@ -1,6 +1,8 @@
 """View sampled likelihood values.
 
 """
+from __future__ import division
+
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt

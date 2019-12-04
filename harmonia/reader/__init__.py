@@ -7,7 +7,7 @@ Compute Fourier-space map models and construct hybrid likelihoods for
 cosmological parameter inference.
 
 """
-from .cartesian_model import WindowCorrelation, WindowedPowerSpectrum
+from .cartesian_model import WindowedCorrelation, WindowedPowerSpectrum
 from .hybrid_likelihoods import (
     cartesian_map_log_likelihood,
     cartesian_parametrised_moments,

@@ -428,7 +428,7 @@ class WindowedCorrelation:
         self.orders = list(
             map(
                 lambda var_name: int(var_name.split()[-1]),
-                fiducial_multipoles.sorted_vars
+                self.fiducial_multipoles.sorted_vars
             )
         )
 

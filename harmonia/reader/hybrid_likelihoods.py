@@ -420,15 +420,15 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
 
     assert np.shape(np.squeeze(fiducial_wavenumbers)) \
         == np.shape(np.squeeze(windowed_power_model.wavenumbers)), (
-        "The wavenumbers at which the power spectrum model is evaluated "
-        "do not match the wavenumbers at which "
-        "the fiducial covariance matrix is estimated. "
-    )
+            "The wavenumbers at which the power spectrum model is evaluated "
+            "do not match the wavenumbers at which "
+            "the fiducial covariance matrix is estimated. "
+        )
     assert len(orders) == len(correlation_modeller.orders), (
-        "The multipoles for which the fiducial covariance matrix is estimated "
-        "do not match the multipoles for which "
-        "the power spectrum model is evaluated. "
-    )
+            "The multipoles for which the fiducial covariance matrix is "
+            "estimated do not match the multipoles for which "
+            "the power spectrum model is evaluated. "
+        )
 
     expectation_filling = windowed_power_model.convolved_multipoles(
         orders, b_1, f_nl=f_nl, **model_kwargs

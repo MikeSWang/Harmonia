@@ -138,7 +138,10 @@ def process():
         # Construct Cartesian likelihood.
         windowed_power_model.wavenumbers = cartesian_data.coord_array
         window_correlator = WindowedCorrelation(
-            np.ones_like(cartesian_data.coord_array)
+            {
+                'k': cartesian_data.coord_array,
+                'power_0': np.ones_like(cartesian_data.coord_array),
+            }
         )
         window_correlator.windowed_correlation = np.diag(
             2/cartesian_multipoles['Nk']

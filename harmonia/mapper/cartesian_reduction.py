@@ -89,7 +89,7 @@ class CartesianMap:
             for var_name in power if 'power_' in var_name
         }
         multipoles['k'] = power['k'][valid_bins]
-        multipoles['Nk'] = power['Nk'][valid_bins]
+        multipoles['Nk'] = power['modes'][valid_bins]
 
         self._logger.debug(
             "Power spectrum multipoles computed for orders {}. ", orders

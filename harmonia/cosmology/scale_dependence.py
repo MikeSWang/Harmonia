@@ -54,12 +54,12 @@ def scale_dependence_modification(cosmo, redshift):
 
     """
     SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY = 1.686
-    SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S = 2998.
-    NORMALISATION = 1.3
+    SPEED_OF_LIGHT_IN_KM_PER_S = 299792.
+    GROWTH_FACTOR_NORMALISATION = 1.3
 
-    num_factors = 3 * NORMALISATION * cosmo.Omega0_m \
+    num_factors = 3 * GROWTH_FACTOR_NORMALISATION * cosmo.Omega0_m \
         * SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY \
-        * (cosmo.h / SPEED_OF_LIGHT_IN_HUNDRED_KM_PER_S)**2
+        * (cosmo.H0 / SPEED_OF_LIGHT_IN_KM_PER_S)**2
     transfer_func = cosmology.power.transfers.CLASS(cosmo, redshift=redshift)
 
     return lambda k: num_factors / (k**2 * transfer_func(k))

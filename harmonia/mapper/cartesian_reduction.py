@@ -59,7 +59,7 @@ class CartesianMap:
         )
         self._logger.debug("FKP catalogue painted to mesh. ")
 
-    def power_multipoles(self, orders, kmin=None, kmax=None, dk=None):
+    def power_multipoles(self, orders, kmin=0., kmax=None, dk=None):
         """Compress the FFT mesh into power spectrum multipoles.
 
         Parameters

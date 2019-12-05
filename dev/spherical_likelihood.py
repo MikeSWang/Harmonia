@@ -65,6 +65,7 @@ def initialise():
             fixed_params.update(
                 {name : dict(zip(['spherical', 'cartesian'], values))}
             )
+    pprint(fixed_tag)
 
     sampled_tag = ""
     sampled_params = {}
@@ -74,6 +75,7 @@ def initialise():
             sampled_params.update(
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
+    pprint(sampled_tag)
 
     ini_tag = "map={},kmax={},pivot={},{},{}".format(
         parsed_params.map, parsed_params.khyb, parsed_params.spherical_pivot,

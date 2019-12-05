@@ -63,6 +63,7 @@ def initialise():
             fixed_params.update(
                 {name : dict(zip([None, 'cubic'], values))}
             )
+    pprint(fixed_tag)
 
     sampled_tag = ""
     sampled_params = {}
@@ -72,6 +73,7 @@ def initialise():
             sampled_params.update(
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
+    pprint(sampled_tag)
 
     ini_tag = "map={},kmax={},{},{}".format(
         parsed_params.map, parsed_params.kmax, sampled_tag, fixed_tag

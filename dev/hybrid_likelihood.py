@@ -51,7 +51,10 @@ simu_cosmo = None
 external_couplings = None
 mask_multipoles = None
 window_multipoles = None
-window_correlation = None
+window_correlator = None
+
+fixed_params = None
+sampled_params = None
 
 
 def initialise():
@@ -136,6 +139,7 @@ def process():
 
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
+        growth_rate=0.,
         cosmo=simu_cosmo,
         mask_multipoles=mask_multipoles,
         window_multipoles=window_multipoles

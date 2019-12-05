@@ -105,7 +105,11 @@ class WindowedPowerSpectrum:
                     "Double check their underlying cosmological models "
                     "are consistent. "
                 )
-            if self.growth_rate is not None:
+            if self.growth_rate is None:
+                self.growth_rate = cosmo.scale_independent_growth_rate(
+                    self.redshift
+                )
+            elif self.growth_rate:
                 cosmo_growth_rate = cosmo.scale_independent_growth_rate(
                     self.redshift
                 )
@@ -450,11 +454,11 @@ class WindowedCorrelation:
             correlation is estimated.
 
         """
-        if self.pivot == 'orders':
+        if pivot == 'orders':
             fiducial_power = self.fiducial_multipoles.unfold(
                 'variable', return_only='data'
             )
-        elif self.pivot == 'scale':
+        elif pivot == 'scale':
             fiducial_power = self.fiducial_multipoles.unfold(
                 'coord', return_only='data'
             )
@@ -484,9 +488,12 @@ class WindowedCorrelation:
     @windowed_correlation.setter
     def windowed_correlation(self, covar_estimate):
 
+        dimension = len(self.orders) \
+            * len(self.fiducial_multipoles.coord_array)
+
         covar_estimate = np.squeeze(np.array(covar_estimate))
         if covar_estimate.ndim != 2 \
-                or covar_estimate.shape != (len(self.wavenumbers),) * 2:
+                or covar_estimate.shape != (dimension,) * 2:
             raise ValueError(
                 "The value of the `window_correlation` property "
                 "must be a matrix of dimensions consistent with the "

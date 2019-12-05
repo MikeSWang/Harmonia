@@ -1,4 +1,4 @@
-"""Sample the Cartesian likelihood from simulations.
+"""Sample the cubic likelihood from simulations.
 
 """
 from collections import defaultdict
@@ -6,14 +6,14 @@ from pprint import pprint
 
 import numpy as np
 from nbodykit.cosmology import Cosmology
+from nbodykit.lab import FKPCatalog
 
 from likelihood_rc import PATHIN, PATHOUT, parsed_params, script_name
-from harmonia.algorithms import CartesianArray, DiscreteSpectrum
+from harmonia.algorithms import CartesianArray
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
     CartesianMap,
     RandomCatalogue,
-    SphericalMap,
     load_catalogue_from_file,
 )
 from harmonia.reader import WindowedCorrelation, WindowedPowerSpectrum
@@ -21,13 +21,6 @@ from harmonia.reader import cartesian_map_log_likelihood as cart_likelihood
 
 # Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
-
-# Survey specfications input.
-SPECS_PATH = PATHIN/"specifications"
-
-MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles-1.00sky.npy"
-WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles-1.00sky.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/""
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -37,10 +30,9 @@ SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 # Global quantities.
+ORDERS = [0]
+
 simu_cosmo = None
-mask_multipoles = None
-window_multipoles = None
-window_correlator = None
 
 fixed_params = None
 sampled_params = None
@@ -69,7 +61,7 @@ def initialise():
         for name, values in eval(fixed_par_file.read()).items():
             fixed_tag += "{}={},".format(name, values[-1])
             fixed_params.update(
-                {name : dict(zip(['spherical', 'cartesian'], values))}
+                {name : dict(zip([None, 'cubic'], values))}
             )
 
     sampled_tag = ""
@@ -81,13 +73,12 @@ def initialise():
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
 
-    ini_tag = "map={},kmax={},pivot={},{},{}".format(
-        parsed_params.map, parsed_params.kmax, parsed_params.cartesian_pivot,
-        sampled_tag, fixed_tag
+    ini_tag = "map={},kmax={},{},{}".format(
+        parsed_params.map, parsed_params.kmax, sampled_tag, fixed_tag
     )
 
     # Extract cosmology and survey specifications.
-    global simu_cosmo, mask_multipoles, window_multipoles, window_correlator
+    global simu_cosmo
 
     with open(COSMOLOGY_FILE) as cosmology_file:
         cosmological_parameters = eval(cosmology_file.read())
@@ -96,16 +87,6 @@ def initialise():
             Omega0_b=cosmological_parameters['Omega0_b'],
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
-
-    mask_multipoles = np.load(MASK_MULTIPOLES_FILE).item()
-    window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()
-
-    fiducial_estimate = np.load(FIDUCIAL_ESTIMATE_FILE).item()
-    window_correlator = WindowedCorrelation(
-        fiducial_estimate['fiducial_data']
-    )
-    window_correlator.windowed_correlation = \
-        fiducial_estimate['fiducial_covariance']
 
     return ini_params, ini_tag
 
@@ -119,14 +100,8 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['khyb'])
-
     windowed_power_model = WindowedPowerSpectrum(
-        redshift=params['redshift'],
-        growth_rate=0.,
-        cosmo=simu_cosmo,
-        mask_multipoles=mask_multipoles,
-        window_multipoles=window_multipoles
+        redshift=params['redshift'], growth_rate=0., cosmo=simu_cosmo
     )
 
     output_data = defaultdict(list)
@@ -141,18 +116,15 @@ def process():
         random_catalogue = RandomCatalogue(
             params['contrast']*params['nbar'], params['boxsize']
         )
-        spherical_map = SphericalMap(
-            disc, data_catalogue, rand=random_catalogue,
-            mean_density_data=params['nbar'],
-            mean_density_rand=params['contrast']*params['nbar']
-        )
-        cartesian_map = CartesianMap(
-            spherical_map.pair, num_mesh=params['mesh']
-        )
+        data_catalogue['NZ'] = params['nbar'] * data_catalogue['Weight']
+        random_catalogue['NZ'] = params['nbar'] * random_catalogue['Weight']
+
+        catalogue_pair = FKPCatalog(data_catalogue, random_catalogue)
+        cartesian_map = CartesianMap(catalogue_pair, num_mesh=params['mesh'])
 
         # Cartesian measurements.
         cartesian_multipoles = cartesian_map.power_multipoles(
-            orders=params['multipoles'], kmax=params['kmax']
+            orders=ORDERS, kmax=params['kmax']
         )
 
         cartesian_data = CartesianArray(
@@ -163,6 +135,13 @@ def process():
 
         # Construct Cartesian likelihood.
         windowed_power_model.wavenumbers = cartesian_data.coord_array
+        window_correlator = WindowedCorrelation(
+            np.ones_like(cartesian_data.coord_array)
+        )
+        window_correlator.windowed_correlation = np.diag(
+            2/cartesian_multipoles['Nk']
+        )
+
         cart_likelihood_kwargs = dict(
             windowed_power_model=windowed_power_model,
             correlation_modeller=window_correlator,
@@ -173,7 +152,7 @@ def process():
             orders=params['multipoles'],
         )
         for par_name, par_values in fixed_params.items():
-            cart_likelihood_kwargs.update({par_name: par_values['cartesian']})
+            cart_likelihood_kwargs.update({par_name: par_values['cubic']})
         for par_name, par_values in sampled_params.items():
             cart_likelihood_kwargs.update({par_name: par_values})
 

@@ -18,18 +18,26 @@ from harmonia.mapper import (
 from harmonia.reader import TwoPointFunction
 from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 
+# Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
+# Survey specfications input.
 COUPLINGS_FILE = PATHIN/"specifications"/""
 
+# Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
 SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
 
+# Survey catalogue input.
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 TO_MESH_KWARGS = dict(resampler='tsc', compensated=True, interlaced=True)
 
+# Global quantities.
 simu_cosmo = None
 external_couplings = None
+
+fixed_params = None
+sampled_params = None
 
 
 def initialise():
@@ -53,7 +61,7 @@ def initialise():
     fixed_params = {}
     with open(FIXED_PARAMS_FILE, 'r') as fixed_par_file:
         for name, values in eval(fixed_par_file.read()).items():
-            fixed_tag += "{}=[s{},c{}],".format(name, *values)
+            fixed_tag += "{}={},".format(name, values[0])
             fixed_params.update(
                 {name : dict(zip(['spherical', 'cartesian'], values))}
             )
@@ -67,9 +75,8 @@ def initialise():
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
 
-    ini_tag = "map={},knots=[{},{}],pivots=[{},{}],{},{}".format(
-        parsed_params.map, parsed_params.khyb, parsed_params.kmax,
-        parsed_params.spherical_pivot, parsed_params.cartesian_pivot,
+    ini_tag = "map={},kmax={},pivot={},{},{}".format(
+        parsed_params.map, parsed_params.khyb, parsed_params.spherical_pivot,
         sampled_tag, fixed_tag
     )
 

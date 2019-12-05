@@ -74,7 +74,8 @@ class CartesianMap:
         -------
         multipoles : dict
             Power multipoles of specified orders at binned wavenumbers
-            (given by the key ``'k'``).
+            (given by the key ``'k'``) together with the mode count in
+            each bin (given by the key ``'Nk'``).
 
         """
         power = ConvolvedFFTPower(
@@ -88,6 +89,7 @@ class CartesianMap:
             for var_name in power if 'power_' in var_name
         }
         multipoles['k'] = power['k'][valid_bins]
+        multipoles['Nk'] = power['Nk'][valid_bins]
 
         self._logger.debug(
             "Power spectrum multipoles computed for orders {}. ", orders

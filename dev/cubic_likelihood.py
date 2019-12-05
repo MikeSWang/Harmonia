@@ -101,7 +101,9 @@ def process():
 
     """
     windowed_power_model = WindowedPowerSpectrum(
-        redshift=params['redshift'], growth_rate=0., cosmo=simu_cosmo
+        redshift=params['redshift'],
+        growth_rate=params['growth_rate'],
+        cosmo=simu_cosmo
     )
 
     output_data = defaultdict(list)

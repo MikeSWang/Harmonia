@@ -123,7 +123,7 @@ def process():
 
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
-        growth_rate=0.,
+        growth_rate=params['growth_rate'],
         cosmo=simu_cosmo,
         mask_multipoles=mask_multipoles,
         window_multipoles=window_multipoles

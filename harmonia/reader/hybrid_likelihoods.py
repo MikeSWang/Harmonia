@@ -352,7 +352,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
     out_shape = (len(bias), len(non_gaussianity), len(two_point_model))
     if breakdown:
-        out_shape += len(data_vector)
+        out_shape += (len(data_vector),)
 
     log_likelihood = []
     for (b_1, f_nl, tpm) in it.product(bias, non_gaussianity, two_point_model):

@@ -58,25 +58,25 @@ def initialise():
     fixed_params = {}
     with open(FIXED_PARAMS_FILE, 'r') as fixed_par_file:
         for name, values in eval(fixed_par_file.read()).items():
-            fixed_tag += "{}={},".format(name, values[-1])
+            fixed_tag += "{}={}".format(name, values[-1])
             if name == 'fnl':
                 name = 'non_gaussianity'
             fixed_params.update(
                 {name : dict(zip([None, 'cubic'], values))}
             )
-    ini_params.update({'fixed_params': fixed_tag.strip(",")})
+    ini_params.update({'fixed_params': fixed_tag})
 
     sampled_tag = ""
     sampled_params = {}
     with open(SAMPLED_PARAMS_FILE, 'r') as samp_par_file:
         for name, (ranges, num_sample) in eval(samp_par_file.read()).items():
-            sampled_tag += "{}_prior=[{},{}],".format(name, *ranges)
+            sampled_tag += "{}_prior=[{},{}]".format(name, *ranges)
             if name == 'fnl':
                 name = 'non_gaussianity'
             sampled_params.update(
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
-    ini_params.update({'sampled_params': sampled_tag.strip(",")})
+    ini_params.update({'sampled_params': sampled_tag})
 
     ini_tag = "map={},kmax={},{},{}".format(
         parsed_params.map, parsed_params.kmax, sampled_tag, fixed_tag
@@ -189,7 +189,7 @@ def finalise(results, filetag):
     """
     assert confirm_directory_path(PATHOUT/script_name)
 
-    filename = f"({params['input_catalogue']}{filetag}).npy"
+    filename = f"{params['input_catalogue']}-({filetag}).npy"
 
     np.save(PATHOUT/script_name/filename, results)
 

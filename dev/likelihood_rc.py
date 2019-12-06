@@ -24,7 +24,7 @@ def parse_external_args():
 
     parser.add_argument('--breakdown', action='store_true')
     parser.add_argument('--spherical-pivot', default='spectral')
-    parser.add_argument('--cartesian-pivot', default='multipole')
+    parser.add_argument('--cartesian-pivot', default='order')
 
     parser.add_argument('--map', required=True)
     parser.add_argument('--khyb', type=float, default=0.05)

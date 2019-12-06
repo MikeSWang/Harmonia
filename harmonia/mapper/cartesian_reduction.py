@@ -82,7 +82,8 @@ class CartesianMap:
             self.mesh, poles=orders, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
-        valid_bins = ~np.equal(power['modes'], 0) & ~np.isnan(power['k'])
+        valid_bins = ~np.equal(power['modes'], 0) \
+            & ~np.equal(power['modes'], 1)
 
         multipoles = {
             var_name: power[var_name][valid_bins].real

@@ -279,9 +279,10 @@ def spherical_parametrised_covariance(b_1, f_nl, two_point_model, pivot,
     return covariance
 
 
-def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
-                                 spherical_data, pivot, breakdown=False,
-                                 exclude_degrees=(), **covariance_kwargs):
+def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
+                                 two_point_model, spherical_data, pivot,
+                                 breakdown=False, exclude_degrees=(),
+                                 **covariance_kwargs):
     """Evaluate the spherical map logarithmic likelihood.
 
     Parameters
@@ -290,7 +291,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
         Scale-independent linear bias of the tracer particles.
     non_gaussianity : float, array_like or None
         Local primordial non-Gaussianity.
-    nbar : float
+    mean_number_density : float
         Mean particle number density (in cubic h/Mpc).
     two_point_model : |two_point_model| , array_like
         2-point function base model.
@@ -339,13 +340,13 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
     data_vector = data_vector[~excluded_deg]
 
     axis_to_squeeze = ()
-    if not isinstance(bias, coll.Sequence):
+    if not isinstance(bias, coll.Iterable):
         bias = (bias,)
         axis_to_squeeze += (0,)
-    if not isinstance(non_gaussianity, coll.Sequence):
+    if not isinstance(non_gaussianity, coll.Iterable):
         non_gaussianity = (non_gaussianity,)
         axis_to_squeeze += (1,)
-    if not isinstance(two_point_model, coll.Sequence):
+    if not isinstance(two_point_model, coll.Iterable):
         two_point_model = (two_point_model,)
         axis_to_squeeze += (2,)
 
@@ -356,7 +357,9 @@ def spherical_map_log_likelihood(bias, non_gaussianity, nbar, two_point_model,
     log_likelihood = []
     for (b_1, f_nl, tpm) in it.product(bias, non_gaussianity, two_point_model):
         sample_covar = spherical_parametrised_covariance(
-            b_1, f_nl, tpm, pivot, nbar=nbar, **covariance_kwargs
+            b_1, f_nl, tpm, pivot,
+            nbar=mean_number_density,
+            **covariance_kwargs
         )[:, ~excluded_deg][~excluded_deg, :]
         sample_likelihood = complex_normal_pdf(
             data_vector, sample_covar,
@@ -390,7 +393,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         Mean particle number density (in cubic h/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
-    pivot : {'orders', 'scale'}
+    pivot : {'order', 'scale'}
         Order in which the data is unpacked as a 1-d vector.
     orders : list of int
         Order(s) of the power spectrum multipoles.
@@ -414,7 +417,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         does not match the wavenumbers of `correlation_modeller`.
 
     """
-    fiducial_wavenumbers = correlation_modeller.power_multipoles['k']
+    fiducial_wavenumbers = correlation_modeller.fiducial_multipoles.coord_array
     fiducial_expectation = correlation_modeller.fiducial_vector(pivot)
     fiducial_covariance = correlation_modeller.windowed_correlation
 
@@ -440,7 +443,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         var_key_root='power_'
     )
 
-    if pivot == 'orders':
+    if pivot == 'order':
         expectation = expectation_array.unfold('variable', return_only='data')
     if pivot == 'scale':
         expectation = expectation_array.unfold('coord', return_only='data')
@@ -452,9 +455,9 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     return expectation, covariance
 
 
-def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
+def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  windowed_power_model, cartesian_data,
-                                 window_corr_modeller, pivot, orders,
+                                 correlation_modeller, pivot, orders,
                                  **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
@@ -464,17 +467,19 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
         Scale-independent linear bias of the tracer particles.
     non_gaussianity : float, array_like or None
         Local primordial non-Gaussianity.
-    nbar : float
+    mean_number_density : float
         Mean particle number density (in cubic h/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
     cartesian_data : :class:`~harmonia.algorithms.morph.CartesianArray`
         Cartesian data array of the compressed field.
-    window_corr_modeller : :class:`~.cartesian_model.WindowCorrelation`
+    correlation_modeller : :class:`~.cartesian_model.WindowCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
-    pivot : {'orders', 'scale'}
+    pivot : {'order', 'scale'}
         Order in which the data is unpacked as a 1-d vector.
+    orders : list of int
+        Order(s) of the power spectrum multipoles to include.
     **covariance_kwargs
         Keyword arguments to be passed to
         :func:`~.reader.hybrid_likelihoods.cartesian_parametrised_moments`.
@@ -485,16 +490,19 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
         Logarithmic likelihood evaluated at the parameter sampling points.
 
     """
-    data_vector = cartesian_data.unfold(pivot, return_only='data')
+    if pivot == 'order':
+        data_vector = cartesian_data.unfold('variable', return_only='data')
+    if pivot == 'scale':
+        data_vector = cartesian_data.unfold('coord', return_only='data')
 
     axis_to_squeeze = ()
-    if not isinstance(bias, coll.Sequence):
+    if not isinstance(bias, coll.Iterable):
         bias = (bias,)
         axis_to_squeeze += (0,)
-    if not isinstance(non_gaussianity, coll.Sequence):
+    if not isinstance(non_gaussianity, coll.Iterable):
         non_gaussianity = (non_gaussianity,)
         axis_to_squeeze += (1,)
-    if not isinstance(windowed_power_model, coll.Sequence):
+    if not isinstance(windowed_power_model, coll.Iterable):
         windowed_power_model = (windowed_power_model,)
         axis_to_squeeze += (2,)
 
@@ -504,8 +512,8 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, nbar,
     for (b_1, f_nl, wpm) \
             in it.product(bias, non_gaussianity, windowed_power_model):
         sample_mean, sample_covar = cartesian_parametrised_moments(
-            b_1, f_nl, wpm, pivot, orders, window_corr_modeller,
-            nbar=nbar, **covariance_kwargs
+            b_1, f_nl, wpm, pivot, orders, correlation_modeller,
+            nbar=mean_number_density, **covariance_kwargs
         )
         sample_likelihood = multivariate_normal_pdf(
             data_vector, sample_mean, sample_covar

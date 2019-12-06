@@ -121,7 +121,7 @@ def confirm_directory_path(dir_path):
 
     Parameters
     ----------
-    dir_path : str
+    dir_path : str or :class:`pathlib.Path`
         Directory path.
 
     Returns
@@ -130,7 +130,7 @@ def confirm_directory_path(dir_path):
         `True` if `dir_path` exists or has been created.
 
     """
-    if not dir_path.endswith("/"):
+    if isinstance(dir_path, str) and not dir_path.endswith("/"):
         dir_path += "/"
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)

@@ -50,7 +50,6 @@ def initialise():
 
     """
     ini_params = parsed_params.__dict__
-    pprint(ini_params)
 
     # Extract fixed parameter values and sampled parameter ranges.
     global fixed_params, sampled_params
@@ -60,20 +59,24 @@ def initialise():
     with open(FIXED_PARAMS_FILE, 'r') as fixed_par_file:
         for name, values in eval(fixed_par_file.read()).items():
             fixed_tag += "{}={},".format(name, values[-1])
+            if name == 'fnl':
+                name = 'non_gaussianity'
             fixed_params.update(
                 {name : dict(zip([None, 'cubic'], values))}
             )
-    pprint(fixed_tag)
+    ini_params.update({'fixed_params': fixed_tag.strip(",")})
 
     sampled_tag = ""
     sampled_params = {}
     with open(SAMPLED_PARAMS_FILE, 'r') as samp_par_file:
         for name, (ranges, num_sample) in eval(samp_par_file.read()).items():
             sampled_tag += "{}_prior=[{},{}],".format(name, *ranges)
+            if name == 'fnl':
+                name = 'non_gaussianity'
             sampled_params.update(
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
-    pprint(sampled_tag)
+    ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     ini_tag = "map={},kmax={},{},{}".format(
         parsed_params.map, parsed_params.kmax, sampled_tag, fixed_tag
@@ -89,6 +92,9 @@ def initialise():
             Omega0_b=cosmological_parameters['Omega0_b'],
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
+
+    pprint(ini_params)
+    print("\n")
 
     return ini_params, ini_tag
 
@@ -153,7 +159,7 @@ def process():
             windowed_power_model=windowed_power_model,
             correlation_modeller=window_correlator,
             cartesian_data=cartesian_data,
-            nbar=params['nbar'],
+            mean_number_density=params['nbar'],
             contrast=params['contrast'],
             pivot=params['cartesian_pivot'],
             orders=params['multipoles'],

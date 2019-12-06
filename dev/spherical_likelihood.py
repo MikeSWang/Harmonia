@@ -52,7 +52,6 @@ def initialise():
 
     """
     ini_params = parsed_params.__dict__
-    pprint(ini_params)
 
     # Extract fixed parameter values and sampled parameter ranges.
     global fixed_params, sampled_params
@@ -62,20 +61,24 @@ def initialise():
     with open(FIXED_PARAMS_FILE, 'r') as fixed_par_file:
         for name, values in eval(fixed_par_file.read()).items():
             fixed_tag += "{}={},".format(name, values[0])
+            if name == 'fnl':
+                name = 'non_gaussianity'
             fixed_params.update(
                 {name : dict(zip(['spherical', 'cartesian'], values))}
             )
-    pprint(fixed_tag)
+    ini_params.update({'fixed_params': fixed_tag.strip(",")})
 
     sampled_tag = ""
     sampled_params = {}
     with open(SAMPLED_PARAMS_FILE, 'r') as samp_par_file:
         for name, (ranges, num_sample) in eval(samp_par_file.read()).items():
             sampled_tag += "{}_prior=[{},{}],".format(name, *ranges)
+            if name == 'fnl':
+                name = 'non_gaussianity'
             sampled_params.update(
                 {name: np.linspace(*ranges, num=num_sample+1)}
             )
-    pprint(sampled_tag)
+    ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     ini_tag = "map={},kmax={},pivot={},{},{}".format(
         parsed_params.map, parsed_params.khyb, parsed_params.spherical_pivot,
@@ -95,6 +98,9 @@ def initialise():
 
     external_couplings = None
 
+    pprint(ini_params)
+    print("\n")
+    
     return ini_params, ini_tag
 
 
@@ -145,7 +151,7 @@ def process():
         sph_likelihood_kwargs = dict(
             two_point_model=two_point_model,
             spherical_data=spherical_data,
-            nbar=params['nbar'],
+            mean_number_density=params['nbar'],
             contrast=params['contrast'],
             pivot=params['spherical_pivot'],
             breakdown=params['breakdown'],

@@ -427,7 +427,7 @@ class WindowedCorrelation:
 
         self.orders = list(
             map(
-                lambda var_name: int(var_name.split()[-1]),
+                lambda var_name: int(var_name.split("power_")[-1]),
                 self.fiducial_multipoles.sorted_vars
             )
         )
@@ -439,9 +439,9 @@ class WindowedCorrelation:
 
         Parameters
         ----------
-        pivot : {'orders', 'scale'}
+        pivot : {'order', 'scale'}
             The order in which the correlation matrix components are
-            arranged: if ``'orders'``, the compoenents are in ascending
+            arranged: if ``'order'``, the compoenents are in ascending
             multipole order and then in ascending order of the wavenumber;
             if ``'scale'``, the components are similarly ordered by the
             wavenumber first and then the multipole order.
@@ -454,7 +454,7 @@ class WindowedCorrelation:
             correlation is estimated.
 
         """
-        if pivot == 'orders':
+        if pivot == 'order':
             fiducial_power = self.fiducial_multipoles.unfold(
                 'variable', return_only='data'
             )

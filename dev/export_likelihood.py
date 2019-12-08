@@ -105,7 +105,7 @@ def read_data(collate_data=False, load_data=False, save=False):
     """
     scr_dir_path = PATHOUT/script_name
     collate_path = scr_dir_path/"collated"
-    program_root = f"map={MAP},kmax={KMAX},*{PRIOR},{FIXED}"
+    program_root = f"map={MAP},kmax={KMAX},{PRIOR},{FIXED}"
     filename = f"{script_name}-({program_root})"
 
     if collate_data:
@@ -116,7 +116,7 @@ def read_data(collate_data=False, load_data=False, save=False):
             f"{scr_dir_path}/{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 
-        output['parameters'] = np.linspace(2.2, 2.5, 601)
+        output['parameters'] = np.linspace(2.2, 2.6, 801)
         output[f'{MAP}_likelihood'] = np.squeeze(output[f'spherical_likelihood'])
 
         if save:
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     KHYB = 0.075
     KMAX = 0.075
     PIVOT = "spectral"
-    PRIOR = "bias_prior=[2.2,2.5]"
+    PRIOR = "bias_prior=[2.2,2.6]"
     FIXED = "fnl=0.0"
 
     script_name = f"{MAP}_likelihood"
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     output, filename = read_data(
         collate_data=True,
         load_data=False,
-        save=False
+        save=True
     )
     filtered_output = filter_data(output, remove_degrees=(0,))
     view_data(

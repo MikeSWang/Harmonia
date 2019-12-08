@@ -151,7 +151,12 @@ def get_filename(file_path):
         File name without extension.
 
     """
-    return os.path.splitext(os.path.basename(file_path))[0]
+    try:
+        from pathlib import Path
+    except ImportError:
+        return os.path.splitext(os.path.basename(file_path))[0]
+    else:
+        return Path(file_path).stem
 
 
 def collate_data_files(file_path_pattern, file_extension, headings=None,

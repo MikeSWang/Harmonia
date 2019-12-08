@@ -169,7 +169,7 @@ def process():
         for par_name, par_values in sampled_params.items():
             cart_likelihood_kwargs.update({par_name: par_values})
 
-        output_data['cartesian_likelihood'].append(
+        output_data['cubic_likelihood'].append(
             [cart_likelihood(**cart_likelihood_kwargs)]
         )
 

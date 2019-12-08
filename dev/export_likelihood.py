@@ -1,25 +1,35 @@
-"""Export sampled spherical likelihood.
+"""Export sampled likelihood.
 
 """
+import os
+import sys
+from pathlib import Path
+
+_cwd = os.path.dirname(__file__)
+sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-from likelihood_rc import PATHOUT
 from view_likelihood import view_samples
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
-from harmonia.collections import collate_data_files, harmony
-from harmonia.cosmology import fiducial_distance
+from harmonia.collections import (
+    collate_data_files,
+    confirm_directory_path,
+    harmony,
+    overwrite_protection,
+)
 
 
-def safe_save(data, path, name, extension):
+def safe_save(data, path, file):
     """Safely save data by checking overwrite protections.
 
     Parameters
     ----------
     data : array_like
         Data to be saved.
-    path, name, extension : str
-        Path, file name and file extension for the data to be saved.
+    path, file : str or :class:`pathlib.Path`
+        Path and file name for the data to be saved.
 
     Raises
     ------
@@ -29,16 +39,12 @@ def safe_save(data, path, name, extension):
         If overwrite permission is denied at the output path.
 
     """
-    from numpy import save
-    from harmonia.collections import (
-        confirm_directory_path,
-        overwrite_protection
-    )
-
-    file = name + extension
     assert confirm_directory_path(path)
     assert overwrite_protection(path, file)
-    save(path + file, data)
+    try:
+        np.save(path/file, data)
+    except TypeError:
+        np.save(path + file, data)
 
 
 def filter_data(full_data, remove_degrees=()):
@@ -59,10 +65,7 @@ def filter_data(full_data, remove_degrees=()):
         Filtered data.
 
     """
-    if ZMAX is None and BOXSIZE is not None:
-        disc = DiscreteSpectrum(BOXSIZE/2, 'dirichlet', KSPLIT)
-    elif ZMAX is not None and BOXSIZE is None:
-        disc = DiscreteSpectrum(fiducial_distance(ZMAX), 'dirichlet', KSPLIT)
+    disc = DiscreteSpectrum(BOXSIZE/2, 'dirichlet', KHYB)
 
     index_vector = SphericalArray\
         .build(disc=disc)\
@@ -77,9 +80,11 @@ def filter_data(full_data, remove_degrees=()):
         full_data['spherical_likelihood'][:, :, ~excluded_deg]
 
     filtered_data = full_data
-    filtered_data.update({
-        'spherical_likelihood': np.sum(likelihood_contributions, axis=-1)
-    })
+    filtered_data.update(
+        {
+            'spherical_likelihood': np.sum(likelihood_contributions, axis=-1)
+        }
+    )
 
     return filtered_data
 
@@ -98,40 +103,29 @@ def read_data(collate_data=False, load_data=False, save=False):
         Read output data.
 
     """
-    scr_dir_path = f"{PATHOUT}{SCRIPT_NAME}/"
-    collate_path = scr_dir_path + "collated/"
+    scr_dir_path = PATHOUT/script_name
+    collate_path = scr_dir_path/"collated"
+    program_root = f"map={MAP},kmax={KMAX},*{PRIOR},{FIXED}"
+    filename = f"{script_name}-({program_root})"
 
     if collate_data:
-        search_root = (
-            f"map={MAP},prior=[[]{PRIOR}[]],pivot={PIVOT},"
-            f"ksplit={KSPLIT},kmax={KMAX}"
-        )
+        search_root = f"map={MAP},kmax={KMAX},*{PRIOR},{FIXED}"\
+            .replace("=[", "=[[]").replace("],", "[]],")
+
         output, count, name_instance = collate_data_files(
-            f"{scr_dir_path}{FILE_ROOT}-*{search_root}*.npy", 'npy'
+            f"{scr_dir_path}/{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 
-        output['parameters'] = output['parameters'][0]
-        output['spherical_likelihood'] = np.squeeze(output['spherical_likelihood'])
-        output['cartesian_likelihood'] = np.squeeze(output['cartesian_likelihood'])
+        output['parameters'] = np.linspace(2.2, 2.5, 601)
+        output[f'{MAP}_likelihood'] = np.squeeze(output[f'spherical_likelihood'])
 
         if save:
-            file_tag = "".join(name_instance.split("(")[-1].split(")")[:-1])
-            if FILE_ROOT == SCRIPT_NAME:
-                file_tag += f"*{count}"
-            safe_save(
-                output, collate_path, f"{FILE_ROOT}-({file_tag})", ".npy"
-            )
+            safe_save(output, collate_path, filename + ".npy")
 
     if load_data:
-        program_root = (
-            f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},"
-            f"ksplit={KSPLIT},kmax={KMAX}"
-        )
-        output = np.load(
-            f"{collate_path}{FILE_ROOT}-({program_root},{PARAM_TAG}).npy"
-        ).item()
+        output = np.load((collate_path/filename).with_suffix(".npy")).item()
 
-    return output
+    return output, filename
 
 
 def view_data(data, savefig=False, **plot_kwargs):
@@ -147,73 +141,50 @@ def view_data(data, savefig=False, **plot_kwargs):
         Keyword arguments to be passed to the plotting routine.
 
     """
+    program_root = f"map={MAP},kmax={KMAX},{PRIOR},{FIXED}"
+    filename = f"{script_name}-({program_root}).pdf"
+
     plt.close('all')
     plt.style.use(harmony)
 
     visual_data = data
+    visual_data['likelihood'] = data[f'{MAP}_likelihood']
 
-    visual_data['likelihood'] = data['spherical_likelihood']
-    fig = view_samples(
-        visual_data,
-        r"$f_\mathrm{NL}$", # r"$b_1$", #
-        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
-        **plot_kwargs
-    )
-
-    visual_data['likelihood'] = data['cartesian_likelihood']
     view_samples(
         visual_data,
-        r"$f_\mathrm{NL}$", # r"$b_1$", #
-        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
-        fig=fig,
+        r"$b_1$", # r"$f_\mathrm{NL}$", #
+        r"$\mathcal{L}(b_1)$", # r"$\mathcal{L}(f_\mathrm{NL})$", #
         **plot_kwargs
     )
 
-    visual_data['likelihood'] = data['spherical_likelihood'] \
-        + data['cartesian_likelihood']
-    view_samples(
-        visual_data,
-        r"$f_\mathrm{NL}$", # r"$b_1$", #
-        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
-        fig=fig,
-        truth=0,
-        **plot_kwargs
-    )
     if savefig:
-        program_root = (
-            f"map={MAP},prior=[{PRIOR}],pivot={PIVOT},"
-            f"ksplit={KSPLIT},kmax={KMAX}"
-        )
-        plt.savefig(
-            f"{PATHOUT}log_likelihood-"
-            f"{FILE_ROOT}-({program_root},{PARAM_TAG}).pdf"
-        )
+        plt.savefig(PATHOUT/script_name/filename)
 
 
 if __name__ == '__main__':
 
-    SCRIPT_NAME = "simulation_likelihood" # "realisation_likelihood" #
-    FILE_ROOT = "halos-(NG=0.,z=1.)" # SCRIPT_NAME #
-
-    ZMAX = None
+    PATHOUT = Path("./data/output/")
+    FILE_ROOT = "halos-(NG=0.,z=1.)"
     BOXSIZE = 1000.
 
-    MAP = "hybrid"
-    PRIOR = "-800.0,800.0"
+    MAP = "spherical"
+    KHYB = 0.075
+    KMAX = 0.075
     PIVOT = "spectral"
-    KSPLIT = 0.05
-    KMAX = 0.1
+    PRIOR = "bias_prior=[2.2,2.5]"
+    FIXED = "fnl=0.0"
 
-    PARAM_TAG = "nbar=2.49e-4,b1=[2.4,2.32],f0=none" # fnl=none, b1=2.4
+    script_name = f"{MAP}_likelihood"
 
-    output = read_data(
+    output, filename = read_data(
         collate_data=True,
         load_data=False,
         save=False
     )
+    filtered_output = filter_data(output, remove_degrees=(0,))
     view_data(
-        filter_data(output, remove_degrees=(0,)),
-        precision=0,
+        filtered_output,
+        precision=3,
         norm_range=(),
-        scatter_plot=False
+        scatter_plot=True
     )

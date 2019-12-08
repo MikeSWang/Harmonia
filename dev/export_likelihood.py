@@ -112,7 +112,7 @@ def read_data(collate_data=False, load_data=False, save=False):
         search_root = f"map={MAP},kmax={KMAX},*{PRIOR},{FIXED}"\
             .replace("=[", "=[[]").replace("],", "[]],")
 
-        output, count, name_instance = collate_data_files(
+        output, _, _ = collate_data_files(
             f"{scr_dir_path}/{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 

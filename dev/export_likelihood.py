@@ -116,8 +116,8 @@ def read_data(collate_data=False, load_data=False, save=False):
             f"{scr_dir_path}/*{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 
-        output['parameters'] = np.linspace(-100, 300, 401)
-        output[f'{MAP}_likelihood'] = np.squeeze(output[f'spherical_likelihood'])
+        output['parameters'] = np.linspace(-200., 200., 401)
+        output[f'{MAP}_likelihood'] = np.squeeze(output[f'{MAP}_likelihood'])
 
         if save:
             safe_save(output, collate_path, filename + ".npy")
@@ -164,27 +164,28 @@ def view_data(data, savefig=False, **plot_kwargs):
 if __name__ == '__main__':
 
     PATHOUT = Path("./data/output/")
-    FILE_ROOT = "(NG=-100.,z=1.)"
+    FILE_ROOT = "(NG=0.,z=1.)"
 
     BOXSIZE = 1000.
 
-    MAP = "spherical"
+    MAP = "cubic"
     KHYB = 0.075
-    KMAX = 0.075
+    KMAX = 0.1
     PIVOT = "spectral"
-    PRIOR = "fnl_prior=[-300.0,100.0]"
-    FIXED = "bias=2.36"
+    PRIOR = "fnl_prior=[-200.0,200.0]"
+    FIXED = "bias=2.35"
 
     script_name = f"{MAP}_likelihood"
 
     output, filename = read_data(
-        collate_data=True,
-        load_data=False,
-        save=True
+        collate_data=False,
+        load_data=True,
+        save=False
     )
-    filtered_output = filter_data(output, remove_degrees=())
+    # filtered_output = filter_data(output, remove_degrees=())
     view_data(
-        filtered_output,
+        output,
+        truth=0,
         precision=0,
         norm_range=(),
         scatter_plot=True,

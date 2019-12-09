@@ -295,7 +295,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Mean particle number density (in cubic h/Mpc).
     two_point_model : |two_point_model| , array_like
         2-point function base model.
-    spherical_data : :class:`~harmonia.algorithms.morph.SphericalArray`
+    spherical_data : :class:`~harmonia.algorithms.arrays.SphericalArray`
         Spherical data array of the transformed field.
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
@@ -471,7 +471,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Mean particle number density (in cubic h/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
-    cartesian_data : :class:`~harmonia.algorithms.morph.CartesianArray`
+    cartesian_data : :class:`~harmonia.algorithms.arrays.CartesianArray`
         Cartesian data array of the compressed field.
     correlation_modeller : :class:`~.cartesian_model.WindowCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,

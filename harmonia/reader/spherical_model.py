@@ -141,7 +141,7 @@ from harmonia.algorithms.integration import \
     angular_spherical_integral as ang_int
 from harmonia.algorithms.integration import \
     radial_spherical_integral as rad_int
-from harmonia.algorithms.morph import SphericalArray
+from harmonia.algorithms.arrays import SphericalArray
 from harmonia.collections.utils import mpi_compute
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 

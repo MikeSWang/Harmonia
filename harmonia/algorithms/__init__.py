@@ -28,4 +28,4 @@ from .integration import (
     radial_besselj_integral,
     radial_spherical_integral,
 )
-from .morph import CartesianArray, SphericalArray
+from .arrays import CartesianArray, SphericalArray

@@ -249,7 +249,7 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
     )
 
 
-def overwrite_protection(outpath, outname, save=True):
+def overwrite_protection(outpath, outname):
     """Inspect and modify overwrite permission.
 
     The function may ask for permission from the user to overwrite the file
@@ -264,40 +264,37 @@ def overwrite_protection(outpath, outname, save=True):
 
     Returns
     -------
-    overwrite_permission : bool
-        Overwrite permission.
+    write_permission : bool
+        Write permission.
 
     """
-    overwrite_permission = False
-    while save:
-        try:
-            if not os.path.exists(outpath):
-                raise FileNotFoundError(f"{outpath} does not exist. ")
-            if not overwrite_permission:
-                try:
-                    if os.path.exists(outpath/outname):
-                        raise FileExistsError
-                except TypeError:
-                    if os.path.exists(outpath + outname):
-                        raise FileExistsError
-        except FileExistsError:
+    write_permission = False
+
+    if not os.path.exists(outpath):
+        warnings.warn(f"{outpath} does not exist. ")
+        return write_permission
+
+    try:
+        overwrite_check = os.path.exists(outpath/outname)
+    except TypeError:
+        overwrite_check = os.path.exists(outpath + outname)
+    finally:
+        if not overwrite_check:
+            write_permission = True
+        else:
             grant_permission = input(
                 "Saving would overwrite existing file at destination. "
                 "Do you want to continue? [y/n] "
             )
             if grant_permission.lower().startswith('y'):
-                overwrite_permission = True
-                break
+                write_permission = True
             else:
-                overwrite_permission = False
-                raise FileExistsError(
+                write_permission = False
+                warnings.warn(
                     "Overwrite permission denied. File not saved. "
                 )
-        else:
-            overwrite_permission = True
-            break
 
-    return overwrite_permission
+    return write_permission
 
 
 def allocate_tasks(total_task, total_proc):

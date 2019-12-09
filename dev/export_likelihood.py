@@ -40,11 +40,11 @@ def safe_save(data, path, file):
 
     """
     assert confirm_directory_path(path)
-    assert overwrite_protection(path, file)
-    try:
-        np.save(path/file, data)
-    except TypeError:
-        np.save(path + file, data)
+    if overwrite_protection(path, file):
+        try:
+            np.save(path/file, data)
+        except TypeError:
+            np.save(path + file, data)
 
 
 def filter_data(full_data, remove_degrees=()):
@@ -106,24 +106,24 @@ def read_data(collate_data=False, load_data=False, save=False):
     scr_dir_path = PATHOUT/script_name
     collate_path = scr_dir_path/"collated"
     program_root = f"map={MAP},kmax={KMAX},{PRIOR},{FIXED}"
-    filename = f"{script_name}-({program_root})"
+    filename = f"{script_name}-{FILE_ROOT}-({program_root})"
 
     if collate_data:
         search_root = f"map={MAP},kmax={KMAX},*{PRIOR},{FIXED}"\
             .replace("=[", "=[[]").replace("],", "[]],")
 
         output, _, _ = collate_data_files(
-            f"{scr_dir_path}/{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
+            f"{scr_dir_path}/*{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 
-        output['parameters'] = np.linspace(2.2, 2.6, 801)
+        output['parameters'] = np.linspace(-100, 300, 401)
         output[f'{MAP}_likelihood'] = np.squeeze(output[f'spherical_likelihood'])
 
         if save:
             safe_save(output, collate_path, filename + ".npy")
 
     if load_data:
-        output = np.load((collate_path/filename).with_suffix(".npy")).item()
+        output = np.load(str(collate_path/filename) + ".npy").item()
 
     return output, filename
 
@@ -142,7 +142,7 @@ def view_data(data, savefig=False, **plot_kwargs):
 
     """
     program_root = f"map={MAP},kmax={KMAX},{PRIOR},{FIXED}"
-    filename = f"{script_name}-({program_root}).pdf"
+    filename = f"{script_name}-{FILE_ROOT}-({program_root}).pdf"
 
     plt.close('all')
     plt.style.use(harmony)
@@ -152,8 +152,8 @@ def view_data(data, savefig=False, **plot_kwargs):
 
     view_samples(
         visual_data,
-        r"$b_1$", # r"$f_\mathrm{NL}$", #
-        r"$\mathcal{L}(b_1)$", # r"$\mathcal{L}(f_\mathrm{NL})$", #
+        r"$f_\mathrm{NL}$", # r"$b_1$", #
+        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
         **plot_kwargs
     )
 
@@ -164,15 +164,16 @@ def view_data(data, savefig=False, **plot_kwargs):
 if __name__ == '__main__':
 
     PATHOUT = Path("./data/output/")
-    FILE_ROOT = "halos-(NG=0.,z=1.)"
+    FILE_ROOT = "(NG=-100.,z=1.)"
+
     BOXSIZE = 1000.
 
     MAP = "spherical"
     KHYB = 0.075
     KMAX = 0.075
     PIVOT = "spectral"
-    PRIOR = "bias_prior=[2.2,2.6]"
-    FIXED = "fnl=0.0"
+    PRIOR = "fnl_prior=[-300.0,100.0]"
+    FIXED = "bias=2.36"
 
     script_name = f"{MAP}_likelihood"
 
@@ -181,10 +182,11 @@ if __name__ == '__main__':
         load_data=False,
         save=True
     )
-    filtered_output = filter_data(output, remove_degrees=(0,))
+    filtered_output = filter_data(output, remove_degrees=())
     view_data(
         filtered_output,
-        precision=3,
+        precision=0,
         norm_range=(),
-        scatter_plot=True
+        scatter_plot=True,
+        savefig=True
     )

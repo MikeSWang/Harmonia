@@ -224,6 +224,10 @@ class WindowedPowerSpectrum:
 
             pk_ell_convolved['k'] = wavenumbers
 
+            if nbar is not None and 0 in orders:
+                pk_ell_convolved['power_0'] += (1 + 1/contrast) / nbar \
+                    * np.ones_like(wavenumbers)
+
             return pk_ell_convolved
 
         s = self.mask_multipoles['s']

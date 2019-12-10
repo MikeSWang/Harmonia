@@ -181,7 +181,8 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
     xx, yy = np.meshgrid(
         samples['parameter_x'], samples['parameter_y'], indexing='ij'
     )
-    hh = np.exp(np.average(samples['likelihood'], axis=0)).T
+    log_hh = np.average(samples['likelihood'], axis=0)
+    hh = np.exp(log_hh - np.min(log_hh)).T
 
     mass = simps(
         [
@@ -209,7 +210,7 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
         plt.figure(fig.number)
 
     if cmap is None:
-        cmap = ListedColormap(sns.color_palette('BuGn_d'))
+        cmap = ListedColormap(sns.color_palette('Greens'))
 
     main = plt.subplot2grid((4, 4), (1, 0), rowspan=3, colspan=3)
 
@@ -381,7 +382,9 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
 
     if estimate:
         if isinstance(precision, Iterable):
-            median_estimate_x = np.around(median_estimate_x, decimals=precision[0])
+            median_estimate_x = np.around(
+                median_estimate_x, decimals=precision[0]
+            )
             lower_uncertainty_x = np.around(
                 median_estimate_x - lower_bound_x, decimals=precision[0]
             )
@@ -393,7 +396,9 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
                 lower_uncertainty_x = int(lower_uncertainty_x)
                 upper_uncertainty_x = int(upper_uncertainty_x)
 
-            median_estimate_y = np.around(median_estimate_y, decimals=precision[1])
+            median_estimate_y = np.around(
+                median_estimate_y, decimals=precision[1]
+            )
             lower_uncertainty_y = np.around(
                 median_estimate_y - lower_bound_y, decimals=precision[1]
             )
@@ -406,12 +411,18 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
                 upper_uncertainty_y = int(upper_uncertainty_y)
         main.set_xlabel(
             r"{} = ${{{}}}^{{+{}}}_{{-{}}}$".format(
-                xlabel, median_estimate_x, upper_uncertainty_x, lower_uncertainty_x
+                xlabel,
+                median_estimate_x,
+                upper_uncertainty_x,
+                lower_uncertainty_x
             )
         )
         main.set_ylabel(
             r"{} = ${{{}}}^{{+{}}}_{{-{}}}$".format(
-                ylabel, median_estimate_y, upper_uncertainty_y, lower_uncertainty_y
+                ylabel,
+                median_estimate_y,
+                upper_uncertainty_y,
+                lower_uncertainty_y
             )
         )
     else:

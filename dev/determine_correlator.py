@@ -17,7 +17,7 @@ from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
 _cwd = os.path.dirname(__file__)
 sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
-from harmonia.mapper import LogNormalCatalogue
+from harmonia.mapper import NBKCatalogue
 from harmonia.collections import cartesian_to_spherical
 from harmonia.collections import confirm_directory_path, harmony
 
@@ -138,7 +138,7 @@ def process():
     """
     results = defaultdict(list)
     for run in range(niter):
-        data_catalogue = LogNormalCatalogue(
+        data_catalogue = NBKCatalogue(
             matter_power_spectrum, nbar, boxsize, nmesh
         )
         rand_catalogue = UniformCatalog(contrast*nbar, boxsize)

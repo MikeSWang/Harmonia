@@ -33,7 +33,7 @@ def parse_cli_args():
 
     cli_parser.add_argument('--fsky', type=float, default=1.)
     cli_parser.add_argument('--split', action='store_true')
-    cli_parser.add_argument('--nbar', type=float, default=5e-2)
+    cli_parser.add_argument('--nbar', type=float, default=1e-2)
     cli_parser.add_argument('--boxsize', type=float, default=1000.)
     cli_parser.add_argument('--padding', type=float, default=70.)
     cli_parser.add_argument('--mesh', type=int, default=512)
@@ -89,7 +89,7 @@ def synthesise():
 
     """
     _window = SurveyWindow(
-        mask=lambda pos:\
+        mask=lambda pos: \
             spherical_indicator(pos, boxsize/2) \
             * sky_mask(pos, fsky, split=split)
     )
@@ -107,7 +107,7 @@ def determine_window():
         Survey window correlation and power multipoles.
 
     """
-    _xi_ell = window.correlation_function_multipoles(ORDERS, Nmesh=mesh)
+    _xi_ell = window.correlation_function_multipoles(ORDERS, num_mesh=mesh)
     _pk_ell = window.power_multipoles
 
     return _xi_ell, _pk_ell
@@ -137,14 +137,14 @@ if __name__ == '__main__':
 
     np.save(
         f"{PATHOUT}{SCRIPT_NAME}/"
-        f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
-        .format(fsky, split*"-split", padding),
+        f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+        .format(fsky, split*"-split", padding, mesh),
         xi_ell
     )
     np.save(
         f"{PATHOUT}{SCRIPT_NAME}/"
-        f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad.npy"
-        .format(fsky, split*"-split", padding),
+        f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+        .format(fsky, split*"-split", padding, mesh),
         pk_ell
     )
 
@@ -172,6 +172,6 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.savefig(
-        f"{PATHOUT}window_multipoles-{{:.2f}}sky-{{:.0f}}pad.pdf"
-        .format(fsky, padding)
+        f"{PATHOUT}window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.pdf"
+        .format(fsky, split*"-split", padding, mesh)
     )

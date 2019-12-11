@@ -65,16 +65,16 @@ def sky_mask(cartesian_position, fraction, split=False):
     if split:
         mask = np.logical_or(
             np.logical_and(
-                spherical_position[..., -1] <= fraction * (2*np.pi),
+                spherical_position[:, -1] <= fraction * (2*np.pi),
                 spherical_position[:, 1] < np.pi/2
             ),
             np.logical_and(
-                spherical_position[..., -1] >= (1 - fraction) * (2*np.pi),
+                spherical_position[:, -1] >= (1 - fraction) * (2*np.pi),
                 spherical_position[:, 1] >= np.pi/2
             )
         )
     else:
-        mask = spherical_position[..., -1] <= fraction * (2*np.pi)
+        mask = spherical_position[:, -1] <= fraction * (2*np.pi)
 
     return mask
 

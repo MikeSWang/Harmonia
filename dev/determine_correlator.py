@@ -28,7 +28,6 @@ sns.set(style='ticks', font='serif')
 PATHOUT = Path("./data/output/")
 SCRIPT_NAME = "window_correlator"
 
-rand_samp = None
 fsky, split = None, None
 khyb, kmax, orders = None, None, None
 nbar, contrast = None, None
@@ -141,7 +140,7 @@ def process():
     """
     results = defaultdict(list)
     for run in range(niter):
-        if rand_samp:
+        if params.rand_samp:
             data_catalogue = UniformCatalog(nbar, boxsize)
         else:
             data_catalogue = NBKCatalogue(
@@ -198,7 +197,8 @@ def export():
 
 params = parse_args()
 
-FILE_ROOT = "correlated_rsamples" if rand_samp else "correlated_csamples"
+FILE_ROOT = "correlated_rsamples" if params.rand_samp \
+    else "correlated_csamples"
 
 if params.task.startswith('gen'):
 

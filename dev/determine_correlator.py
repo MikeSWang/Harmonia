@@ -182,8 +182,11 @@ def export():
         'npy'
     )
 
-    for key, vals in collated_output.items():
-        collated_output[key] = [val[0] for val in vals]
+    valid_bins = [Nk_array[0][0] % 2 for Nk_array in collated_output['Nk']]
+    for var, vals in collated_output.items():
+        collated_output[var] = [
+            val[0][start:] for val, start in zip(vals, valid_bins)
+        ]
 
     return collated_output
 
@@ -199,7 +202,7 @@ if params.task == 'generate':
 
     confirm_directory_path(PATHOUT/SCRIPT_NAME)
     np.save(
-        PATHOUT/SCRIPT_NAME/"correlated-samples-({tag})-[{}].npy"
+        PATHOUT/SCRIPT_NAME/"correlated-samples-({})-[{}].npy"
         .format(tag, params.sessionid),
         output
     )

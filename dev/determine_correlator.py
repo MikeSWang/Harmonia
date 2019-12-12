@@ -17,7 +17,7 @@ from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
 _cwd = os.path.dirname(__file__)
 sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
-from harmonia.mapper import NBKCatalogue
+from harmonia.mapper import NBKCatalogue, load_catalogue_from_file
 from harmonia.collections import cartesian_to_spherical
 from harmonia.collections import collate_data_files, confirm_directory_path
 from harmonia.collections import harmony
@@ -25,8 +25,11 @@ from harmonia.collections import harmony
 plt.style.use(harmony)
 sns.set(style='ticks', font='serif')
 
+PATHIN = Path("./data/input/")
 PATHOUT = Path("./data/output/")
 SCRIPT_NAME = "window_correlator"
+
+CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 fsky, split = None, None
 khyb, kmax, orders = None, None, None
@@ -88,6 +91,7 @@ def parse_args():
 
     parser.add_argument('--task', required=True)
     parser.add_argument('--rand-samp', action='store_true')
+    parser.add_argument('--input-catalogue', default='')
     parser.add_argument('--sessionid', default='')
 
     parser.add_argument('--fsky', type=float, default=1.)
@@ -139,41 +143,80 @@ def process():
 
     """
     results = defaultdict(list)
-    for run in range(niter):
-        if params.rand_samp:
-            data_catalogue = UniformCatalog(nbar, boxsize)
-        else:
-            data_catalogue = NBKCatalogue(
-                matter_power_spectrum, nbar, boxsize, nmesh
+
+    if params.input_catalogue:
+        for file_suffix in ["L.txt", "R.txt"]:
+            catalogue_name = params['input_catalogue'] + file_suffix
+            catalogue_path = PATHIN/"catalogues"/catalogue_name
+
+            data_catalogue = load_catalogue_from_file(
+                str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize']
             )
-        rand_catalogue = UniformCatalog(contrast*nbar, boxsize)
+            rand_catalogue = UniformCatalog(contrast*nbar, boxsize)
 
-        for catalogue in [data_catalogue, rand_catalogue]:
-            catalogue['Selection'] *= domain_cut(
-                catalogue['Position'] - [boxsize/2] * 3,
-                boxsize/2, fsky, split=split
+            for catalogue in [data_catalogue, rand_catalogue]:
+                catalogue['Selection'] *= domain_cut(
+                    catalogue['Position'] - [boxsize/2] * 3,
+                    boxsize/2, fsky, split=split
+                )
+                catalogue['NZ'] = nbar * catalogue['Weight']
+
+            catalogue_pair = FKPCatalog(data_catalogue, rand_catalogue)
+            catalogue_mesh = catalogue_pair.to_mesh(
+                Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
             )
-            catalogue['NZ'] = nbar * catalogue['Weight']
 
-        catalogue_pair = FKPCatalog(data_catalogue, rand_catalogue)
-        catalogue_mesh = catalogue_pair.to_mesh(
-            Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
-        )
-
-        multipoles = ConvolvedFFTPower(
-            catalogue_mesh, poles=orders, kmin=khyb, kmax=kmax
-        ).poles
-        valid_bins = (
-            ~np.equal(multipoles['modes'], 0)
-            & ~np.equal(multipoles['modes'], 1)
-        )
-
-        results['k'].append(multipoles['k'][valid_bins])
-        results['Nk'].append(multipoles['modes'][valid_bins])
-        for ell in orders:
-            results[f'power_{ell}'].append(
-                multipoles[f'power_{ell}'][valid_bins].real
+            multipoles = ConvolvedFFTPower(
+                catalogue_mesh, poles=orders, kmin=khyb, kmax=kmax
+            ).poles
+            valid_bins = (
+                ~np.equal(multipoles['modes'], 0)
+                & ~np.equal(multipoles['modes'], 1)
             )
+
+            results['k'].append(multipoles['k'][valid_bins])
+            results['Nk'].append(multipoles['modes'][valid_bins])
+            for ell in orders:
+                results[f'power_{ell}'].append(
+                    multipoles[f'power_{ell}'][valid_bins].real
+                )
+
+    else:
+        for run in range(niter):
+            if params.rand_samp:
+                data_catalogue = UniformCatalog(nbar, boxsize)
+            else:
+                data_catalogue = NBKCatalogue(
+                    matter_power_spectrum, nbar, boxsize, nmesh
+                )
+            rand_catalogue = UniformCatalog(contrast*nbar, boxsize)
+
+            for catalogue in [data_catalogue, rand_catalogue]:
+                catalogue['Selection'] *= domain_cut(
+                    catalogue['Position'] - [boxsize/2] * 3,
+                    boxsize/2, fsky, split=split
+                )
+                catalogue['NZ'] = nbar * catalogue['Weight']
+
+            catalogue_pair = FKPCatalog(data_catalogue, rand_catalogue)
+            catalogue_mesh = catalogue_pair.to_mesh(
+                Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
+            )
+
+            multipoles = ConvolvedFFTPower(
+                catalogue_mesh, poles=orders, kmin=khyb, kmax=kmax
+            ).poles
+            valid_bins = (
+                ~np.equal(multipoles['modes'], 0)
+                & ~np.equal(multipoles['modes'], 1)
+            )
+
+            results['k'].append(multipoles['k'][valid_bins])
+            results['Nk'].append(multipoles['modes'][valid_bins])
+            for ell in orders:
+                results[f'power_{ell}'].append(
+                    multipoles[f'power_{ell}'][valid_bins].real
+                )
 
     return results
 
@@ -296,7 +339,7 @@ elif params.task.startswith('agg'):
     )
 
     sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
-    plt.savefig(PATHOUT/SCRIPT_NAME/"collated"/f"{name}.pdf")
+    plt.savefig(PATHOUT/SCRIPT_NAME/f"{name}.pdf")
 
 else:
     tag = initialise()

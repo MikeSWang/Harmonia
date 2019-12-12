@@ -146,7 +146,7 @@ def process():
 
     if params.input_catalogue:
         for file_suffix in ["L.txt", "R.txt"]:
-            catalogue_name = params['input_catalogue'] + file_suffix
+            catalogue_name = params.input_catalogue + file_suffix
             catalogue_path = PATHIN/"catalogues"/catalogue_name
 
             data_catalogue = load_catalogue_from_file(

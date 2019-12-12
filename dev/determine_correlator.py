@@ -179,8 +179,17 @@ def process():
 
 
 def export():
+    """Export aggregated program results.
 
-    collated_output, _, _ = collate_data_files(
+    Returns
+    -------
+    collated_output : dict
+        Aggregated output data.
+    filename : int
+        Aggregated data file name.
+
+    """
+    collated_output, file_count, _ = collate_data_files(
         f"{str(PATHOUT/SCRIPT_NAME)}/{FILE_ROOT}*{tag}*.npy"
         .replace("=[", "=[[]").replace("],", "[]],"),
         'npy'
@@ -192,19 +201,72 @@ def export():
             val[start:] for val, start in zip(vals, invalid_bins)
         ]
 
-    return collated_output
+    filename = "{}-({})".format(
+        FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*file_count}")
+    )
+    np.save(PATHOUT/SCRIPT_NAME/"collated"/f"{filename}.npy", collated_output)
+
+    return collated_output, filename
+
+
+def extract(results):
+    """Extract fiducial covariance estimate.
+
+    Paramaters
+    ----------
+    results : dict
+        Aggregated results.
+
+    Returns
+    -------
+    estimate : dict
+        Extracted covariance estimate.
+    corr : dict
+        Extracted sample correlation.
+
+    """
+    mean_data = {
+        var: np.mean(vals, axis=0)
+        for var, vals in results.items()
+    }
+
+    covar = np.cov(
+        np.hstack((results[f'power_{ell}'] for ell in orders)),
+        rowvar=False, ddof=1
+    )
+
+    corr = np.corrcoef(
+        np.hstack((results[f'power_{ell}'] for ell in orders)), rowvar=False
+    )
+
+    error = {
+        'd' + var: np.std(vals, axis=0, ddof=1)
+            / np.sqrt(np.size(vals, axis=0))
+        for var, vals in results.items()
+        if "power_" in var
+    }
+
+    estimate = {
+        'fiducial_data': mean_data,
+        'fiducial_covariance': covar,
+        'error': error
+    }
+
+    return estimate, corr
 
 
 params = parse_args()
 
-FILE_ROOT = "correlated_rsamples" if params.rand_samp \
-    else "correlated_csamples"
-
-if params.task.startswith('gen'):
+if params.rand_samp:
+    FILE_ROOT = "correlated_rsamples"
+else:
+    FILE_ROOT = "correlated_csamples"
 
     matter_power_spectrum = cosmology.LinearPower(
         cosmology.Planck15, redshift=0.
     )
+
+if params.task.startswith('gen'):
 
     tag = initialise()
     output = process()
@@ -216,6 +278,41 @@ if params.task.startswith('gen'):
         output
     )
 elif params.task.startswith('agg'):
+    confirm_directory_path(PATHOUT/SCRIPT_NAME/"collated")
+    confirm_directory_path(PATHOUT/SCRIPT_NAME/"extracted")
 
     tag = initialise()
-    output = export()
+    output, name = export()
+
+    fiducial_estimate, fiducial_corr = extract(output)
+
+    np.save(
+        PATHOUT/SCRIPT_NAME/"extracted"/(
+            f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
+        ),
+        fiducial_estimate
+    )
+
+    sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
+    plt.savefig(PATHOUT/SCRIPT_NAME/"collated"/f"{name}.pdf")
+
+else:
+    tag = initialise()
+
+    count = 32
+    name = "{}-({})".format(
+        FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*count}")
+    )
+    output = np.load(PATHOUT/SCRIPT_NAME/"collated"/f"{name}.npy").item()
+
+    fiducial_estimate, fiducial_corr = extract(output)
+
+    np.save(
+        PATHOUT/SCRIPT_NAME/"extracted"/(
+            f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
+        ),
+        fiducial_estimate
+    )
+
+    sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
+    plt.savefig(PATHOUT/SCRIPT_NAME/f"{name}.pdf")

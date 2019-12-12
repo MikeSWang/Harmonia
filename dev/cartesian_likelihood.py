@@ -25,9 +25,9 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles-1.00sky.npy"
-WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles-1.00sky.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/""
+MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles.npy"
+WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles.npy"
+FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimate.npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -127,7 +127,7 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['khyb'])
+    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
 
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
@@ -160,7 +160,9 @@ def process():
 
         # Cartesian measurements.
         cartesian_multipoles = cartesian_map.power_multipoles(
-            orders=params['multipoles'], kmax=params['kmax']
+            orders=params['multipoles'],
+            kmin=params['khyb'],
+            kmax=params['kmax']
         )
 
         cartesian_data = CartesianArray(
@@ -179,6 +181,7 @@ def process():
             contrast=params['contrast'],
             pivot=params['cartesian_pivot'],
             orders=params['multipoles'],
+            modified_t=2560
         )
         for par_name, par_values in fixed_params.items():
             cart_likelihood_kwargs.update({par_name: par_values['cartesian']})

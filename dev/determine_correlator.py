@@ -244,8 +244,10 @@ def export():
             val[start:] for val, start in zip(vals, invalid_bins)
         ]
 
+    if params.input_catalogue:
+        _tag = tag.replace(f",iter={niter}", "")
     filename = "{}-({})".format(
-        FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*file_count}")
+        FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={niter*file_count}")
     )
     np.save(PATHOUT/SCRIPT_NAME/"collated"/f"{filename}.npy", collated_output)
 
@@ -352,10 +354,16 @@ elif params.task.startswith('agg'):
 else:
     tag = initialise()
 
-    count = 32
-    name = "{}-({})".format(
-        FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*count}")
-    )
+    count = 21
+    if params.input_catalogue:
+        name = "{}-({})".format(
+            FILE_ROOT, tag.replace(f",iter={niter}", "")
+        )
+    else:
+        name = "{}-({})".format(
+            FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*count}")
+        )
+
     output = np.load(PATHOUT/SCRIPT_NAME/"collated"/f"{name}.npy").item()
 
     fiducial_estimate, fiducial_corr = extract(output)

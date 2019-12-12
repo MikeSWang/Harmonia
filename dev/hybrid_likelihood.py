@@ -35,9 +35,9 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 SPECS_PATH = PATHIN/"specifications"
 
 COUPLINGS_FILE = SPECS_PATH/""
-MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles-1.00sky.npy"
-WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles-1.00sky.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimation-1.00sky.npy"
+MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles.npy"
+WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles.npy"
+FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimate.npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -229,6 +229,7 @@ def process():
             contrast=params['contrast'],
             pivot=params['cartesian_pivot'],
             orders=params['multipoles'],
+            modified_t=2560
         )
         for par_name, par_values in fixed_params.items():
             cart_likelihood_kwargs.update({par_name: par_values['cartesian']})

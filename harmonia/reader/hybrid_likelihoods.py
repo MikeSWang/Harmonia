@@ -36,6 +36,7 @@ import collections as coll
 import itertools as it
 
 import numpy as np
+from scipy.special import gamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
 from harmonia.collections import matrix_log_det
@@ -215,6 +216,74 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
     )
 
     density = 1/2 * (- log_normalisation_const - log_det_cov_mat - exponent)
+
+    if not return_log:
+        density = np.exp(density)
+
+    return density
+
+
+def modified_t_pdf(data_vector, mean_vector, cov_matrix, num_sample,
+                   return_log=True):
+    """Compute the multivariate modified-*t* probability density function
+    or its natural logarithm given the data vector, its mean vector and
+    covariance matrix.
+
+    Parameters
+    ----------
+    data_vector : float, array_like
+        Data vector.
+    mean_vector : float, array_like
+        Mean vector.
+    cov_matrix : float, array_like
+        Covariance matrix.
+    num_sample : int
+        Number of samples used in estimating the covariance matrix.
+    return_log : bool, optional
+        If `True` (default), return logarithmic probability density.
+
+    Returns
+    -------
+    density : float, array_like
+        (Logarithmic) probability density value.
+
+    Raises
+    ------
+    ValueError
+        If the dimensions of `data_vector`, `mean_vector` and `cov_matrix`
+        are not consistent.
+
+    """
+    data_vector, mean_vector, cov_matrix = np.squeeze(data_vector), \
+        np.squeeze(mean_vector), np.squeeze(cov_matrix)
+    if cov_matrix.ndim == 1:
+        cov_matrix = np.diag(cov_matrix)
+    if np.size(data_vector) != np.size(data_vector) \
+            or np.size(data_vector)**2 != np.size(cov_matrix):
+        raise ValueError(
+            "Dimensions of `data_vector`, `mean_vector` and `cov_matrix` "
+            "are not consistent: {}, {} and ({}, {}). ".format(
+                np.size(data_vector),
+                np.size(mean_vector),
+                np.size(cov_matrix, axis=0),
+                np.size(cov_matrix, axis=1),
+            )
+        )
+
+    dat_dim = np.size(data_vector)
+
+    log_normalisation_const = - dat_dim/2 * np.log((num_sample - 1)*np.pi) \
+        + np.log(gamma(num_sample/2)) - np.log(gamma((num_sample-dat_dim)/2))
+
+    log_det_cov_mat = matrix_log_det(cov_matrix)
+
+    core = np.log(
+        1 + 1/(num_sample - 1) * _chi_square(
+            data_vector - mean_vector, cov_matrix, elementwise=False
+        )
+    )
+
+    density = log_normalisation_const - (log_det_cov_mat + num_sample*core)/2
 
     if not return_log:
         density = np.exp(density)
@@ -458,7 +527,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
 def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  windowed_power_model, cartesian_data,
                                  correlation_modeller, pivot, orders,
-                                 **covariance_kwargs):
+                                 modified_t=False, **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
     Parameters
@@ -480,6 +549,10 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Order in which the data is unpacked as a 1-d vector.
     orders : list of int
         Order(s) of the power spectrum multipoles to include.
+    modified_t : int or `False`, optional
+        If the covariance matrix is empirical, use the modified-*t*
+        distribution by setting this to the number of sampled used in
+        estimating the covariance.  Default is `False`.
     **covariance_kwargs
         Keyword arguments to be passed to
         :func:`~.reader.hybrid_likelihoods.cartesian_parametrised_moments`.
@@ -515,9 +588,14 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             b_1, f_nl, wpm, pivot, orders, correlation_modeller,
             nbar=mean_number_density, **covariance_kwargs
         )
-        sample_likelihood = multivariate_normal_pdf(
-            data_vector, sample_mean, sample_covar
-        )
+        if modified_t:
+            sample_likelihood = modified_t_pdf(
+                data_vector, sample_mean, sample_covar, num_sample=modified_t
+            )
+        else:
+            sample_likelihood = multivariate_normal_pdf(
+                data_vector, sample_mean, sample_covar
+            )
         log_likelihood.append(sample_likelihood)
 
     log_likelihood = np.reshape(log_likelihood, out_shape)

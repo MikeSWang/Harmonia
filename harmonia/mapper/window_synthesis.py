@@ -176,7 +176,7 @@ class SurveyWindow:
         cartesian_map = CartesianMap(self.synthetic_catalogue, **mesh_kwargs)
 
         if kmax is None:
-            kmax = 0.8 * np.pi * mesh_kwargs['num_mesh'] \
+            kmax = np.pi * mesh_kwargs['num_mesh'] \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
         if dk is None:
             dk = np.sqrt(3) * 2*np.pi \

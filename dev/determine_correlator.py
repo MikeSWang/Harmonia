@@ -28,6 +28,7 @@ sns.set(style='ticks', font='serif')
 PATHOUT = Path("./data/output/")
 SCRIPT_NAME = "window_correlator"
 
+rand_samp = None
 fsky, split = None, None
 khyb, kmax, orders = None, None, None
 nbar, contrast = None, None
@@ -87,6 +88,7 @@ def parse_args():
     parser = ArgumentParser()
 
     parser.add_argument('--task', required=True)
+    parser.add_argument('--rand-samp', action='store_true')
     parser.add_argument('--sessionid', default='')
 
     parser.add_argument('--fsky', type=float, default=1.)
@@ -139,9 +141,12 @@ def process():
     """
     results = defaultdict(list)
     for run in range(niter):
-        data_catalogue = NBKCatalogue(
-            matter_power_spectrum, nbar, boxsize, nmesh
-        )
+        if rand_samp:
+            data_catalogue = UniformCatalog(nbar, boxsize)
+        else:
+            data_catalogue = NBKCatalogue(
+                matter_power_spectrum, nbar, boxsize, nmesh
+            )
         rand_catalogue = UniformCatalog(contrast*nbar, boxsize)
 
         for catalogue in [data_catalogue, rand_catalogue]:
@@ -177,22 +182,26 @@ def process():
 def export():
 
     collated_output, _, _ = collate_data_files(
-        f"{str(PATHOUT/SCRIPT_NAME)}/*{tag}*.npy"
+        f"{str(PATHOUT/SCRIPT_NAME)}/{FILE_ROOT}*{tag}*.npy"
         .replace("=[", "=[[]").replace("],", "[]],"),
         'npy'
     )
 
-    valid_bins = [Nk_array[0][0] % 2 for Nk_array in collated_output['Nk']]
+    invalid_bins = [Nk_array[0] % 2 for Nk_array in collated_output['Nk']]
     for var, vals in collated_output.items():
         collated_output[var] = [
-            val[0][start:] for val, start in zip(vals, valid_bins)
+            val[start:] for val, start in zip(vals, invalid_bins)
         ]
 
     return collated_output
 
 
 params = parse_args()
-if params.task == 'generate':
+
+FILE_ROOT = "correlated_rsamples" if rand_samp else "correlated_csamples"
+
+if params.task.startswith('gen'):
+
     matter_power_spectrum = cosmology.LinearPower(
         cosmology.Planck15, redshift=0.
     )
@@ -202,11 +211,11 @@ if params.task == 'generate':
 
     confirm_directory_path(PATHOUT/SCRIPT_NAME)
     np.save(
-        PATHOUT/SCRIPT_NAME/"correlated-samples-({})-[{}].npy"
-        .format(tag, params.sessionid),
+        PATHOUT/SCRIPT_NAME/"{}-({})-[{}].npy"
+        .format(FILE_ROOT, tag, params.sessionid),
         output
     )
-elif params.task == 'aggregate':
+elif params.task.startswith('agg'):
 
     tag = initialise()
     output = export()

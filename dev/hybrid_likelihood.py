@@ -37,7 +37,7 @@ SPECS_PATH = PATHIN/"specifications"
 COUPLINGS_FILE = SPECS_PATH/""
 MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles.npy"
 WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimate.npy"
+FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimate-hybrid.npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -116,7 +116,7 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
-    external_couplings = np.load(COUPLINGS_FILE).item()
+    # external_couplings = np.load(COUPLINGS_FILE).item()
 
     mask_multipoles = np.load(MASK_MULTIPOLES_FILE).item()
     window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()

@@ -246,6 +246,8 @@ def export():
 
     if params.input_catalogue:
         _tag = tag.replace(f",iter={niter}", "")
+    else:
+        _tag = tag
     filename = "{}-({})".format(
         FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={niter*file_count}")
     )

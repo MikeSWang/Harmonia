@@ -499,7 +499,7 @@ class WindowedCorrelation:
         if covar_estimate.ndim != 2 \
                 or covar_estimate.shape != (dimension,) * 2:
             raise ValueError(
-                "The value of the `window_correlation` property "
+                "The value of the `windowed_correlation` property "
                 "must be a matrix of dimensions consistent with the "
                 "`wavenumbers` property. "
             )

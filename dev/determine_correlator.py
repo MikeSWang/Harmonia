@@ -302,7 +302,9 @@ def extract(results):
 
 params = parse_args()
 
-if params.rand_samp:
+if params.input_catalogue:
+    FILE_ROOT = params.input_catalogue
+elif params.rand_samp:
     FILE_ROOT = "correlated_rsamples"
 else:
     FILE_ROOT = "correlated_csamples"
@@ -317,11 +319,17 @@ if params.task.startswith('gen'):
     output = process()
 
     confirm_directory_path(PATHOUT/SCRIPT_NAME)
-    np.save(
-        PATHOUT/SCRIPT_NAME/"{}-({})-[{}].npy"
-        .format(FILE_ROOT, tag, params.sessionid),
-        output
-    )
+    if params.sessionid:
+        np.save(
+            PATHOUT/SCRIPT_NAME/"{}-({})-[{}].npy"
+            .format(FILE_ROOT, tag, params.sessionid),
+            output
+        )
+    else:
+        np.save(
+            PATHOUT/SCRIPT_NAME/"{}-({}).npy".format(FILE_ROOT, tag), output
+        )
+
 elif params.task.startswith('agg'):
     confirm_directory_path(PATHOUT/SCRIPT_NAME/"collated")
     confirm_directory_path(PATHOUT/SCRIPT_NAME/"extracted")

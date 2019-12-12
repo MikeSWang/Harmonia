@@ -19,7 +19,8 @@ sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
 from harmonia.mapper import NBKCatalogue
 from harmonia.collections import cartesian_to_spherical
-from harmonia.collections import confirm_directory_path, harmony
+from harmonia.collections import collate_data_files, confirm_directory_path
+from harmonia.collections import harmony
 
 plt.style.use(harmony)
 sns.set(style='ticks', font='serif')
@@ -163,14 +164,28 @@ def process():
             & ~np.equal(multipoles['modes'], 1)
         )
 
-        results['k'].append([multipoles['k'][valid_bins]])
-        results['Nk'].append([multipoles['modes'][valid_bins]])
+        results['k'].append(multipoles['k'][valid_bins])
+        results['Nk'].append(multipoles['modes'][valid_bins])
         for ell in orders:
             results[f'power_{ell}'].append(
-                [multipoles[f'power_{ell}'][valid_bins].real]
+                multipoles[f'power_{ell}'][valid_bins].real
             )
 
     return results
+
+
+def export():
+
+    collated_output, _, _ = collate_data_files(
+        f"{str(PATHOUT/SCRIPT_NAME)}/*{tag}*.npy"
+        .replace("=[", "=[[]").replace("],", "[]],"),
+        'npy'
+    )
+
+    for key, vals in collated_output.items():
+        collated_output[key] = [val[0] for val in vals]
+
+    return collated_output
 
 
 params = parse_args()
@@ -184,8 +199,11 @@ if params.task == 'generate':
 
     confirm_directory_path(PATHOUT/SCRIPT_NAME)
     np.save(
-        PATHOUT/SCRIPT_NAME/"samples-[{}].npy".format(params.sessionid),
+        PATHOUT/SCRIPT_NAME/"correlated-samples-({tag})-[{}].npy"
+        .format(tag, params.sessionid),
         output
     )
 elif params.task == 'aggregate':
-    pass
+
+    tag = initialise()
+    output = export()

@@ -225,10 +225,13 @@ def extract(results):
         Extracted sample correlation.
 
     """
-    mean_data = {
-        var: np.mean(vals, axis=0)
-        for var, vals in results.items()
-    }
+    mean_data = {'k': np.mean(results['k'], axis=0)}
+    mean_data.update(
+        {
+            f'power_{ell}': np.mean(results[f'power_{ell}'], axis=0)
+            for ell in orders
+        }
+    )
 
     covar = np.cov(
         np.hstack((results[f'power_{ell}'] for ell in orders)),
@@ -240,10 +243,9 @@ def extract(results):
     )
 
     error = {
-        'd' + var: np.std(vals, axis=0, ddof=1)
-            / np.sqrt(np.size(vals, axis=0))
-        for var, vals in results.items()
-        if "power_" in var
+        f'dpower_{ell}': np.std(results[f'power_{ell}'], axis=0, ddof=1)
+            / np.sqrt(np.size(results[f'power_{ell}'], axis=0))
+        for ell in orders
     }
 
     estimate = {

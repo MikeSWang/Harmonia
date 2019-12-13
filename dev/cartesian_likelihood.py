@@ -107,9 +107,11 @@ def initialise():
     window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()
 
     fiducial_estimate = np.load(
-        FIDUCIAL_ESTIMATE_FILENAME.format(
-            np.around(parsed_params.khyb, decimals=2),
-            np.around(parsed_params.kmax, decimals=2)
+        SPECS_PATH/(
+            FIDUCIAL_ESTIMATE_FILENAME.format(
+                np.around(parsed_params.khyb, decimals=2),
+                np.around(parsed_params.kmax, decimals=2)
+            )
         )
     ).item()
     window_correlator = WindowedCorrelation(

@@ -12,6 +12,7 @@ Probability distributions
 
     complex_normal_pdf
     multivariate_normal_pdf
+    modified_student_pdf
 
 
 Spherical likelihood
@@ -36,7 +37,7 @@ import collections as coll
 import itertools as it
 
 import numpy as np
-from scipy.special import gamma
+from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
 from harmonia.collections import matrix_log_det
@@ -123,11 +124,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
     if np.size(dat_vector)**2 != np.size(cov_matrix):
         raise ValueError(
             "`data_vector` and `cov_matrix` dimensions are not consistent: "
-            "{} and ({}, {}). ".format(
-                np.size(dat_vector),
-                np.size(cov_matrix, axis=0),
-                np.size(cov_matrix, axis=1),
-            )
+            "{} and {}. ".format(np.size(dat_vector), np.shape(cov_matrix))
         )
 
     dat_dim = np.size(dat_vector)
@@ -195,11 +192,10 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
             or np.size(data_vector)**2 != np.size(cov_matrix):
         raise ValueError(
             "Dimensions of `data_vector`, `mean_vector` and `cov_matrix` "
-            "are not consistent: {}, {} and ({}, {}). ".format(
+            "are not consistent: {}, {} and {}. ".format(
                 np.size(data_vector),
                 np.size(mean_vector),
-                np.size(cov_matrix, axis=0),
-                np.size(cov_matrix, axis=1),
+                np.shape(cov_matrix),
             )
         )
 
@@ -223,11 +219,11 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
     return density
 
 
-def modified_t_pdf(data_vector, mean_vector, cov_matrix, num_sample,
-                   return_log=True):
-    """Compute the multivariate modified-*t* probability density function
-    or its natural logarithm given the data vector, its mean vector and
-    covariance matrix.
+def modified_student_pdf(data_vector, mean_vector, cov_matrix, num_sample,
+                         return_log=True):
+    """Compute the multivariate modified Student probability density
+    function or its natural logarithm given the data vector, its mean
+    vector and covariance matrix.
 
     Parameters
     ----------
@@ -262,25 +258,24 @@ def modified_t_pdf(data_vector, mean_vector, cov_matrix, num_sample,
             or np.size(data_vector)**2 != np.size(cov_matrix):
         raise ValueError(
             "Dimensions of `data_vector`, `mean_vector` and `cov_matrix` "
-            "are not consistent: {}, {} and ({}, {}). ".format(
+            "are not consistent: {}, {} and {}. ".format(
                 np.size(data_vector),
                 np.size(mean_vector),
-                np.size(cov_matrix, axis=0),
-                np.size(cov_matrix, axis=1),
+                np.shape(cov_matrix),
             )
         )
 
     dat_dim = np.size(data_vector)
 
     log_normalisation_const = - dat_dim/2 * np.log((num_sample - 1)*np.pi) \
-        + np.log(gamma(num_sample/2)) - np.log(gamma((num_sample-dat_dim)/2))
+        + loggamma(num_sample/2) - loggamma((num_sample -dat_dim)/2)
 
     log_det_cov_mat = matrix_log_det(cov_matrix)
 
     core = np.log(
-        1 + 1/(num_sample - 1) * _chi_square(
+        1 + _chi_square(
             data_vector - mean_vector, cov_matrix, elementwise=False
-        )
+        ) / (num_sample - 1)
     )
 
     density = log_normalisation_const - (log_det_cov_mat + num_sample*core)/2
@@ -527,7 +522,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
 def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  windowed_power_model, cartesian_data,
                                  correlation_modeller, pivot, orders,
-                                 modified_t=False, **covariance_kwargs):
+                                 num_covar_sample=None, **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
     Parameters
@@ -549,10 +544,10 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Order in which the data is unpacked as a 1-d vector.
     orders : list of int
         Order(s) of the power spectrum multipoles to include.
-    modified_t : int or `False`, optional
-        If the covariance matrix is empirical, use the modified-*t*
-        distribution by setting this to the number of sampled used in
-        estimating the covariance.  Default is `False`.
+    num_covar_sample : int or None, optional
+        If not `None` (default), this is the number of sampled used in
+        estimating the covariance and the modified Student distribution is
+        used.
     **covariance_kwargs
         Keyword arguments to be passed to
         :func:`~.reader.hybrid_likelihoods.cartesian_parametrised_moments`.
@@ -588,9 +583,10 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             b_1, f_nl, wpm, pivot, orders, correlation_modeller,
             nbar=mean_number_density, **covariance_kwargs
         )
-        if modified_t:
-            sample_likelihood = modified_t_pdf(
-                data_vector, sample_mean, sample_covar, num_sample=modified_t
+        if num_covar_sample:
+            sample_likelihood = modified_student_pdf(
+                data_vector, sample_mean, sample_covar,
+                num_sample=num_covar_sample
             )
         else:
             sample_likelihood = multivariate_normal_pdf(

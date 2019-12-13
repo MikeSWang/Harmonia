@@ -27,7 +27,7 @@ SPECS_PATH = PATHIN/"specifications"
 
 MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles.npy"
 WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles.npy"
-FIDUCIAL_ESTIMATE_FILE = SPECS_PATH/"fiducial_estimate.npy"
+FIDUCIAL_ESTIMATE_FILENAME = "fiducial_estimate-knots=({},{}).npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -86,9 +86,10 @@ def initialise():
             )
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
-    ini_tag = "map={},kmax={},pivot={},{}{}".format(
+    ini_tag = "map={},kmax={},pivot={},{}{}{}".format(
         parsed_params.map, parsed_params.kmax, parsed_params.cartesian_pivot,
-        sampled_tag, fixed_tag
+        sampled_tag, fixed_tag,
+        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est}"
     ).strip(",")
 
     # Extract cosmology and survey specifications.
@@ -105,7 +106,12 @@ def initialise():
     mask_multipoles = np.load(MASK_MULTIPOLES_FILE).item()
     window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()
 
-    fiducial_estimate = np.load(FIDUCIAL_ESTIMATE_FILE).item()
+    fiducial_estimate = np.load(
+        FIDUCIAL_ESTIMATE_FILENAME.format(
+            np.around(parsed_params.khyb, decimals=2),
+            np.around(parsed_params.kmax, decimals=2)
+        )
+    ).item()
     window_correlator = WindowedCorrelation(
         fiducial_estimate['fiducial_data']
     )
@@ -181,7 +187,7 @@ def process():
             contrast=params['contrast'],
             pivot=params['cartesian_pivot'],
             orders=params['multipoles'],
-            modified_t=2560
+            num_covar_sample=params['num_cov_est']
         )
         for par_name, par_values in fixed_params.items():
             cart_likelihood_kwargs.update({par_name: par_values['cartesian']})

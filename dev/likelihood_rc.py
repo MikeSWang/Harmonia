@@ -30,6 +30,7 @@ def parse_external_args():
     parser.add_argument('--khyb', type=float, default=0.05)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--multipoles', type=int, nargs='+', default=[0, 2])
+    parser.add_argument('--num-cov-est', type=int, default=None)
 
     parser.add_argument('--nbar', type=float, default=2.4883e-4)
     parser.add_argument('--growth-rate', type=float, default=0.)

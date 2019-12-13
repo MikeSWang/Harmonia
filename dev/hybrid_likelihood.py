@@ -240,6 +240,10 @@ def process():
             [cart_likelihood(**cart_likelihood_kwargs)]
         )
 
+        if params['cartesian_pivot'] == 'order':
+            unfold_pivot = 'data'
+        elif params['cartesian_pivot'] == 'scale':
+            unfold_pivot = 'coords'
         output_data['data_vector'].append(
             np.concatenate(
                 (
@@ -247,7 +251,7 @@ def process():
                         params['spherical_pivot'], return_only='data'
                     ),
                     cartesian_data.unfold(
-                        params['cartesian_pivot'], return_only='data'
+                        unfold_pivot, return_only='data'
                     ),
                 )
             )

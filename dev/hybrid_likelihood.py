@@ -251,7 +251,7 @@ def process():
         if params['cartesian_pivot'] == 'order':
             unfold_pivot = 'data'
         elif params['cartesian_pivot'] == 'scale':
-            unfold_pivot = 'coords'
+            unfold_pivot = 'coord'
         output_data['data_vector'].append(
             np.concatenate(
                 (

@@ -249,12 +249,6 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
 
     cumulative_x = cumtrapz(marginal_x, samples['parameter_x'], initial=0.)
 
-    if truth:
-        try:
-            plt.axvline(truth[0], c='k', ls=':', lw=1.)
-        except (TypeError, IndexError):
-            pass
-
     if estimate:
         median_idx = np.argmin(
             np.abs(cumulative_x - 0.5*cumulative_x[-1])
@@ -311,12 +305,6 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
     plt.plot(marginal_y, samples['parameter_y'], c=cmap(cmap.N))
 
     cumulative_y = cumtrapz(marginal_y, samples['parameter_y'], initial=0.)
-
-    if truth:
-        try:
-            plt.axvline(truth[1], c='k', ls=':', lw=1.)
-        except (TypeError, IndexError):
-            pass
 
     if estimate:
         median_idx = np.argmin(

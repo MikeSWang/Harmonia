@@ -249,7 +249,7 @@ def process():
         )
 
         if params['cartesian_pivot'] == 'order':
-            unfold_pivot = 'data'
+            unfold_pivot = 'variable'
         elif params['cartesian_pivot'] == 'scale':
             unfold_pivot = 'coord'
         output_data['data_vector'].append(

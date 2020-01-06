@@ -627,7 +627,7 @@ class CartesianArray:
 
     def __init__(self, filling, coord_key, var_key_root):
 
-        self.sorted_vars = (
+        self.sorted_vars = tuple(
             key for key in sorted(filling) if var_key_root in key
         )
 

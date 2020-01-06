@@ -156,7 +156,7 @@ def process(runtime_info):
 
     suite = defaultdict(list)
     if cataloguing:
-        for run in range(niter):
+        for _ in range(niter):
             catalogue = CATALOGUE[generator](
                 Plin,
                 nbar,
@@ -176,7 +176,7 @@ def process(runtime_info):
             suite['Pk'].append([cartesian_power['power'].real])
             suite['Pshot'].append([cartesian_power.attrs['shotnoise']])
     else:
-        for run in range(niter):
+        for _ in range(niter):
             field = MECHANISM[generator](boxsize, mesh_gen, Plin, bias=bias)
             if sampling:
                 field = poisson_sample(field, nbar, boxsize)

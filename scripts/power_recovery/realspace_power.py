@@ -144,7 +144,7 @@ def process(runtime_info):
     )[flat_order]
 
     measurements = defaultdict(list)
-    for run in range(niter):
+    for _ in range(niter):
         data_catalogue = GEN_CATALOGUE[gen_name](
             Plin,
             nbar,

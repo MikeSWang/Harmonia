@@ -133,7 +133,7 @@ def process(runtime_info):
     disc = DiscreteSpectrum(rmax, 'Dirichlet', kmax)
 
     output_data = defaultdict(list)
-    for run in range(niter):
+    for _ in range(niter):
         catalogue = GEN_CATALOGUE[gen_name](
             Plin,
             nbar,

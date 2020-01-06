@@ -25,7 +25,7 @@ nbar, contrast = None, None
 boxsize, nmesh, niter = None, None, None
 
 
-def domain_cut(cartesian_position, radius, fraction, split=False):
+def domain_cut(cartesian_position, radius, fraction, split_caps=False):
     """Define the sky domain cut.
 
     Parameters
@@ -49,7 +49,7 @@ def domain_cut(cartesian_position, radius, fraction, split=False):
     spherical_position = cartesian_to_spherical(cartesian_position)
 
     veto = spherical_position[:, 0] <= radius
-    if split:
+    if split_caps:
         veto *= np.logical_or(
             np.logical_and(
                 spherical_position[:, 1] < np.pi/2,
@@ -145,7 +145,7 @@ def process():
             for catalogue in [data_catalogue, rand_catalogue]:
                 catalogue['Selection'] *= domain_cut(
                     catalogue['Position'] - [boxsize/2] * 3,
-                    boxsize/2, fsky, split=split
+                    boxsize/2, fsky, split_caps=split
                 )
                 catalogue['NZ'] = nbar * catalogue['Weight']
 
@@ -170,7 +170,7 @@ def process():
                 )
 
     else:
-        for run in range(niter):
+        for _ in range(niter):
             if params.rand_samp:
                 data_catalogue = UniformCatalog(nbar, boxsize)
             else:
@@ -182,7 +182,7 @@ def process():
             for catalogue in [data_catalogue, rand_catalogue]:
                 catalogue['Selection'] *= domain_cut(
                     catalogue['Position'] - [boxsize/2] * 3,
-                    boxsize/2, fsky, split=split
+                    boxsize/2, fsky, split_caps=split
                 )
                 catalogue['NZ'] = nbar * catalogue['Weight']
 
@@ -278,8 +278,8 @@ def extract(results):
     )
 
     error = {
-        f'dpower_{ell}': np.std(results[f'power_{ell}'], axis=0, ddof=1)
-            / np.sqrt(np.size(results[f'power_{ell}'], axis=0))
+        f'dpower_{ell}': np.std(results[f'power_{ell}'], axis=0, ddof=1) /
+                         np.sqrt(np.size(results[f'power_{ell}'], axis=0))
         for ell in orders
     }
 

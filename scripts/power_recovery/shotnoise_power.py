@@ -85,7 +85,7 @@ def process(runtime_info):
     )[flat_order]
 
     measurements = defaultdict(list)
-    for run in range(niter):
+    for _ in range(niter):
         data_catalogue = RandomCatalogue(nbar, 2*rmax)
         mesh = data_catalogue.to_mesh(
             Nmesh=mesh_cal,

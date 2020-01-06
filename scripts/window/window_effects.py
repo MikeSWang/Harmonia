@@ -42,7 +42,7 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def sky_mask(cartesian_position, fraction, split=False):
+def sky_mask(cartesian_position, fraction, split_caps=False):
     """Define the sky mask.
 
     Parameters
@@ -63,7 +63,7 @@ def sky_mask(cartesian_position, fraction, split=False):
     """
     spherical_position = cartesian_to_spherical(cartesian_position)
 
-    if split:
+    if split_caps:
         mask = np.logical_or(
             np.logical_and(
                 spherical_position[..., -1] <= fraction * (2*np.pi),
@@ -135,10 +135,10 @@ def process():
 
         # With window
         data_catalogue['Weight'] *= sky_mask(
-            data_catalogue['Position'] - boxsize/2, fsky, split=split
+            data_catalogue['Position'] - boxsize/2, fsky, split_caps=split
         )
         random_catalogue['Weight'] *= sky_mask(
-            random_catalogue['Position'] - boxsize/2, fsky, split=split
+            random_catalogue['Position'] - boxsize/2, fsky, split_caps=split
         )
 
         spherical_map = SphericalMap(

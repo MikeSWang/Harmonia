@@ -37,7 +37,7 @@ def parse_cli_args():
     return cli_parser.parse_args()
 
 
-def sky_mask(cartesian_position, fraction, split=False):
+def sky_mask(cartesian_position, fraction, split_caps=False):
     """Define the sky mask.
 
     Parameters
@@ -58,7 +58,7 @@ def sky_mask(cartesian_position, fraction, split=False):
     """
     spherical_position = cartesian_to_spherical(cartesian_position)
 
-    if split:
+    if split_caps:
         mask = np.logical_or(
             np.logical_and(
                 spherical_position[:, -1] <= fraction * (2*np.pi),
@@ -87,7 +87,7 @@ def synthesise():
     _window = SurveyWindow(
         mask=lambda pos: \
             spherical_indicator(pos, boxsize/2) \
-            * sky_mask(pos, fsky, split=split)
+            * sky_mask(pos, fsky, split_caps=split)
     )
     _window.synthesise(nbar, boxsize, padding=padding)
 

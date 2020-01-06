@@ -154,13 +154,13 @@ def test_unfold(spherical_array, axis_order, flat_array, flat_indices):
     "in_structure",
     ['natural', 'transposed', 'root', 'spectral', 'scale'],
 )
-def test_refold(spherical_array, in_structure):
+def test_fold(spherical_array, in_structure):
     assert all(
         [
-            np.allclose(init_subarr, refolded_subarr)
-             for init_subarr, refolded_subarr in zip(
+            np.allclose(init_subarr, folded_subarr)
+             for init_subarr, folded_subarr in zip(
                  spherical_array.data_array,
-                 spherical_array.refold(
+                 spherical_array.fold(
                      spherical_array.unfold(axis_order=in_structure)[0],
                      in_structure,
                      'data',
@@ -170,10 +170,10 @@ def test_refold(spherical_array, in_structure):
     )
     assert all(
         [
-            init_subarr == refolded_subarr
-            for init_subarr, refolded_subarr in zip(
+            init_subarr == folded_subarr
+            for init_subarr, folded_subarr in zip(
                  spherical_array.index_array,
-                 spherical_array.refold(
+                 spherical_array.fold(
                      spherical_array.unfold(axis_order=in_structure)[1],
                      in_structure,
                      'index',

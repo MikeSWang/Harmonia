@@ -72,7 +72,7 @@ class WindowedPowerSpectrum:
     Raises
     ------
     ValueError
-        If `power_spectrum` is `None` when `cosmo` is.
+        If `power_spectrum` is `None` when `cosmo` is `None`.
 
 
     .. |window_function| replace::
@@ -148,8 +148,8 @@ class WindowedPowerSpectrum:
         Parameters
         ----------
         orders : list or tuple of int
-            Order(s) of the multipole, in ``{0, 2, 4}``, sorted in
-            ascending order.
+            Multipole orders from the set ``{0, 2, 4}`` sorted in ascending
+            order.
         b_1 : float
             Scale-independent linear bias.
         f_nl : float or None, optional

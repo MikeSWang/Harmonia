@@ -492,10 +492,10 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
             "the fiducial covariance matrix is estimated. "
         )
     assert len(orders) == len(correlation_modeller.orders), (
-            "The multipoles for which the fiducial covariance matrix is "
-            "estimated do not match the multipoles for which "
-            "the power spectrum model is evaluated. "
-        )
+        "The multipoles for which the fiducial covariance matrix is "
+        "estimated do not match the multipoles for which "
+        "the power spectrum model is evaluated. "
+    )
 
     expectation_filling = windowed_power_model.convolved_multipoles(
         orders, b_1, f_nl=f_nl, **model_kwargs

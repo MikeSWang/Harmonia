@@ -77,8 +77,8 @@ RSD coupling kernels
            \gamma(z) F(z) D(z) \phi(r) \,,
    \end{align*}
 
-over the spherical volume element, where :math:`k_{\ell n}` are the
-discrete wavenumbers.
+over the spherical volume element, where :math:`k_{\ell n}` is the
+discrete wavenumber.
 
 When there is no angular masking (i.e. :math:`M(\hat{\mathbf{r}})` is
 constant), the coupling coefficients reduce to :math:`M_{\mu\nu} =

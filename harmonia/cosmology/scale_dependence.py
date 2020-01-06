@@ -17,7 +17,7 @@ scale-dependence modification kernel
     .. math::
 
         A(k,z) = 3 \left( \frac{H_0}{\mathrm{c}} \right)^2
-            \frac{\Omega_\textrm{m} \delta_\textrm{c}}{k^2 T(k,z)}
+            \frac{1.3\Omega_\textrm{m} \delta_\textrm{c}}{k^2 T(k,z)}
 
 relates to the cosmological model and its transfer function :math:`T(k,z)`
 computed by ``nbodykit`` with ``CLASS``.
@@ -50,7 +50,7 @@ def scale_dependence_modification(cosmo, redshift):
     -------
     callable
         Scale-dependence modification kernel as a function of the Fourier
-        scale (in h/Mpc).
+        scale (in :math:`h`/Mpc).
 
     """
     SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY = 1.686
@@ -86,18 +86,19 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.):
 
     Returns
     -------
-    b_k : callable
-        Scale-dependent bias as a function of the Fourier scale (in h/Mpc).
+    callable
+        Scale-dependent bias as a function of the Fourier scale (in
+        :math:`h`/Mpc).
 
     """
-    def b_k(k):
+    def _b_k(k):
 
         b_of_k = b_1 + f_nl * (b_1 - tracer_parameter) \
             * scale_dependence_modification(cosmo, redshift)(k)
 
         return b_of_k
 
-    return b_k
+    return _b_k
 
 
 def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,
@@ -130,7 +131,7 @@ def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,
     -------
     callable
         Non-Gaussianity modified biased power spectrum as a function of
-        the Fourier scale (in h/Mpc).
+        the Fourier scale (in :math:`h`/Mpc).
 
     """
     if power_spectrum is None:

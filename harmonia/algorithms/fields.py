@@ -114,11 +114,11 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     Parameters
     ----------
     boxsize : float
-        Box size per dimension (in Mpc/h).
+        Box size per dimension (in Mpc/:math:`h`).
     num_mesh : int
         Mesh number per dimension.
     power_spectrum : callable
-        Desired power spectrum (in cubic Mpc/h).
+        Desired power spectrum (in cubic Mpc/:math:`h`).
     bias : float or callable, optional
         Bias of the density contrast field (default is 1.), as a constant
         or a function of the Fourier wavenumber.
@@ -199,11 +199,11 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     Parameters
     ----------
     boxsize : float
-        Box size per dimension (in Mpc/h).
+        Box size per dimension (in Mpc/:math:`h`).
     num_mesh : int
         Mesh number per dimension.
     power_spectrum : callable
-        Desired power spectrum (in cubic Mpc/h).
+        Desired power spectrum (in cubic Mpc/:math:`h`).
     bias : float or callable, optional
         Bias of the density contrast field (default is 1.), as a constant
         or a function of the Fourier wavenumber.
@@ -487,7 +487,7 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
     field : float, array_like
         Random field.
     boxsize : float
-        Box size per dimension (in Mpc/h).
+        Box size per dimension (in Mpc/:math:`h`).
     kmax : float or None, optional
         Maximum wavenumber.  If `None` (default), this is set to largest
         wave number the field supports.

@@ -47,8 +47,8 @@ class SphericalMap:
     rand : :class:`nbodykit.base.catalog.CatalogSource` *or None, optional*
         Random catalogue of particles (default is `None`).
     mean_density_data, mean_density_rand : float or None, optional
-        Mean particle number density (in cubic h/Mpc) of the data or
-        random catalogue (default is `None`).
+        Mean particle number density (in cubic :math:`h`/Mpc) of the data
+        or random catalogue (default is `None`).
     source : {'simulation', 'survey'}, optional
         Catalogue source, either ``'simulation'`` for simulations or
         ``'survey'`` data.
@@ -64,7 +64,7 @@ class SphericalMap:
     pair : |fkp_catalogue| *or None*
         FKP pair of data and random catalogues.
     mean_density : float
-        Mean particle number density (in cubic h/Mpc) of the data
+        Mean particle number density (in cubic :math:`h`/Mpc) of the data
         catalogue.
     alpha_ratio : float or None
         Ratio of weighted mean particle number densities of the data

@@ -18,8 +18,8 @@ _fiducial_cosmology = cosmology.Planck15
 
 
 def fiducial_distance(z):
-    """Compute comoving distance (in Mpc/h) from redshift in fiducial
-    cosmology.
+    """Compute comoving distance (in Mpc/:math:`h`) from redshift in
+    fiducial cosmology.
 
     Parameters
     ----------

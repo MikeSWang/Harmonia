@@ -77,10 +77,10 @@ class SurveyWindow:
         Parameters
         ----------
         number_density : float
-            Particle number density (in cubic h/Mpc).
+            Particle number density (in cubic :math:`h`/Mpc).
         boxsize : float, array_like
-            Catalogue box size (in Mpc/h) as a scalar or a triple of
-            scalars.
+            Catalogue box size (in Mpc/:math:`h`) as a scalar or a triple
+            of scalars.
         padding : float, optional
             Additional box padding needed for accurate window function
             determination (default is 1.).
@@ -93,8 +93,8 @@ class SurveyWindow:
         """
         if self.synthetic_catalogue is not None:
             warnings.warn(
-                "Synthetic catalogue already exists. "
-                "It is now being resynthesised. "
+                "Synthetic catalogue already exists; "
+                "it is now being resynthesised. "
             )
 
         catalogue = UniformCatalog(number_density, boxsize)
@@ -184,8 +184,8 @@ class SurveyWindow:
 
         if self.power_multipoles is not None:
             warnings.warn(
-                "Power spectrum multipoles have already been computed. "
-                "They are now being overwritten. "
+                "Power spectrum multipoles have already been computed; "
+                "they are now being overwritten. "
             )
 
         with warnings.catch_warnings():
@@ -221,6 +221,7 @@ class SurveyWindow:
         )
 
         extension_padding = np.mean(np.abs(np.diff(k_samples)))
+        # Linear padding and then logarithmic padding.
         extension_first_leg = np.max(k_samples) \
             + extension_padding * np.arange(1, NUM_K_EXTENSION)
         extension_second_leg = np.logspace(
@@ -268,8 +269,8 @@ class SurveyWindow:
 
         if self.correlation_multipoles is not None:
             warnings.warn(
-                "Correlation function multipoles have already been computed. "
-                "They are now being overwritten. "
+                "Correlation function multipoles have already been computed; "
+                "they are now being overwritten. "
             )
 
         try:

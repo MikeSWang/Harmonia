@@ -51,8 +51,9 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
     boxsize : float
         Catalogue box size.
     unit_scale : float, optional
-        Scaling factor for converting the length unit to Mpc/h (default is
-        1.), e.g. ``unit_scale = 1.e-3`` for converting Kpc/h to Mpc/h.
+        Scaling factor for converting the length unit to Mpc/:math:`h`
+        (default is 1.), e.g. ``unit_scale = 1.e-3`` for converting
+        Kpc/:math:`h` to Mpc/:math:`h`.
 
     Returns
     -------
@@ -78,9 +79,10 @@ class RandomCatalogue(UniformCatalog):
     Parameters
     ----------
     mean_density : float
-        Desired mean particle number density (in cubic h/Mpc).
+        Desired mean particle number density (in cubic :math:`h`/Mpc).
     boxsize : float, array_like
-        Catalogue box size (in Mpc/h) as a scalar or a triple of scalars.
+        Catalogue box size (in Mpc/:math:`h`) as a scalar or a triple of
+        scalars.
     seed : int or None, optional
         Random seed of the catalogue (default is `None`).
 
@@ -117,9 +119,10 @@ class NBKCatalogue(LogNormalCatalog):
         Desired linear matter power spectrum with specified cosmology and
         redshift.
     mean_density : float
-        Desired mean particle number density (in cubic h/Mpc).
+        Desired mean particle number density (in cubic :math:`h`/Mpc).
     boxsize : float, array_like
-        Catalogue box size (in Mpc/h) as a scalar or a triplet of scalars.
+        Catalogue box size (in Mpc/:math:`h`) as a scalar or a triplet of
+        scalars.
     num_mesh : int
         Mesh grid number per dimension for FFT generation.
     bias : float, optional
@@ -177,11 +180,11 @@ class LogNormalCatalogue(CatalogSource):
     Parameters
     ----------
     power_spectrum : callable
-        Desired linear matter power spectrum (in cubic Mpc/h).
+        Desired linear matter power spectrum (in cubic Mpc/:math:`h`).
     mean_density : float
-        Desired mean particle number density (in cubic h/Mpc).
+        Desired mean particle number density (in cubic :math:`h`/Mpc).
     boxsize : float
-        Catalogue box size per dimension (in Mpc/h).
+        Catalogue box size per dimension (in Mpc/:math:`h`).
     num_mesh : int
         Mesh grid number per dimension for FFT generation.
     bias : float, optional
@@ -305,15 +308,15 @@ class LogNormalCatalogue(CatalogSource):
 
     @column
     def Position(self):
-        """Particle positions (in Mpc/h).
+        """Particle positions (in Mpc/:math:`h`).
 
         """
         return self.make_column(self._pos)
 
     @column
     def VelocityOffset(self):
-        """Appropriately normalised particle velocity offsets (in Mpc/h) to
-        positions.
+        """Appropriately normalised particle velocity offsets (in
+        Mpc/:math:`h`) to positions.
 
         """
         return self.make_column(self._vel_offset)
@@ -326,11 +329,11 @@ class GaussianCatalogue(CatalogSource):
     Parameters
     ----------
     power_spectrum : callable
-        Desired linear matter power spectrum (in cubic Mpc/h).
+        Desired linear matter power spectrum (in cubic Mpc/:math:`h`).
     mean_density : float
-        Desired mean particle number density (in cubic h/Mpc).
+        Desired mean particle number density (in cubic :math:`h`/Mpc).
     boxsize : float
-        Catalogue box size per dimension (in Mpc/h).
+        Catalogue box size per dimension (in Mpc/:math:`h`).
     num_mesh : int
         Mesh grid number per dimension for FFT generation.
     bias : float, optional
@@ -459,15 +462,15 @@ class GaussianCatalogue(CatalogSource):
 
     @column
     def Position(self):
-        """Particle positions (in Mpc/h).
+        """Particle positions (in Mpc/:math:`h`).
 
         """
         return self.make_column(self._pos)
 
     @column
     def VelocityOffset(self):
-        """Appropriately normalised particle velocity offsets (in Mpc/h) to
-        positions.
+        """Appropriately normalised particle velocity offsets (in
+        Mpc/:math:`h`) to positions.
 
         """
         return self.make_column(self._vel_offset)

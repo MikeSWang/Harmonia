@@ -93,7 +93,7 @@ class CartesianMap:
         multipoles['Nk'] = power['modes'][valid_bins]
 
         self._logger.debug(
-            "Power spectrum multipoles computed for orders {}. ", orders
+            "Power spectrum multipoles computed for orders %s. ", str(orders)
         )
 
         return multipoles

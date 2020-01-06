@@ -775,7 +775,7 @@ class TwoPointFunction(Couplings):
         Linear growth rate at the current epoch.
     matter_power_spectrum : callable
         Linear matter power spectrum model at the current epoch (in cubic
-        Mpc/h).
+        Mpc/:math:`h`).
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
@@ -1065,7 +1065,7 @@ class TwoPointFunction(Couplings):
         mu, nu : tuple or list of int
             Coefficient triplet index.
         nbar : float
-            Mean particle number density (in cubic h/Mpc).
+            Mean particle number density (in cubic :math:`h`/Mpc).
         contrast : float, optional
             Effectively downscale `nbar` by ``1 + 1/constrast``.  Default is
             ``numpy.inf``.
@@ -1128,8 +1128,9 @@ class TwoPointFunction(Couplings):
             If `True` (default is `False`), only compute the diagonal
             entries of the covariance matrix.
         nbar : float or None, optional
-            Mean particle number density (in cubic h/Mpc).  If `part` is
-            ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
+            Mean particle number density (in cubic :math:`h`/Mpc).  If
+            `part` is ``'shotnoise'`` or ``'both'``, this cannot be `None`
+            (default).
         b_1 : float or None, optional
             Scale-independent linear bias of the tracer particles at the
             current epoch.  If `part` is ``'signal'`` or ``'both'``, this
@@ -1234,8 +1235,9 @@ class TwoPointFunction(Couplings):
             noise parts.  If ``'signal'`` or ``'shotnoise'``, compute
             only the corresponding part.
         nbar : float or None, optional
-            Mean particle number density (in cubic h/Mpc).  If `part` is
-            ``'shotnoise'`` or ``'both'``, this cannot be `None` (default).
+            Mean particle number density (in cubic :math:`h`/Mpc).  If
+            `part` is ``'shotnoise'`` or ``'both'``, this cannot be `None`
+            (default).
         b_1 : float or None, optional
             Scale-independent linear bias of the tracer particles at the
             current epoch.  If `part` is ``'signal'`` or ``'both'``, this

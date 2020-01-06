@@ -356,7 +356,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     non_gaussianity : float, array_like or None
         Local primordial non-Gaussianity.
     mean_number_density : float
-        Mean particle number density (in cubic h/Mpc).
+        Mean particle number density (in cubic :math:`h`/Mpc).
     two_point_model : |two_point_model| , array_like
         2-point function base model.
     spherical_data : :class:`~harmonia.algorithms.arrays.SphericalArray`
@@ -454,7 +454,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     f_nl : float or None
         Local primordial non-Gaussianity.
     nbar : float
-        Mean particle number density (in cubic h/Mpc).
+        Mean particle number density (in cubic :math:`h`/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
     pivot : {'order', 'scale'}
@@ -532,7 +532,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     non_gaussianity : float, array_like or None
         Local primordial non-Gaussianity.
     mean_number_density : float
-        Mean particle number density (in cubic h/Mpc).
+        Mean particle number density (in cubic :math:`h`/Mpc).
     windowed_power_model : :class:`~.cartesian_model.WindowedPowerSpectrum`
         Windowed power spectrum base model.
     cartesian_data : :class:`~harmonia.algorithms.arrays.CartesianArray`

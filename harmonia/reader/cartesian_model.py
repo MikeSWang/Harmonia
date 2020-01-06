@@ -155,8 +155,8 @@ class WindowedPowerSpectrum:
         f_nl : float or None, optional
             Local primordial non-Gaussianity parameter (default is `None`).
         nbar : float or None, optional
-            Mean particle number density (in cubic h/Mpc).  If `None`
-            (default), shot noise is neglected.
+            Mean particle number density (in cubic :math:`h`/Mpc).  If
+            `None` (default), shot noise is neglected.
         wavenumbers : float, array_like or None, optional
             Wavenumbers at which the model is evaluated (default is
             `None`).  If `None`, :attr:`wavenumbers` property must be set;

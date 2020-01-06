@@ -5,21 +5,20 @@ import os
 import sys
 from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 _cwd = os.path.dirname(__file__)
 sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
 
-from view_likelihood import view_pdf, view_contour
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     collate_data_files,
     confirm_directory_path,
     harmony,
-    overwrite_protection,
+    overwrite_protection
 )
-
+from view_likelihood import view_contour, view_pdf
 
 def safe_save(data, path, file):
     """Safely save data by checking overwrite protections.
@@ -165,16 +164,16 @@ def view_data(data, savefig=False, **plot_kwargs):
     if MAP != "hybrid":
         visual_data['likelihood'] = data[f'{MAP}_likelihood']
     view_contour(
-        output, new_output,  r"$f_\mathrm{NL}$", r"$b_1$",
+        output, new_output, r"$f_{\mathrm{NL}}$", r"$b_1$",
         truth=(0, None),
         precision=(0, 2),
-        plot_ranges=([-150.0,150.0], [2.25, 2.55]),
+        plot_ranges=([-150.0, 150.0], [2.25, 2.55]),
     )
     '''
     view_pdf(
         visual_data,
-        r"$f_\mathrm{NL}$", # r"$b_1$", #
-        r"$\mathcal{L}(f_\mathrm{NL})$", # r"$\mathcal{L}(b_1)$", #
+        r"$f_{\mathrm{NL}}$", # r"$b_1$", #
+        r"$\mathcal{L}(f_{\mathrm{NL}})$", # r"$\mathcal{L}(b_1)$", #
         **plot_kwargs
     )
     '''
@@ -185,7 +184,7 @@ def view_data(data, savefig=False, **plot_kwargs):
 
 if __name__ == '__main__':
 
-    PATHOUT = Path("./data/output/")
+    PATHOUT = Path("../../data/likelihood/")
     FILE_ROOT = "(NG=0.,z=1.)"
 
     BOXSIZE = 1000.
@@ -208,7 +207,7 @@ if __name__ == '__main__':
 #        output, new_output,
 #        truth=(0, None),
 #        precision=(0, 2),
-#        plot_ranges=([-150.0,150.0], [2.25, 2.55]),
+#        plot_ranges=([-150.0, 150.0], [2.25, 2.55]),
 #        #savefig=True
 #    )
     '''

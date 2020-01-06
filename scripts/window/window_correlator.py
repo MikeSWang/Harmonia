@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
         sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
         plt.savefig(PATHOUT/script_name/f"{name}.pdf")
-    else:
+    else:  # load saved aggregate output
         tag = initialise()
 
         count = 21

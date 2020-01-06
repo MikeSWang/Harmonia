@@ -7,8 +7,16 @@ import warnings
 from argparse import ArgumentParser
 from pathlib import Path
 
-_cwd = os.path.dirname(__file__)
-sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
+PATHIN = Path("../../data/survey/")
+PATHOUT = Path("../../data/likelihood/")
+
+
+def import_local_package():
+    """Add package to Python module path.
+
+    """
+    _cwd = os.path.dirname(__file__)
+    sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
 
 
 def parse_external_args():
@@ -47,10 +55,9 @@ def parse_external_args():
     return parser.parse_args()
 
 
-PATHIN = Path("./data/input/")
-PATHOUT = Path("./data/output/")
-
 if __name__ != '__main__':
+
+    import_local_package()
 
     from harmonia.collections import clean_warning_format, get_filename
 

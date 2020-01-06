@@ -2,8 +2,6 @@
 catalogues.
 
 """
-import os
-import sys
 from argparse import ArgumentParser
 from collections import defaultdict
 from itertools import product as iterprod
@@ -12,9 +10,7 @@ from pprint import pprint
 import numpy as np
 from nbodykit.lab import ConvolvedFFTPower, FKPCatalog
 
-_cwd = os.path.dirname(__file__)
-sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
-
+from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import cartesian_to_spherical, confirm_directory_path
 from harmonia.mapper import (
@@ -23,8 +19,6 @@ from harmonia.mapper import (
     load_catalogue_from_file,
 )
 
-PATHIN, PATHOUT = "./data/input/", "./data/output/"
-SCRIPT_NAME = "window_effects"
 
 INPUT_FILE_ROOT = "halos-(NG=0.,z=1.)-"
 PAIR_NUMS = list(range(0, 11)) + list(range(12, 22))
@@ -206,17 +200,17 @@ if __name__ == '__main__':
     # Process catalogues.
     no_window_output, windowed_output = process()
 
-    confirm_directory_path(PATHOUT + SCRIPT_NAME + "/")
+    confirm_directory_path(PATHOUT + script_name + "/")
     np.save(
         "".join([
-            PATHOUT, SCRIPT_NAME, "/",
+            PATHOUT, script_name, "/",
             "no_window_measurements", "-(", script_tag, f").npy"
         ]),
         no_window_output
     )
     np.save(
         "".join([
-            PATHOUT, SCRIPT_NAME, "/",
+            PATHOUT, script_name, "/",
             "windowed_measurements", "-(", script_tag, f").npy"
         ]),
         windowed_output

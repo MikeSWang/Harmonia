@@ -1,8 +1,6 @@
-"""Calculate the survey window function.
+"""Determine the survey window function.
 
 """
-import os
-import sys
 from argparse import ArgumentParser
 from pprint import pprint
 
@@ -10,9 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-_cwd = os.path.dirname(__file__)
-sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
-
+from window_rc import PATHOUT, script_name
 from harmonia.mapper import SurveyWindow
 from harmonia.collections import (
     cartesian_to_spherical,
@@ -115,10 +111,7 @@ def determine_window():
 
 if __name__ == '__main__':
 
-    PATHOUT = "./data/output/"
-    SCRIPT_NAME = "window_multipoles"
-
-    confirm_directory_path(f"{PATHOUT}{SCRIPT_NAME}/")
+    confirm_directory_path(f"{PATHOUT}{script_name}/")
 
     params = parse_cli_args()
     pprint(params.__dict__)
@@ -136,13 +129,13 @@ if __name__ == '__main__':
     xi_ell, pk_ell = determine_window()
 
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/"
+        f"{PATHOUT}{script_name}/"
         f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
         .format(fsky, split*"-split", padding, mesh),
         xi_ell
     )
     np.save(
-        f"{PATHOUT}{SCRIPT_NAME}/"
+        f"{PATHOUT}{script_name}/"
         f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
         .format(fsky, split*"-split", padding, mesh),
         pk_ell

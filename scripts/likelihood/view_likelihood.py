@@ -152,7 +152,7 @@ def view_pdf(samples, xlabel, ylabel, scaling='normalised', estimate='max',
     return fig
 
 
-def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
+def view_contour(samples, new_samples, xlabel, ylabel, truth=None, estimate=True,
                  precision=None, plot_ranges=None, cmap=None, fig=None):
     """View sampled likelihood contours.
 
@@ -182,8 +182,9 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
         samples['parameter_x'], samples['parameter_y'], indexing='ij'
     )
     log_hh = np.average(samples['likelihood'], axis=0)
-    hh = np.exp(log_hh - np.min(log_hh)).T
+    hh = np.squeeze(np.exp(log_hh - np.min(log_hh))).T
 
+    print(hh.shape)
     mass = simps(
         [
             simps(likelihood_y, samples['parameter_y'])
@@ -355,16 +356,16 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
             pass
     plt.xlim(left=0, right=1.01*max(marginal_y))
 
-    if estimate:
-        max_indices = np.unravel_index(np.argmax(hh), hh.shape)
-        main.scatter(
-            xx[max_indices], yy[max_indices],
-            s=64, c=cmap(cmap.N), marker='+', label='maximum'
-        )
-        main.scatter(
-            median_estimate_x, median_estimate_y,
-            s=64, c=cmap(cmap.N), marker='x', label='median'
-        )
+#    if estimate:
+#        max_indices = np.unravel_index(np.argmax(hh), hh.shape)
+#        main.scatter(
+#            xx[max_indices], yy[max_indices],
+#            s=64, c=cmap(cmap.N), marker='+', label='maximum'
+#        )
+#        main.scatter(
+#            median_estimate_x, median_estimate_y,
+#            s=64, c=cmap(cmap.N), marker='x', label='median'
+#        )
 
     main.legend(handletextpad=0)
 
@@ -416,5 +417,190 @@ def view_contour(samples, xlabel, ylabel, truth=None, estimate=True,
     else:
         main.set_xlabel(xlabel)
         main.set_ylabel(ylabel)
+
+    ######
+    samples = new_samples
+    xx, yy = np.meshgrid(
+        samples['parameter_x'], samples['parameter_y'], indexing='ij'
+    )
+    log_hh = np.average(samples['likelihood'], axis=0)
+    hh = np.squeeze(np.exp(log_hh - np.min(log_hh))).T
+
+    print(hh.shape)
+    mass = simps(
+        [
+            simps(likelihood_y, samples['parameter_y'])
+            for likelihood_y in hh
+        ],
+        samples['parameter_x']
+    )
+    hh /= mass
+
+    h_flat = np.flip(np.sort(hh.flatten()))
+    cum_h = np.cumsum(h_flat)
+    cum_h /= cum_h[-1]
+
+    h_levels = np.zeros_like(SIGMA_LEVELS)
+    for n, quantile in enumerate(SIGMA_LEVELS):
+        try:
+            h_levels[n] = h_flat[cum_h <= quantile][-1]
+        except IndexError:
+            h_levels[n] = h_flat[0]
+
+    cmap = ListedColormap(sns.color_palette('Purples'))
+
+    main.contourf(
+        xx, yy, hh, h_levels,
+        antialiased=True, cmap=cmap, alpha=0.9
+    )
+
+    marginal_x = np.array(
+        [simps(likelihood_y, samples['parameter_y']) for likelihood_y in hh]
+    )
+
+    ax_ul.plot(samples['parameter_x'], marginal_x, c=cmap(cmap.N))
+
+    cumulative_x = cumtrapz(marginal_x, samples['parameter_x'], initial=0.)
+
+    if estimate:
+        median_idx = np.argmin(
+            np.abs(cumulative_x - 0.5*cumulative_x[-1])
+        )
+        median_estimate_x = samples['parameter_x'][median_idx]
+
+        lower_bound_idx = np.argmin(
+            np.abs(cumulative_x - ONE_SIGMA_QUANTILES[0]*cumulative_x[-1])
+        )
+        lower_bound_x = samples['parameter_x'][lower_bound_idx]
+
+        upper_bound_idx = np.argmin(
+            np.abs(cumulative_x - ONE_SIGMA_QUANTILES[-1]*cumulative_x[-1])
+        )
+        upper_bound_x = samples['parameter_x'][upper_bound_idx]
+
+        ax_ul.vlines(
+            median_estimate_x,
+            ymin=0., ymax=marginal_x[median_idx],
+            colors=cmap(cmap.N), linestyles='--', linewidth=1.
+        )
+        ax_ul.fill_between(
+            samples['parameter_x'][lower_bound_idx:upper_bound_idx+1],
+            marginal_x[lower_bound_idx:upper_bound_idx+1],
+            color=cmap(cmap.N), alpha=0.33, antialiased=True
+        )
+
+    marginal_y = [
+        simps(likelihood_x, samples['parameter_x'])
+        for likelihood_x in hh.T
+    ]
+
+    ax_lr.plot(marginal_y, samples['parameter_y'], c=cmap(cmap.N))
+
+    cumulative_y = cumtrapz(marginal_y, samples['parameter_y'], initial=0.)
+
+    if estimate:
+        median_idx = np.argmin(
+            np.abs(cumulative_y - 0.5*cumulative_y[-1])
+        )
+        median_estimate_y = samples['parameter_y'][median_idx]
+
+        lower_bound_idx = np.argmin(
+            np.abs(cumulative_y - ONE_SIGMA_QUANTILES[0]*cumulative_y[-1])
+        )
+        lower_bound_y = samples['parameter_y'][lower_bound_idx]
+
+        upper_bound_idx = np.argmin(
+            np.abs(cumulative_y - ONE_SIGMA_QUANTILES[-1]*cumulative_y[-1])
+        )
+        upper_bound_y = samples['parameter_y'][upper_bound_idx]
+
+        ax_lr.hlines(
+            median_estimate_y,
+            xmin=0., xmax=marginal_y[median_idx],
+            colors=cmap(cmap.N), linestyles='--', linewidth=1.
+        )
+        ax_lr.fill_betweenx(
+            samples['parameter_y'][lower_bound_idx:upper_bound_idx+1],
+            marginal_y[lower_bound_idx:upper_bound_idx+1],
+            edgecolor='none',
+            color=cmap(cmap.N),
+            alpha=0.33,
+            antialiased=True
+        )
+
+    if plot_ranges:
+        try:
+            plt.ylim(*plot_ranges[1])
+        except SyntaxError:
+            pass
+    plt.xlim(left=0, right=1.01*max(marginal_y))
+
+#    if estimate:
+#        max_indices = np.unravel_index(np.argmax(hh), hh.shape)
+#        main.scatter(
+#            xx[max_indices], yy[max_indices],
+#            s=64, c=cmap(cmap.N), marker='+'#, label='maximum'
+#        )
+#        main.scatter(
+#            median_estimate_x, median_estimate_y,
+#            s=64, c=cmap(cmap.N), marker='x'#, label='median'
+#        )
+
+    main.legend(handletextpad=0)
+
+    if estimate:
+        if isinstance(precision, Iterable):
+            median_estimate_x = np.around(
+                median_estimate_x, decimals=precision[0]
+            )
+            lower_uncertainty_x = np.around(
+                median_estimate_x - lower_bound_x, decimals=precision[0]
+            )
+            upper_uncertainty_x = np.around(
+                upper_bound_x - median_estimate_x, decimals=precision[0]
+            )
+            if precision[0] == 0:
+                median_estimate_x = int(median_estimate_x)
+                lower_uncertainty_x = int(lower_uncertainty_x)
+                upper_uncertainty_x = int(upper_uncertainty_x)
+
+            median_estimate_y = np.around(
+                median_estimate_y, decimals=precision[1]
+            )
+            lower_uncertainty_y = np.around(
+                median_estimate_y - lower_bound_y, decimals=precision[1]
+            )
+            upper_uncertainty_y = np.around(
+                upper_bound_y - median_estimate_y, decimals=precision[1]
+            )
+            if precision[1] == 0:
+                median_estimate_y = int(median_estimate_y)
+                lower_uncertainty_y = int(lower_uncertainty_y)
+                upper_uncertainty_y = int(upper_uncertainty_y)
+        print(
+            r"{} = ${{{}}}^{{+{}}}_{{-{}}}$".format(
+                xlabel,
+                median_estimate_x,
+                upper_uncertainty_x,
+                lower_uncertainty_x
+            )
+        )
+        print(
+            r"{} = ${{{}}}^{{+{}}}_{{-{}}}$".format(
+                ylabel,
+                median_estimate_y,
+                upper_uncertainty_y,
+                lower_uncertainty_y
+            )
+        )
+
+    main.set_xlabel(
+        r"$f_\mathrm{NL}$ = ${-10}^{+50}_{-44}$ (green), "
+        r"${-7}^{+53}_{-45}$ (purple)"
+    )
+    main.set_ylabel(
+        r"$b_1$ = ${2.39}^{+0.05}_{-0.06}$ (green), "
+        r"${2.39}^{+0.03}_{-0.04}$ (purple)"
+    )
 
     return fig

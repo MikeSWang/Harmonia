@@ -1,9 +1,7 @@
-"""Window effects in measured power spectrum multipoles of simulated
+"""Window convolution of predicted power spectrum multipoles for simulated
 catalogues.
 
 """
-import os
-import sys
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
@@ -11,14 +9,9 @@ import numpy as np
 import seaborn as sns
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
-_cwd = os.path.dirname(__file__)
-sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
-
+from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.collections import confirm_directory_path, harmony
 from harmonia.reader import WindowedPowerSpectrum
-
-plt.style.use(harmony)
-sns.set(style='ticks', font='serif')
 
 PK_FILENAME = "halos-(NG=0.,z=1.)-Pk-(nbar=2.49e-4,b=2.3415)"
 
@@ -83,14 +76,14 @@ def shift_y_coord(degree, amount=250.):
         return - amount
 
 
+plt.style.use(harmony)
+sns.set(style='ticks', font='serif')
+
 params = parse_cli_args()
 
 if __name__ == '__main__':
 
-    PATHIN = "./data/input/"
-    PATHOUT = "./data/output/"
-    SCRIPT_NAME = "window_convolution"
-    confirm_directory_path(f"{PATHOUT}{SCRIPT_NAME}/")
+    confirm_directory_path(f"{PATHOUT}{script_name}/")
 
     REDSHIFT = 0.
     ORDERS = [0, 2, 4]
@@ -125,11 +118,11 @@ if __name__ == '__main__':
         .format(fsky, contrast)
     ).item()
 
-#    for var_name, var_results in measurements.items():
-#        if var_name != 'shotnoise':
-#            measurements[var_name] = [
-#                [var_array[0][-15:] for var_array in var_results]
-#            ]
+    # for var_name, var_results in measurements.items():
+    #     if var_name != 'shotnoise':
+    #         measurements[var_name] = [
+    #             [var_array[0][-15:] for var_array in var_results]
+    #         ]
 
     measured_multipoles = {
         'k': np.mean(np.concatenate(measurements['k']), axis=0),

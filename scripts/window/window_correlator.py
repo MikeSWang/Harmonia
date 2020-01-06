@@ -1,11 +1,8 @@
 """Determine the correlation induced by the survey window.
 
 """
-import os
-import sys
 from argparse import ArgumentParser
 from collections import defaultdict
-from pathlib import Path
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -14,20 +11,11 @@ import seaborn as sns
 from nbodykit.lab import cosmology
 from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
 
-_cwd = os.path.dirname(__file__)
-sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../")))
-
+from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.mapper import NBKCatalogue, load_catalogue_from_file
 from harmonia.collections import cartesian_to_spherical
 from harmonia.collections import collate_data_files, confirm_directory_path
 from harmonia.collections import harmony
-
-plt.style.use(harmony)
-sns.set(style='ticks', font='serif')
-
-PATHIN = Path("./data/input/")
-PATHOUT = Path("./data/output/")
-SCRIPT_NAME = "window_correlator"
 
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
@@ -233,7 +221,7 @@ def export():
 
     """
     collated_output, file_count, _ = collate_data_files(
-        f"{str(PATHOUT/SCRIPT_NAME)}/{FILE_ROOT}*{tag}*.npy"
+        f"{str(PATHOUT/script_name)}/{FILE_ROOT}*{tag}*.npy"
         .replace("=[", "=[[]").replace("],", "[]],"),
         'npy'
     )
@@ -251,7 +239,7 @@ def export():
     filename = "{}-({})".format(
         FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={niter*file_count}")
     )
-    np.save(PATHOUT/SCRIPT_NAME/"collated"/f"{filename}.npy", collated_output)
+    np.save(PATHOUT/script_name/"collated"/f"{filename}.npy", collated_output)
 
     return collated_output, filename
 
@@ -304,78 +292,81 @@ def extract(results):
     return estimate, corr
 
 
-params = parse_args()
+plt.style.use(harmony)
+sns.set(style='ticks', font='serif')
 
-if params.input_catalogue:
-    FILE_ROOT = params.input_catalogue
-elif params.rand_samp:
-    FILE_ROOT = "correlated_rsamples"
-else:
-    FILE_ROOT = "correlated_csamples"
+if __name__ == '__main__':
 
-    matter_power_spectrum = cosmology.LinearPower(
-        cosmology.Planck15, redshift=0.
-    )
+    params = parse_args()
 
-if params.task.startswith('gen'):
-
-    tag = initialise()
-    output = process()
-
-    confirm_directory_path(PATHOUT/SCRIPT_NAME)
-    if params.sessionid:
-        np.save(
-            PATHOUT/SCRIPT_NAME/"{}-({})-[{}].npy"
-            .format(FILE_ROOT, tag, params.sessionid),
-            output
-        )
-    else:
-        np.save(
-            PATHOUT/SCRIPT_NAME/"{}-({}).npy".format(FILE_ROOT, tag), output
-        )
-
-elif params.task.startswith('agg'):
-    confirm_directory_path(PATHOUT/SCRIPT_NAME/"collated")
-    confirm_directory_path(PATHOUT/SCRIPT_NAME/"extracted")
-
-    tag = initialise()
-    output, name = export()
-
-    fiducial_estimate, fiducial_corr = extract(output)
-
-    np.save(
-        PATHOUT/SCRIPT_NAME/"extracted"/(
-            f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
-        ),
-        fiducial_estimate
-    )
-
-    sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
-    plt.savefig(PATHOUT/SCRIPT_NAME/f"{name}.pdf")
-
-else:
-    tag = initialise()
-
-    count = 21
     if params.input_catalogue:
-        name = "{}-({})".format(
-            FILE_ROOT, tag.replace(f",iter={niter}", "")
-        )
+        FILE_ROOT = params.input_catalogue
+    elif params.rand_samp:
+        FILE_ROOT = "correlated_rsamples"
     else:
-        name = "{}-({})".format(
-            FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*count}")
+        FILE_ROOT = "correlated_csamples"
+
+        matter_power_spectrum = cosmology.LinearPower(
+            cosmology.Planck15, redshift=0.
         )
 
-    output = np.load(PATHOUT/SCRIPT_NAME/"collated"/f"{name}.npy").item()
+    if params.task.startswith('gen'):
+        tag = initialise()
+        output = process()
 
-    fiducial_estimate, fiducial_corr = extract(output)
+        confirm_directory_path(PATHOUT/script_name)
+        if params.sessionid:
+            np.save(
+                PATHOUT/script_name/"{}-({})-[{}].npy"
+                .format(FILE_ROOT, tag, params.sessionid),
+                output
+            )
+        else:
+            np.save(
+                PATHOUT/script_name/"{}-({}).npy".format(FILE_ROOT, tag),
+                output
+            )
+    elif params.task.startswith('agg'):
+        confirm_directory_path(PATHOUT/script_name/"collated")
+        confirm_directory_path(PATHOUT/script_name/"extracted")
 
-    np.save(
-        PATHOUT/SCRIPT_NAME/"extracted"/(
-            f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
-        ),
-        fiducial_estimate
-    )
+        tag = initialise()
+        output, name = export()
 
-    sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
-    plt.savefig(PATHOUT/SCRIPT_NAME/f"{name}.pdf")
+        fiducial_estimate, fiducial_corr = extract(output)
+
+        np.save(
+            PATHOUT/script_name/"extracted"/(
+                f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
+            ),
+            fiducial_estimate
+        )
+
+        sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
+        plt.savefig(PATHOUT/script_name/f"{name}.pdf")
+    else:
+        tag = initialise()
+
+        count = 21
+        if params.input_catalogue:
+            name = "{}-({})".format(
+                FILE_ROOT, tag.replace(f",iter={niter}", "")
+            )
+        else:
+            name = "{}-({})".format(
+                FILE_ROOT, tag.replace(f"iter={niter}", f"iter={niter*count}")
+            )
+
+        output = np.load(PATHOUT/script_name/"collated"/f"{name}.npy").item()
+
+        fiducial_estimate, fiducial_corr = extract(output)
+
+        np.save(
+            PATHOUT/script_name/"extracted"/(
+                f"{name}.npy".replace(FILE_ROOT, "fiducial_estimate")
+            ),
+            fiducial_estimate
+        )
+
+        sns.heatmap(fiducial_corr, square=True, cmap='YlGn')
+        plt.savefig(PATHOUT/script_name/f"{name}.pdf")

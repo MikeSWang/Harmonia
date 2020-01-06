@@ -15,6 +15,7 @@ from view_likelihood import view_pdf, view_contour
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import (
     collate_data_files,
+    confirm_directory_path,
     harmony,
     overwrite_protection,
 )
@@ -94,27 +95,42 @@ def read_data(collate_data=False, load_data=False, save=False):
     """
     scr_dir_path = PATHOUT/script_name
     collate_path = scr_dir_path/"collated"
-    program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
-    file_name = f"{script_name}-{FILE_ROOT}-({program_root})"
 
-    if collate_data:
-        search_root = f"map={MAP},kmax={KMAX},*{PRIOR}{FIXED}"\
+    if MAP == "hybrid":
+        search_root = f"map={MAP},*knots=[{KHYB},{KMAX}],*{PRIOR}{FIXED}"\
             .replace("=[", "=[[]").replace("],", "[]],")
+        program_root = f"map={MAP},knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
+    else:
+        search_root = f"map={MAP},*kmax={KMAX},*{PRIOR}{FIXED}"\
+            .replace("=[", "=[[]").replace("],", "[]],")
+        program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
 
+    file_name = f"{script_name}-{FILE_ROOT}-({program_root})"
+    if collate_data:
         collated_output, _, _ = collate_data_files(
             f"{scr_dir_path}/*{FILE_ROOT}-*-*{search_root}*.npy", 'npy'
         )
 
         # NOTE: Change this before running.
-        # output['parameter_x'] = np.linspace(-200., 200., 801)
-        # output['parameter_y'] = np.linspace(2.2, 2.6, 81)
-        collated_output['parameter'] = np.linspace(-300, 100, 401)
+        # collated_output['parameter'] = np.linspace(-200, 200, 401)
+        collated_output['parameter_x'] = np.linspace(-175., 175., 351)
+        collated_output['parameter_y'] = np.linspace(2.15, 2.55, 41)
 
-        collated_output[f'{MAP}_likelihood'] = np.squeeze(
-            output[f'{MAP}_likelihood']
-        )
+        if MAP == "hybrid":
+            filtered_output = filter_data(collated_output, remove_degrees=())
+            collated_output['likelihood'] = np.squeeze(
+                filtered_output['spherical_likelihood']
+                + filtered_output['cartesian_likelihood']
+            )
+            del collated_output['spherical_likelihood']
+            del collated_output['cartesian_likelihood']
+        else:
+            collated_output['likelihood'] = np.squeeze(
+                collated_output[f'{MAP}_likelihood']
+            )
 
         if save:
+            confirm_directory_path(collate_path)
             safe_save(collated_output, collate_path, file_name + ".npy")
 
     if load_data:
@@ -136,15 +152,25 @@ def view_data(data, savefig=False, **plot_kwargs):
         Keyword arguments to be passed to the plotting routine.
 
     """
-    program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
+    if MAP == "hybrid":
+        program_root = f"map={MAP},knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
+    else:
+        program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
     file_name = f"{script_name}-{FILE_ROOT}-({program_root}).pdf"
 
     plt.close('all')
     plt.style.use(harmony)
 
     visual_data = data
-    visual_data['likelihood'] = data[f'{MAP}_likelihood']
-
+    if MAP != "hybrid":
+        visual_data['likelihood'] = data[f'{MAP}_likelihood']
+    view_contour(
+        output, new_output,  r"$f_\mathrm{NL}$", r"$b_1$",
+        truth=(0, None),
+        precision=(0, 2),
+        plot_ranges=([-150.0,150.0], [2.25, 2.55]),
+    )
+    '''
     view_pdf(
         visual_data,
         r"$f_\mathrm{NL}$", # r"$b_1$", #
@@ -152,12 +178,7 @@ def view_data(data, savefig=False, **plot_kwargs):
         **plot_kwargs
     )
     '''
-    view_contour(
-        visual_data, r"$f_\mathrm{NL}$", r"$b_1$",
-        cmap=ListedColormap(sns.color_palette('Blues')),
-        **plot_kwargs
-    )
-    '''
+
     if savefig:
         plt.savefig(PATHOUT/script_name/file_name)
 
@@ -169,12 +190,12 @@ if __name__ == '__main__':
 
     BOXSIZE = 1000.
 
-    MAP = "spherical"
-    KHYB = 0.075
+    MAP = "cartesian"
+    KHYB = 0.04
     KMAX = 0.1
     PIVOT = "spectral"
-    PRIOR = "fnl_prior=[-200.0,-200.0],"
-    FIXED = "bias=2.39"
+    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-175.0,175.0]"
+    FIXED = ""
 
     script_name = f"{MAP}_likelihood"
 
@@ -183,21 +204,20 @@ if __name__ == '__main__':
         load_data=False,
         save=True
     )
-    filtered_output = filter_data(output, remove_degrees=())
+#    view_data(
+#        output, new_output,
+#        truth=(0, None),
+#        precision=(0, 2),
+#        plot_ranges=([-150.0,150.0], [2.25, 2.55]),
+#        #savefig=True
+#    )
+    '''
     view_data(
         output,
         truth=0,
         precision=0,
         plot_range=(),
         scatter_plot=True,
-        savefig=True
-    )
-    '''
-    view_data(
-        output,
-        truth=(0., None),
-        precision=(0, 2),
-        plot_ranges=[(-150., 150.), (2.2, 2.5)],
         savefig=True
     )
     '''

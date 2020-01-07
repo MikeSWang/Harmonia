@@ -64,4 +64,3 @@ if __name__ != '__main__':
     warnings.formatwarning = clean_warning_format
 
     script_name = get_filename(sys.argv[0])
-    parsed_params = parse_external_args()

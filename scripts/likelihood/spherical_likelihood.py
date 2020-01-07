@@ -7,7 +7,7 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, parsed_params, script_name
+from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
@@ -189,6 +189,7 @@ def finalise(results, filetag):
 
 if __name__ == '__main__':
 
+    parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()
     finalise(output, tag)

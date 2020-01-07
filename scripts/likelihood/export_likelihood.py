@@ -171,6 +171,7 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
         view_pdf(
             data_to_view,
             r"$f_{\mathrm{NL}}$", r"$\mathcal{L}(f_{\mathrm{NL}})$",
+            scatter_plot=True,
             **plot_kwargs
         )
     else:
@@ -186,38 +187,40 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
         else:
             program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
         file_name = f"{script_name}-{file_root}-({program_root}).pdf"
-        plt.savefig(PATHOUT/script_name/file_name)
+        plt.savefig(PATHOUT/script_name/file_name, transparency=True)
 
 
 if __name__ == '__main__':
 
     # NOTE: Change this before running.
     MAP = "hybrid"
-    NG = 100
+    NG = -100
     KHYB = 0.04
     KMAX = 0.1
-    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-100.0,250.0]"
+    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-250.0,100.0]"
     FIXED = ""
 
     # NOTE: Change this before running.
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
-    x_parameters = np.linspace(-100.0, 250.0, 351)
+    x_parameters = np.linspace(-250.0, 100.0, 351)
     y_parameters = np.linspace(2.15, 2.55, 41)
 
     # NOTE: Change this before running.
     output = read_data(
-        collate_data=False,
-        load_data=True,
-        save_data=False
+        collate_data=True,
+        load_data=False,
+        save_data=True
     )
+
     view_data(
         output,
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        plot_ranges=([-100.0, 250.0], [2.25, 2.55]),
-        # scatter_plot=True,
-        # savefig=True,
+        plot_ranges=([-250.0, 100.0], [2.275, 2.525]),
+        savefig=True,
+        # cmap=['Purples', 'Greens'],
+        # alpha=[1., 0.8],
     )

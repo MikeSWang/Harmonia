@@ -35,7 +35,7 @@ def parse_external_args():
     parser.add_argument('--cartesian-pivot', default='order')
 
     parser.add_argument('--map', required=True)
-    parser.add_argument('--khyb', type=float, default=0.05)
+    parser.add_argument('--khyb', type=float, default=0.04)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--multipoles', type=int, nargs='+', default=[0, 2])
     parser.add_argument('--num-cov-est', type=int, default=None)

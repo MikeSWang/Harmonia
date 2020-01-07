@@ -167,7 +167,7 @@ def view_pdf(samples, xlabel, ylabel, scaling='normalised', precision=None,
 
 
 def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
-                 estimate='max', plot_ranges=None, cmap=None):
+                 estimate='max', plot_ranges=None, cmap=None, alpha=None):
     """View sampled likelihood contours.
 
     Parameters
@@ -188,6 +188,8 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
         Horizontal abd vertical axis limits.
     cmap : (list of) :class:`matplotlib.ScalarMappable`
         Colour map(s) for sampled likelihood contours.
+    alpha : (list of) float
+        Transparency alpha(s) for sampled likelihood contours.
 
     Returns
     -------
@@ -199,9 +201,14 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
     """
     if not isinstance(samples, list):
         samples = [samples]
-        cmap = [cmap]
-    elif cmap is None:
+    if cmap is None:
         cmap = [None] * len(samples)
+    else:
+        cmap = list(
+            map(lambda name: ListedColormap(sns.color_palette(name)), cmap)
+        )
+    if alpha is None:
+        alpha = list(np.linspace(1, 0.75, len(samples)))
 
     fig = plt.figure(figsize=(6, 6))
 
@@ -213,7 +220,7 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
         (4, 4), (1, 3), rowspan=3, colspan=1, sharey=canvas
     )
 
-    def _step_plot(_samples, _fig, _estimate, _cmap):
+    def _step_plot(_samples, _fig, _estimate, _cmap, _alpha):
 
         main, xpanel, ypanel = _fig.axes
 
@@ -251,7 +258,9 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
         if _cmap is None:
             _cmap = ListedColormap(sns.color_palette('Greens'))
 
-        main.contourf(xx, yy, hh, h_levels, antialiased=True, cmap=_cmap)
+        main.contourf(
+            xx, yy, hh, h_levels, antialiased=True, cmap=_cmap, alpha=_alpha
+        )
 
         # Marginal likelihoods.
         marginal_x = np.array([
@@ -370,15 +379,12 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
                 c=_cmap(_cmap.N), label=", ".join([x_est_label, y_est_label])
             )
 
-        _est = {
-            'x': (estimate_x, lower_bound_x, upper_bound_x),
-            'y': (estimate_y, lower_bound_y, upper_bound_y)
-        }
+        return _fig
 
-        return _fig, _est
-
-    for samples_to_plot, cmap_to_use in zip(samples, cmap):
-        fig, results = _step_plot(samples_to_plot, fig, estimate, cmap_to_use)
+    for samples_to_plot, cmap_to_use, alpha_to_use in zip(samples, cmap, alpha):
+        fig = _step_plot(
+            samples_to_plot, fig, estimate, cmap_to_use, alpha_to_use
+        )
 
     if truth:
         try:

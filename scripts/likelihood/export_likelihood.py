@@ -211,7 +211,8 @@ if __name__ == '__main__':
     output = read_data(
         collate_data=True,
         load_data=False,
-        save_data=True
+        save_data=True,
+        # remove_degs=(),
     )
 
     view_data(

@@ -84,7 +84,7 @@ def parse_args():
 
     parser.add_argument('--fsky', type=float, default=1.)
     parser.add_argument('--split', action='store_true')
-    parser.add_argument('--khyb', type=float, default=0.05)
+    parser.add_argument('--khyb', type=float, default=0.04)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--orders', type=int, nargs='+', default=[0, 2, 4])
     parser.add_argument('--nbar', type=float, default=1e-3)

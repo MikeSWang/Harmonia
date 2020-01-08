@@ -99,11 +99,11 @@ def read_data(collate_data=False, load_data=False, save_data=False,
     if MAP == "hybrid":
         search_root = f"map={MAP},*knots=[{KHYB},{KMAX}],*{PRIOR}{FIXED}"\
             .replace("=[", "=[[]").replace("],", "[]],")
-        program_root = f"map={MAP},knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
+        program_root = f"knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
     else:
         search_root = f"map={MAP},*kmax={KMAX},*{PRIOR}{FIXED}"\
             .replace("=[", "=[[]").replace("],", "[]],")
-        program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
+        program_root = f"kmax={KMAX},{PRIOR}{FIXED}"
 
     file_name = f"{script_name}-{file_root}-({program_root})"
     if collate_data:
@@ -143,7 +143,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
     if load_data:
         collated_output = np.load(
-            collation_outpath/str(file_name + ".npy")
+            collation_outpath/str(file_name + ".npy").replace("])", "],exdeg=[0])")
         ).item()
 
     return collated_output
@@ -183,9 +183,9 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 
     if savefig:
         if MAP == "hybrid":
-            program_root = f"map={MAP},knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
+            program_root = f"knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
         else:
-            program_root = f"map={MAP},kmax={KMAX},{PRIOR}{FIXED}"
+            program_root = f"kmax={KMAX},{PRIOR}{FIXED}"
         file_name = f"{script_name}-{file_root}-({program_root}).pdf"
         plt.savefig(PATHOUT/script_name/file_name, transparency=True)
 
@@ -194,17 +194,17 @@ if __name__ == '__main__':
 
     # NOTE: Change this before running.
     MAP = "hybrid"
-    NG = -100
+    NG = 0
     KHYB = 0.04
     KMAX = 0.1
-    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-250.0,100.0]"
+    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-175.0,175.0]"
     FIXED = ""
 
     # NOTE: Change this before running.
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
-    x_parameters = np.linspace(-250.0, 100.0, 351)
+    x_parameters = np.linspace(-175.0, 175.0, 351)
     y_parameters = np.linspace(2.15, 2.55, 41)
 
     # NOTE: Change this before running.
@@ -212,7 +212,7 @@ if __name__ == '__main__':
         collate_data=True,
         load_data=False,
         save_data=True,
-        # remove_degs=(),
+        # remove_degs=(0,),
     )
 
     view_data(
@@ -220,7 +220,7 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        plot_ranges=([-250.0, 100.0], [2.275, 2.525]),
+        plot_ranges=([-175.0, 175.0], [2.25, 2.55]),
         savefig=True,
         # cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],

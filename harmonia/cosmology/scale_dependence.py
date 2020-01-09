@@ -17,10 +17,10 @@ scale-dependence modification kernel
     .. math::
 
         A(k,z) = 3 \left( \frac{H_0}{\mathrm{c}} \right)^2
-            \frac{1.3\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z)T(k)}
+            \frac{1.27\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z)T(k)}
 
 relates to the cosmological model and its growth factor :math:`D(z)`
-(normalised to unity at the current epoch, thus the numerical factor 1.3)
+(normalised to unity at the current epoch, thus the numerical factor 1.27)
 and transfer function :math:`T(k)` (normalised to unity at the vanishing
 wavenumber) computed by ``nbodykit`` with ``CLASS``.
 

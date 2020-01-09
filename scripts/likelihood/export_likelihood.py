@@ -194,25 +194,25 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 if __name__ == '__main__':
 
     # NOTE: Change this before running.
-    MAP = "hybrid"
+    MAP = "spherical"
     NG = 0
-    KHYB = 0.04
-    KMAX = 0.1
-    PRIOR = "bias_prior=[2.15,2.55],fnl_prior=[-175.0,175.0]"
+    KHYB = 0.075
+    KMAX = 0.075
+    PRIOR = "bias_prior=[2.2,2.6],fnl_prior=[-150.0,250.0]"
     FIXED = ""
 
     # NOTE: Change this before running.
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
-    x_parameters = np.linspace(-175.0, 175.0, 351)
-    y_parameters = np.linspace(2.15, 2.55, 41)
+    x_parameters = np.linspace(-150.0, 250.0, 401)
+    y_parameters = np.linspace(2.2, 2.6, 41)
 
     # NOTE: Change this before running.
     output = read_data(
-        collate_data=True,
-        load_data=False,
-        save_data=True,
+        collate_data=False,
+        load_data=True,
+        save_data=False,
         # remove_degs=(0,),
     )
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        plot_ranges=([-175.0, 175.0], [2.25, 2.55]),
+        plot_ranges=([-150.0, 250.0], [2.2, 2.6]),
         savefig=True,
         # cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],

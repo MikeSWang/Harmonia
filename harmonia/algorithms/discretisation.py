@@ -81,7 +81,7 @@ class DiscreteSpectrum:
     attrs : dict
         Discrete spectrum attributes, which contains the following keys:
         ``'min_wavenumber'``, ``'max_wavenumber'`` for minimum and maximum
-        wave numbers; ``'boundary_radius'``, ``'bounded_volume'`` for the
+        wavenumbers; ``'boundary_radius'``, ``'bounded_volume'`` for the
         bounding radius and volume; ``'boundary_condition'`` for the
         boundary condition type.
 

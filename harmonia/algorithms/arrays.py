@@ -31,7 +31,7 @@ class SphericalArray:
 
     Spherical degrees :math:`\ell` and orders :math:`m` are associated with
     the spherical Bessel and harmonic functions, and spherical depths
-    :math:`n` are the number of allowed radial wave numbers for each degree
+    :math:`n` are the number of allowed radial wavenumbers for each degree
     of a discrete Fourier spectrum.
 
     Generally, the array can appear in the following structures:

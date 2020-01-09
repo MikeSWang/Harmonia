@@ -143,7 +143,8 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
     if load_data:
         collated_output = np.load(
-            collation_outpath/str(file_name + ".npy").replace("])", "],exdeg=[0])")
+            collation_outpath/str(file_name + ".npy")
+            # .replace("])", "],exdeg=[0])")
         ).item()
 
     return collated_output

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from window_rc import PATHOUT, script_name
+from window_rc import PATHOUT
 from harmonia.mapper import SurveyWindow
 from harmonia.collections import (
     cartesian_to_spherical,
@@ -111,7 +111,7 @@ def determine_window():
 
 if __name__ == '__main__':
 
-    confirm_directory_path(f"{PATHOUT}{script_name}/")
+    confirm_directory_path(PATHOUT/"window_multipoles")
 
     params = parse_cli_args()
     pprint(params.__dict__)
@@ -129,15 +129,17 @@ if __name__ == '__main__':
     xi_ell, pk_ell = determine_window()
 
     np.save(
-        f"{PATHOUT}{script_name}/"
-        f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
-        .format(fsky, split*"-split", padding, mesh),
+        PATHOUT/"window_multipoles"/(
+            f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+            .format(fsky, split*"-split", padding, mesh)
+        ),
         xi_ell
     )
     np.save(
-        f"{PATHOUT}{script_name}/"
-        f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
-        .format(fsky, split*"-split", padding, mesh),
+        PATHOUT/"window_multipoles"/(
+            f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+            .format(fsky, split*"-split", padding, mesh)
+        ),
         pk_ell
     )
 
@@ -165,6 +167,8 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.savefig(
-        f"{PATHOUT}window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.pdf"
-        .format(fsky, split*"-split", padding, mesh)
+        PATHOUT/"window_multipoles"/(
+            f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.pdf"
+            .format(fsky, split*"-split", padding, mesh)
+        )
     )

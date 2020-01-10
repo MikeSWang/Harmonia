@@ -86,7 +86,7 @@ def initialise():
         Initialised program tag.
 
     """
-    ini_params = vars(parsed_params)
+    ini_params = parsed_params.__dict__
 
     rsd_tag = 'on' if parsed_params.rsd else 'off'
 

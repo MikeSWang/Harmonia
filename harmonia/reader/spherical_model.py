@@ -889,16 +889,16 @@ class TwoPointFunction(Couplings):
                 )
             return self._couplings
 
-        self._couplings = {'radial': super().compile_couplings('radial')}
+        self._couplings = {'radial': self.compile_couplings('radial')}
         if self.mask is None:
             self._couplings['angular'] = None
         else:
-            self._couplings['angular'] = super().compile_couplings('angular')
+            self._couplings['angular'] = self.compile_couplings('angular')
 
         if bool(self.growth_rate):
             self._couplings['RSD'] = None
         else:
-            self._couplings['RSD'] = super().compile_couplings('RSD')
+            self._couplings['RSD'] = self.compile_couplings('RSD')
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Relevant coupling coefficients compiled. ")

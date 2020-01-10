@@ -88,10 +88,7 @@ def initialise():
     """
     ini_params = vars(parsed_params)
 
-    pprint(ini_params)
-    print("\n")
-
-    rsd_tag = 'on' if parsed_params.rsd_flag else 'off'
+    rsd_tag = 'on' if parsed_params.rsd else 'off'
 
     ini_tag = "pivot={},rmax={},kmax={},fsky={},rsd={}".format(
         parsed_params.pivot,
@@ -113,6 +110,10 @@ def process():
         Program output.
 
     """
+    if COMM is not None and COMM.rank == 0:
+        pprint(parsed_params)
+        print("\n")
+
     disc = DiscreteSpectrum(params['rmax'], 'Dirichlet', params['kmax'])
 
     with open(COSMOLOGY_FILE) as cosmology_file:

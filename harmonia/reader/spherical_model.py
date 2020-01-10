@@ -694,17 +694,13 @@ class Couplings:
             coeff_vector = mpi_compute(
                 index_vector, coeff_processor, self.comm
             )
-
-            if self.comm.rank == 0:
-                sequenced_couplings = dict(zip(index_vector, coeff_vector))
-                sequenced_couplings = \
-                    self.comm.bcast(sequenced_couplings, root=0)
         else:
             coeff_vector = [
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
                 for mu in index_vector
             ]
-            sequenced_couplings = dict(zip(index_vector, coeff_vector))
+
+        sequenced_couplings = dict(zip(index_vector, coeff_vector))
 
         return sequenced_couplings
 

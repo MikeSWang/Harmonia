@@ -111,7 +111,7 @@ def process():
 
     """
     if COMM is not None and COMM.rank == 0:
-        pprint(parsed_params)
+        pprint(params)
         print("\n")
 
     disc = DiscreteSpectrum(params['rmax'], 'Dirichlet', params['kmax'])

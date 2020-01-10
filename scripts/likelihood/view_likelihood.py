@@ -59,6 +59,7 @@ def view_pdf(samples, xlabel, ylabel, scaling='normalised', precision=None,
 
     sns.set(style='ticks', font='serif')
     fig = plt.figure()
+    fig.add_subplot(111)
 
     def _step_plot(_samples, _fig, _estimate):
 

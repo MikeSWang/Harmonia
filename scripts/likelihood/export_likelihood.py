@@ -194,10 +194,10 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 if __name__ == '__main__':
 
     # NOTE: Change this before running.
-    MAP = "spherical"
+    MAP = "hybrid"
     NG = 0
-    KHYB = 0.075
-    KMAX = 0.075
+    KHYB = 0.04
+    KMAX = 0.1
     PRIOR = "bias_prior=[2.2,2.6],fnl_prior=[-150.0,250.0]"
     FIXED = ""
 
@@ -221,8 +221,8 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        plot_ranges=([-150.0, 250.0], [2.2, 2.6]),
-        savefig=True,
+        # plot_ranges=([-150.0, 250.0], [2.2, 2.6]),
+        # savefig=True,
         # cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],
     )

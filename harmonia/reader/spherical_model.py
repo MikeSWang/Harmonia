@@ -688,17 +688,17 @@ class Couplings:
                 .build(disc=self.disc)\
                 .unfold('natural', return_only='index')
 
-        if self.comm is not None:
+        if self.comm is None:
+            coeff_vector = [
+                self.couplings_fixed_index(mu, coupling_type=coupling_type)
+                for mu in index_vector
+            ]
+        else:
             coeff_processor = lambda mu: \
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
             coeff_vector = mpi_compute(
                 index_vector, coeff_processor, self.comm
             )
-        else:
-            coeff_vector = [
-                self.couplings_fixed_index(mu, coupling_type=coupling_type)
-                for mu in index_vector
-            ]
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
 
@@ -885,16 +885,16 @@ class TwoPointFunction(Couplings):
                 )
             return self._couplings
 
-        self._couplings = {'radial': self.compile_couplings('radial')}
+        self._couplings = {'radial': super().compile_couplings('radial')}
         if self.mask is None:
             self._couplings['angular'] = None
         else:
-            self._couplings['angular'] = self.compile_couplings('angular')
+            self._couplings['angular'] = super().compile_couplings('angular')
 
         if bool(self.growth_rate):
             self._couplings['RSD'] = None
         else:
-            self._couplings['RSD'] = self.compile_couplings('RSD')
+            self._couplings['RSD'] = super().compile_couplings('RSD')
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Relevant coupling coefficients compiled. ")

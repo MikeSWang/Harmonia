@@ -423,6 +423,8 @@ def mpi_compute(data_array, mapping, comm, root=0):
     if comm.rank == root:
         output_array = np.concatenate(output, axis=0)
 
+    output_array = comm.bcast(output_array, root=root)
+
     return output_array
 
 

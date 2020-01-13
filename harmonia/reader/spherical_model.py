@@ -135,6 +135,7 @@ import warnings
 
 import numpy as np
 from nbodykit.lab import cosmology
+from scipy.integrate.quadpack import IntegrationWarning
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.algorithms.integration import \
@@ -549,10 +550,19 @@ class Couplings:
                 coupling_coeff = complex(mu[0] == nu[0] and mu[1] == nu[1])
 
             else:
-                coupling_coeff = ang_int(
-                    lambda theta, phi: \
-                        _angular_kernel(theta, phi, mu, nu, mask=self.mask)
-                )
+                with warnings.catch_warnings(record=True) as any_warnings:
+                    warnings.filterwarnings(
+                        "default", category=IntegrationWarning
+                    )
+                    coupling_coeff = ang_int(
+                        lambda theta, phi: \
+                            _angular_kernel(theta, phi, mu, nu, mask=self.mask)
+                    )
+                    if any_warnings:
+                        warnings.warn(
+                            "Angular integration warning emitted.\n",
+                            IntegrationWarning
+                        )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
@@ -563,21 +573,40 @@ class Couplings:
             if trivial_case:  # Kronecker delta
                 coupling_coeff = float(mu[-1] == nu[-1])
             else:
-                coupling_coeff = kappa_nu * rad_int(
-                    lambda r: \
-                        _radial_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
-                    self.disc.attrs['boundary_radius']
-                )
+                with warnings.catch_warnings(record=True) as any_warnings:
+                    warnings.filterwarnings(
+                        "default", category=IntegrationWarning
+                    )
+                    coupling_coeff = kappa_nu * rad_int(
+                        lambda r: _radial_kernel(
+                            r, mu, nu, k_mu, k_nu, **func_attrs
+                        ),
+                        self.disc.attrs['boundary_radius']
+                    )
+                    if any_warnings:
+                        warnings.warn(
+                            "Radial integration warning emitted.\n",
+                            IntegrationWarning
+                        )
         elif coupling_type == 'RSD':
             attrs.extend(
                 ['weight_derivative', 'growth_evolution', 'AP_distortion']
             )
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
-            coupling_coeff = kappa_nu / k_nu * rad_int(
-                lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
-                self.disc.attrs['boundary_radius']
-            )
+            with warnings.catch_warnings(record=True) as any_warnings:
+                warnings.filterwarnings(
+                    "default", category=IntegrationWarning
+                )
+                coupling_coeff = kappa_nu / k_nu * rad_int(
+                    lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
+                    self.disc.attrs['boundary_radius']
+                )
+                if any_warnings:
+                    warnings.warn(
+                        "RSD integration warning emitted.\n",
+                        IntegrationWarning
+                    )
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computed %s.", _info_msg)
@@ -1097,9 +1126,18 @@ class TwoPointFunction(Couplings):
         else:
             args = mu, nu, k_mu, k_nu
             kwargs = dict(selection=self.selection, weight=self.weight)
-            shot_noise = rad_int(
-                lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
-            )
+            with warnings.catch_warnings(record=True) as any_warnings:
+                warnings.filterwarnings(
+                    "default", category=IntegrationWarning
+                )
+                shot_noise = rad_int(
+                    lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
+                )
+                if any_warnings:
+                    warnings.warn(
+                        "Shot noise integration warning emitted.\n",
+                        IntegrationWarning
+                    )
 
         shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar
 

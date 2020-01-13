@@ -212,10 +212,15 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
 
         collated_data = dict.fromkeys(all_data[-1].keys())
         for key in collated_data:
-            collated_data[key] = np.concatenate(
-                [np.atleast_1d(data[key]) for data in all_data],
-                axis=0
-            )
+            to_concat = [np.atleast_1d(data[key]) for data in all_data]
+            # to_concat = []
+            # for data in all_data:
+            #     block_entry = [
+            #         line_entry for line_entry in data[key]
+            #         if len(line_entry) == 6
+            #     ]
+            #     to_concat.append(np.atleast_1d(block_entry))
+            collated_data[key] = np.concatenate(to_concat, axis=0)
 
         return collated_data, collation_count, last_collated_file
 

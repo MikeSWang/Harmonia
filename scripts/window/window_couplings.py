@@ -11,7 +11,7 @@ from nbodykit.cosmology import Cosmology
 
 from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
-from harmonia.collections import confirm_directory_path, format_float
+from harmonia.collections import confirm_directory_path
 from harmonia.reader import TwoPointFunction
 
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
@@ -90,12 +90,10 @@ def initialise():
 
     rsd_tag = 'on' if parsed_params.rsd else 'off'
 
-    ini_tag = "pivot={},rmax={},kmax={},fsky={},rsd={}".format(
+    ini_tag = "pivot={},rmax={}.,kmax={},fsky={:.2f},rsd={}".format(
         parsed_params.pivot,
-        format_float(parsed_params.rmax, 'intdot'),
-        format_float(parsed_params.kmax, 'sci'),
-        format_float(parsed_params.fsky, 'decdot'),
-        rsd_tag,
+        int(np.around(parsed_params.rmax)),
+        parsed_params.kmax, parsed_params.fsky, rsd_tag
     )
 
     return ini_params, ini_tag
@@ -151,7 +149,7 @@ def finalise():
     """
     assert confirm_directory_path(PATHOUT/script_name)
 
-    filename = f"{script_name}-({tag}).npy"
+    filename = f"couplings-({tag}).npy"
     if COMM is None or COMM.rank != 0:
         np.save(PATHOUT/script_name/filename, output)
     else:

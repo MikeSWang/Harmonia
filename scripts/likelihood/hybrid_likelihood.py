@@ -8,6 +8,7 @@ import numpy as np
 from nbodykit.cosmology import Cosmology
 
 from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
+from likelihood_rc import domain_cut
 from harmonia.algorithms import (
     CartesianArray,
     DiscreteSpectrum,
@@ -34,10 +35,12 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-COUPLINGS_FILE = SPECS_PATH/""
-MASK_MULTIPOLES_FILE = SPECS_PATH/"mask_multipoles.npy"
-WINDOW_MULTIPOLES_FILE = SPECS_PATH/"window_multipoles.npy"
-FIDUCIAL_ESTIMATE_FILENAME = "fiducial_estimate-knots=({},{}).npy"
+COUPLINGS_FILE = "couplings-(pivot={},kmax={},fsky={:.2f}).npy"
+MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
+WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
+FIDUCIAL_ESTIMATE_FILENAME = (
+    "fiducial_estimate-(fsky={:.2f},orders={},knots=[{},{}]).npy"
+)
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -97,12 +100,16 @@ def initialise():
             )
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
-    ini_tag = "map={},pivots=[{},{}],knots=[{},{}],{}{}".format(
+    rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
+    growth_rate = None if parsed_params.rsd else 0.
+    ini_params.update({'growth_rate': growth_rate})
+
+    ini_tag = "map={},pivots=[{},{}],knots=[{},{}],{}{}{}{}".format(
         parsed_params.map,
         parsed_params.spherical_pivot, parsed_params.cartesian_pivot,
         parsed_params.khyb, parsed_params.kmax,
-        sampled_tag, fixed_tag,
-        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est}"
+        rsd_tag, sampled_tag, fixed_tag,
+        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
     ).strip(",")
 
     # Extract cosmology and survey specifications.
@@ -117,16 +124,30 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
-    # external_couplings = np.load(COUPLINGS_FILE).item()
+    if parsed_params.load_couplings:
+        external_couplings = np.load(
+            COUPLINGS_FILE.format(
+                parsed_params.spherical_pivot,
+                str(parsed_params.khyb).rstrip("0"),
+                parsed_params.fsky
+            )
+        ).item()
 
-    mask_multipoles = np.load(MASK_MULTIPOLES_FILE).item()
-    window_multipoles = np.load(WINDOW_MULTIPOLES_FILE).item()
+    mask_multipoles = np.load(
+        SPECS_PATH/MASK_MULTIPOLES_FILE.format(parsed_params.fsky)
+    ).item()
+
+    window_multipoles = np.load(
+        SPECS_PATH/WINDOW_MULTIPOLES_FILE.format(parsed_params.fsky)
+    ).item()
 
     fiducial_estimate = np.load(
         SPECS_PATH/(
             FIDUCIAL_ESTIMATE_FILENAME.format(
-                np.around(parsed_params.khyb, decimals=2),
-                np.around(parsed_params.kmax, decimals=2)
+                parsed_params.fsky,
+                str(parsed_params.orders).replace(", ", ","),
+                str(parsed_params.khyb).rstrip("0"),
+                str(parsed_params.kmax).rstrip("0")
             )
         )
     ).item()
@@ -155,7 +176,7 @@ def process():
 
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
-        growth_rate=0.,
+        growth_rate=params['growth_rate'],
         cosmo=simu_cosmo,
         mask_multipoles=mask_multipoles,
         window_multipoles=window_multipoles
@@ -163,6 +184,7 @@ def process():
     two_point_model = TwoPointFunction(
         disc,
         redshift=params['redshift'],
+        growth_rate=params['growth_rate'],
         cosmo=simu_cosmo,
         couplings=external_couplings
     )
@@ -179,6 +201,13 @@ def process():
         random_catalogue = RandomCatalogue(
             params['contrast']*params['nbar'], params['boxsize']
         )
+
+        for catalogue in [data_catalogue, random_catalogue]:
+            catalogue['Selection'] *= domain_cut(
+                catalogue['Position'], params['boxsize']/2, params['fsky']
+            )
+            catalogue['NZ'] = params['nbar'] * catalogue['Weight']
+
         spherical_map = SphericalMap(
             disc, data_catalogue, rand=random_catalogue,
             mean_density_data=params['nbar'],

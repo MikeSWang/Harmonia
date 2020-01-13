@@ -856,7 +856,7 @@ class TwoPointFunction(Couplings):
                 self.growth_rate = cosmo.scale_independent_growth_rate(
                     self.redshift
                 )
-            elif bool(self.growth_rate):
+            elif self.growth_rate:
                 cosmo_growth_rate = cosmo.scale_independent_growth_rate(
                     self.redshift
                 )
@@ -920,7 +920,7 @@ class TwoPointFunction(Couplings):
         else:
             self._couplings['angular'] = super().compile_couplings('angular')
 
-        if bool(self.growth_rate):
+        if self.growth_rate:
             self._couplings['RSD'] = None
         else:
             self._couplings['RSD'] = super().compile_couplings('RSD')
@@ -1016,7 +1016,7 @@ class TwoPointFunction(Couplings):
         couplings = self.couplings
 
         angular_reduction = (self.couplings['angular'] is None)
-        rsd_reduction = bool(self.growth_rate)
+        rsd_reduction = not bool(self.growth_rate)
 
         Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
         if not angular_reduction:

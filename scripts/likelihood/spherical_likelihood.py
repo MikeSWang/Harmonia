@@ -8,6 +8,7 @@ import numpy as np
 from nbodykit.cosmology import Cosmology
 
 from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
+from likelihood_rc import domain_cut
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
@@ -22,7 +23,8 @@ from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
 # Survey specfications input.
-COUPLINGS_FILE = PATHIN/"specifications"/""
+SPECS_PATH = PATHIN/"specifications"
+COUPLINGS_FILE = "couplings-(pivot={},kmax={},fsky={:.2f}).npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -80,9 +82,13 @@ def initialise():
             )
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
-    ini_tag = "map={},kmax={},pivot={},{}{}".format(
+    rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
+    growth_rate = None if parsed_params.rsd else 0.
+    ini_params.update({'growth_rate': growth_rate})
+
+    ini_tag = "map={},kmax={},pivot={},{}{}{}".format(
         parsed_params.map, parsed_params.khyb, parsed_params.spherical_pivot,
-        sampled_tag, fixed_tag
+        rsd_tag, sampled_tag, fixed_tag,
     ).strip(",")
 
     # Extract cosmology and survey specifications.
@@ -96,7 +102,14 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
-    external_couplings = None
+    if parsed_params.load_couplings:
+        external_couplings = np.load(
+            SPECS_PATH/COUPLINGS_FILE.format(
+                parsed_params.spherical_pivot,
+                str(parsed_params.khyb).rstrip("0"),
+                parsed_params.fsky
+            )
+        ).item()
 
     pprint(ini_params)
     print("\n")
@@ -118,6 +131,7 @@ def process():
     two_point_model = TwoPointFunction(
         disc,
         redshift=params['redshift'],
+        growth_rate=params['growth_rate'],
         cosmo=simu_cosmo,
         couplings=external_couplings
     )
@@ -134,6 +148,13 @@ def process():
         random_catalogue = RandomCatalogue(
             params['contrast']*params['nbar'], params['boxsize']
         )
+
+        for catalogue in [data_catalogue, random_catalogue]:
+            catalogue['Selection'] *= domain_cut(
+                catalogue['Position'], params['boxsize']/2, params['fsky']
+            )
+            catalogue['NZ'] = params['nbar'] * catalogue['Weight']
+
         spherical_map = SphericalMap(
             disc, data_catalogue, rand=random_catalogue,
             mean_density_data=params['nbar'],

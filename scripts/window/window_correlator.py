@@ -112,11 +112,13 @@ def initialise():
     pprint(param_dict)
     print("\n")
 
-    return "fsky={0}{4},knots=[{1},{2}],boxsize={3},mesh={5},iter={6}".format(
-        np.around(fsky, decimals=2),
-        np.around(khyb, decimals=2),
-        np.around(kmax, decimals=2),
-        np.int(boxsize), split*"s", nmesh, niter
+    return (
+        "fsky={}{},orders={},knots=[{},{}],boxsize={},mesh={},iter={}"
+    ).format(
+        np.around(fsky, decimals=2), split*"s",
+        str(orders).replace(", ", ","),
+        str(khyb).rstrip("0"), str(kmax).rstrip("0"),
+        np.int(boxsize), nmesh, niter
     )
 
 

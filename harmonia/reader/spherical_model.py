@@ -544,8 +544,6 @@ class Couplings:
                 'chi_of_z',
             ]
 
-        warnings.filterwarnings("default", category=IntegrationWarning)
-
         if coupling_type == 'angular':
             trivial_case = not callable(self.mask)
             if trivial_case:  # Kronecker delta
@@ -915,6 +913,8 @@ class TwoPointFunction(Couplings):
                 )
             return self._couplings
 
+        warnings.filterwarnings('default', category=IntegrationWarning)
+
         self._couplings = {'radial': super().compile_couplings('radial')}
         if self.mask is None:
             self._couplings['angular'] = None
@@ -1118,8 +1118,6 @@ class TwoPointFunction(Couplings):
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
         k_nu = self.disc.wavenumbers[ell_nu][n_nu-1]
 
-        warnings.filterwarnings("default", category=IntegrationWarning)
-
         if not callable(self.selection) and not callable(self.weight) \
                 and ell_mu == ell_nu:
             if n_mu == n_nu:
@@ -1211,6 +1209,8 @@ class TwoPointFunction(Couplings):
                 "where no masking, selection, weighting, evolution or "
                 "geometrical effects are present. "
             )
+
+        warnings.filterwarnings("default", category=IntegrationWarning)
 
         scale_mod_kwargs = dict(f_nl=f_nl, tracer_parameter=tracer_parameter)
         if part == 'both':

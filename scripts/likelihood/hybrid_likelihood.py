@@ -146,8 +146,8 @@ def initialise():
             FIDUCIAL_ESTIMATE_FILENAME.format(
                 parsed_params.fsky,
                 str(parsed_params.multipoles).replace(", ", ","),
-                str(parsed_params.khyb).rstrip("0"),
-                str(parsed_params.kmax).rstrip("0")
+                str(np.around(parsed_params.khyb, decimals=3)).rstrip("0"),
+                str(np.around(parsed_params.kmax, decimals=3)).rstrip("0")
             )
         )
     ).item()

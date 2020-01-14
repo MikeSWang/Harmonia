@@ -423,11 +423,14 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     output = []
     for piece_idx, data_piece in enumerate(data_chunk):
         output.append(mapping(data_piece))
-        if logger is not None and comm.rank == 0:
-            if (piece_idx + 1) % (len(data_chunk) // 10) == 0 or \
+        if logger is not None:
+            if (piece_idx + 1) % (len(data_chunk) // 4) == 0 or \
                     piece_idx + 1 == len(data_chunk):
                 progress = 100 * (piece_idx + 1) / len(data_chunk)
-                logger.info("Progress: %d%% computed. ", progress)
+                logger.info(
+                    "Progress for process %d: %d%% computed. ",
+                    comm.rank, progress
+                )
 
     comm.Barrier()
 

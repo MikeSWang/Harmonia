@@ -117,7 +117,8 @@ def initialise():
     ).format(
         np.around(fsky, decimals=2), split*"s",
         str(orders).replace(", ", ","),
-        str(khyb).rstrip("0"), str(kmax).rstrip("0"),
+        str(np.around(khyb, decimals=3)).rstrip("0"),
+        str(np.around(kmax, decimals=3)).rstrip("0"),
         np.int(boxsize), nmesh, niter
     )
 

@@ -145,7 +145,7 @@ def initialise():
         SPECS_PATH/(
             FIDUCIAL_ESTIMATE_FILENAME.format(
                 parsed_params.fsky,
-                str(parsed_params.orders).replace(", ", ","),
+                str(parsed_params.multipoles).replace(", ", ","),
                 str(parsed_params.khyb).rstrip("0"),
                 str(parsed_params.kmax).rstrip("0")
             )

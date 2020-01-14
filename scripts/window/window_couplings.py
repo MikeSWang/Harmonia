@@ -90,6 +90,8 @@ def initialise():
     ini_params = parsed_params.__dict__
 
     rsd_tag = 'on' if parsed_params.rsd else 'off'
+    growth_rate = None if parsed_params.rsd else 0.
+    ini_params.update({'growth_rate': growth_rate})
 
     ini_tag = "pivot={},rmax={}.,kmax={},fsky={:.2f},rsd={}".format(
         parsed_params.pivot,
@@ -138,6 +140,7 @@ def process():
 
     kwargs = dict(
         redshift=params['redshift'],
+        growth_rate=params['growth_rate'],
         cosmo=cosmo,
         survey_specs=survey_specs,
         comm=COMM,

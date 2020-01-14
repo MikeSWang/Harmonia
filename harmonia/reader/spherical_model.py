@@ -135,7 +135,7 @@ import warnings
 
 import numpy as np
 from nbodykit.lab import cosmology
-from scipy.integrate.quadpack import IntegrationWarning
+from scipy.integrate import IntegrationWarning
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.algorithms.integration import \
@@ -560,7 +560,7 @@ class Couplings:
                     warnings.warn(
                         "Angular integration warning emitted: {}.\n"
                             .format(any_warnings[-1].message),
-                        IntegrationWarning
+                        category=IntegrationWarning
                     )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
@@ -583,7 +583,7 @@ class Couplings:
                     warnings.warn(
                         "Radial integration warning emitted: {}.\n"
                             .format(any_warnings[-1].message),
-                        IntegrationWarning
+                        category=IntegrationWarning
                     )
         elif coupling_type == 'RSD':
             attrs.extend(
@@ -600,7 +600,7 @@ class Couplings:
                 warnings.warn(
                     "RSD integration warning emitted: {}.\n"
                         .format(any_warnings[-1].message),
-                    IntegrationWarning
+                    category=IntegrationWarning
                 )
 
         if self.comm is None or self.comm.rank == 0:
@@ -1134,7 +1134,7 @@ class TwoPointFunction(Couplings):
                 warnings.warn(
                     "Shot noise integration warning emitted: {}.\n"
                         .format(any_warnings[-1].message),
-                    IntegrationWarning
+                    category=IntegrationWarning
                 )
 
         shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar

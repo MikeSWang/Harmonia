@@ -297,7 +297,7 @@ class SurveyWindow:
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore",
+                'ignore',
                 message=(
                     "The default value of extrap has been changed to False, "
                     "set it to True if you cannot reproduce previous results"

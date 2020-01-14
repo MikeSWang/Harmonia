@@ -146,8 +146,6 @@ from harmonia.algorithms.arrays import SphericalArray
 from harmonia.collections.utils import mpi_compute
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 
-warnings.filterwarnings('default', category=IntegrationWarning)
-
 
 # KERNELS
 # -----------------------------------------------------------------------------
@@ -915,8 +913,6 @@ class TwoPointFunction(Couplings):
                     "non-NoneType `cosmo_spec` or `growth_rate`. "
                 )
             return self._couplings
-
-
 
         self._couplings = {'radial': super().compile_couplings('radial')}
         if self.mask is None:

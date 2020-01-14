@@ -2,12 +2,14 @@
 and survey specifications.
 
 """
+import warnings
 from argparse import ArgumentParser
 from pprint import pprint
 
 import numpy as np
 from mpi4py import MPI
 from nbodykit.cosmology import Cosmology
+from scipy.integrate import IntegrationWarning
 
 from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
@@ -159,6 +161,7 @@ def finalise():
 if __name__ == '__main__':
 
     COMM = MPI.COMM_WORLD
+    warnings.filterwarnings('default', category=IntegrationWarning)
 
     parsed_params = parse_args()
     params, tag = initialise()

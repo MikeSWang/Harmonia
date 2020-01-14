@@ -544,6 +544,8 @@ class Couplings:
                 'chi_of_z',
             ]
 
+        warnings.filterwarnings("default", category=IntegrationWarning)
+
         if coupling_type == 'angular':
             trivial_case = not callable(self.mask)
             if trivial_case:  # Kronecker delta
@@ -551,9 +553,6 @@ class Couplings:
 
             else:
                 with warnings.catch_warnings(record=True) as any_warnings:
-                    warnings.filterwarnings(
-                        "default", category=IntegrationWarning
-                    )
                     coupling_coeff = ang_int(
                         lambda theta, phi: \
                             _angular_kernel(theta, phi, mu, nu, mask=self.mask)
@@ -561,7 +560,7 @@ class Couplings:
                 if any_warnings:
                     warnings.warn(
                         "Angular integration warning emitted: {}.\n"
-                        .format(any_warnings[-1].message),
+                            .format(any_warnings[-1].message),
                         IntegrationWarning
                     )
         elif coupling_type == 'radial':
@@ -575,9 +574,6 @@ class Couplings:
                 coupling_coeff = float(mu[-1] == nu[-1])
             else:
                 with warnings.catch_warnings(record=True) as any_warnings:
-                    warnings.filterwarnings(
-                        "default", category=IntegrationWarning
-                    )
                     coupling_coeff = kappa_nu * rad_int(
                         lambda r: _radial_kernel(
                             r, mu, nu, k_mu, k_nu, **func_attrs
@@ -597,9 +593,6 @@ class Couplings:
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
             with warnings.catch_warnings(record=True) as any_warnings:
-                warnings.filterwarnings(
-                    "default", category=IntegrationWarning
-                )
                 coupling_coeff = kappa_nu / k_nu * rad_int(
                     lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
                     self.disc.attrs['boundary_radius']
@@ -1125,6 +1118,8 @@ class TwoPointFunction(Couplings):
         k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
         k_nu = self.disc.wavenumbers[ell_nu][n_nu-1]
 
+        warnings.filterwarnings("default", category=IntegrationWarning)
+
         if not callable(self.selection) and not callable(self.weight) \
                 and ell_mu == ell_nu:
             if n_mu == n_nu:
@@ -1135,9 +1130,6 @@ class TwoPointFunction(Couplings):
             args = mu, nu, k_mu, k_nu
             kwargs = dict(selection=self.selection, weight=self.weight)
             with warnings.catch_warnings(record=True) as any_warnings:
-                warnings.filterwarnings(
-                    "default", category=IntegrationWarning
-                )
                 shot_noise = rad_int(
                     lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
                 )

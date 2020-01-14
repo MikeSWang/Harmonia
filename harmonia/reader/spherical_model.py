@@ -551,17 +551,10 @@ class Couplings:
                 coupling_coeff = complex(mu[0] == nu[0] and mu[1] == nu[1])
 
             else:
-                with warnings.catch_warnings(record=True) as any_warnings:
-                    coupling_coeff = ang_int(
-                        lambda theta, phi: \
-                            _angular_kernel(theta, phi, mu, nu, mask=self.mask)
-                    )
-                if any_warnings:
-                    warnings.warn(
-                        "Angular integration warning emitted: {}.\n"
-                            .format(any_warnings[-1].message),
-                        category=IntegrationWarning
-                    )
+                coupling_coeff = ang_int(
+                    lambda theta, phi: \
+                        _angular_kernel(theta, phi, mu, nu, mask=self.mask)
+                )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
@@ -572,36 +565,22 @@ class Couplings:
             if trivial_case:  # Kronecker delta
                 coupling_coeff = float(mu[-1] == nu[-1])
             else:
-                with warnings.catch_warnings(record=True) as any_warnings:
-                    coupling_coeff = kappa_nu * rad_int(
-                        lambda r: _radial_kernel(
-                            r, mu, nu, k_mu, k_nu, **func_attrs
-                        ),
-                        self.disc.attrs['boundary_radius']
-                    )
-                if any_warnings:
-                    warnings.warn(
-                        "Radial integration warning emitted: {}.\n"
-                            .format(any_warnings[-1].message),
-                        category=IntegrationWarning
-                    )
+                coupling_coeff = kappa_nu * rad_int(
+                    lambda r: _radial_kernel(
+                        r, mu, nu, k_mu, k_nu, **func_attrs
+                    ),
+                    self.disc.attrs['boundary_radius']
+                )
         elif coupling_type == 'RSD':
             attrs.extend(
                 ['weight_derivative', 'growth_evolution', 'AP_distortion']
             )
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
-            with warnings.catch_warnings(record=True) as any_warnings:
-                coupling_coeff = kappa_nu / k_nu * rad_int(
-                    lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
-                    self.disc.attrs['boundary_radius']
-                )
-            if any_warnings:
-                warnings.warn(
-                    "RSD integration warning emitted: {}.\n"
-                        .format(any_warnings[-1].message),
-                    category=IntegrationWarning
-                )
+            coupling_coeff = kappa_nu / k_nu * rad_int(
+                lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
+                self.disc.attrs['boundary_radius']
+            )
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computed %s.", _info_msg)
@@ -652,11 +631,6 @@ class Couplings:
         """
         coupling_type = self._alias(coupling_type)
 
-        _info_msg = "all {} couplings".format(coupling_type.replace("'", ""))
-
-        if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Computing %s.", _info_msg)
-
         if coupling_type == 'angular':
             sigma_gen = lambda ell: [
                 (ell, m, None) for m in range(-ell, ell+1)
@@ -674,9 +648,6 @@ class Couplings:
                     for sigma in sigma_gen(ell)
                 ]
             )
-
-        if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Computed %s.", _info_msg)
 
         return couplings_component
 
@@ -706,30 +677,51 @@ class Couplings:
             dict of {int: :class:`numpy.ndarray`}
 
         """
+        _info_msg = "all {} couplings".format(coupling_type.replace("'", ""))
+
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
             index_vector = SphericalArray\
                 .build(disc=self.disc)\
                 .unfold('natural', return_only='index')
 
-        if self.comm is None:
-            coeff_vector = []
-            for ind_idx, mu in enumerate(index_vector):
-                coeff_vector.append(
-                    self.couplings_fixed_index(mu, coupling_type=coupling_type)
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Computing %s.", _info_msg)
+
+        with warnings.catch_warnings(record=True) as any_warnings:
+            if self.comm is None:
+                coeff_vector = []
+                for ind_idx, mu in enumerate(index_vector):
+                    coeff_vector.append(
+                        self.couplings_fixed_index(
+                            mu, coupling_type=coupling_type
+                        )
+                    )
+                    if (ind_idx + 1) % (len(index_vector) // 10) == 0 or \
+                            ind_idx + 1 == len(index_vector):
+                        progress = 100 * (ind_idx + 1) / len(index_vector)
+                        self._logger.info(
+                            "Progress: %d%% computed. ", progress
+                        )
+            else:
+                coeff_processor = lambda mu: self.couplings_fixed_index(
+                    mu, coupling_type=coupling_type
                 )
-                if (ind_idx + 1) % (len(index_vector) // 10) == 0 or \
-                        ind_idx + 1 == len(index_vector):
-                    progress = 100 * (ind_idx + 1) / len(index_vector)
-                    self._logger.info("Progress: %d%% computed. ", progress)
-        else:
-            coeff_processor = lambda mu: \
-                self.couplings_fixed_index(mu, coupling_type=coupling_type)
-            coeff_vector = mpi_compute(
-                index_vector, coeff_processor, self.comm, logger=self._logger
+                coeff_vector = mpi_compute(
+                    index_vector, coeff_processor, self.comm,
+                    logger=self._logger
+                )
+        if any_warnings:
+            warnings.warn(
+                "Integration warning for {} couplings emitted: {}.\n"
+                    .format(coupling_type, any_warnings[-1].message),
+                IntegrationWarning
             )
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
+
+        if self.comm is None or self.comm.rank == 0:
+            self._logger.info("Computed %s.", _info_msg)
 
         return sequenced_couplings
 

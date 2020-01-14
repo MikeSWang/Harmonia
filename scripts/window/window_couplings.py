@@ -2,14 +2,13 @@
 and survey specifications.
 
 """
-import warnings
+import logging
 from argparse import ArgumentParser
 from pprint import pprint
 
 import numpy as np
 from mpi4py import MPI
 from nbodykit.cosmology import Cosmology
-from scipy.integrate import IntegrationWarning
 
 from window_rc import PATHIN, PATHOUT, script_name
 from harmonia.algorithms import DiscreteSpectrum
@@ -110,6 +109,12 @@ def process():
         Program output.
 
     """
+    import sys
+
+    logger = logging.getLogger("TwoPointFunction")
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.INFO)
+
     if COMM is not None and COMM.rank == 0:
         pprint(params)
         print(f"\nRunning on {COMM.size} process(es).\n")
@@ -161,7 +166,6 @@ def finalise():
 if __name__ == '__main__':
 
     COMM = MPI.COMM_WORLD
-    warnings.filterwarnings('default', category=IntegrationWarning)
 
     parsed_params = parse_args()
     params, tag = initialise()

@@ -558,11 +558,12 @@ class Couplings:
                         lambda theta, phi: \
                             _angular_kernel(theta, phi, mu, nu, mask=self.mask)
                     )
-                    if any_warnings:
-                        warnings.warn(
-                            "Angular integration warning emitted.\n",
-                            IntegrationWarning
-                        )
+                if any_warnings:
+                    warnings.warn(
+                        "Angular integration warning emitted: {}.\n"
+                        .format(any_warnings[-1].message),
+                        IntegrationWarning
+                    )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
@@ -583,11 +584,12 @@ class Couplings:
                         ),
                         self.disc.attrs['boundary_radius']
                     )
-                    if any_warnings:
-                        warnings.warn(
-                            "Radial integration warning emitted.\n",
-                            IntegrationWarning
-                        )
+                if any_warnings:
+                    warnings.warn(
+                        "Radial integration warning emitted: {}.\n"
+                            .format(any_warnings[-1].message),
+                        IntegrationWarning
+                    )
         elif coupling_type == 'RSD':
             attrs.extend(
                 ['weight_derivative', 'growth_evolution', 'AP_distortion']
@@ -602,11 +604,12 @@ class Couplings:
                     lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
                     self.disc.attrs['boundary_radius']
                 )
-                if any_warnings:
-                    warnings.warn(
-                        "RSD integration warning emitted.\n",
-                        IntegrationWarning
-                    )
+            if any_warnings:
+                warnings.warn(
+                    "RSD integration warning emitted: {}.\n"
+                        .format(any_warnings[-1].message),
+                    IntegrationWarning
+                )
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computed %s.", _info_msg)
@@ -718,15 +721,20 @@ class Couplings:
                 .unfold('natural', return_only='index')
 
         if self.comm is None:
-            coeff_vector = [
-                self.couplings_fixed_index(mu, coupling_type=coupling_type)
-                for mu in index_vector
-            ]
+            coeff_vector = []
+            for ind_idx, mu in enumerate(index_vector):
+                coeff_vector.append(
+                    self.couplings_fixed_index(mu, coupling_type=coupling_type)
+                )
+                if (ind_idx + 1) % (len(index_vector) // 10) == 0 or \
+                        ind_idx + 1 == len(index_vector):
+                    progress = 100 * (ind_idx + 1) / len(index_vector)
+                    self._logger.info("Progress: %d%% computed. ", progress)
         else:
             coeff_processor = lambda mu: \
                 self.couplings_fixed_index(mu, coupling_type=coupling_type)
             coeff_vector = mpi_compute(
-                index_vector, coeff_processor, self.comm
+                index_vector, coeff_processor, self.comm, logger=self._logger
             )
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
@@ -1133,11 +1141,12 @@ class TwoPointFunction(Couplings):
                 shot_noise = rad_int(
                     lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
                 )
-                if any_warnings:
-                    warnings.warn(
-                        "Shot noise integration warning emitted.\n",
-                        IntegrationWarning
-                    )
+            if any_warnings:
+                warnings.warn(
+                    "Shot noise integration warning emitted: {}.\n"
+                        .format(any_warnings[-1].message),
+                    IntegrationWarning
+                )
 
         shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar
 

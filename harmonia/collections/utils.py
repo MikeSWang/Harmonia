@@ -387,7 +387,7 @@ def allocate_segments(tasks=None, total_task=None, total_proc=None):
     return segments
 
 
-def mpi_compute(data_array, mapping, comm, root=0):
+def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     """Multiprocess mapping of data.
 
     For each map to be applied, the input data array is scattered over the
@@ -405,6 +405,8 @@ def mpi_compute(data_array, mapping, comm, root=0):
         MPI communicator.
     root : int, optional
         Rank of the process taken as the root process (default is 0).
+    logger : :class:`logging.Logger` or None, optional
+        Logger (default is `None`).
 
     Returns
     -------
@@ -418,7 +420,14 @@ def mpi_compute(data_array, mapping, comm, root=0):
     )
     data_chunk = data_array[segments[comm.rank]]
 
-    output = [mapping(data_piece) for data_piece in data_chunk]
+    output = []
+    for piece_idx, data_piece in enumerate(data_chunk):
+        output.append(mapping(data_piece))
+        if logger is not None and comm.rank == 0:
+            if (piece_idx + 1) % (len(data_chunk) // 10) == 0 or \
+                    piece_idx + 1 == len(data_chunk):
+                progress = 100 * (piece_idx + 1) / len(data_chunk)
+                logger.info("Progress: %d%% computed. ", progress)
 
     comm.Barrier()
 

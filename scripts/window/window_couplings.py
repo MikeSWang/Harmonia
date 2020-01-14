@@ -110,7 +110,7 @@ def process():
     """
     if COMM is not None and COMM.rank == 0:
         pprint(params)
-        print(f"\nRunning on {COMM.size} processes.\n")
+        print(f"\nRunning on {COMM.size} process(es).\n")
 
     disc = DiscreteSpectrum(params['rmax'], 'Dirichlet', params['kmax'])
 

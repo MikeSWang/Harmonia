@@ -151,7 +151,8 @@ def process():
 
         for catalogue in [data_catalogue, random_catalogue]:
             catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params['boxsize']/2, params['fsky']
+                catalogue['Position'], params['boxsize']/2, params['fsky'],
+                add_vel=params['rsd']
             )
             catalogue['NZ'] = params['nbar'] * catalogue['Weight']
 

@@ -39,7 +39,8 @@ from harmonia.collections.utils import normalise_vector
 _MAX_INT = 4294967295
 
 
-def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
+def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.,
+                             add_vel=False, vel_unit_scale=1.e-3):
     """Load catalogue from a file.
 
     Parameters
@@ -54,6 +55,13 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
         Scaling factor for converting the length unit to Mpc/:math:`h`
         (default is 1.), e.g. ``unit_scale = 1.e-3`` for converting
         Kpc/:math:`h` to Mpc/:math:`h`.
+    add_vel : bool, optional
+        If `True` (default is `False`), add the velocity columns to
+        position columns (for e.g. redshift-space distortions).
+    vel_unit_scale : float, optional
+        Scaling factor for converting the velocity length unit to
+        Mpc/:math:`h` (default is 1.e-3), e.g. ``vel_unit_scale = 1.e-3``
+        for converting Kpc/:math:`h` to Mpc/:math:`h`.
 
     Returns
     -------
@@ -68,6 +76,12 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.):
         catalogue['x'][:, None] * [unit_scale, 0, 0] \
         + catalogue['y'][:, None] * [0, unit_scale, 0] \
         + catalogue['z'][:, None] * [0, 0, unit_scale]
+
+    if add_vel:
+        catalogue['Position'] = \
+            catalogue['vx'][:, None] * [vel_unit_scale, 0, 0] \
+            + catalogue['vy'][:, None] * [0, vel_unit_scale, 0] \
+            + catalogue['vz'][:, None] * [0, 0, vel_unit_scale]
 
     return catalogue
 

@@ -166,7 +166,8 @@ def process():
         catalogue_path = PATHIN/"catalogues"/catalogue_name
 
         data_catalogue = load_catalogue_from_file(
-            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize']
+            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize'],
+            add_vel=params['rsd']
         )
         random_catalogue = RandomCatalogue(
             params['contrast']*params['nbar'], params['boxsize']

@@ -549,12 +549,32 @@ class Couplings:
             trivial_case = not callable(self.mask)
             if trivial_case:  # Kronecker delta
                 coupling_coeff = complex(mu[0] == nu[0] and mu[1] == nu[1])
-
             else:
-                coupling_coeff = ang_int(
-                    lambda theta, phi: \
-                        _angular_kernel(theta, phi, mu, nu, mask=self.mask)
-                )
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        'error', category=IntegrationWarning
+                    )
+                    try:
+                        coupling_coeff = ang_int(
+                            lambda theta, phi: _angular_kernel(
+                                theta, phi, mu, nu, mask=self.mask
+                            )
+                        )
+                    except IntegrationWarning:
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings(
+                                'ignore', category=IntegrationWarning
+                            )
+                            coupling_coeff = ang_int(
+                                lambda theta, phi: _angular_kernel(
+                                    theta, phi, mu, nu, mask=self.mask
+                                )
+                            )
+                        print(
+                            "Angular integration warning for index pair: "
+                            "{} and {}. "
+                            .format(mu, nu)
+                        )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
@@ -677,13 +697,11 @@ class Couplings:
             dict of {int: :class:`numpy.ndarray`}
 
         """
+        coupling_type = self._alias(coupling_type)
+
         _info_msg = "all {} couplings".format(coupling_type.replace("'", ""))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray\
-                .build(disc=self.disc)\
-                .unfold('natural', return_only='index')
+        index_vector = self._reduced_index_vector(coupling_type)
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computing %s.", _info_msg)
@@ -737,6 +755,27 @@ class Couplings:
         raise ValueError(
             f"Unrecognised `coupling_type`: {coupling_type}. "
         )
+
+    def _reduced_index_vector(self, coupling_type):
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            index_vector = SphericalArray\
+                .build(disc=self.disc)\
+                .unfold('natural', return_only='index')
+
+        if coupling_type == 'angular':
+            operated_index_vector = map(
+                lambda tup: (tup[0], tup[1], None),
+                index_vector
+            )
+        else:
+            operated_index_vector = map(
+                lambda tup: (tup[0], None, tup[2]),
+                index_vector
+            )
+
+        return list(set(operated_index_vector))
 
 
 # 2-Point Correlators
@@ -1012,11 +1051,14 @@ class TwoPointFunction(Couplings):
         angular_reduction = (self.couplings['angular'] is None)
         rsd_reduction = not bool(self.growth_rate)
 
-        Phi_mu, Phi_nu = couplings['radial'][mu], couplings['radial'][nu]
+        Phi_mu = couplings['radial'][mu[0]][mu[-1]]
+        Phi_nu = couplings['radial'][nu[0]][nu[-1]]
         if not angular_reduction:
-            M_mu, M_nu = couplings['angular'][mu], couplings['angular'][nu]
+            M_mu = couplings['angular'][mu[0]][mu[1]]
+            M_nu = couplings['angular'][nu[0]][nu[1]]
         if not rsd_reduction:
-            Upsilon_mu, Upsilon_nu = couplings['RSD'][mu], couplings['RSD'][nu]
+            Upsilon_mu = couplings['RSD'][mu[0]][mu[-1]]
+            Upsilon_nu = couplings['RSD'][nu[0]][nu[-1]]
 
         f = self.growth_rate
         p_k = self._mode_powers

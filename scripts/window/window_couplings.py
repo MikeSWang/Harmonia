@@ -160,7 +160,7 @@ def finalise():
     assert confirm_directory_path(PATHOUT/script_name)
 
     filename = f"couplings-({tag}).npy"
-    if COMM is None or COMM.rank != 0:
+    if COMM is None or COMM.rank == 0:
         np.save(PATHOUT/script_name/filename, output)
     else:
         pass

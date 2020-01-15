@@ -146,6 +146,15 @@ from harmonia.algorithms.arrays import SphericalArray
 from harmonia.collections.utils import mpi_compute
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 
+__all__ = ['Couplings', 'TwoPointFunction']
+
+
+class CouplingCoefficientWarning(UserWarning):
+    """Coupling coefficient warning from poor integration.
+
+    """
+    pass
+
 
 # KERNELS
 # -----------------------------------------------------------------------------
@@ -550,31 +559,19 @@ class Couplings:
             if trivial_case:  # Kronecker delta
                 coupling_coeff = complex(mu[0] == nu[0] and mu[1] == nu[1])
             else:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings(
-                        'error', category=IntegrationWarning
+                with warnings.catch_warnings(record=True) as any_warning:
+                    coupling_coeff = ang_int(
+                        lambda theta, phi: _angular_kernel(
+                            theta, phi, mu, nu, mask=self.mask
+                        )
                     )
-                    try:
-                        coupling_coeff = ang_int(
-                            lambda theta, phi: _angular_kernel(
-                                theta, phi, mu, nu, mask=self.mask
-                            )
-                        )
-                    except IntegrationWarning:
-                        with warnings.catch_warnings():
-                            warnings.filterwarnings(
-                                'ignore', category=IntegrationWarning
-                            )
-                            coupling_coeff = ang_int(
-                                lambda theta, phi: _angular_kernel(
-                                    theta, phi, mu, nu, mask=self.mask
-                                )
-                            )
-                        print(
-                            "Angular integration warning for index pair: "
-                            "{} and {}. "
-                            .format(mu, nu)
-                        )
+                if any_warning:
+                    warnings.warn(
+                        "Angular integration warning for index pair "
+                        "{} and {}: {}.\n"
+                            .format(mu, nu, any_warning[-1].message),
+                        category=CouplingCoefficientWarning
+                    )
         elif coupling_type == 'radial':
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
@@ -585,22 +582,38 @@ class Couplings:
             if trivial_case:  # Kronecker delta
                 coupling_coeff = float(mu[-1] == nu[-1])
             else:
-                coupling_coeff = kappa_nu * rad_int(
-                    lambda r: _radial_kernel(
-                        r, mu, nu, k_mu, k_nu, **func_attrs
-                    ),
-                    self.disc.attrs['boundary_radius']
-                )
+                with warnings.catch_warnings(record=True) as any_warning:
+                    coupling_coeff = kappa_nu * rad_int(
+                        lambda r: _radial_kernel(
+                            r, mu, nu, k_mu, k_nu, **func_attrs
+                        ),
+                        self.disc.attrs['boundary_radius']
+                    )
+                if any_warning:
+                    warnings.warn(
+                        "Radial integration warning for index pair "
+                        "{} and {}: {}.\n"
+                            .format(mu, nu, any_warning[-1].message),
+                        category=CouplingCoefficientWarning
+                    )
         elif coupling_type == 'RSD':
             attrs.extend(
                 ['weight_derivative', 'growth_evolution', 'AP_distortion']
             )
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
-            coupling_coeff = kappa_nu / k_nu * rad_int(
-                lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
-                self.disc.attrs['boundary_radius']
-            )
+            with warnings.catch_warnings(record=True) as any_warning:
+                coupling_coeff = kappa_nu / k_nu * rad_int(
+                    lambda r: _RSD_kernel(r, mu, nu, k_mu, k_nu, **func_attrs),
+                    self.disc.attrs['boundary_radius']
+                )
+            if any_warning:
+                warnings.warn(
+                    "RSD integration warning for index pair "
+                    "{} and {}: {}.\n"
+                        .format(mu, nu, any_warning[-1].message),
+                    category=CouplingCoefficientWarning
+                )
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.debug("Computed %s.", _info_msg)
@@ -706,7 +719,7 @@ class Couplings:
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computing %s.", _info_msg)
 
-        with warnings.catch_warnings(record=True) as any_warnings:
+        with warnings.catch_warnings(record=True) as captured_warnings:
             if self.comm is None:
                 coeff_vector = []
                 for ind_idx, mu in enumerate(index_vector):
@@ -729,12 +742,12 @@ class Couplings:
                     index_vector, coeff_processor, self.comm,
                     logger=self._logger
                 )
-        if any_warnings:
-            warnings.warn(
-                "Integration warning for {} couplings emitted: {}.\n"
-                    .format(coupling_type, any_warnings[-1].message),
-                IntegrationWarning
-            )
+
+        unique_warning_msgs = set(map(
+            lambda warning_obj: warning_obj.message, captured_warnings
+        ))
+        for msg in unique_warning_msgs:
+            warnings.warn(msg, IntegrationWarning)
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
 
@@ -1162,14 +1175,19 @@ class TwoPointFunction(Couplings):
         else:
             args = mu, nu, k_mu, k_nu
             kwargs = dict(selection=self.selection, weight=self.weight)
+
             with warnings.catch_warnings(record=True) as any_warnings:
                 shot_noise = rad_int(
                     lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
                 )
-            if any_warnings:
+
+            unique_warning_msgs = set(map(
+                lambda warning_obj: warning_obj.message, any_warnings
+            ))
+            for msg in unique_warning_msgs:
                 warnings.warn(
                     "Shot noise integration warning emitted: {}.\n"
-                        .format(any_warnings[-1].message),
+                        .format(msg),
                     category=IntegrationWarning
                 )
 

@@ -102,14 +102,20 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
+    ini_params.update({'sph_mode_independence': True})
     if parsed_params.load_couplings:
-        external_couplings = np.load(
-            SPECS_PATH/COUPLINGS_FILE.format(
-                parsed_params.spherical_pivot,
-                str(parsed_params.khyb).rstrip("0"),
-                parsed_params.fsky
-            )
-        ).item()
+        try:
+            external_couplings = np.load(
+                SPECS_PATH/COUPLINGS_FILE.format(
+                    parsed_params.spherical_pivot,
+                    str(parsed_params.khyb).rstrip("0"),
+                    parsed_params.fsky
+                )
+            ).item()
+        except FileNotFoundError:
+            pass
+        else:
+            ini_params.update({'sph_mode_independence': False})
 
     pprint(ini_params)
     print("\n")
@@ -177,7 +183,7 @@ def process():
             contrast=params['contrast'],
             pivot=params['spherical_pivot'],
             breakdown=params['breakdown'],
-            independence=True,
+            independence=params['sph_mode_independence'],
         )
         for par_name, par_values in fixed_params.items():
             sph_likelihood_kwargs.update({par_name: par_values['spherical']})

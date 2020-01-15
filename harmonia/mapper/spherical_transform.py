@@ -104,7 +104,7 @@ class SphericalMap:
             warnings.warn(
                 "Fourier modes up to degree {0} are missing. "
                 "It is recommnded they be removed in post-processing instead. "
-                .format(np.min(disc.degrees) - 1)
+                    .format(np.min(disc.degrees) - 1)
             )
 
         radius = disc.attrs['boundary_radius']

@@ -131,14 +131,14 @@ if __name__ == '__main__':
     np.save(
         PATHOUT/"window_multipoles"/(
             f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
-            .format(fsky, split*"-split", padding, mesh)
+                .format(fsky, split*"-split", padding, mesh)
         ),
         xi_ell
     )
     np.save(
         PATHOUT/"window_multipoles"/(
             f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
-            .format(fsky, split*"-split", padding, mesh)
+                .format(fsky, split*"-split", padding, mesh)
         ),
         pk_ell
     )
@@ -169,6 +169,6 @@ if __name__ == '__main__':
     plt.savefig(
         PATHOUT/"window_multipoles"/(
             f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.pdf"
-            .format(fsky, split*"-split", padding, mesh)
+                .format(fsky, split*"-split", padding, mesh)
         )
     )

@@ -854,9 +854,11 @@ class TwoPointFunction(Couplings):
                 )
                 if not np.isclose(self.growth_rate, cosmo_growth_rate):
                     warnings.warn(
-                        "`growth_rate` value inconsistent with `cosmo` model: "
-                        "input {}, model predicted value {}. "
-                        .format(self.growth_rate, cosmo_growth_rate)
+                        "Input `growth_rate` deviates from "
+                        "the general relativistic prediction for "
+                        "input `cosmo` model: "
+                        "input value {}, predicted value {}. "
+                            .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
 
@@ -907,15 +909,15 @@ class TwoPointFunction(Couplings):
             return self._couplings
 
         self._couplings = {'radial': super().compile_couplings('radial')}
-        if self.mask is None:
-            self._couplings['angular'] = None
-        else:
+        if self.mask:
             self._couplings['angular'] = super().compile_couplings('angular')
+        else:
+            self._couplings['angular'] = None
 
         if self.growth_rate:
-            self._couplings['RSD'] = None
-        else:
             self._couplings['RSD'] = super().compile_couplings('RSD')
+        else:
+            self._couplings['RSD'] = None
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Relevant coupling coefficients compiled. ")

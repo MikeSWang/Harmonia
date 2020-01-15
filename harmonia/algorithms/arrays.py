@@ -573,7 +573,7 @@ class SphericalArray:
         elif len(degrees) != len(array):
             raise ValueError(
                 "`degrees` and `array` lengths differ: {} and {}. "
-                .format(len(degrees), len(array))
+                    .format(len(degrees), len(array))
             )
 
         if subarray_type == 'data':

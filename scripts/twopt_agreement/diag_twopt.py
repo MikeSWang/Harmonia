@@ -142,7 +142,7 @@ def diagonal_smoothing():
             smooth_data['measurements'] / correction_ratio
         warnings.warn(
             "2-point measurements downscaled by {:.2f}. "
-            .format(correction_ratio),
+                .format(correction_ratio),
             RuntimeWarning
         )
 

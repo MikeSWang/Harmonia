@@ -321,7 +321,7 @@ if __name__ == '__main__':
         if params.sessionid:
             np.save(
                 PATHOUT/script_name/"{}-({})-[{}].npy"
-                .format(FILE_ROOT, tag, params.sessionid),
+                    .format(FILE_ROOT, tag, params.sessionid),
                 output
             )
         else:

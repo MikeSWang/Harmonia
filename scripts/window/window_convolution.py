@@ -101,12 +101,12 @@ if __name__ == '__main__':
     # Window function.
     mask_multipoles = np.load(
         f"{PATHOUT}window_multipoles/mask_multipoles-{{:.2f}}sky.npy"
-        .format(fsky)
+            .format(fsky)
     ).item()
     try:
         window_multipoles = np.load(
             f"{PATHOUT}window_multipoles/window_multipoles-{{:.2f}}sky.npy"
-            .format(fsky)
+                .format(fsky)
         ).item()
     except FileNotFoundError:
         window_multipoles = None
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     measurements = np.load(
         f"{PATHOUT}window_effects/windowed_measurements"
         "-(fsky={:.2f},contrast={:.1f},mesh=256).npy"
-        .format(fsky, contrast)
+            .format(fsky, contrast)
     ).item()
 
     # for var_name, var_results in measurements.items():

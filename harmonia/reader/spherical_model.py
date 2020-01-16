@@ -717,7 +717,7 @@ class Couplings:
         index_vector = self._reduced_index_vector(coupling_type)
 
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Computing %s.", _info_msg)
+            self._logger.info("Computing %s. ", _info_msg)
         if self.comm is not None:
             self.comm.Barrier()
 
@@ -756,7 +756,7 @@ class Couplings:
         if self.comm is not None:
             self.comm.Barrier()
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Computed %s.", _info_msg)
+            self._logger.info("Computed %s. ", _info_msg)
 
         return sequenced_couplings
 

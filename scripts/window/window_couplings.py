@@ -3,6 +3,7 @@ and survey specifications.
 
 """
 import logging
+import sys
 from argparse import ArgumentParser
 from pprint import pprint
 
@@ -111,10 +112,15 @@ def process():
         Program output.
 
     """
-    import sys
+    logging_handler = logging.StreamHandler(sys.stdout)
+    logging_formatter = logging.Formatter(
+        fmt='[%(asctime)s %(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    logging_handler.setFormatter(logging_formatter)
 
     logger = logging.getLogger("TwoPointFunction")
-    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.addHandler(logging_handler)
     logger.setLevel(logging.INFO)
 
     if COMM is not None and COMM.rank == 0:

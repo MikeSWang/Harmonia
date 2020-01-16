@@ -565,7 +565,7 @@ class Couplings:
                             theta, phi, mu, nu, mask=self.mask
                         )
                     )
-                if any_warning:
+                if any_warning and not np.isclose(coupling_coeff, 0.):
                     warnings.warn(
                         "Angular integration warning for index pair "
                         "{} and {}: {}.\n"
@@ -751,6 +751,8 @@ class Couplings:
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
 
+        if self.comm is not None:
+            self.comm.Barrier()
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computed %s.", _info_msg)
 
@@ -779,13 +781,11 @@ class Couplings:
 
         if coupling_type == 'angular':
             operated_index_vector = map(
-                lambda tup: (tup[0], tup[1], None),
-                index_vector
+                lambda tup: (tup[0], tup[1], None), index_vector
             )
         else:
             operated_index_vector = map(
-                lambda tup: (tup[0], None, tup[2]),
-                index_vector
+                lambda tup: (tup[0], None, tup[2]), index_vector
             )
 
         return list(set(operated_index_vector))

@@ -718,6 +718,8 @@ class Couplings:
 
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("Computing %s.", _info_msg)
+        if self.comm is not None:
+            self.comm.Barrier()
 
         with warnings.catch_warnings(record=True) as captured_warnings:
             if self.comm is None:

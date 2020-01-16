@@ -104,10 +104,11 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0.
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},pivots=[{},{}],knots=[{},{}],{}{}{}{}".format(
+    ini_tag = "map={},pivots=[{},{}],knots=[{},{}],orders={},{}{}{}{}".format(
         parsed_params.map,
         parsed_params.spherical_pivot, parsed_params.cartesian_pivot,
         parsed_params.khyb, parsed_params.kmax,
+        str(parsed_params.multipoles).replace(", ", ","),
         rsd_tag, sampled_tag, fixed_tag,
         bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
     ).strip(",")

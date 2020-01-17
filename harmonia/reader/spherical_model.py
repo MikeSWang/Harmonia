@@ -576,10 +576,9 @@ class Couplings:
             attrs.extend(['bias_evolution'])
             func_attrs = {attr: getattr(self, attr) for attr in attrs}
 
-            trivial_case = not callable(self.mask) and (mu[0] == nu[0]) \
-                and not any(
-                    [callable(func) for attr, func in func_attrs.items()]
-                )
+            trivial_case = (mu[0] == nu[0]) and not any(
+                [callable(func) for attr, func in func_attrs.items()]
+            )
             if trivial_case:  # Kronecker delta
                 coupling_coeff = float(mu[-1] == nu[-1])
             else:

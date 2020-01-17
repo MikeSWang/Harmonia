@@ -1066,14 +1066,14 @@ class TwoPointFunction(Couplings):
         angular_reduction = (self.couplings['angular'] is None)
         rsd_reduction = not bool(self.growth_rate)
 
-        Phi_mu = couplings['radial'][mu[0]][mu[-1]]
-        Phi_nu = couplings['radial'][nu[0]][nu[-1]]
+        Phi_mu = self._access_couplings('radial', mu)
+        Phi_nu = self._access_couplings('radial', nu)
         if not angular_reduction:
-            M_mu = couplings['angular'][mu[0]][mu[1]]
-            M_nu = couplings['angular'][nu[0]][nu[1]]
+            M_mu = self._access_couplings('angular', mu)
+            M_nu = self._access_couplings('angular', nu)
         if not rsd_reduction:
-            Upsilon_mu = couplings['RSD'][mu[0]][mu[-1]]
-            Upsilon_nu = couplings['RSD'][nu[0]][nu[-1]]
+            Upsilon_mu = self._access_couplings('RSD', mu)
+            Upsilon_nu = self._access_couplings('RSD', nu)
 
         f = self.growth_rate
         p_k = self._mode_powers
@@ -1160,7 +1160,8 @@ class TwoPointFunction(Couplings):
                 return 0.j
             M_mu_nu = 1.
         else:
-            M_mu_nu = (self.couplings['angular'][mu])[ell_nu][m_nu+ell_nu]
+            M_mu_nu = \
+                self._access_couplings('angular', mu)[ell_nu][m_nu+ell_nu]
 
         rmax = self.disc.attrs['boundary_radius']
 
@@ -1394,3 +1395,10 @@ class TwoPointFunction(Couplings):
                 mode_variance[idx] /= 2*ell + 1
 
         return mode_variance
+
+    def _access_couplings(self, coupling_type, mu):
+
+        if coupling_type == 'angular':
+            return self.couplings[coupling_type][(mu[0], mu[1], None)]
+        else:
+            return self.couplings[coupling_type][(mu[0], None, mu[2])]

@@ -149,7 +149,8 @@ def process():
         catalogue_path = PATHIN/"catalogues"/catalogue_name
 
         data_catalogue = load_catalogue_from_file(
-            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize']
+            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize'],
+            add_vel=params['rsd']
         )
         random_catalogue = RandomCatalogue(
             params['contrast']*params['nbar'], params['boxsize']
@@ -157,8 +158,7 @@ def process():
 
         for catalogue in [data_catalogue, random_catalogue]:
             catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params['boxsize']/2, params['fsky'],
-                add_vel=params['rsd']
+                catalogue['Position'], params['boxsize']/2, params['fsky']
             )
             catalogue['NZ'] = params['nbar'] * catalogue['Weight']
 

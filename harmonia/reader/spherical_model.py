@@ -569,7 +569,7 @@ class Couplings:
                     warnings.warn(
                         "Angular integration warning for index pair "
                         "{} and {}: {}.\n"
-                            .format(mu, nu, any_warning[-1].message),
+                        .format(mu, nu, any_warning[-1].message),
                         category=CouplingCoefficientWarning
                     )
         elif coupling_type == 'radial':
@@ -593,7 +593,7 @@ class Couplings:
                     warnings.warn(
                         "Radial integration warning for index pair "
                         "{} and {}: {}.\n"
-                            .format(mu, nu, any_warning[-1].message),
+                        .format(mu, nu, any_warning[-1].message),
                         category=CouplingCoefficientWarning
                     )
         elif coupling_type == 'RSD':
@@ -611,7 +611,7 @@ class Couplings:
                 warnings.warn(
                     "RSD integration warning for index pair "
                     "{} and {}: {}.\n"
-                        .format(mu, nu, any_warning[-1].message),
+                    .format(mu, nu, any_warning[-1].message),
                     category=CouplingCoefficientWarning
                 )
 
@@ -912,7 +912,7 @@ class TwoPointFunction(Couplings):
                         "the general relativistic prediction for "
                         "input `cosmo` model: "
                         "input value {}, predicted value {}. "
-                            .format(self.growth_rate, cosmo_growth_rate)
+                        .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
 
@@ -1190,7 +1190,7 @@ class TwoPointFunction(Couplings):
             for msg in unique_warning_msgs:
                 warnings.warn(
                     "Shot noise integration warning emitted: {}.\n"
-                        .format(msg),
+                    .format(msg),
                     category=IntegrationWarning
                 )
 

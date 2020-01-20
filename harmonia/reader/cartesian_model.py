@@ -117,7 +117,7 @@ class WindowedPowerSpectrum:
                     warnings.warn(
                         "`growth_rate` value inconsistent with `cosmo` model: "
                         "input {}, model predicted value {}. "
-                            .format(self.growth_rate, cosmo_growth_rate)
+                        .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
         self.mask_multipoles = mask_multipoles

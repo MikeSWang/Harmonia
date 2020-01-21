@@ -29,7 +29,7 @@ def fiducial_distance(z):
     Returns
     -------
     float, array_like
-        Comoving distance.
+        Fiducial comoving distance.
 
     """
     return _fiducial_cosmology.comoving_distance(z)

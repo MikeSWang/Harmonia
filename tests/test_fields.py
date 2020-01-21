@@ -6,7 +6,7 @@ from harmonia.algorithms.fields import (
     generate_gaussian_random_field,
     generate_lognormal_random_field,
     generate_regular_grid,
-    lognormal_transform, 
+    lognormal_transform,
     poisson_sample,
     populate_particles,
     threshold_clip,
@@ -29,9 +29,7 @@ def test_generate_regular_grid(cell_size, num_mesh):
 def test_generate_gaussian_random_field(boxsize, num_mesh):
 
     field, vector_field = generate_gaussian_random_field(
-        boxsize, num_mesh, power_spectrum,
-        clip=False,
-        return_disp=True
+        boxsize, num_mesh, power_spectrum, clip=False, return_disp=True
     )
 
     assert np.shape(field) == (num_mesh,) * 3

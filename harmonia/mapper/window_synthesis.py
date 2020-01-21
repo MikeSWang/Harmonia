@@ -15,6 +15,7 @@ high-density synthetic catalogues.
 import warnings
 
 import numpy as np
+import psutil
 from mcfit import P2xi
 from nbodykit.lab import FKPCatalog, UniformCatalog
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
@@ -67,6 +68,8 @@ class SurveyWindow:
             source, mask, selection, weight
 
         self.synthetic_catalogue = None
+        self._raw_power_multipoles = None
+
         self.power_multipoles = None
         self.correlation_multipoles = None
 
@@ -109,7 +112,7 @@ class SurveyWindow:
             raise ValueError(f"Unrecognised source type: {self.source}. ")
 
         if callable(self.mask):
-            catalogue['Weight'] *= self.mask(catalogue['Location'])
+            catalogue['Selection'] *= self.mask(catalogue['Location'])
         if callable(self.selection):
             catalogue['Weight'] *= self.selection(catalogue['Location'])
         if callable(self.weight):
@@ -121,7 +124,7 @@ class SurveyWindow:
             catalogue, None, BoxSize=padding*boxsize
         )
 
-    def power_spectrum_multipoles(self, orders, kmin=0., kmax=None, dk=None,
+    def power_spectrum_multipoles(self, orders, kmin=1.e-6, kmax=None, dk=None,
                                   **mesh_kwargs):
         """Determine window function power spectrum multipoles from the
         synthetic catalogue.
@@ -131,7 +134,7 @@ class SurveyWindow:
         orders : int, array_like
             Multipole orders.
         kmin : float, optional
-            Minimum wavenumber (default is 0.).
+            Minimum wavenumber (default is 1.e-6).
         kmax, dk : float or None, optional
             Maximum wavenumber or wavenumber bin size (default is `None`).
             If `None`, `kmax` is the Nyquist wavenumber determined from
@@ -163,6 +166,7 @@ class SurveyWindow:
         """
         LOG10_K_MAX = 1.
         NUM_K_EXTENSION = 1000
+        NUM_INTERPOL_DISPLAY = pow(2, 10)
 
         if self.synthetic_catalogue is None:
             raise AttributeError(
@@ -171,7 +175,10 @@ class SurveyWindow:
             )
 
         if 'num_mesh' not in mesh_kwargs:
-            mesh_kwargs['num_mesh'] = 512
+            if psutil.virtual_memory().available > 10 * 768**3:
+                mesh_kwargs['num_mesh'] = 768
+            else:
+                mesh_kwargs['num_mesh'] = 512
 
         cartesian_map = CartesianMap(self.synthetic_catalogue, **mesh_kwargs)
 
@@ -182,7 +189,7 @@ class SurveyWindow:
             dk = np.sqrt(3) * 2*np.pi \
                 / min(self.synthetic_catalogue.attrs['BoxSize'])
 
-        if self.power_multipoles is not None:
+        if self._raw_power_multipoles is not None:
             warnings.warn(
                 "Power spectrum multipoles have already been computed; "
                 "they are now being overwritten. "
@@ -199,47 +206,56 @@ class SurveyWindow:
                 category=RuntimeWarning,
                 message="divide by zero encountered in double_scalars"
             )
-            power_multipoles = cartesian_map.power_multipoles(
+            measured_power_multipoles = cartesian_map.power_multipoles(
                 orders, kmin=kmin, kmax=kmax, dk=dk
             )
 
-        k_samples = power_multipoles['k']
+        normalisation_amplitude = measured_power_multipoles['power_0'][0].real
 
-        self.power_multipoles = {
-            'power_{:d}'.format(ell):
-                power_multipoles['power_{:d}'.format(ell)]
+        self._raw_power_multipoles = {
+            ell: measured_power_multipoles['power_{:d}'.format(ell)]
+                 / normalisation_amplitude
             for ell in orders
         }
 
-        normalisation_amplitude = self.power_multipoles['power_0'][0].real
-        self.power_multipoles.update(
-            {
-                var_name: var_vals / normalisation_amplitude
-                for var_name, var_vals in self.power_multipoles.items()
-                if 'power_' in var_name
-            }
-        )
-
-        extension_padding = np.mean(np.abs(np.diff(k_samples)))
         # Linear padding and then logarithmic padding.
-        extension_first_leg = np.max(k_samples) \
+        k_measured = measured_power_multipoles['k']
+        extension_padding = np.mean(np.abs(np.diff(k_measured)))
+        extension_first_leg = np.max(k_measured) \
             + extension_padding * np.arange(1, NUM_K_EXTENSION)
         extension_second_leg = np.logspace(
-            np.log10(np.max(k_samples) + NUM_K_EXTENSION*extension_padding),
+            np.log10(np.max(k_measured) + extension_padding*NUM_K_EXTENSION),
             LOG10_K_MAX,
             num=NUM_K_EXTENSION
         )
+        k_extension = np.append(extension_first_leg, extension_second_leg)
 
-        self.power_multipoles['k'] = np.append(
-            k_samples, np.append(extension_first_leg, extension_second_leg)
+        self._raw_power_multipoles.update(
+            {'k': np.append(k_measured, k_extension)}
         )
-        self.power_multipoles.update(
+        self._raw_power_multipoles.update(
             {
-                var_name: np.append(var_vals, np.zeros(2*NUM_K_EXTENSION-1))
-                for var_name, var_vals in self.power_multipoles.items()
-                if 'power_' in var_name
+                ell: np.append(
+                    self._raw_power_multipoles[ell],
+                    np.zeros(2*NUM_K_EXTENSION-1)
+                )
+                for ell in orders
             }
         )
+
+        k_samples = np.logspace(
+            *np.log10(self._raw_power_multipoles['k'][[0, -1]]),
+            num=NUM_INTERPOL_DISPLAY
+        )
+        self.power_multipoles = {
+            'power_{:d}'.format(ell): Spline(
+                self._raw_power_multipoles['k'],
+                self._raw_power_multipoles[ell],
+                k=1
+            )(k_samples)
+            for ell in orders
+        }
+        self.power_multipoles.update({'k': k_samples})
 
         return self.power_multipoles
 
@@ -273,25 +289,14 @@ class SurveyWindow:
                 "they are now being overwritten. "
             )
 
-        try:
-            assert hasattr(
-                self.power_multipoles, 'power_{:d}'.format(max(orders))
-            )
-            power_multipoles = self.power_multipoles
-        except (AttributeError, AssertionError):
-            power_multipoles = self.power_spectrum_multipoles(
-                orders, **multipoles_kwargs
-            )
+        if not hasattr(self._raw_power_multipoles, max(orders)):
+            _ = self.power_spectrum_multipoles(orders, **multipoles_kwargs)
 
-        k = power_multipoles['k']
-        pk_ell = {
-            ell: power_multipoles['power_{:d}'.format(ell)]
-            for ell in orders
-        }
-
+        k = self._raw_power_multipoles['k']
         k_interpol = np.logspace(*np.log10(k[[0, -1]]), num=NUM_INTERPOL)
+
         pk_ell_interpol = {
-            ell: Spline(k, pk_ell[ell], k=1)(k_interpol)
+            ell: Spline(k, self._raw_power_multipoles[ell], k=1)(k_interpol)
             for ell in orders
         }
 
@@ -322,13 +327,11 @@ class SurveyWindow:
             for ell in orders
         }
 
-        self.correlation_multipoles = {'s': s_interpol}
-        self.correlation_multipoles.update(
-            {
-                'correlation_{:d}'.format(ell):
-                    xi_ell_interpol[ell] / normalisation_amplitude
-                for ell in orders
-            }
-        )
+        self.correlation_multipoles = {
+            'correlation_{:d}'.format(ell):
+                xi_ell_interpol[ell] / normalisation_amplitude
+            for ell in orders
+        }
+        self.correlation_multipoles.update({'s': s_interpol})
 
         return self.correlation_multipoles

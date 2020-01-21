@@ -32,12 +32,6 @@ from harmonia.collections.utils import unit_const
 class SphericalMap:
     r"""Discretised spherical Fourier map from catalogue sources.
 
-    Notes
-    -----
-    The spherical degrees of the map is usually assumed to start at
-    :math:`\ell = 0` (see :ref:`warning <degree-index-warning>` in
-    :mod:`~harmonia.reader.spherical_model`).
-
     Parameters
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
@@ -46,12 +40,13 @@ class SphericalMap:
         Data catalogue of particles.
     rand : :class:`nbodykit.base.catalog.CatalogSource` *or None, optional*
         Random catalogue of particles (default is `None`).
+    source : {'simulation', 'survey'}, optional
+        Catalogue source, either ``'simulation'`` for simulations (with
+        coordianate origin at a corner) or ``'survey'`` data (with
+        coordianate origin at the centre).
     mean_density_data, mean_density_rand : float or None, optional
         Mean particle number density (in cubic :math:`h`/Mpc) of the data
         or random catalogue (default is `None`).
-    source : {'simulation', 'survey'}, optional
-        Catalogue source, either ``'simulation'`` for simulations or
-        ``'survey'`` data.
 
     Attributes
     ----------
@@ -88,22 +83,22 @@ class SphericalMap:
             "Centred positions stored in 'Location' column. "
         ),
         'inscribing': (
-            "Bounding sphere is not inscribed in %s catalogue: "
-            "boxsize %.1f; diameter %.1f. "
+            "Bounding sphere larger than the %s catalogue: "
+            "boxsize %.1f < diameter %.1f. "
         ),
         'integral_constraint': "Integral constraint imposed. ",
         'method': "Default method for computing expectation set to %s. ",
         'spherical_cut': "Mock %s simulation box cut to sphere. ",
     }
 
-    def __init__(self, disc, data, rand=None, mean_density_data=None,
-                 mean_density_rand=None, source='simulation'):
+    def __init__(self, disc, data, rand=None, source='simulation',
+                 mean_density_data=None, mean_density_rand=None):
 
         self.disc = disc
         if np.min(disc.degrees) > 0:
             warnings.warn(
-                "Fourier modes up to degree {0} are missing. "
-                "It is recommnded they be removed in post-processing instead. "
+                "Fourier modes up to degree {0} are missing. It is "
+                "recommended they be removed in post-processing instead. "
                 .format(np.min(disc.degrees) - 1)
             )
 
@@ -112,13 +107,12 @@ class SphericalMap:
 
         if source == 'simulation':
             data_boxsize = data.attrs['BoxSize']
-            if not np.allclose(data_boxsize, 2*radius):
-                self._logger.info(
+            if any(data_boxsize < 2*radius):
+                self._logger.debug(
                     self._msg['inscribing'], "data", data_boxsize, 2*radius
                 )
 
-            data['Location'] = data['Position'] \
-                - np.divide(data_boxsize, 2)
+            data['Location'] = data['Position'] - np.divide(data_boxsize, 2)
             self._logger.debug(self._msg['centering'], "data")
 
             data['Selection'] *= spherical_cut(data['Location'], radius)
@@ -139,7 +133,7 @@ class SphericalMap:
                     warnings.warn(
                         self._msg['boxsizes'], data_boxsize, rand_boxsize
                     )
-                if not np.allclose(rand_boxsize, 2*radius):
+                if any(data_boxsize < 2*radius):
                     self._logger.info(
                         self._msg['inscribing'],
                         "random", rand_boxsize, 2*radius
@@ -193,7 +187,7 @@ class SphericalMap:
         summation.
 
         Parity relations between spherical harmonics of opposite orders but
-        the same degree are employed to reduce computational effort.
+        the same degree are employed to reduce computational redundancy.
 
         Parameters
         ----------
@@ -328,7 +322,7 @@ class SphericalMap:
 
         Returns
         -------
-        spherical_power : float, array_like
+        float, array_like
             Spherically recovered power.  The major index corresponds to
             spherical degrees and the minor index to matching spherical
             orders.
@@ -336,12 +330,9 @@ class SphericalMap:
         """
         density_contrast_coeff = self.density_constrast(method=method)
 
-        spherical_power = self._square_amplitude(
-            density_contrast_coeff,
-            normalisation=self.disc.normalisations
+        return self._square_amplitude(
+            density_contrast_coeff, normalisation=self.disc.normalisations
         )
-
-        return spherical_power
 
     def two_points_pivoted(self, pivot, method=None, order_collapse=False):
         r"""Comptute 2-point values given a pivot for unpacking indices to
@@ -372,8 +363,7 @@ class SphericalMap:
         density_contrast_coeff = self.density_constrast(method=method)
 
         return self._compute_pivoted_two_points_from_coeff(
-            density_contrast_coeff, self.disc,
-            pivot=pivot,
+            density_contrast_coeff, self.disc, pivot,
             order_collapse=order_collapse
         )
 
@@ -441,14 +431,11 @@ class SphericalMap:
         .. |ndarray| replace:: :class:`numpy.ndarray`
 
         """
+        collapse = 'rms' if order_collapse else None
+
         delta_ellmn = SphericalArray.build(
             disc=disc, filling=density_contrast_coeff
         )
-
-        if order_collapse:
-            collapse = 'rms'
-        else:
-            collapse = None
 
         delta_ellmn_flat = delta_ellmn.unfold(
             pivot, collapse=collapse, return_only='data'

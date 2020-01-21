@@ -9,8 +9,8 @@ from harmonia.reader import Couplings, TwoPointFunction
 DISC_PARAMS = dict(
     radius=100.,
     condition='Dirichlet',
-    cutoff=0.1,
-    cuton=0.,
+    highcut=0.1,
+    lowcut=0.,
     maxdeg=None,
     mindeg=0,
 )
@@ -83,14 +83,14 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
     )
 
     variance_model = TwoPointFunction(
-        discrete_spectrum, growth_rate=None, cosmo=fiducial_cosmology,
+        discrete_spectrum, growth_rate=0., cosmo=fiducial_cosmology,
     )
     variance_matrix = variance_model.mode_variance(
         pivot, part=part, **TWO_POINT_TEST_PARAMS
     )
 
     two_point_model_angular_reduction = TwoPointFunction(
-        discrete_spectrum, growth_rate=None, cosmo=fiducial_cosmology
+        discrete_spectrum, growth_rate=0., cosmo=fiducial_cosmology
     )
     covariance_matrix_angular_reduction = \
         two_point_model_angular_reduction.two_point_covariance(

@@ -2,9 +2,9 @@
 Utility tools (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
-Provide convenience system utilities for input/output handling, processing,
-formatting and data manipulation, and common algebraic, geometric and
-statistical computational algorithms.
+Provide utilities for input/output handling, processing, formatting and
+data type manipulation, and common algebraic, geometric and statistical
+algorithms.
 
 
 System utilities
@@ -52,7 +52,7 @@ Computational utilities
     zero_const
     unit_const
     const_function
-    matrix_log_det
+    mat_logdet
     covar_to_corr
     binary_search
 
@@ -80,6 +80,7 @@ from __future__ import division
 import os
 import warnings
 from collections import defaultdict
+from pathlib import Path
 from glob import glob
 
 import numpy as np
@@ -99,7 +100,7 @@ __all__ = [
     'zero_const',
     'unit_const',
     'const_function',
-    'matrix_log_det',
+    'mat_logdet',
     'covar_to_corr',
     'binary_search',
     'normalise_vector',
@@ -109,8 +110,6 @@ __all__ = [
     'bin_edges_from_centres',
     'smooth_by_bin_average',
 ]
-
-_MAX_INT = np.iinfo(np.int64).max
 
 
 # SYSTEM UTILITIES
@@ -130,10 +129,11 @@ def confirm_directory_path(dir_path):
         `True` if `dir_path` exists or has been created.
 
     """
-    if isinstance(dir_path, str) and not dir_path.endswith("/"):
-        dir_path += "/"
+    dir_path = Path(dir_path)
+
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
+
     return os.path.exists(dir_path)
 
 
@@ -142,7 +142,7 @@ def get_filename(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : str or :class:`pathlib.Path`
         Full or partial file path.
 
     Returns
@@ -151,12 +151,7 @@ def get_filename(file_path):
         File name without extension.
 
     """
-    try:
-        from pathlib import Path
-    except ImportError:
-        return os.path.splitext(os.path.basename(file_path))[0]
-    else:
-        return Path(file_path).stem
+    return Path(file_path).stem
 
 
 def collate_data_files(file_path_pattern, file_extension, headings=None,
@@ -186,7 +181,7 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
         Collated data.
     collation_count : int
         Number of data files collated.
-    last_collated_file : str
+    last_file : str
         Last collated file name.
 
     Raises
@@ -201,8 +196,7 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
 
     """
     all_files = glob(file_path_pattern)
-    collation_count = len(all_files)
-    last_collated_file = get_filename(all_files[-1])
+    last_file = get_filename(all_files[-1])
 
     if file_extension.lower().endswith('npy'):
         all_data = [
@@ -222,7 +216,9 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
             #     to_concat.append(np.atleast_1d(block_entry))
             collated_data[key] = np.concatenate(to_concat, axis=0)
 
-        return collated_data, collation_count, last_collated_file
+        collation_count = max(map(len, collated_data.values()))
+
+        return collated_data, collation_count, last_file
 
     if file_extension.lower().endswith(('txt', 'dat')):
         if headings is None or columns is None:
@@ -237,17 +233,15 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
 
         collated_data = defaultdict(list)
         for key_idx, key in enumerate(headings):
-            collated_data[key] = np.concatenate(
-                [
-                    np.atleast_2d(
-                        np.loadtxt(file, usecols=columns)[:, key_idx]
-                    )
-                    for file in all_files
-                ],
-                axis=0
-            )
+            to_concat = [
+                np.atleast_2d(np.loadtxt(file, usecols=columns)[:, key_idx])
+                for file in all_files
+            ]
+            collated_data[key] = np.concatenate(to_concat, axis=0)
 
-        return collated_data, collation_count, last_collated_file
+        collation_count = max(map(len, collated_data.values()))
+
+        return collated_data, collation_count, last_file
 
     raise NotImplementedError(
         f"Unsupported file extension: {file_extension}. "
@@ -262,44 +256,36 @@ def overwrite_protection(outpath, outname):
 
     Parameters
     ----------
-    outpath : str
+    outpath : str or :class:`pathlib.Path`
         Write-out directory path.
     outname : str
         Write-out filename.
 
     Returns
     -------
-    write_permission : bool
+    bool
         Write permission.
 
     """
-    write_permission = False
+    outpath = Path(outpath)
 
     if not os.path.exists(outpath):
-        warnings.warn(f"{outpath} does not exist. ")
-        return write_permission
+        warnings.warn(f"{outpath} does not exist. ", RuntimeWarning)
+        return True
 
-    try:
-        overwrite_check = os.path.exists(outpath/outname)
-    except TypeError:
-        overwrite_check = os.path.exists(outpath + outname)
-    finally:
-        if not overwrite_check:
-            write_permission = True
-        else:
-            grant_permission = input(
-                "Saving would overwrite existing file at destination. "
-                "Do you want to continue? [y/n] "
-            )
-            if grant_permission.lower().startswith('y'):
-                write_permission = True
-            else:
-                write_permission = False
-                warnings.warn(
-                    "Overwrite permission denied. File not saved. "
-                )
+    if not os.path.exists(outpath/outname):
+        return True
 
-    return write_permission
+    grant_permission = input(
+        "Saving would overwrite existing file at destination. "
+        "Do you want to continue? [y/n] "
+    )
+
+    if grant_permission.lower().startswith('y'):
+        return True
+
+    warnings.warn("Overwrite permission denied. File not saved. ")
+    return False
 
 
 def allocate_tasks(total_task, total_proc):
@@ -321,7 +307,19 @@ def allocate_tasks(total_task, total_proc):
     tasks : list of int
         Number of tasks for each process.
 
+    Raises
+    ------
+    TypeError
+        If `total_task` or `total_proc` is not an integer.
+
     """
+    try:
+        total_task, total_proc = map(int, (total_task, total_proc))
+    except TypeError:
+        raise TypeError(
+            "`total_task` and `total_proc` must have integer values. "
+        )
+
     num_task_remaining, num_proc_remaining, tasks = total_task, total_proc, []
 
     while num_task_remaining > 0:
@@ -361,19 +359,8 @@ def allocate_segments(tasks=None, total_task=None, total_proc=None):
         Index slice of the segment of tasks that each process should
         receive.
 
-    Raises
-    ------
-    ValueError
-        If either `ntask` or `nproc` is `None` while `tasks` is also
-        `None`.
-
     """
     if tasks is None:
-        if total_task is None or total_proc is None:
-            raise ValueError(
-                "`total_task` and `total_proc` cannot be None "
-                "while `tasks` is None. "
-            )
         tasks = allocate_tasks(total_task, total_proc)
     if total_proc is None:
         total_proc = len(tasks)
@@ -415,31 +402,43 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
         other than `root`.
 
     """
+    if root + 1 > comm.size:
+        root = 0
+        warnings.warn(
+            "Input `root` set to 0 as it exceeds the number of processes. "
+        )
+
+    def progress_log(current_idx, task_length):
+
+        if comm.rank == 0:
+            logged_process = "first"
+        elif comm.rank == comm.size - 1:
+            logged_process = "last"
+        else:
+            logged_process = None
+
+        block_length = max(task_length // 4, 1)
+        progress_length = current_idx + 1
+        progress_percentage = 100 * progress_length / task_length
+
+        if logger and logged_process:
+            if progress_length % block_length == 0 \
+                    or progress_length == task_length:
+                logger.info(
+                    "Progress for the %s process: %d%% computed. ",
+                    logged_process, progress_percentage
+                )
+
     segments = allocate_segments(
         total_task=len(data_array), total_proc=comm.size
     )
     data_chunk = data_array[segments[comm.rank]]
 
     output = []
+    chunk_length = len(data_chunk)
     for piece_idx, data_piece in enumerate(data_chunk):
         output.append(mapping(data_piece))
-        if logger is not None and comm.rank in [0, comm.size - 1]:
-            rank_process = "first" if comm.rank == 0 else "last"
-            progress_block = len(data_chunk) // 4
-            if progress_block > 0:
-                if (piece_idx + 1) % progress_block == 0 or \
-                        piece_idx + 1 == len(data_chunk):
-                    progress = 100 * (piece_idx + 1) / len(data_chunk)
-                    logger.info(
-                        "Progress for the %s process: %d%% computed. ",
-                        rank_process, progress
-                    )
-            else:
-                progress = 100 * (piece_idx + 1) / len(data_chunk)
-                logger.info(
-                    "Progress for the %s process: %d%% computed. ",
-                    rank_process, progress
-                )
+        progress_log(piece_idx, chunk_length)
 
     comm.Barrier()
 
@@ -559,13 +558,12 @@ def format_float(x, case, use_sci_dp=3):
 
 
 def sort_dict_to_list(dict_data):
-    """Sort a dictionary by its integer keys and return a list of its
-    values by keys in ascending order.
+    """Sort dictionary values by key in ascending order to a list.
 
     Parameters
     ----------
     dict_data : dict
-        Dictionary with integer keys.
+        Dictionary data to be sorted.
 
     Returns
     -------
@@ -575,19 +573,13 @@ def sort_dict_to_list(dict_data):
     Raises
     ------
     TypeError
-        If `dict_data` is not a dictionary, or its keys are not integers.
+        If `dict_data` is not a dictionary.
 
     """
-    if not isinstance(dict_data, dict):
+    try:
+        sorted_list = [dict_data[key] for key in sorted(dict_data.keys())]
+    except AttributeError:
         raise TypeError("`dict_data` must be a dictionary. ")
-
-    keys = list(dict_data.keys())
-    if not all([isinstance(key, int) for key in keys]):
-        raise TypeError("`dict_data` keys must be integers. ")
-
-    sorted_keys = np.sort(keys)
-
-    sorted_list = [dict_data[key] for key in sorted_keys]
 
     return sorted_list
 
@@ -618,11 +610,9 @@ def sort_list_to_dict(list_data, int_keys):
     if len(list_data) != len(int_keys):
         raise ValueError("`list_data` and `int_keys` lengths do not match. ")
 
-    order = np.argsort(int_keys)
-
     sorted_dict = {
         int_keys[order_idx]: list_data[order_idx]
-        for order_idx in order
+        for order_idx in np.argsort(int_keys)
     }
 
     return sorted_dict
@@ -682,7 +672,7 @@ def const_function(const):
     return lambda *args, **kwargs: const
 
 
-def matrix_log_det(matrix, diag=False):
+def mat_logdet(matrix, diag=False):
     """Calculate logarithm of the determinant of a positive-definite
     matrix.
 
@@ -712,13 +702,12 @@ def matrix_log_det(matrix, diag=False):
 
     if diag:
         sign_det = np.prod(np.sign(np.diag(matrix)))
-        if sign_det != 1.:
-            raise ValueError("`matrix` is not positive definite. ")
         log_det = np.sum(np.log(np.abs(np.diag(matrix))))
     else:
         sign_det, log_det = np.linalg.slogdet(matrix)
-        if sign_det != 1.:
-            raise ValueError("`matrix` is not positive definite. ")
+
+    if sign_det != 1.:
+        raise ValueError("`matrix` is not positive definite. ")
 
     return log_det
 
@@ -739,7 +728,7 @@ def covar_to_corr(covar):
     Raises
     ------
     NotImplementedError
-        If `covar` data type is complex.
+        If `covar` is complex.
 
     """
     if np.iscomplexobj(covar):
@@ -779,7 +768,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
 
     """
     if maxnum is None:
-        maxnum = _MAX_INT
+        maxnum = np.iinfo(np.int64).max
 
     if a == b:
         raise ValueError(
@@ -788,8 +777,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
     if a > b:
         a, b = b, a
         warnings.warn(
-            f"Initial interval [{a}, {b}] reordered to [{b}, {a}]. ",
-            RuntimeWarning
+            f"Initial interval [{a}, {b}] reordered to [{b}, {a}]. "
         )
 
     def _scan_interval(func, a, b, dx):
@@ -1057,7 +1045,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
 def smooth_by_bin_average(data, bin_edges, x_coarse_key, y_coarse_key,
                           dx_coarse_key=None, dy_coarse_key=None):
     """Smooth data points by simple average binning in coordinates, with
-    optional binning of uncertainties in quadratic.
+    optional binning of uncertainties in quadrature.
 
     Parameters
     ----------

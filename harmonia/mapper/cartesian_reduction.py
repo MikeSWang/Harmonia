@@ -59,16 +59,18 @@ class CartesianMap:
         )
         self._logger.debug("FKP catalogue painted to mesh. ")
 
-    def power_multipoles(self, orders, kmin=0., kmax=None, dk=None):
+    def power_multipoles(self, orders, kmin=1.e-4, kmax=None, dk=None):
         """Compress the FFT mesh into power spectrum multipoles.
 
         Parameters
         ----------
         orders : list of int
             Orders of the power multipoles.
+        kmin : float, optional
+            The wavenumber minimum to be used (default is 1.e-4).
         kmin, kmax, dk : float or None, optional
-            The wavenumber minimum, maximum or bin size to be used
-            (default is `None`).
+            The wavenumber maximum or bin size to be used (default is
+            `None`).
 
         Returns
         -------

@@ -21,12 +21,12 @@ from .bases import spherical_besselj, spherical_besselj_root
 
 class DiscreteSpectrum:
     r"""Discrete Fourier spectrum for the given radial boundary condition,
-    indexed by spherical degrees :math:`\ell` associated with the spherical
-    harmonic and spherical Bessel functions.
+    indexed by spherical degree :math:`\ell` associated with the spherical
+    harmonic and Bessel functions.
 
     When a boundary condition is prescribed at some maximum radius
-    :math:`r = R`, the allowed wavenumbers for the discretised spectrum
-    are indexed by tuples :math:`(\ell, n)` of double indices
+    :math:`r = R`, wavenumbers for the discretised spectrum are indexed by
+    tuple :math:`(\ell, n)`,
 
     .. math::
 
@@ -38,7 +38,7 @@ class DiscreteSpectrum:
     the boundary condition is Dirichlet, or zeros of their derivatives if
     the boundary condition is Neumann.  The spherical depth
     :math:`n_{\textrm{max},\ell}` is the maximum number of radial
-    wavenumbers allowed in the scale cutoff range for each degree.  The
+    wavenumbers for each degree in the wavenumber cutoff range.  The
     normalisation coefficients derived from completeness relations are
 
     .. math::
@@ -58,11 +58,11 @@ class DiscreteSpectrum:
         Boundary radius.
     condition : {'dirichlet', 'neumann'}
         Either Dirichlet or Neumann boundary condition.
-    cutoff : float
+    highcut : float
         Fourier spectrum upper cutoff.
     maxdeg : int or None, optional
         Maximum spherical degree (default is `None`).
-    cuton : float, optional
+    lowcut : float, optional
         Fourier spectrum lower cutoff (default is 0.).
     mindeg : int, optional
         Minimum spherical degree (default is 0).
@@ -76,8 +76,8 @@ class DiscreteSpectrum:
     roots : *dict of* {*int*: :class:`numpy.ndarray`}
         Spherical Bessel roots associated with the discrete spectrum.
     mode_count : int
-        Total number of allowed spherical Fourier modes counting spherical
-        order multuplicities.
+        Total number of spherical Fourier modes counting spherical order
+        multuplicities.
     attrs : dict
         Discrete spectrum attributes, which contains the following keys:
         ``'min_wavenumber'``, ``'max_wavenumber'`` for minimum and maximum
@@ -95,11 +95,12 @@ class DiscreteSpectrum:
 
     _logger = logging.getLogger("DiscreteSpectrum")
 
-    def __init__(self, radius, condition, cutoff, maxdeg=None, cuton=0.,
+    def __init__(self, radius, condition, highcut, maxdeg=None, lowcut=0.,
                  mindeg=0, comm=None):
 
         condition = self._alias(condition)
-        disc_args = (radius, condition, cuton, cutoff, mindeg, maxdeg)
+
+        disc_args = (radius, condition, lowcut, highcut, mindeg, maxdeg)
 
         self.degrees, self.depths, self.roots, self.mode_count = \
             self._discretise(*disc_args, logger=self._logger, comm=comm)
@@ -107,8 +108,8 @@ class DiscreteSpectrum:
         self.comm = comm
 
         self.attrs = {
-            'min_wavenumber': cuton,
-            'max_wavenumber': cutoff,
+            'min_wavenumber': lowcut,
+            'max_wavenumber': highcut,
             'boundary_radius': radius,
             'bounded_volume': (4*np.pi/3) * radius**3,
             'boundary_condition': condition,
@@ -130,8 +131,8 @@ class DiscreteSpectrum:
         str_args = (
             self.attrs['boundary_condition'],
             self.attrs['boundary_radius'],
-            self.attrs['min_wavenumber'],
-            self.attrs['max_wavenumber'],
+            np.around(self.attrs['min_wavenumber'], decimals=4),
+            np.around(self.attrs['max_wavenumber'], decimals=4),
         )
 
         return str_root.format(*str_args)
@@ -155,7 +156,7 @@ class DiscreteSpectrum:
         }
 
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Spectral root indices compiled. ")
+            self._logger.debug("Spectral root indices compiled. ")
 
         return self._root_indices
 
@@ -178,7 +179,7 @@ class DiscreteSpectrum:
         }
 
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Spectral wavenumbers computed. ")
+            self._logger.debug("Spectral wavenumbers computed. ")
 
         return self._wavenumbers
 
@@ -212,7 +213,7 @@ class DiscreteSpectrum:
             }
 
         if self.comm is None or self.comm.rank == 0:
-            self._logger.info("Spectral normalisations computed. ")
+            self._logger.debug("Spectral normalisations computed. ")
 
         return self._normalisations
 
@@ -247,10 +248,11 @@ class DiscreteSpectrum:
         """
         to_log = (logger is not None) and (comm is None or comm.rank == 0)
 
-        derivative = (condition == 'neumann') and (condition != 'dirichlet')
+        derivative = (condition == 'neumann')
+
+        degrees, depths, roots = [], [], {}
 
         ell, mode_count = ellmin, 0
-        degrees, depths, roots = [], [], {}
         while True:
             if ellmax is not None:
                 if ell > ellmax:
@@ -259,6 +261,7 @@ class DiscreteSpectrum:
                     break
 
             u_ell, n_ell = [], 0
+
             current_root = spherical_besselj_root(
                 ell, n_ell+1, derivative=derivative
             )

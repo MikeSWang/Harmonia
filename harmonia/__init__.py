@@ -24,5 +24,5 @@
 __author__ = "Mike (Shengbo) Wang"
 __copyright__ = "Copyright 2019, Harmonia / M S Wang"
 __date__ = "2019"
-__license__ = "GPL 3.0"
-__version__ = "0.0.dev0"
+__license__ = "GPLv3"
+__version__ = "0.1.0"

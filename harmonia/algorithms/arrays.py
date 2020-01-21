@@ -20,34 +20,33 @@ from .bases import spherical_besselj_root
 
 
 class SphericalArray:
-    r"""Spherical arrays with morphable structure.
+    r"""Data arrays for spherically decomposed cosmological fields.
 
-    The array is initialised in the natural structure together with an
-    index array of the same structure.  A natural structure array is a
-    length-:math:`\ell` sequence of
+    The data array is initialised, together with an index array, in the
+    natural structure as a length-:math:`\ell` sequence of
     :math:`(m_\ell \times n_\ell)`-rectangular arrays whose entries are
     indexed by a triplet :math:`(\ell, m_\ell, n_\ell)` corresponding to
     the spherical degree, order and depth respectively.
 
-    Spherical degrees :math:`\ell` and orders :math:`m` are associated with
-    the spherical Bessel and harmonic functions, and spherical depths
-    :math:`n` are the number of allowed radial wavenumbers for each degree
-    of a discrete Fourier spectrum.
+    The spherical degree :math:`\ell` and order :math:`m` are associated
+    with the spherical Bessel and harmonic functions, and the spherical
+    depth :math:`n` is the number of radial wavenumbers in the discretised
+    spectrum for each spherical degree.
 
-    Generally, the array can appear in the following structures:
+    Both the data and index arrays can also appear in the following
+    structures:
 
-        * 'natural', or equivalently :math:`(\ell, m, n)`;
-        * 'transposed', or equivalently :math:`(\ell, n, m)`, where
-          ordering by spherical depth takes precedence over that by
-          spherical order;
-        * 'spectral', or equivalently :math:`k`, where a flattened array is
-          sorted by spectral wavenumber in ascending order;
-        * 'root', or equivalently :math:`(\ell, n)`, similar to
-          'transposed' but subarrays of equivalent spherical orders have
-          been averaged/collapsed in :math:`m`;
-        * 'scale', or equivalently :math:`u`, similar to 'spectral' but
-          subarrays of equivalent spherical orders have been
-          averaged/collapsed in :math:`m`.
+        * 'natural'---indexed by :math:`(\ell, m, n)`;
+        * 'transposed'---indexed by :math:`(\ell, n, m)`;
+        * 'spectral'---indexed by :math:`(k_{\ell n}, m)`, where the array
+          is flattened and sorted by the wavenumber and then the spherical
+          order;
+        * 'root'---indexed by :math:`(\ell, n)`, similar to 'transposed'
+          but subarrays of equivalent spherical orders :math:`m` are
+          averaged/collapsed;
+        * 'scale'---indexed by :math:`k_{\ell n}`, similar to 'spectral'
+          but subarrays of equivalent spherical orders :math:`m` are
+          averaged/collapsed.
 
     Parameters
     ----------
@@ -72,9 +71,9 @@ class SphericalArray:
         Roots of spherical Bessel functions or their derivatives
         corresponding to `degrees` and `depths`.
     index_array : list of (int, int, int), array_like
-        Triplet indices stored in the natural structure.
+        Index array in the natural structure.
     data_array : *list of* :class:`numpy.ndarray` *or None*
-        Data stored in the natural structure.
+        Data array in the natural structure.
 
     Raises
     ------
@@ -128,7 +127,7 @@ class SphericalArray:
 
     @classmethod
     def build(cls, filling=None, disc=None):
-        """Build spherical array from a given discrete spectrum.
+        """Build spherical array from a discrete spectrum.
 
         If `disc` is not provided, the natural structure is inferred from
         `filling`; if only `disc` is provided, a natural structue index
@@ -207,10 +206,12 @@ class SphericalArray:
         """
         dat_arr, idx_arr = self.data_array, self.index_array
 
-        data_flat = None
         empty_flag = (dat_arr is None)
 
         axis_order = self._alias(axis_order)
+
+        transpose = (axis_order == 'lnm')
+
         if axis_order == 'ln':
             axis_order = 'lmn'
             if collapse is None:
@@ -220,7 +221,6 @@ class SphericalArray:
             if collapse is None:
                 collapse = 'mean'
 
-        transpose = (axis_order == 'lnm')
         if collapse:
             square = (collapse == 'rms')
             if not empty_flag:
@@ -232,6 +232,8 @@ class SphericalArray:
         index_flat = self._flatten(
             idx_arr, 'index', subarray_transpose=transpose
         )
+
+        data_flat = None
         if not empty_flag:
             data_flat = np.array(
                 self._flatten(dat_arr, 'data', subarray_transpose=transpose)
@@ -243,8 +245,8 @@ class SphericalArray:
                 roots = self._repeat_subarray(
                     roots, 'data', degrees=self.degrees
                 )
-
             flat_order = np.argsort(self._flatten(roots, 'data'))
+
             index_flat = [index_flat[order_idx] for order_idx in flat_order]
             if not empty_flag:
                 data_flat = data_flat[flat_order]
@@ -270,35 +272,38 @@ class SphericalArray:
 
         Returns
         -------
-        array : list of tuple or float, array_like
+        folded_array : list of tuple or float, array_like
             External array in natural structure.
 
         """
         if subarray_type == 'index':
             return self.index_array
 
+        structure = self._alias(structure)
+
         ordered_index = self.unfold(structure, return_only='index')
 
-        structure = self._alias(structure)
         if structure in ['lmn', 'lnm', 'k']:
-            array = []
+            folded_array = []
             for ell, nmax in zip(self.degrees, self.depths):
-                array.append([[None] * nmax] * (2*ell + 1))
+                folded_array.append([[None] * nmax] * (2*ell + 1))
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, m_idx, n_idx = \
                     index[0], index[1] + index[0], index[-1] - 1
-                array[ell_idx][m_idx][n_idx] = entry
+                folded_array[ell_idx][m_idx][n_idx] = entry
         elif structure in ['ln', 'u']:
-            array = [
+            folded_array = [
                 [None for n in range(nmax)]
                 for ell, nmax in zip(self.degrees, self.depths)
             ]
             for index, entry in zip(ordered_index, flat_array):
                 ell_idx, n_idx = index[0], index[-1] - 1
-                array[ell_idx][n_idx] = entry
-            array = self._repeat_subarray(array, 'data', degrees=self.degrees)
+                folded_array[ell_idx][n_idx] = entry
+            folded_array = self._repeat_subarray(
+                folded_array, 'data', degrees=self.degrees
+            )
 
-        return array
+        return folded_array
 
     def morph(self, flat_array, in_struct, out_struct, subarray_type):
         """Morph a compatible external flat array flattened in one
@@ -599,7 +604,7 @@ class SphericalArray:
 
 
 class CartesianArray:
-    r"""Structured Cartesian arrays.
+    r"""Data arrays for Cartesian decomposition of cosmological fields.
 
     This consists of a coordinate array and data array(s) for different
     variables corresponding to the coordinates.
@@ -608,15 +613,13 @@ class CartesianArray:
     ----------
     filling : dict
         Data to fill in holding both a coordinate array and data array(s).
-    coord_key, var_key_root : str
+    coord_key, variable_key_root : str
         The key or the root string of the key corresponding to the
         coordinate array or the data array(s).
 
     Attributes
     ----------
-    filling : dict
-        Data filled into the structured Cartesian arrays.
-    sorted_vars : tuple of str
+    variables : tuple of str
         Sorted data variable names (keys).
     coord_array : *float* :class:`numpy.ndarray`
         Coordinate array.
@@ -625,25 +628,23 @@ class CartesianArray:
 
     """
 
-    def __init__(self, filling, coord_key, var_key_root):
+    def __init__(self, filling, coord_key, variable_key_root):
 
-        self.sorted_vars = tuple(
-            key for key in sorted(filling) if var_key_root in key
+        self.variables = tuple(
+            key for key in sorted(filling) if variable_key_root in key
         )
 
         try:
             self.coord_array = np.squeeze(filling[coord_key])
             self.data_arrays = [
                 np.squeeze(filling[var_name])
-                for var_name in self.sorted_vars
+                for var_name in self.variables
             ]
         except (TypeError, AttributeError):
             raise ValueError(
                 "`filling` should be a dictionary with keys/key roots "
-                "`coord_key` and `var_key_root`. "
+                "`coord_key` and `variable_key_root`. "
             )
-
-        self.filling = filling
 
     def unfold(self, pivot, return_only=None):
         """Flatten data and corresponding coordinate arrays in the
@@ -653,9 +654,9 @@ class CartesianArray:
         ----------
         pivot : {'coord', 'variable'}
             Order for array flattening.  If ``'coord'``, the arrays are
-            flattened in ascending order of the coordinate; if
-            ``'variable'``, the arrays are flattened in ascending order of
-            the variable name (key).
+            flattened by coordinate in ascending order; if ``'variable'``,
+            the arrays are flattened by variable name (key) in ascending
+            order.
         return_only : {'coords', 'data', None}, optional
             Only return the coordinate (``'coords'``) or data (``'data'``)
             array(s) (default is `None`).
@@ -671,10 +672,10 @@ class CartesianArray:
 
         """
         if pivot == 'variable':
-            coords_flat = np.tile(self.coord_array, len(self.sorted_vars))
+            coords_flat = np.tile(self.coord_array, len(self.variables))
             data_flat = np.concatenate(self.data_arrays)
         elif pivot == 'coord':
-            coords_flat = np.repeat(self.coord_array, len(self.sorted_vars))
+            coords_flat = np.repeat(self.coord_array, len(self.variables))
             data_flat = np.vstack(self.data_arrays).flatten('F')
 
         if return_only == 'data':

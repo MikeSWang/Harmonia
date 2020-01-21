@@ -1303,7 +1303,7 @@ class TwoPointFunction(Couplings):
                     )
 
             triu_indices = np.triu_indices(dim_covar, k=1)
-            two_point_covar[triu_indices] = two_point_covar.T[triu_indices]
+            two_point_covar[triu_indices] = two_point_covar.H[triu_indices]
 
         return two_point_covar
 

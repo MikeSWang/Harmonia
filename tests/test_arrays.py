@@ -7,8 +7,8 @@ from harmonia.algorithms.arrays import CartesianArray, SphericalArray
 TEST_PARAMS = dict(
     radius=100.,
     condition='Dirichlet',
-    cutoff=0.1,
-    cuton=0.,
+    highcut=0.1,
+    lowcut=0.,
     maxdeg=None,
     mindeg=0,
 )

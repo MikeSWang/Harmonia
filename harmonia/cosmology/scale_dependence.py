@@ -16,8 +16,8 @@ scale-dependence modification kernel
 
     .. math::
 
-        A(k,z) = 3 \left( \frac{H_0}{\mathrm{c}} \right)^2
-            \frac{1.27\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z)T(k)}
+        A(k,z) = 1.27 \left( \frac{H_0}{\mathrm{c}} \right)^2
+            \frac{3\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z)T(k)}
 
 relates to the cosmological model and its growth factor :math:`D(z)`
 (normalised to unity at the current epoch, thus the numerical factor 1.27)
@@ -59,9 +59,10 @@ def scale_dependence_modification(cosmo, redshift):
     SPEED_OF_LIGHT_IN_KM_PER_S = 299792.
     GROWTH_FACTOR_NORMALISATION = 1.27
 
-    num_factors = 3 * GROWTH_FACTOR_NORMALISATION * cosmo.Omega0_m \
-        * SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY \
+    num_factors = GROWTH_FACTOR_NORMALISATION \
+        * 3 * cosmo.Omega0_m * SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY \
         * (cosmo.H0 / SPEED_OF_LIGHT_IN_KM_PER_S)**2
+
     transfer_func = cosmology.power.transfers.CLASS(cosmo, redshift=redshift)
 
     return lambda k: num_factors / (k**2 * transfer_func(k))
@@ -93,14 +94,14 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.):
         :math:`h`/Mpc).
 
     """
-    def _b_k(k):
+    def b_of_k(k):
 
-        b_of_k = b_1 + f_nl * (b_1 - tracer_parameter) \
+        b_k = b_1 + f_nl * (b_1 - tracer_parameter) \
             * scale_dependence_modification(cosmo, redshift)(k)
 
-        return b_of_k
+        return b_k
 
-    return _b_k
+    return b_of_k
 
 
 def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,

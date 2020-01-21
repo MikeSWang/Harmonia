@@ -3,9 +3,8 @@
 Cosmological models (:mod:`~harmonia.cosmology`)
 ***************************************************************************
 
-Compute cosmological quantities for a specified model with
-:class:`nbodykit.cosmology`.  The default cosmology is set by *Planck* 2015
-results [`arXiv:1502.01589 <https://arxiv.org/abs/1502.01589>`_].
+Compute  quantities related to a specified cosmological model with
+:class:`nbodykit.cosmology`.
 
 """
 from nbodykit import cosmology
@@ -19,6 +18,6 @@ from .scale_dependence import (
 
 fiducial_cosmology = cosmology.Planck15
 """:class:`nbodykit.cosmology.cosmology.Cosmology`: Default *Planck15*
-cosmology.
+cosmology [`arXiv:1502.01589 <https://arxiv.org/abs/1502.01589>`_].
 
 """

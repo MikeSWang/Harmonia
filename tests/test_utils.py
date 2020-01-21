@@ -88,7 +88,7 @@ def test_allocate_segments(tasks, ntask, nproc):
         ] \
         + [slice(TEST_CASE_INTERVAL*(nproc - 1), TEST_CASE_INTERVAL*nproc + 1)]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         utils.allocate_segments(total_task=ntask)
 
 
@@ -155,11 +155,11 @@ def test_const_function(const, x):
     "matrix,logdet",
     [(10*np.eye(499), 1148.9899614040)]
 )
-def test_matrix_log_det(matrix, logdet):
-    assert utils.matrix_log_det(matrix) == pytest.approx(logdet)
-    assert utils.matrix_log_det(matrix, diag=True) == pytest.approx(logdet)
+def test_mat_logdet(matrix, logdet):
+    assert utils.mat_logdet(matrix) == pytest.approx(logdet)
+    assert utils.mat_logdet(matrix, diag=True) == pytest.approx(logdet)
     with pytest.raises(ValueError):
-        utils.matrix_log_det(-matrix)
+        utils.mat_logdet(-matrix)
 
 
 @pytest.mark.parametrize("ndim,nsize", [(3, 10), (5, 8)])

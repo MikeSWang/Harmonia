@@ -7,8 +7,8 @@ from harmonia.algorithms.discretisation import DiscreteSpectrum
 TEST_ARGS = dict(
     radius=100.,
     condition='Dirichlet',
-    cutoff=0.1,
-    cuton=0.,
+    highcut=0.1,
+    lowcut=0.,
     maxdeg=None,
     mindeg=0,
 )

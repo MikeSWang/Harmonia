@@ -40,7 +40,7 @@ _MAX_INT = 4294967295
 
 
 def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.,
-                             add_vel=False, vel_unit_scale=1.e-3):
+                             add_vel=False, vel_offset_unit_scale=1.e-3):
     """Load catalogue from a file.
 
     Parameters
@@ -58,10 +58,12 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.,
     add_vel : bool, optional
         If `True` (default is `False`), add the velocity columns to
         position columns (for e.g. redshift-space distortions).
-    vel_unit_scale : float, optional
-        Scaling factor for converting the velocity length unit to
-        Mpc/:math:`h` (default is 1.e-3), e.g. ``vel_unit_scale = 1.e-3``
-        for converting Kpc/:math:`h` to Mpc/:math:`h`.
+    vel_offset_unit_scale : float, optional
+        Scaling factor for converting the velocity offset length unit to
+        Mpc/:math:`h` (default is 1.e-3), e.g.
+        ``vel_offset_unit_scale = 1.e-3`` for converting Kpc/:math:`h` to
+        Mpc/:math:`h`.  The velocity offset should include the redshift
+        conversion factor (the conformal Hubble parameter).
 
     Returns
     -------
@@ -72,6 +74,7 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.,
     catalogue = CSVCatalog(file_path, headings)
 
     catalogue.attrs['BoxSize'] = boxsize
+
     catalogue['Position'] = \
         catalogue['x'][:, None] * [unit_scale, 0, 0] \
         + catalogue['y'][:, None] * [0, unit_scale, 0] \
@@ -79,9 +82,9 @@ def load_catalogue_from_file(file_path, headings, boxsize, unit_scale=1.,
 
     if add_vel:
         catalogue['Position'] = \
-            catalogue['vx'][:, None] * [vel_unit_scale, 0, 0] \
-            + catalogue['vy'][:, None] * [0, vel_unit_scale, 0] \
-            + catalogue['vz'][:, None] * [0, 0, vel_unit_scale]
+            catalogue['vx'][:, None] * [vel_offset_unit_scale, 0, 0] \
+            + catalogue['vy'][:, None] * [0, vel_offset_unit_scale, 0] \
+            + catalogue['vz'][:, None] * [0, 0, vel_offset_unit_scale]
 
     return catalogue
 
@@ -106,9 +109,7 @@ class RandomCatalogue(UniformCatalog):
 
     def __init__(self, mean_density, boxsize, seed=None, comm=None):
 
-        UniformCatalog.__init__(
-            self, mean_density, boxsize, seed=seed, comm=comm
-        )
+        super().__init__(mean_density, boxsize, seed=seed, comm=comm)
 
         self.attrs['nbar'] = mean_density
 
@@ -163,7 +164,7 @@ class NBKCatalogue(LogNormalCatalog):
         if self.comm is None or self.comm.rank == 0:
             self._logger.info("%s generated. ", self.__str__())
 
-        if add_RSD:
+        if self.attrs['RSD_flag']:
             self['Position'] += self['VelocityOffset'] \
                 * normalise_vector(self['Position'])
             if self.comm is None or self.comm.rank == 0:
@@ -254,13 +255,13 @@ class LogNormalCatalogue(CatalogSource):
             cosmo = getattr(power_spectrum, 'cosmo', None)
             redshift = getattr(power_spectrum, 'redshift', None)
             growth_rate = cosmo.scale_independent_growth_rate(redshift)
-        elif growth_rate is None and add_RSD:
+        elif growth_rate is None and self.attrs['RSD_flag']:
             raise ValueError(
                 "`growth_rate` cannot be None if `add_RSD` is True and "
                 "`power_spectrum` does not have 'cosmo' and 'redshift' "
                 "attributes. "
             )
-        elif not add_RSD:
+        elif not self.attrs['RSD_flag']:
             growth_rate = None
         self.attrs['growth_rate'] = growth_rate
 
@@ -292,7 +293,7 @@ class LogNormalCatalogue(CatalogSource):
 
         self['Position'] += [boxsize/2] * 3
 
-        if add_RSD:
+        if self.attrs['RSD_flag']:
             self._vel_offset = growth_rate * displacement
             if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \
@@ -408,13 +409,13 @@ class GaussianCatalogue(CatalogSource):
             cosmo = getattr(power_spectrum, 'cosmo', None)
             redshift = getattr(power_spectrum, 'redshift', None)
             growth_rate = cosmo.scale_independent_growth_rate(redshift)
-        elif growth_rate is None and add_RSD:
+        elif growth_rate is None and self.attrs['RSD_flag']:
             raise ValueError(
                 "`growth_rate` cannot be None if `add_RSD` is True and "
                 "`power_spectrum` does not have 'cosmo' and 'redshift' "
                 "attributes. "
             )
-        elif not add_RSD:
+        elif not self.attrs['RSD_flag']:
             growth_rate = None
         self.attrs['growth_rate'] = growth_rate
 
@@ -446,7 +447,7 @@ class GaussianCatalogue(CatalogSource):
 
         self['Position'] += [boxsize/2] * 3
 
-        if add_RSD:
+        if self.attrs['RSD_flag']:
             self._vel_offset = growth_rate * displacement
             if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \

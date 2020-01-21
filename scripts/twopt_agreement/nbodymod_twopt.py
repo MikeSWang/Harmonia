@@ -171,7 +171,7 @@ if __name__ == '__main__':
         'mask': unit_const,
         'selection': unit_const,
         'weight': unit_const,  # None
-        'weight_derivative' : zero_const,  # None
+        'weight_derivative': zero_const,  # None
     }
 
     COMM = MPI.COMM_WORLD

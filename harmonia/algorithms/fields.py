@@ -67,8 +67,8 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
     Raises
     ------
     ValueError
-        If `variable` does not correspond to any of the following:
-        ``'coords'``, ``'norm'`` or ``'both'``.
+        If `variable` is none of the following: ``'coords'``, ``'norm'``
+        or ``'both'``.
 
     """
     indices = np.indices((num_mesh,) * 3)
@@ -143,7 +143,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     Raises
     ------
     ValueError
-        If `bias` is neither a positive float nor a callable function.
+        If `bias` is neither a positive number nor a callable function.
 
     """
     vol, num_cell = boxsize**3, num_mesh**3
@@ -156,21 +156,19 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     fourier_field = amplitude * whitenoise
 
     try:
-        bias = float(bias)
+        bias_k = float(bias)
     except TypeError:
         if callable(bias):
             bias_k = bias(k_norm)
-            overdensity = num_cell * np.real(
-                fftp.ifftn(fftp.fftshift(bias_k * fourier_field))
-            )
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
-    else:
-        if bias <= 0:
+    finally:
+        if np.any(bias_k <= 0):
             raise ValueError("`bias` parameter must be positive. ")
-        overdensity = num_cell * np.real(
-            fftp.ifftn(fftp.fftshift(bias * fourier_field))
-        )
+
+    overdensity = num_cell * np.real(
+        fftp.ifftn(fftp.fftshift(bias_k * fourier_field))
+    )
 
     if clip:
         overdensity = threshold_clip(overdensity, threshold=-1.)
@@ -225,32 +223,32 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     Raises
     ------
     ValueError
-        If `bias` is neither a positive float nor a callable function.
+        If `bias` is neither a positive number nor a callable function.
 
     See Also
     --------
     :func:`generate_gaussian_random_field`
 
     """
-    vol, num_cell = boxsize**3, num_mesh**3
     k_vec, k_norm = generate_regular_grid(
         2*np.pi/boxsize, num_mesh, variable='both'
     )
 
-    pk = power_spectrum(k_norm) / vol
-
     try:
-        bias = float(bias)
+        bias_k = float(bias)
     except TypeError:
         if callable(bias):
-            pk_target = bias(k_norm)**2 * pk
+            bias_k = bias(k_norm)
         else:
             raise ValueError(f"Invalid `bias` parameter: {bias}. ")
-    else:
-        if bias <= 0:
+    finally:
+        if np.any(bias_k <= 0):
             raise ValueError("`bias` parameter must be positive. ")
-        pk_target = bias**2 * pk
 
+    vol, num_cell = boxsize**3, num_mesh**3
+
+    pk = power_spectrum(k_norm) / vol
+    pk_target = bias_k**2 * pk
     xi_target = num_cell * np.real(fftp.ifftn(fftp.fftshift(pk_target)))
     xi_generation = lognormal_transform(xi_target, 'correlation')
     pk_generation = fftp.fftshift(fftp.fftn(xi_generation)) / num_cell
@@ -297,14 +295,15 @@ def threshold_clip(density_contrast, threshold=-1.):
     density_contrast = np.array(density_contrast)
 
     clipping_mask = density_contrast < threshold
+
+    density_contrast[clipping_mask] = -1.
+
     clipping_ratio = np.sum(clipping_mask) / np.size(clipping_mask)
     if clipping_ratio > 0.005:
         warnings.warn(
             "{:.2g}% of field values are clipped. ".format(100*clipping_ratio),
             RuntimeWarning
         )
-
-    density_contrast[clipping_mask] = -1.
 
     return density_contrast
 
@@ -351,7 +350,7 @@ def lognormal_transform(obj, obj_type):
                 return lambda r: np.log(1 + obj(r))
             raise TypeError(f"Invalid `obj` type: {type(obj)}. ")
 
-    raise ValueError(f"Invalid `obj_type` value: {obj_type}. ")
+    raise ValueError(f"Invalid `obj_type`: {obj_type}. ")
 
 
 def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
@@ -373,10 +372,14 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
     sampled_field : float :class:`numpy.ndarray`
         Poisson sampled density contrast field.
 
+    Raises
+    ------
+    ValueError
+        If `density_contrast` is not given on a regular grid.
+
     """
     density_contrast = np.array(density_contrast)
-    if len(set(density_contrast.shape)) > 1:
-        raise ValueError("`density_contrast` field is not a regular grid. ")
+    _is_regular_grid(density_contrast, "density_contrast")
 
     num_mesh = max(density_contrast.shape)
     mean_num_per_cell = mean_density * (boxsize / num_mesh)**3
@@ -419,8 +422,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
 
     """
     sampled_field = np.array(sampled_field)
-    if len(set(sampled_field.shape)) > 1:
-        raise ValueError("`field` is not a regular grid. ")
+    _is_regular_grid(sampled_field, "sampled_field")
 
     num_mesh = max(sampled_field.shape)
     cell_size = boxsize / num_mesh
@@ -475,6 +477,22 @@ def _gen_circsym_whitenoise(num_mesh, seed=None):
     whitenoise = samples[0] + 1j * samples[1]
 
     return whitenoise
+
+
+def _is_regular_grid(field, name="field"):
+    """Check if the field array is given on a regular grid.
+
+    Parameters
+    ----------
+    field : array_like
+        Field data array.
+    name : str, optional
+        Name of the field (default is ``"field"``).
+
+    """
+    field = np.asarray(field)
+    if len(set(field.shape)) > 1:
+        raise ValueError(f"'{name}' is not a regular grid. ")
 
 
 def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
@@ -563,16 +581,12 @@ def _radial_binning(grid_norm, grid_data, num_bin, scaling, low_edge=None,
     bin_count, _ = np.histogram(grid_norm.flatten(), bins=bins)
 
     bin_coord, _ = np.histogram(
-        grid_norm.flatten(),
-        bins=bins,
-        weights=grid_norm.flatten()
+        grid_norm.flatten(), bins=bins, weights=grid_norm.flatten()
     )
     bin_coord /= bin_count
 
     bin_data, _ = np.histogram(
-        grid_norm.flatten(),
-        bins=bins,
-        weights=grid_data.flatten()
+        grid_norm.flatten(), bins=bins, weights=grid_data.flatten()
     )
     bin_data /= bin_count
 

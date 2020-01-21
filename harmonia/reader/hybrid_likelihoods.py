@@ -40,7 +40,7 @@ import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import matrix_log_det
+from harmonia.collections import mat_logdet
 
 
 # Probability distributions
@@ -143,7 +143,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
             raise ValueError("`cov_matrix` is not positive definite. ")
         log_det_cov_mat = np.log(np.abs(var_vector))
     else:
-        log_det_cov_mat = matrix_log_det(cov_matrix)
+        log_det_cov_mat = mat_logdet(cov_matrix)
 
     chi_sq = _chi_square(dat_vector, cov_matrix, elementwise=elementwise)
 
@@ -203,7 +203,7 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
 
     log_normalisation_const = dat_dim * np.log(2*np.pi)
 
-    log_det_cov_mat = matrix_log_det(cov_matrix)
+    log_det_cov_mat = mat_logdet(cov_matrix)
 
     exponent = _chi_square(
         data_vector - mean_vector,
@@ -270,7 +270,7 @@ def modified_student_pdf(data_vector, mean_vector, cov_matrix, num_sample,
     log_normalisation_const = - dat_dim/2 * np.log((num_sample - 1)*np.pi) \
         + loggamma(num_sample/2) - loggamma((num_sample -dat_dim)/2)
 
-    log_det_cov_mat = matrix_log_det(cov_matrix)
+    log_det_cov_mat = mat_logdet(cov_matrix)
 
     core = np.log(
         1 + _chi_square(

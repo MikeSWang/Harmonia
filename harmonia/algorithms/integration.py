@@ -6,8 +6,7 @@ Numerically integrate against Fourier basis functions.
 
 .. warning::
 
-    Quadrature integration of spherical Bessel functions may converge
-    slowly.
+    Quadrature integration of spherical functions may converge slowly.
 
 **Generic spherical integrals**
 

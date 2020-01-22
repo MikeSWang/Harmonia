@@ -136,6 +136,7 @@ import warnings
 
 import numpy as np
 from nbodykit.lab import cosmology
+from numba import njit
 from scipy.integrate import IntegrationWarning
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
@@ -1196,6 +1197,7 @@ class TwoPointFunction(Couplings):
 
         return shot_noise
 
+    @njit
     def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
                              b_1=None, f_nl=None, tracer_parameter=1.,
                              contrast=np.inf):

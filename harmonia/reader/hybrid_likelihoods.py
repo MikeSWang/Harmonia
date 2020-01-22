@@ -37,6 +37,7 @@ import collections as coll
 import itertools as it
 
 import numpy as np
+from numba import njit
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
@@ -343,6 +344,7 @@ def spherical_parametrised_covariance(b_1, f_nl, two_point_model, pivot,
     return covariance
 
 
+@njit
 def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  two_point_model, spherical_data, pivot,
                                  breakdown=False, exclude_degrees=(),
@@ -519,6 +521,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
     return expectation, covariance
 
 
+@njit
 def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  windowed_power_model, cartesian_data,
                                  correlation_modeller, pivot, orders,

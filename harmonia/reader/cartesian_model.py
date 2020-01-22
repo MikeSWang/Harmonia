@@ -34,8 +34,10 @@ class WindowedPowerSpectrum:
     redshift : float, optional
         Current redshift at which the model is evaluated (default is 0.).
     growth_rate : float or None, optional
-        Linear growth rate at the current epoch.  If `None` (default), this
-        is set to zero and RSD calculations are neglected.
+        Linear growth rate at the current epoch.  If `None` (default), an
+        attempt is made to compute its value from `redshift` and `cosmo`;
+        should `cosmo` be `None`, it is set to 0, in which case no RSD
+        calculations are invoked.
     power_spectrum : callable or None, optional
         Linear matter power spectrum model at the current epoch.
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
@@ -54,9 +56,9 @@ class WindowedPowerSpectrum:
     ----------
     redshift : float
         Current redshift at which the model is evaluated (default is 0.).
-    growth_rate : float or None
-        Linear growth rate at the current epoch.  If `None`, RSD
-        calculations are neglected.
+    growth_rate : float or int
+        Linear growth rate at the current epoch.  This is 0 if RSD effects
+        are ignored.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
     mask_multipoles : dict or None, optional
@@ -89,6 +91,8 @@ class WindowedPowerSpectrum:
         self.matter_power_spectrum = power_spectrum
 
         if cosmo is None:
+            if self.growth_rate is None:
+                self.growth_rate = 0
             if self.matter_power_spectrum is None:
                 raise ValueError(
                     "`power_spectrum` cannot be None when `cosmo` is None. "
@@ -100,9 +104,9 @@ class WindowedPowerSpectrum:
                 )
             else:
                 warnings.warn(
-                    "Input `power_spectrum` is used instead of "
-                    "the power spectrum associated with `cosmo`. "
-                    "Double check their underlying cosmological models "
+                    "Input `power_spectrum` is used instead of the "
+                    "power spectrum associated with `cosmo`. "
+                    "Please double check their underlying cosmological models "
                     "are consistent. "
                 )
             if self.growth_rate is None:

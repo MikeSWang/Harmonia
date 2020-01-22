@@ -25,13 +25,14 @@ include the following factors:
     * angular mask :math:`M(\hat{\mathbf{r}})`;
     * radial selection :math:`\phi(r)`, and radial weight :math:`w(r)` or
       its derivative :math:`w'(r)`;
-    * linear bias evolution :math:`G(z,k) = b(z,k) / b(0,k)` normalised to
-      unity at the current epoch, where :math:`b(z,k)` is the
-      scale-dependent linear bias;
+    * linear bias evolution :math:`G(z,k) = b(z,k) / b(z_*,k)` normalised
+      to unity at the current epoch :math:`z_*`, where :math:`b(z,k)` is
+      the scale-dependent linear bias;
     * clustering evolution, :math:`D(z)`, which is the linear growth factor
-      normalised to unity at the current epoch;
-    * linear growth rate evolution :math:`F(z) = f(z) / f_0` normalised to
-      unity at the current epoch, where :math:`f_0 \equiv f(0)`;
+      normalised to unity at the :math:`z = 0` epoch;
+    * linear growth rate evolution :math:`F(z) = f(z) / f_*` normalised to
+      unity at the current epoch :math:`z_*`, where :math:`f_* \equiv
+      f(z_*)`;
     * Alcock--Paczynski differential distortion
 
       .. math::
@@ -84,8 +85,8 @@ When there is no angular masking (i.e. :math:`M(\hat{\mathbf{r}})` is
 constant), the coupling coefficients reduce to :math:`M_{\mu\nu} =
 \delta_{\mu\nu}`; if in addition radial selection, weighting and
 evolutionary effects are all absent and the distance--redshift conversion
-is the cosmological one (i.e. no AP correction), the radial coupling
-coefficients is equivalent to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
+is the cosmological one (i.e. no AP correction), then
+:math:`M_{\mu\nu} \Phi_{\mu\nu} = \delta_{\mu\nu}`.
 
 .. autosummary::
 
@@ -101,10 +102,10 @@ coefficients is equivalent to :math:`\Phi_{\mu\nu} = \delta_{\mu\nu}`.
 
     \left\langle \delta_\mu \delta_\nu \right\rangle = \sum_\sigma
         M_{\mu\sigma} M^*_{\nu\sigma} \left[
-            b_0(k_\sigma) \Phi_{\mu\sigma} + f_0 \Upsilon_{\mu\sigma}
+            b_*(k_\sigma) \Phi_{\mu\sigma} + f_* \Upsilon_{\mu\sigma}
         \right] \left[
-            b_0(k_\sigma) \Phi_{\nu\sigma} + f_0 \Upsilon_{\nu\sigma}
-        \right] \kappa_\sigma^{-1} P_\textrm{m,0}(k_\sigma) \,,
+            b_*(k_\sigma) \Phi_{\nu\sigma} + f_* \Upsilon_{\nu\sigma}
+        \right] \kappa_\sigma^{-1} P_{\textrm{m}*}(k_\sigma) \,,
 
 and the shot noise part
 
@@ -114,12 +115,12 @@ and the shot noise part
         \frac{1}{\bar{n}} M_{\mu\nu} \int \operatorname{d}\!r r^2
         (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
 
-where the scale-dependent bias :math:`b_0(k) = b_1(0) + f_\textrm{NL}
-\Delta b(k)` includes the modification :math:`\Delta b(k)` due to local
+where the scale-dependent bias :math:`b(z,k) = b_1(z) + f_\textrm{NL}
+\Delta b(z,k)` includes the modification :math:`\Delta b` due to local
 primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the current
 epoch (see :mod:`~harmonia.cosmology.scale_dependence`);
-:math:`P_\textrm{m,0}` is the matter power spectrum at the current epoch;
-:math:`\kappa` denotes the normalisation coefficients (see
+:math:`P_{\textrm{m}*}` is the matter power spectrum at the current epoch
+:math:`z_*`; :math:`\kappa` denotes the normalisation coefficients (see
 :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`); and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
@@ -467,6 +468,8 @@ class Couplings:
 
     """
 
+    _logger = logging.getLogger("Couplings")
+
     _all_specs_attr = {
         "survey_specs": (
             'mask',
@@ -484,11 +487,7 @@ class Couplings:
         ),
     }
 
-    def __init__(self, disc, survey_specs=None, cosmo_specs=None, comm=None,
-                 logger=None):
-
-        if logger is None:
-            self._logger = logging.getLogger("Couplings")
+    def __init__(self, disc, survey_specs=None, cosmo_specs=None, comm=None):
 
         self.comm = comm
         self.disc = disc
@@ -808,8 +807,10 @@ class TwoPointFunction(Couplings):
         Current redshift at which 2-point functions are modelled (default
         is 0.).
     growth_rate : float or None, optional
-        Linear growth rate at the current epoch.  If `None` (default), this
-        is set to zero and RSD calculations are neglected.
+        Linear growth rate at the current epoch.  If `None` (default), an
+        attempt is made to compute its value from `redshift` and `cosmo`;
+        should `cosmo` be `None`, it is set to 0, in which case no RSD
+        calculations are invoked.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
     cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
@@ -842,8 +843,9 @@ class TwoPointFunction(Couplings):
     ----------
     redshift : float
         Current redshift at which the 2-point functions are modelled.
-    growth_rate : float or None
-        Linear growth rate at the current epoch.
+    growth_rate : float or int
+        Linear growth rate at the current epoch.  This is 0 if RSD effects
+        are ignored.
     matter_power_spectrum : callable
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/:math:`h`).
@@ -870,11 +872,7 @@ class TwoPointFunction(Couplings):
                  cosmo_specs=None, couplings=None, comm=None):
 
         super().__init__(
-            disc,
-            survey_specs=survey_specs,
-            cosmo_specs=cosmo_specs,
-            comm=comm,
-            logger=self._logger
+            disc, survey_specs=survey_specs, cosmo_specs=cosmo_specs, comm=comm
         )
 
         self.redshift = redshift
@@ -882,6 +880,8 @@ class TwoPointFunction(Couplings):
         self.matter_power_spectrum = power_spectrum
 
         if cosmo is None:
+            if self.growth_rate is None:
+                self.growth_rate = 0
             if self.matter_power_spectrum is None:
                 raise ValueError(
                     "power_spectrum` cannot be None when `cosmo` is None. "
@@ -1061,8 +1061,6 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
-        couplings = self.couplings
-
         angular_reduction = (self.couplings['angular'] is None)
         rsd_reduction = not bool(self.growth_rate)
 

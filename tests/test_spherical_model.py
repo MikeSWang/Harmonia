@@ -74,7 +74,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
 
     two_point_model = TwoPointFunction(
         discrete_spectrum,
-        growth_rate=None,
+        growth_rate=0.,
         cosmo=fiducial_cosmology,
         survey_specs=TWO_POINT_SURVEY_SPECS
     )

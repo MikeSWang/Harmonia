@@ -107,7 +107,7 @@ class SphericalMap:
 
         if source == 'simulation':
             data_boxsize = data.attrs['BoxSize']
-            if any(data_boxsize < 2*radius):
+            if np.any(data_boxsize < 2*radius):
                 self._logger.debug(
                     self._msg['inscribing'], "data", data_boxsize, 2*radius
                 )
@@ -133,7 +133,7 @@ class SphericalMap:
                     warnings.warn(
                         self._msg['boxsizes'], data_boxsize, rand_boxsize
                     )
-                if any(data_boxsize < 2*radius):
+                if np.any(data_boxsize < 2*radius):
                     self._logger.info(
                         self._msg['inscribing'],
                         "random", rand_boxsize, 2*radius

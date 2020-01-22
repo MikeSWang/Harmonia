@@ -83,7 +83,7 @@ params = parse_cli_args()
 
 if __name__ == '__main__':
 
-    confirm_directory_path(f"{PATHOUT}{script_name}/")
+    confirm_directory_path(PATHOUT/script_name)
 
     REDSHIFT = 0.
     ORDERS = [0, 2, 4]
@@ -95,17 +95,17 @@ if __name__ == '__main__':
 
     # Underlying power spectrum.
     matter_power_spectrum = Spline(
-        *np.loadtxt(f"{PATHIN}cosmology/{PK_FILENAME}.txt", unpack=True), k=1
+        *np.loadtxt(PATHIN/f"cosmology/{PK_FILENAME}.txt", unpack=True), k=1
     )
 
     # Window function.
     mask_multipoles = np.load(
-        f"{PATHOUT}window_multipoles/mask_multipoles-{{:.2f}}sky.npy"
+        PATHOUT/f"window_multipoles/mask_multipoles-{{:.2f}}sky.npy"
         .format(fsky)
     ).item()
     try:
         window_multipoles = np.load(
-            f"{PATHOUT}window_multipoles/window_multipoles-{{:.2f}}sky.npy"
+            PATHOUT/f"window_multipoles/window_multipoles-{{:.2f}}sky.npy"
             .format(fsky)
         ).item()
     except FileNotFoundError:
@@ -113,9 +113,11 @@ if __name__ == '__main__':
 
     # Measurements
     measurements = np.load(
-        f"{PATHOUT}window_effects/windowed_measurements"
-        "-(fsky={:.2f},contrast={:.1f},mesh=256).npy"
-        .format(fsky, contrast)
+        PATHOUT/(
+            f"window_effects/windowed_measurements"
+            "-(fsky={:.2f},contrast={:.1f},mesh=256).npy"
+            .format(fsky, contrast)
+        )
     ).item()
 
     # for var_name, var_results in measurements.items():
@@ -166,7 +168,7 @@ if __name__ == '__main__':
     for ell in ORDERS:
         measurement_plot = plt.errorbar(
             measured_multipoles['k'] \
-                * shift_x_coord(ell, amount=0.04),
+                * shift_x_coord(ell, amount=0.005),
             measured_multipoles['power_{}'.format(ell)],
             measured_multipoles['dpower_{}'.format(ell)],
             fmt='o', markersize=3., capsize=0., alpha=2/3,
@@ -175,7 +177,7 @@ if __name__ == '__main__':
         plt.semilogx(
             k_model,
             windowed_multipoles['power_{}'.format(ell)] \
-                + shift_y_coord(ell, amount=250.),
+                + shift_y_coord(ell, amount=0.),
             color=measurement_plot[0].get_color(),
             linestyle='--', label=r"model $\ell={}$".format(ell)
         )

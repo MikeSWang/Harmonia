@@ -38,14 +38,11 @@ def initialise():
     """
     global input_file, kmax, dk, boxsize, mesh_cal, headings
 
-    try:
-        input_file = params.input_file
-        kmax = params.kmax
-        dk = params.dk
-        boxsize = params.boxsize
-        mesh_cal = params.mesh_cal
-    except AttributeError as attr_err:
-        raise AttributeError(attr_err)
+    input_file = params.input_file
+    kmax = params.kmax
+    dk = params.dk
+    boxsize = params.boxsize
+    mesh_cal = params.mesh_cal
 
     with open(f"{PATHIN}{script_name}/halos-headings.txt", 'r') as header:
         headings = header.readline().strip("").split(",")
@@ -199,7 +196,7 @@ def finalise(output_data, save=True, plot=True):
 
             plt.savefig("".join([base_path, "/", filename, ".pdf"]))
         except Exception as e:
-            raise Exception(e)
+            print(e)
 
 
 if __name__ == '__main__':

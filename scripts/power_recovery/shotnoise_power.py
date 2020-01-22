@@ -34,16 +34,13 @@ def initialise():
     """
     global nbar, rmax, kmax, dk, mesh_cal, niter, prog_id
 
-    try:
-        nbar = params.nbar
-        rmax = params.rmax
-        dk = params.dk
-        kmax = params.kmax
-        mesh_cal = params.mesh_cal
-        niter = params.niter
-        prog_id = params.prog_id
-    except AttributeError as attr_err:
-        raise AttributeError(attr_err)
+    nbar = params.nbar
+    rmax = params.rmax
+    dk = params.dk
+    kmax = params.kmax
+    mesh_cal = params.mesh_cal
+    niter = params.niter
+    prog_id = params.prog_id
 
     param_tag = "nbar={},rmax={},kmax={},mesh=c{},iter={}".format(
         format_float(nbar, 'sci'),

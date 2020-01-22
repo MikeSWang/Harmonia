@@ -45,22 +45,19 @@ def initialise():
     global pivots, gen_name, rsd_flag, nbar, bias, redshift, rmax, kmax, \
         expand, mesh_gen, mesh_cal, niter, prog_id
 
-    try:
-        pivots = params.pivots.split(",")
-        generator = params.generator
-        rsd_flag = params.rsd
-        nbar = params.nbar
-        bias = params.bias
-        redshift = params.redshift
-        rmax = fiducial_cosmology.comoving_distance(params.zmax)
-        kmax = params.kmax
-        expand = params.expand
-        mesh_gen = params.mesh_gen
-        mesh_cal = params.mesh_cal
-        niter = params.niter
-        prog_id = params.prog_id
-    except AttributeError as attr_err:
-        raise AttributeError(attr_err)
+    pivots = params.pivots.split(",")
+    generator = params.generator
+    rsd_flag = params.rsd
+    nbar = params.nbar
+    bias = params.bias
+    redshift = params.redshift
+    rmax = fiducial_cosmology.comoving_distance(params.zmax)
+    kmax = params.kmax
+    expand = params.expand
+    mesh_gen = params.mesh_gen
+    mesh_cal = params.mesh_cal
+    niter = params.niter
+    prog_id = params.prog_id
 
     if generator.lower().startswith('g'):
         gen_name = "gaussian"

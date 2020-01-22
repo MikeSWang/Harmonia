@@ -142,7 +142,7 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     Raises
     ------
-    ValueError
+    TypeError
         If `bias` is neither a positive number nor a callable function.
 
     """
@@ -158,10 +158,10 @@ def generate_gaussian_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     try:
         bias_k = float(bias)
     except TypeError:
-        if callable(bias):
+        try:
             bias_k = bias(k_norm)
-        else:
-            raise ValueError(f"Invalid `bias` parameter: {bias}. ")
+        except TypeError:
+            raise TypeError(f"Invalid `bias` data type: {type(bias)}. ")
     finally:
         if np.any(bias_k <= 0):
             raise ValueError("`bias` parameter must be positive. ")
@@ -222,7 +222,7 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
 
     Raises
     ------
-    ValueError
+    TypeError
         If `bias` is neither a positive number nor a callable function.
 
     See Also
@@ -237,10 +237,10 @@ def generate_lognormal_random_field(boxsize, num_mesh, power_spectrum, bias=1.,
     try:
         bias_k = float(bias)
     except TypeError:
-        if callable(bias):
+        try:
             bias_k = bias(k_norm)
-        else:
-            raise ValueError(f"Invalid `bias` parameter: {bias}. ")
+        except TypeError:
+            raise TypeError(f"Invalid `bias` data type: {type(bias)}. ")
     finally:
         if np.any(bias_k <= 0):
             raise ValueError("`bias` parameter must be positive. ")
@@ -346,9 +346,10 @@ def lognormal_transform(obj, obj_type):
         try:
             return np.log(1 + obj)
         except TypeError:
-            if callable(obj):
+            try:
                 return lambda r: np.log(1 + obj(r))
-            raise TypeError(f"Invalid `obj` type: {type(obj)}. ")
+            except TypeError:
+                raise TypeError(f"Invalid `obj` type: {type(obj)}. ")
 
     raise ValueError(f"Invalid `obj_type`: {obj_type}. ")
 

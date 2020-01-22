@@ -33,18 +33,14 @@ def initialise():
     """
     global pivots, rsd_flag, nbar, bias, redshift, kmax, rmax, growth_rate
 
-    try:
-        pivots = params.pivots.split(",")
-        rsd_flag = params.rsd
-        nbar = params.nbar
-        bias = params.bias
-        redshift = params.redshift
-        kmax = params.kmax
-        rmax = fiducial_cosmology.comoving_distance(params.zmax)
-        growth_rate = \
-            fiducial_cosmology.scale_independent_growth_rate(redshift)
-    except AttributeError as attr_err:
-        raise AttributeError(attr_err)
+    pivots = params.pivots.split(",")
+    rsd_flag = params.rsd
+    nbar = params.nbar
+    bias = params.bias
+    redshift = params.redshift
+    kmax = params.kmax
+    rmax = fiducial_cosmology.comoving_distance(params.zmax)
+    growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots)

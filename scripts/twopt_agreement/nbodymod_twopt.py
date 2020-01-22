@@ -35,14 +35,11 @@ def initialise():
     """
     global pivots, nbar, bias, rmax, kmax
 
-    try:
-        pivots = params.pivots.split(",")
-        nbar = params.nbar
-        bias = params.bias
-        rmax = params.boxside / 2
-        kmax = params.kmax
-    except AttributeError as attr_err:
-        raise AttributeError(attr_err)
+    pivots = params.pivots.split(",")
+    nbar = params.nbar
+    bias = params.bias
+    rmax = params.boxside / 2
+    kmax = params.kmax
 
     global Plin, growth_rate
 

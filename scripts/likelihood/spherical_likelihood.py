@@ -83,7 +83,7 @@ def initialise():
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
-    growth_rate = None if parsed_params.rsd else 0.
+    growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
     ini_tag = "map={},kmax={},pivot={},{}{}{}".format(

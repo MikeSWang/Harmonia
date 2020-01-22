@@ -1397,6 +1397,7 @@ class TwoPointFunction(Couplings):
     def _access_couplings(self, coupling_type, mu):
 
         if coupling_type == 'angular':
-            return self.couplings[coupling_type][(mu[0], mu[1], None)]
+            _access_tuple = (mu[0], mu[1], None)
         else:
-            return self.couplings[coupling_type][(mu[0], None, mu[2])]
+            _access_tuple = (mu[0], None, mu[2])
+        return self.couplings[coupling_type][_access_tuple]

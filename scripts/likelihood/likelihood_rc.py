@@ -1,6 +1,7 @@
 """Runtime configuration for likelihood sampling.
 
 """
+import logging
 import os
 import sys
 import warnings
@@ -101,3 +102,14 @@ PATHOUT = Path("../../data/likelihood/")
 
 if __name__ != '__main__':
     script_name = get_filename(sys.argv[0])
+
+    logging_handler = logging.StreamHandler(sys.stdout)
+    logging_formatter = logging.Formatter(
+        fmt='[%(asctime)s %(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    logging_handler.setFormatter(logging_formatter)
+
+    logger = logging.getLogger()
+    logger.addHandler(logging_handler)
+    logger.setLevel(logging.INFO)

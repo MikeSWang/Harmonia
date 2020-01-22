@@ -7,8 +7,8 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
-from likelihood_rc import domain_cut
+from likelihood_rc import PATHIN, PATHOUT, logger, script_name
+from likelihood_rc import domain_cut, parse_external_args
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
@@ -173,6 +173,10 @@ def process():
 
         spherical_data = SphericalArray.build(
             disc=disc, filling=overdensity_field
+        )
+
+        logger.info(
+            "Measurement made for %s catalogue. ", file_suffix.rstrip(".txt")
         )
 
         # Construct spherical likelihood.

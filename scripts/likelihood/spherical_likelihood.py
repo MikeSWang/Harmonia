@@ -7,15 +7,10 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, logger, script_name
+from likelihood_rc import PATHIN, PATHOUT, DATAPATH, logger, script_name
 from likelihood_rc import domain_cut, parse_external_args
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path
-from harmonia.mapper import (
-    RandomCatalogue,
-    SphericalMap,
-    load_catalogue_from_file,
-)
 from harmonia.reader import TwoPointFunction
 from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 
@@ -24,15 +19,14 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
-COUPLINGS_FILE = "couplings-(pivot={},kmax={},fsky={:.2f}).npy"
+COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={}).npy"
+
+# Catalogue map input.
+MAP_PATH = DATAPATH/"spherical_map"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
 SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
-
-# Survey catalogue input.
-CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-TO_MESH_KWARGS = dict(resampler='tsc', compensated=True, interlaced=True)
 
 # Global quantities.
 simu_cosmo = None
@@ -83,11 +77,13 @@ def initialise():
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
+    ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},kmax={},pivot={},{}{}{}".format(
-        parsed_params.map, parsed_params.khyb, parsed_params.spherical_pivot,
+    ini_tag = "map={},fsky={},knots=[{},{}],{}{}{}".format(
+        parsed_params.map, parsed_params.fsky,
+        parsed_params.kmin, parsed_params.kmax,
         rsd_tag, sampled_tag, fixed_tag,
     ).strip(",")
 
@@ -107,9 +103,8 @@ def initialise():
         try:
             external_couplings = np.load(
                 SPECS_PATH/COUPLINGS_FILE.format(
-                    parsed_params.spherical_pivot,
-                    str(parsed_params.khyb).rstrip("0"),
-                    parsed_params.fsky
+                    parsed_params.fsky,
+                    str(parsed_params.kmax).rstrip("0"),
                 )
             ).item()
         except FileNotFoundError:
@@ -142,41 +137,17 @@ def process():
         couplings=external_couplings
     )
 
+    map_file = params['input_catalogue'] \
+        + "-(map={},knots=[{},{}],rsd={}).npy".format(
+            params['map'], params['kmin'], params['kmax'], params['rsd']
+        )
+    map_data = np.load(MAP_PATH/map_file).item()
+
     output_data = defaultdict(list)
     for file_suffix in ["L.txt", "R.txt"]:
-        # Build map from loaded catalogue.
-        catalogue_name = params['input_catalogue'] + file_suffix
-        catalogue_path = PATHIN/"catalogues"/catalogue_name
-
-        data_catalogue = load_catalogue_from_file(
-            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize'],
-            add_vel=params['rsd']
-        )
-        random_catalogue = RandomCatalogue(
-            params['contrast']*params['nbar'], params['boxsize']
-        )
-
-        for catalogue in [data_catalogue, random_catalogue]:
-            catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params['boxsize']/2, params['fsky']
-            )
-            catalogue['NZ'] = params['nbar'] * catalogue['Weight']
-
-        spherical_map = SphericalMap(
-            disc, data_catalogue, rand=random_catalogue,
-            mean_density_data=params['nbar'],
-            mean_density_rand=params['contrast']*params['nbar']
-        )
-
-        # Compute measurements.
-        overdensity_field = spherical_map.density_constrast()
-
+        # Load map data.
         spherical_data = SphericalArray.build(
-            disc=disc, filling=overdensity_field
-        )
-
-        logger.info(
-            "Measurement made for %s catalogue. ", file_suffix.rstrip(".txt")
+            disc=disc, filling=map_data[file_suffix]
         )
 
         # Construct spherical likelihood.

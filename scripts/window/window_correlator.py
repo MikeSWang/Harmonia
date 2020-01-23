@@ -113,13 +113,14 @@ def initialise():
     print("\n")
 
     return (
-        "fsky={}{},orders={},knots=[{},{}],boxsize={},mesh={},iter={}"
+        "fsky={}{},boxsize={},knots=[{},{}],orders={},mesh={},iter={}"
     ).format(
         np.around(fsky, decimals=2), split*"s",
-        str(orders).replace(", ", ","),
+        np.int(boxsize),
         str(np.around(khyb, decimals=3)).rstrip("0"),
         str(np.around(kmax, decimals=3)).rstrip("0"),
-        np.int(boxsize), nmesh, niter
+        str(orders).replace(", ", ","),
+        nmesh, niter
     )
 
 

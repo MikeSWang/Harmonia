@@ -7,8 +7,8 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
-from likelihood_rc import domain_cut
+from likelihood_rc import PATHIN, PATHOUT, DATAPATH, script_name
+from likelihood_rc import domain_cut, parse_external_args
 from harmonia.algorithms import CartesianArray, DiscreteSpectrum
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
@@ -26,10 +26,13 @@ COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
+# Catalogue map input.
+MAP_PATH = DATAPATH/"cartesian_map"
+
 MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
 WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
 FIDUCIAL_ESTIMATE_FILENAME = (
-    "fiducial_estimate-(fsky={:.2f},orders={},knots=[{},{}]).npy"
+    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={}).npy"
 )
 
 # Likelihood input.
@@ -90,15 +93,20 @@ def initialise():
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
+    ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},kmax={},pivot={},orders={},{}{}{}{}".format(
-        parsed_params.map, parsed_params.kmax, parsed_params.cartesian_pivot,
-        str(parsed_params.multipoles).replace(", ", ","),
-        rsd_tag, sampled_tag, fixed_tag,
-        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est}",
-    ).strip(",")
+    ini_tag = "map={},fsky={},knots=[{},{}],orders={},pivot={},{}{}{}{}"\
+        .format(
+            parsed_params.map, parsed_params.fsky,
+            parsed_params.kmin, parsed_params.kmax,
+            str(parsed_params.multipoles).replace(", ", ","), 
+            parsed_params.cartesian_pivot, rsd_tag,
+            sampled_tag, fixed_tag,
+            bool(parsed_params.num_cov_est) 
+                * f"ncov={parsed_params.num_cov_est}",
+        ).strip(",")
 
     # Extract cosmology and survey specifications.
     global simu_cosmo, mask_multipoles, window_multipoles, window_correlator
@@ -123,9 +131,9 @@ def initialise():
         SPECS_PATH/(
             FIDUCIAL_ESTIMATE_FILENAME.format(
                 parsed_params.fsky,
-                str(parsed_params.multipoles).replace(", ", ","),
                 str(np.around(parsed_params.khyb, decimals=3)).rstrip("0"),
-                str(np.around(parsed_params.kmax, decimals=3)).rstrip("0")
+                str(np.around(parsed_params.kmax, decimals=3)).rstrip("0"),
+                str(parsed_params.multipoles).replace(", ", ",")
             )
         )
     ).item()
@@ -150,8 +158,6 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
-
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],
         growth_rate=params['growth_rate'],
@@ -160,45 +166,20 @@ def process():
         window_multipoles=window_multipoles
     )
 
+    map_file = params['input_catalogue'] \
+        + "-(map={},knots=[{},{}],orders={},rsd={}).npy".format(
+            params['map'], params['kmin'], params['kmax'], 
+            str(params['multipoles']).replace(", ", ","), params['rsd']
+        )
+    map_data = np.load(MAP_PATH/map_file).item()
+
     output_data = defaultdict(list)
     for file_suffix in ["L.txt", "R.txt"]:
-        # Build map from loaded catalogue.
-        catalogue_name = params['input_catalogue'] + file_suffix
-        catalogue_path = PATHIN/"catalogues"/catalogue_name
-
-        data_catalogue = load_catalogue_from_file(
-            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize'],
-            add_vel=params['rsd']
-        )
-        random_catalogue = RandomCatalogue(
-            params['contrast']*params['nbar'], params['boxsize']
-        )
-
-        for catalogue in [data_catalogue, random_catalogue]:
-            catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params['boxsize']/2, params['fsky']
-            )
-            catalogue['NZ'] = params['nbar'] * catalogue['Weight']
-
-        spherical_map = SphericalMap(
-            disc, data_catalogue, rand=random_catalogue,
-            mean_density_data=params['nbar'],
-            mean_density_rand=params['contrast']*params['nbar']
-        )
-        cartesian_map = CartesianMap(
-            spherical_map.pair, num_mesh=params['mesh']
-        )
-
-        # Cartesian measurements.
-        cartesian_multipoles = cartesian_map.power_multipoles(
-            orders=params['multipoles'],
-            kmax=params['kmax']
-        )
-
+        # Load map data.
         cartesian_data = CartesianArray(
-            filling=cartesian_multipoles,
+            filling=map_data[file_suffix],
             coord_key='k',
-            var_key_root='power_'
+            variable_key_root='power_'
         )
 
         # Construct Cartesian likelihood.

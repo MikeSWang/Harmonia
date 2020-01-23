@@ -94,10 +94,9 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "pivot={},rmax={}.,kmax={},fsky={:.2f},rsd={}".format(
-        parsed_params.pivot,
-        int(np.around(parsed_params.rmax)),
-        parsed_params.kmax, parsed_params.fsky, rsd_tag
+    ini_tag = "fsky={:.2f},rmax={}.,kmax={},rsd={}".format(
+        parsed_params.fsky, int(np.around(parsed_params.rmax)),
+        parsed_params.kmax, rsd_tag
     )
 
     return ini_params, ini_tag

@@ -30,24 +30,21 @@ def parse_external_args():
 
     parser.add_argument('--map', required=True)
     parser.add_argument('--fsky', type=float, default=1.)
+    parser.add_argument('--kmin', type=float, default=None)
     parser.add_argument('--khyb', type=float, default=0.04)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--rsd', action='store_true')
-    parser.add_argument('--multipoles', type=int, nargs='+', default=[0, 2])
+    parser.add_argument('--multipoles', type=int, nargs='+', default=0)
 
-    parser.add_argument('--breakdown', action='store_true')
     parser.add_argument('--spherical-pivot', default='spectral')
     parser.add_argument('--cartesian-pivot', default='order')
+    parser.add_argument('--breakdown', action='store_true')
     parser.add_argument('--load-couplings', action='store_true')
     parser.add_argument('--num-cov-est', type=int, default=None)
 
     parser.add_argument('--nbar', type=float, default=2.4883e-4)
     parser.add_argument('--redshift', type=float, default=1.)
-
-    parser.add_argument('--contrast', type=float, default=10.)
     parser.add_argument('--boxsize', type=float, default=1000.)
-    parser.add_argument('--dk', type=float, default=None)
-    parser.add_argument('--mesh', type=int, default=256)
     parser.add_argument('--input-catalogue', required=True)
 
     return parser.parse_args()
@@ -99,6 +96,7 @@ warnings.formatwarning = clean_warning_format
 
 PATHIN = Path("../../data/survey/")
 PATHOUT = Path("../../data/likelihood/")
+DATAPATH = Path("../../data/map/")
 
 if __name__ != '__main__':
     script_name = get_filename(sys.argv[0])

@@ -6,9 +6,9 @@ from pprint import pprint
 
 import numpy as np
 
-from map_rc import PATHIN, PATHOUT, logger, script_name
+from map_rc import PATHIN, PATHOUT, script_name
 from map_rc import domain_cut, parse_external_args
-from harmonia.algorithms import CartesianArray, DiscreteSpectrum
+from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
     CartesianMap,

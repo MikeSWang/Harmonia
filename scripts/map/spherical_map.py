@@ -5,11 +5,10 @@ from collections import defaultdict
 from pprint import pprint
 
 import numpy as np
-from nbodykit.cosmology import Cosmology
 
-from map_rc import PATHIN, PATHOUT, logger, script_name
+from map_rc import PATHIN, PATHOUT, script_name
 from map_rc import domain_cut, parse_external_args
-from harmonia.algorithms import DiscreteSpectrum, SphericalArray
+from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
     RandomCatalogue,

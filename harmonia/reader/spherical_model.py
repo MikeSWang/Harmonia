@@ -1002,10 +1002,11 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
+        angular_reduction = (self.couplings['angular'] is None)
+        rsd_reduction = not bool(self.growth_rate)
+
         Phi_mu = self._access_couplings('radial', mu)
         Phi_nu = self._access_couplings('radial', nu)
-
-        rsd_reduction = not bool(self.growth_rate)
 
         if not rsd_reduction:
             Upsilon_mu = self._access_couplings('RSD', mu)

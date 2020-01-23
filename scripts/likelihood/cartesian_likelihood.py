@@ -192,7 +192,6 @@ def process():
         # Cartesian measurements.
         cartesian_multipoles = cartesian_map.power_multipoles(
             orders=params['multipoles'],
-            kmin=params['khyb'],
             kmax=params['kmax']
         )
 

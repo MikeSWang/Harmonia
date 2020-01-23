@@ -132,8 +132,8 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['khyb'])
-    global two_point_model
+    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
+
     two_point_model = TwoPointFunction(
         disc,
         redshift=params['redshift'],
@@ -194,6 +194,7 @@ def process():
         for par_name, par_values in sampled_params.items():
             sph_likelihood_kwargs.update({par_name: par_values})
 
+        print(sph_likelihood_kwargs)  # HACK: to be removed.
         output_data['spherical_likelihood'].append(
             [sph_likelihood(**sph_likelihood_kwargs)]
         )

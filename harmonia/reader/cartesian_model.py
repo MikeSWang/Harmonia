@@ -83,6 +83,10 @@ class WindowedPowerSpectrum:
 
     """
 
+    LOG_K_INTERPOL_RANGE = -5, 1
+    NUM_INTERPOL = pow(2, 14)
+    PREDICTED_ORDERS = [0, 2, 4]
+
     def __init__(self, redshift=0., growth_rate=None, power_spectrum=None,
                  cosmo=None, mask_multipoles=None, window_multipoles=None):
 
@@ -124,10 +128,19 @@ class WindowedPowerSpectrum:
                         .format(self.growth_rate, cosmo_growth_rate)
                     )
         self.cosmo = cosmo
+        self._mod_kernel = \
+            scale_dependence_modification(self.cosmo, self.redshift)
+
         self.mask_multipoles = mask_multipoles
         self.window_multipoles = window_multipoles
 
         self._wavenumbers = None
+        self._mode_powers_ = None
+        self._mode_scale_dependence_modifications_ = None
+        self._interp_point_powers_ = None
+        self._interp_point_scale_dependence_modifications_ = None
+
+        self._k_interpol_ = None
 
     @property
     def wavenumbers(self):
@@ -189,11 +202,7 @@ class WindowedPowerSpectrum:
             also `None`.
 
         """
-        LOG_K_INTERPOL_RANGE = -5, 1
-        NUM_INTERPOL = pow(2, 14)
-        PREDICTED_ORDERS = [0, 2, 4]
-
-        if not set(orders).issubset(set(PREDICTED_ORDERS)):
+        if not set(orders).issubset(set(self.PREDICTED_ORDERS)):
             raise ValueError("`orders` must be a subset of {0, 2, 4}. ")
 
         if wavenumbers is None:
@@ -215,14 +224,12 @@ class WindowedPowerSpectrum:
                 b_k = b_1 * np.ones_like(wavenumbers)
             else:
                 b_k = b_1 + f_nl * (b_1 - tracer_parameter) \
-                    * scale_dependence_modification(self.cosmo, self.redshift)(
-                        wavenumbers
-                    )
+                    * self._mode_scale_dependence_modifications
 
             pk_ell_convolved = {
                 'power_{}'.format(ell):
                     self.kaiser_factors(ell, b_k, self.growth_rate) \
-                    * self.matter_power_spectrum(wavenumbers)
+                    * self._mode_powers
                 for ell in orders
             }
 
@@ -236,20 +243,16 @@ class WindowedPowerSpectrum:
 
         s = self.mask_multipoles['s']
 
-        k_interpol = np.logspace(*LOG_K_INTERPOL_RANGE, num=NUM_INTERPOL)
-
         if f_nl is None:
-            b_k_interpol = b_1 * np.ones_like(k_interpol)
+            b_k_interpol = b_1 * np.ones_like(self._k_interpol)
         else:
             b_k_interpol = b_1 + f_nl * (b_1 - tracer_parameter) \
-                * scale_dependence_modification(self.cosmo, self.redshift)(
-                    k_interpol
-                )
+                * self._mod_kernel(self._k_interpol)
 
         pk_ell_interpol = {
             ell: self.kaiser_factors(ell, b_k_interpol, self.growth_rate) \
-                * self.matter_power_spectrum(k_interpol)
-            for ell in PREDICTED_ORDERS
+                * self.matter_power_spectrum(self._k_interpol)
+            for ell in self.PREDICTED_ORDERS
         }
 
         with warnings.catch_warnings():
@@ -262,12 +265,12 @@ class WindowedPowerSpectrum:
             )
             xi_ell = {
                 ell: Spline(
-                    *P2xi(k_interpol, l=ell, lowring=True)(
+                    *P2xi(self._k_interpol, l=ell, lowring=True)(
                         pk_ell_interpol[ell], extrap=False
                     ),
                     k=1
                 )(s)
-                for ell in PREDICTED_ORDERS
+                for ell in self.PREDICTED_ORDERS
             }
 
         xi_ell_convolved = {}
@@ -402,6 +405,113 @@ class WindowedPowerSpectrum:
 
         return np.squeeze(kaiser_factor)
 
+    @property
+    def _mode_powers(self):
+        """Power of the underlying matter distribution at the discrete
+        Fourier wavenumbers.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray``}
+            Mode power unmodulated by tracer bias.
+
+        """
+        if self._mode_powers_ is not None:
+            return self._mode_powers_
+
+        self._mode_powers_ = self.matter_power_spectrum(self.wavenumbers)
+
+        return self._mode_powers_
+
+    @property
+    def _mode_scale_dependence_modifications(self):
+        """Scale-dependent modification to the scale-independent linear
+        bias at discrete Fourier wavenumbers to be modulated by local
+        primordial non-Gaussianity and tracer parameter.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray`}
+            Mode scale-dependent modification.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`cosmo` is `None`.
+
+        """
+        if self._mode_scale_dependence_modifications_ is not None:
+            return self._mode_scale_dependence_modifications_
+
+        if self.cosmo is None:
+            raise ValueError("`cosmo` cannot be None for scale modification. ")
+
+        _kernel = scale_dependence_modification(self.cosmo, self.redshift)
+
+        self._mode_scale_dependence_modifications_ = \
+            self._mod_kernel(self.wavenumbers)
+
+        return self._mode_scale_dependence_modifications_
+
+    @property
+    def _interp_point_powers(self):
+        """Power of the underlying matter distribution at the interpolation
+        point wavenumbers.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray``}
+            Mode power unmodulated by tracer bias.
+
+        """
+        if self._interp_point_powers_ is not None:
+            return self._interp_point_powers_
+
+        self._interp_point_powers_ = \
+            self.matter_power_spectrum(self._k_interpol)
+
+        return self._interp_point_powers_
+
+    @property
+    def _interp_point_scale_dependence_modifications(self):
+        """Scale-dependent modification to the scale-independent linear
+        bias at interpolation point wavenumber to be modulated by local
+        primordial non-Gaussianity and tracer parameter.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray`}
+            Mode scale-dependent modification.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`cosmo` is `None`.
+
+        """
+        if self._interp_point_scale_dependence_modifications_ is not None:
+            return self._interp_point_scale_dependence_modifications_
+
+        if self.cosmo is None:
+            raise ValueError("`cosmo` cannot be None for scale modification. ")
+
+        self._interp_point_scale_dependence_modifications_ = \
+            self._mod_kernel(self._k_interpol)
+
+        return self._interp_point_scale_dependence_modifications_
+
+    @property
+    def _k_interpol(self):
+
+        if self._k_interpol_ is not None:
+            return self._k_interpol_
+
+        self._k_interpol_ = np.logspace(
+            *self.LOG_K_INTERPOL_RANGE, num=self.NUM_INTERPOL
+        )
+
+        return self._k_interpol_
+
 
 class WindowedCorrelation:
     """Window-induced correlation matrix for power spectrum multipoles at
@@ -436,7 +546,7 @@ class WindowedCorrelation:
         self.orders = list(
             map(
                 lambda var_name: int(var_name.split("power_")[-1]),
-                self.fiducial_multipoles.sorted_vars
+                self.fiducial_multipoles.variables
             )
         )
 

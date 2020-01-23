@@ -76,6 +76,7 @@ class WindowedPowerSpectrum:
     ValueError
         If `power_spectrum` is `None` when `cosmo` is `None`.
 
+
     .. |cosmology| replace::
 
         :class:`nbodykit.cosmology.cosmology.Cosmology`

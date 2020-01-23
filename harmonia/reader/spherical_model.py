@@ -138,7 +138,6 @@ from itertools import product
 
 import numpy as np
 from nbodykit.lab import cosmology
-from numba import njit
 from scipy.integrate import IntegrationWarning
 
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
@@ -918,6 +917,7 @@ class TwoPointFunction(Couplings):
         self._mode_powers_ = None
         self._mode_scale_dependence_modifications_ = None
         self._fixed_angular_sums_ = None
+        self._fixed_shot_noise_ = None
 
     @property
     def couplings(self):
@@ -1098,8 +1098,6 @@ class TwoPointFunction(Couplings):
         rmax = self.disc.attrs['boundary_radius']
 
         u_mu = self.disc.roots[ell_mu][n_mu-1]
-        k_mu = self.disc.wavenumbers[ell_mu][n_mu-1]
-        k_nu = self.disc.wavenumbers[ell_nu][n_nu-1]
 
         if not callable(self.selection) and not callable(self.weight) \
                 and ell_mu == ell_nu:
@@ -1108,29 +1106,12 @@ class TwoPointFunction(Couplings):
             else:
                 shot_noise = 0.
         else:
-            args = mu, nu, k_mu, k_nu
-            kwargs = dict(selection=self.selection, weight=self.weight)
-
-            with warnings.catch_warnings(record=True) as any_warnings:
-                shot_noise = rad_int(
-                    lambda r: _shot_noise_kernel(r, *args, **kwargs), rmax
-                )
-
-            unique_warning_msgs = set(map(
-                lambda warning_obj: warning_obj.message, any_warnings
-            ))
-            for msg in unique_warning_msgs:
-                warnings.warn(
-                    "Shot noise integration warning emitted: {}.\n"
-                    .format(msg),
-                    category=IntegrationWarning
-                )
+            shot_noise = self._access_shot_noise(mu, nu)
 
         shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar
 
         return shot_noise
 
-    @njit
     def two_point_covariance(self, pivot, part='both', diag=False, nbar=None,
                              b_1=None, f_nl=None, tracer_parameter=1.,
                              contrast=np.inf):
@@ -1398,7 +1379,7 @@ class TwoPointFunction(Couplings):
         Returns
         -------
         dict
-            Angular sums for all paired coupling coefficient indices over
+            Angular sums for all pairs of coupling coefficient indices over
             the summed angular coupling coefficient index.
 
         """
@@ -1426,16 +1407,69 @@ class TwoPointFunction(Couplings):
 
         return self._fixed_angular_sums_
 
+    @property
+    def _fixed_shot_noise(self):
+        """Pre-computed shot noise integral for each fixed pair of coupling
+        coefficient indices.
+
+        Returns
+        -------
+        dict
+            Shot noise integral for all pairs of coupling coefficient
+            indices.
+
+        """
+        if self._fixed_shot_noise_ is not None:
+            return self._fixed_shot_noise_
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            operatable_index_vector = map(
+                lambda tup: (tup[0], None, tup[2]),
+                self._natural_indices.unfold('natural', return_only='index')
+            )
+        index_vector = list(set(operatable_index_vector))
+
+        kwargs = dict(selection=self.selection, weight=self.weight)
+
+        self._fixed_shot_noise_ = defaultdict(dict)
+        with warnings.catch_warnings(record=True) as any_warnings:
+            for mu, nu in product(*(index_vector,)*2):
+                k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
+                k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
+                self._fixed_shot_noise_[(mu, nu)] = rad_int(
+                    lambda r: \
+                        _shot_noise_kernel(r, mu, nu, k_mu, k_nu, **kwargs),
+                    self.disc.attrs['boundary_radius']
+                )
+
+        unique_warning_msgs = set(map(
+            lambda warning_obj: warning_obj.message, any_warnings
+        ))
+        for msg in unique_warning_msgs:
+            warnings.warn(
+                "Shot noise integration warning emitted: {}.\n".format(msg),
+                category=IntegrationWarning
+            )
+
+        return self._fixed_shot_noise_
+
     def _access_couplings(self, coupling_type, mu):
 
         if coupling_type == 'angular':
-            _access_tuple = (mu[0], mu[1], None)
+            _tuple_key = (mu[0], mu[1], None)
         else:
-            _access_tuple = (mu[0], None, mu[2])
-        return self.couplings[coupling_type][_access_tuple]
+            _tuple_key = (mu[0], None, mu[2])
+        return self.couplings[coupling_type][_tuple_key]
 
     def _access_angular_sums(self, ell, mu, nu):
 
-        _key_tuple = ((mu[0], mu[1], None), (nu[0], nu[1], None))
+        _tuple_key = ((mu[0], mu[1], None), (nu[0], nu[1], None))
 
-        return self._fixed_angular_sums[ell][_key_tuple]
+        return self._fixed_angular_sums[ell][_tuple_key]
+
+    def _access_shot_noise(self, mu, nu):
+
+        _tuple_key = ((mu[0], None, mu[2]), (nu[0], None, nu[2]))
+
+        return self._fixed_shot_noise[_tuple_key]

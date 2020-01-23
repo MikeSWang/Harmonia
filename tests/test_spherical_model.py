@@ -40,11 +40,11 @@ def test_Couplings(discrete_spectrum, coupling_type):
     couplings_full = \
         Couplings(discrete_spectrum, survey_specs=COUPLINGS_SURVEY_SPECS)
 
-    partial_couplings_fixed_index = couplings_partial.couplings_fixed_index(
+    partial_couplings_fixed_index = couplings_partial._couplings_fixed_index(
         mu=COUPLINGS_TEST_PARAMS['mu'],
         coupling_type=coupling_type
     )
-    full_couplings_fixed_index = couplings_full.couplings_fixed_index(
+    full_couplings_fixed_index = couplings_full._couplings_fixed_index(
         mu=COUPLINGS_TEST_PARAMS['mu'],
         coupling_type=coupling_type
     )

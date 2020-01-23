@@ -133,6 +133,8 @@ epoch (see :mod:`~harmonia.cosmology.scale_dependence`);
 """
 import logging
 import warnings
+from collections import defaultdict
+from itertools import product
 
 import numpy as np
 from nbodykit.lab import cosmology
@@ -620,7 +622,7 @@ class Couplings:
 
         return coupling_coeff
 
-    def couplings_fixed_index(self, mu, coupling_type):
+    def _couplings_fixed_index(self, mu, coupling_type):
         r"""Compute coupling coefficients with the first triplet index
         fixed.
 
@@ -633,7 +635,7 @@ class Couplings:
 
         ::
 
-            Couplings.couplings_fixed_index(mu, 'angular')
+            Couplings._couplings_fixed_index(mu, 'angular')
 
         returns the quantity
 
@@ -686,13 +688,7 @@ class Couplings:
 
     def compile_couplings(self, coupling_type):
         r"""Compile all coupling coefficients of a given type as a sequence
-        iterated through the first triplet index ordered as specified.
-
-        This returns a dictionary whose keys are all the triplet indices,
-        each with a value corresponding to the coefficients returned by
-        a call of
-        :meth:`~.reader.spherical_model.Couplings.couplings_fixed_index`
-        for the specified coupling type and that triplet index.
+        iterated through the first coupling index in the discrete spectrum.
 
         Parameters
         ----------
@@ -726,7 +722,7 @@ class Couplings:
                 coeff_vector = []
                 for ind_idx, mu in enumerate(index_vector):
                     coeff_vector.append(
-                        self.couplings_fixed_index(
+                        self._couplings_fixed_index(
                             mu, coupling_type=coupling_type
                         )
                     )
@@ -737,7 +733,7 @@ class Couplings:
                             "Progress: %d%% computed. ", progress
                         )
             else:
-                coeff_processor = lambda mu: self.couplings_fixed_index(
+                coeff_processor = lambda mu: self._couplings_fixed_index(
                     mu, coupling_type=coupling_type
                 )
                 coeff_vector = mpi_compute(
@@ -782,15 +778,15 @@ class Couplings:
                 .unfold('natural', return_only='index')
 
         if coupling_type == 'angular':
-            operated_index_vector = map(
+            operatable_index_vector = map(
                 lambda tup: (tup[0], tup[1], None), index_vector
             )
         else:
-            operated_index_vector = map(
+            operatable_index_vector = map(
                 lambda tup: (tup[0], None, tup[2]), index_vector
             )
 
-        return list(set(operated_index_vector))
+        return set(list(operatable_index_vector))
 
 
 # 2-Point Correlators
@@ -834,8 +830,8 @@ class TwoPointFunction(Couplings):
         normalised to unity today, ``'AP_distortion'`` for AP distortion.
         Default is `None`.
     couplings : dict of {str: dict of {tuple: dict}} or None, optional
-        Pre-computed couplings (default is `None`) with consistent
-        cosmology and redshift as the other arguments.
+        Pre-computed couplings (default is `None`) for cosmology and
+        redshift consistent with the other arguments.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -917,9 +913,11 @@ class TwoPointFunction(Couplings):
                     )
         self.cosmo = cosmo
 
+        self._natural_indices = SphericalArray.build(disc=self.disc)
         self._couplings = couplings
         self._mode_powers_ = None
         self._mode_scale_dependence_modifications_ = None
+        self._fixed_angular_sums_ = None
 
     @property
     def couplings(self):
@@ -979,64 +977,6 @@ class TwoPointFunction(Couplings):
 
         return self._couplings
 
-    @property
-    def _mode_powers(self):
-        """Power of the underlying matter distribution at the discretised
-        Fourier modes.
-
-        Returns
-        -------
-        dict of {int: float :class:`numpy.ndarray``}
-            Mode power unmodulated by tracer bias.
-
-        """
-        if self._mode_powers_ is not None:
-            return self._mode_powers_
-
-        self._mode_powers_ = {}
-        for ell in self.disc.degrees:
-            self._mode_powers_[ell] = self.matter_power_spectrum(
-                self.disc.wavenumbers[ell]
-            )
-
-        return self._mode_powers_
-
-    @property
-    def _mode_scale_dependence_modifications(self):
-        """Scale-dependent modification to the scale-independent linear
-        bias at discretised Fourier modes to be modulated by local
-        primordial non-Gaussianity and tracer parameter.
-
-        Returns
-        -------
-        dict of {int: float :class:`numpy.ndarray`}
-            Mode scale-dependent modification.
-
-        Raises
-        ------
-        ValueError
-            If :attr:`cosmo` is `None`.
-
-        """
-        if self._mode_scale_dependence_modifications_ is not None:
-            return self._mode_scale_dependence_modifications_
-
-        if self.cosmo is None:
-            raise ValueError("`cosmo` cannot be None for scale modification. ")
-
-        scale_dependence_modification_kernel = scale_dependence_modification(
-            self.cosmo, self.redshift
-        )
-
-        self._mode_scale_dependence_modifications_ = {}
-        for ell in self.disc.degrees:
-            self._mode_scale_dependence_modifications_[ell] = \
-                scale_dependence_modification_kernel(
-                    self.disc.wavenumbers[ell]
-                )
-
-        return self._mode_scale_dependence_modifications_
-
     def two_point_signal(self, mu, nu, b_1, f_nl=None, tracer_parameter=1.):
         """Compute signal 2-point function for given triplet indices with
         or without scale-dependence modification by local primordial
@@ -1062,14 +1002,11 @@ class TwoPointFunction(Couplings):
             indices.
 
         """
-        angular_reduction = (self.couplings['angular'] is None)
-        rsd_reduction = not bool(self.growth_rate)
-
         Phi_mu = self._access_couplings('radial', mu)
         Phi_nu = self._access_couplings('radial', nu)
-        if not angular_reduction:
-            M_mu = self._access_couplings('angular', mu)
-            M_nu = self._access_couplings('angular', nu)
+
+        rsd_reduction = not bool(self.growth_rate)
+
         if not rsd_reduction:
             Upsilon_mu = self._access_couplings('RSD', mu)
             Upsilon_nu = self._access_couplings('RSD', nu)
@@ -1105,12 +1042,8 @@ class TwoPointFunction(Couplings):
                 signal += radial_sum
         else:
             for ell, nmax in zip(self.disc.degrees, self.disc.depths):
-                angular_sum = np.sum(
-                    [
-                        M_mu[ell][m_idx] * np.conj(M_nu[ell][m_idx])
-                        for m_idx in range(0, 2*ell+1)
-                    ]
-                )
+
+                angular_sum = self._access_angular_sums(ell, mu, nu)
 
                 b_k = b_1 * np.ones(nmax)
                 if f_nl is not None:
@@ -1282,9 +1215,9 @@ class TwoPointFunction(Couplings):
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray\
-                .build(disc=self.disc)\
-                .unfold(pivot, return_only='index')
+            index_vector = self._natural_indices.unfold(
+                pivot, return_only='index'
+            )
 
         dim_covar = len(index_vector)
         two_point_covar = np.zeros((dim_covar, dim_covar), dtype=complex)
@@ -1303,7 +1236,9 @@ class TwoPointFunction(Couplings):
                     )
 
             triu_indices = np.triu_indices(dim_covar, k=1)
-            two_point_covar[triu_indices] = two_point_covar.H[triu_indices]
+            two_point_covar[triu_indices] = np.conj(
+                two_point_covar.T[triu_indices]
+            )
 
         return two_point_covar
 
@@ -1369,9 +1304,9 @@ class TwoPointFunction(Couplings):
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            index_vector = SphericalArray\
-                .build(disc=self.disc)\
-                .unfold(pivot, return_only='index')
+            index_vector = self._natural_indices.unfold(
+                pivot, return_only='index'
+            )
 
         collapse_dof_correction = (pivot in ['scale', 'root'])
 
@@ -1396,6 +1331,101 @@ class TwoPointFunction(Couplings):
 
         return mode_variance
 
+    @property
+    def _mode_powers(self):
+        """Power of the underlying matter distribution at the discretised
+        Fourier modes.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray``}
+            Mode power unmodulated by tracer bias.
+
+        """
+        if self._mode_powers_ is not None:
+            return self._mode_powers_
+
+        self._mode_powers_ = {}
+        for ell in self.disc.degrees:
+            self._mode_powers_[ell] = self.matter_power_spectrum(
+                self.disc.wavenumbers[ell]
+            )
+
+        return self._mode_powers_
+
+    @property
+    def _mode_scale_dependence_modifications(self):
+        """Scale-dependent modification to the scale-independent linear
+        bias at discretised Fourier modes to be modulated by local
+        primordial non-Gaussianity and tracer parameter.
+
+        Returns
+        -------
+        dict of {int: float :class:`numpy.ndarray`}
+            Mode scale-dependent modification.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`cosmo` is `None`.
+
+        """
+        if self._mode_scale_dependence_modifications_ is not None:
+            return self._mode_scale_dependence_modifications_
+
+        if self.cosmo is None:
+            raise ValueError("`cosmo` cannot be None for scale modification. ")
+
+        scale_dependence_modification_kernel = scale_dependence_modification(
+            self.cosmo, self.redshift
+        )
+
+        self._mode_scale_dependence_modifications_ = {}
+        for ell in self.disc.degrees:
+            self._mode_scale_dependence_modifications_[ell] = \
+                scale_dependence_modification_kernel(
+                    self.disc.wavenumbers[ell]
+                )
+
+        return self._mode_scale_dependence_modifications_
+
+    @property
+    def _fixed_angular_sums(self):
+        """Pre-computed angular sums for each fixed pair of coupling
+        coefficient indices over the summed angular coupling coefficient
+        indices.
+
+        Returns
+        -------
+        dict
+            Angular sums for all paired coupling coefficient indices over
+            the summed angular coupling coefficient index.
+
+        """
+        if self._fixed_angular_sums_ is not None:
+            return self._fixed_angular_sums_
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            operatable_index_vector = map(
+                lambda tup: (tup[0], tup[1], None),
+                self._natural_indices.unfold('natural', return_only='index')
+            )
+        index_vector = list(set(operatable_index_vector))
+
+        angular_couplings = self.couplings['angular']
+
+        self._fixed_angular_sums_ = defaultdict(dict)
+        for ell in self.disc.degrees:
+            for partial_mu, partial_nu in product(*(index_vector,)*2):
+                M_mu_ = angular_couplings[partial_mu][ell]
+                M_nu_ = angular_couplings[partial_nu][ell]
+                self._fixed_angular_sums_[ell].update(
+                    {(partial_mu, partial_nu) : np.sum(M_mu_ * np.conj(M_nu_))}
+                )
+
+        return self._fixed_angular_sums_
+
     def _access_couplings(self, coupling_type, mu):
 
         if coupling_type == 'angular':
@@ -1403,3 +1433,9 @@ class TwoPointFunction(Couplings):
         else:
             _access_tuple = (mu[0], None, mu[2])
         return self.couplings[coupling_type][_access_tuple]
+
+    def _access_angular_sums(self, ell, mu, nu):
+
+        _key_tuple = ((mu[0], mu[1], None), (nu[0], nu[1], None))
+
+        return self._fixed_angular_sums[ell][_key_tuple]

@@ -42,7 +42,7 @@ def scale_dependence_modification(cosmo, redshift):
 
     Parameters
     ----------
-    cosmo : :class:`nbodykit.cosmology.Cosmology`
+    cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.
     redshift : float
@@ -79,7 +79,7 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.):
         redshift.
     f_nl : float
         Local primordial non-Gaussnianity.
-    cosmo : :class:`nbodykit.cosmology.Cosmology`
+    cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.
     redshift : float, optional
@@ -116,7 +116,7 @@ def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,
     b_1 : float
         Scale-independent linear bias.  Must be the value at the specified
         redshift.
-    cosmo : :class:`nbodykit.cosmology.Cosmology`
+    cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.
     redshift : float, optional

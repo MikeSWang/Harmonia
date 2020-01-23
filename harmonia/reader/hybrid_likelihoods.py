@@ -461,7 +461,7 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
         Order in which the data is unpacked as a 1-d vector.
     orders : list of int
         Order(s) of the power spectrum multipoles.
-    correlation_modeller : :class:`~.cartesian_model.WindowCorrelation`
+    correlation_modeller : :class:`~.cartesian_model.WindowedCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
     **model_kwargs
@@ -537,7 +537,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Windowed power spectrum base model.
     cartesian_data : :class:`~harmonia.algorithms.arrays.CartesianArray`
         Cartesian data array of the compressed field.
-    correlation_modeller : :class:`~.cartesian_model.WindowCorrelation`
+    correlation_modeller : :class:`~.cartesian_model.WindowedCorrelation`
         Window-induced correlation modeller.  Must be pivoted at `pivot`,
         i.e. its :attr:`pivot` attribute must agree with input `pivot`.
     pivot : {'order', 'scale'}

@@ -34,8 +34,8 @@ def initialise():
     ini_params = parsed_params.__dict__
 
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
-    ini_tag = "map={},kmax={},orders={},{}".format(
-        parsed_params.map, parsed_params.kmax,
+    ini_tag = "map={},k=[{},{}],orders={},{}".format(
+        parsed_params.map, parsed_params.kmin, parsed_params.kmax,
         str(parsed_params.multipoles).replace(", ", ","), rsd_tag
     ).strip(",")
 
@@ -86,11 +86,19 @@ def process():
         )
 
         # Compute measurements.
-        output_data[file_suffix] = cartesian_map.power_multipoles(
-            orders=params['multipoles'],
-            kmin=params['khyb'],
-            kmax=params['kmax']
-        )
+        if params['kmin']:
+            kwargs = dict(
+                orders=params['multipoles'],
+                kmin=params['kmin'],
+                kmax=params['kmax']
+            )
+        else:
+            kwargs = dict(
+                orders=params['multipoles'],
+                kmax=params['kmax']
+            )
+
+        output_data[file_suffix] = cartesian_map.power_multipoles(**kwargs)
 
     return output_data
 

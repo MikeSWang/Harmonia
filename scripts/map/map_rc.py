@@ -30,10 +30,10 @@ def parse_external_args():
 
     parser.add_argument('--map', required=True)
     parser.add_argument('--fsky', type=float, default=1.)
-    parser.add_argument('--khyb', type=float, default=0.04)
+    parser.add_argument('--kmin', type=float, default=None)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--rsd', action='store_true')
-    parser.add_argument('--multipoles', type=int, nargs='+', default=[0, 2])
+    parser.add_argument('--multipoles', type=int, nargs='+', default=0)
 
     parser.add_argument('--nbar', type=float, default=2.4883e-4)
     parser.add_argument('--contrast', type=float, default=10.)

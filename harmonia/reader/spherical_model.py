@@ -809,7 +809,7 @@ class TwoPointFunction(Couplings):
         calculations are invoked.
     power_spectrum : callable or None
         Linear matter power spectrum model at the current epoch.
-    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+    cosmo : |cosmology| *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
         scale-dependent bias.
@@ -845,7 +845,7 @@ class TwoPointFunction(Couplings):
     matter_power_spectrum : callable
         Linear matter power spectrum model at the current epoch (in cubic
         Mpc/:math:`h`).
-    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+    cosmo : |cosmology| *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
         scale-dependent bias.

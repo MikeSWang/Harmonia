@@ -40,7 +40,7 @@ class WindowedPowerSpectrum:
         calculations are invoked.
     power_spectrum : callable or None, optional
         Linear matter power spectrum model at the current epoch.
-    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+    cosmo : |cosmology| *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
         scale-dependent bias.
@@ -66,7 +66,7 @@ class WindowedPowerSpectrum:
         separations.
     window_multipoles : dict or None, optional
         Window power spectrum multipoles given at sampled wavenumbers.
-    cosmo : :class:`nbodykit.cosmology.Cosmology` *or None, optional*
+    cosmo : |cosmology| *or None, optional*
         Cosmological model used to produce a power spectrum model, linear
         growth rate and the transfer function for calculating the
         scale-dependent bias.
@@ -76,10 +76,9 @@ class WindowedPowerSpectrum:
     ValueError
         If `power_spectrum` is `None` when `cosmo` is `None`.
 
+    .. |cosmology| replace::
 
-    .. |window_function| replace::
-
-        :class:`~harmonia.mapper.window_synthesis.SurveyWindow`
+        :class:`nbodykit.cosmology.cosmology.Cosmology`
 
     """
 

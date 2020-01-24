@@ -193,7 +193,7 @@ def process():
 
     smap_file = params['input_catalogue'] \
         + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
-            params['map'], params['fsky'],
+            'spherical', params['fsky'],
             params['kmin'], params['khyb'],
             params['rsd']
         )
@@ -201,7 +201,7 @@ def process():
 
     cmap_file = params['input_catalogue'] \
         + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
-            params['map'], params['fsky'], params['khyb'], params['kmax'],
+            'cartesian', params['fsky'], params['khyb'], params['kmax'],
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )
     cmap_data = np.load(CMAP_PATH/cmap_file).item()

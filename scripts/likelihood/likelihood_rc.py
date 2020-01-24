@@ -34,7 +34,7 @@ def parse_external_args():
     parser.add_argument('--khyb', type=float, default=0.04)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--rsd', action='store_true')
-    parser.add_argument('--multipoles', type=int, nargs='+', default=0)
+    parser.add_argument('--multipoles', type=int, nargs='+', default=[0])
 
     parser.add_argument('--spherical-pivot', default='spectral')
     parser.add_argument('--cartesian-pivot', default='order')

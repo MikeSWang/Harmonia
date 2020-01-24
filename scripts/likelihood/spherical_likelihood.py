@@ -110,8 +110,9 @@ def initialise():
         else:
             ini_params.update({'sph_mode_independence': False})
 
-    pprint(ini_params)
-    print("\n")
+    if comm.rank == 0:
+        pprint(ini_params)
+        print("\n")
 
     return ini_params, ini_tag
 

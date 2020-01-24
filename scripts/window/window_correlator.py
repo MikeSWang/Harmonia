@@ -222,7 +222,7 @@ def export():
         Aggregated data file name.
 
     """
-    collated_output, file_count, _ = collate_data_files(
+    collated_output, itercount, _ = collate_data_files(
         f"{str(PATHOUT/script_name)}/{FILE_ROOT}*{tag}*.npy"
         .replace("=[", "=[[]").replace("],", "[]],"),
         'npy'
@@ -239,7 +239,7 @@ def export():
     else:
         _tag = tag
     filename = "{}-({})".format(
-        FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={niter*file_count}")
+        FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={itercount}")
     )
     np.save(PATHOUT/script_name/"collated"/f"{filename}.npy", collated_output)
 

@@ -160,8 +160,9 @@ def initialise():
     window_correlator.windowed_correlation = \
         fiducial_estimate['fiducial_covariance']
 
-    pprint(ini_params)
-    print("\n")
+    if comm.rank == 0:
+        pprint(ini_params)
+        print("\n")
 
     return ini_params, ini_tag
 
@@ -206,6 +207,8 @@ def process():
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )
     cmap_data = np.load(CMAP_PATH/cmap_file).item()
+
+    windowed_power_model.wavenumbers = cmap_data['k']
 
     output_data = defaultdict(list)
     for file_suffix in ["L.txt", "R.txt"]:

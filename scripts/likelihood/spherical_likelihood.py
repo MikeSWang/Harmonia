@@ -164,7 +164,6 @@ def process():
         for par_name, par_values in sampled_params.items():
             sph_likelihood_kwargs.update({par_name: par_values})
 
-        print(sph_likelihood_kwargs)  # HACK: to be removed.
         output_data['spherical_likelihood'].append(
             [sph_likelihood(**sph_likelihood_kwargs)]
         )

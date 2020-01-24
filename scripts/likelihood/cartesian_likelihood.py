@@ -86,8 +86,6 @@ def initialise():
     est_tag = bool(parsed_params.num_cov_est) \
         * f"ncov={parsed_params.num_cov_est},"
 
-    rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
-    ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 

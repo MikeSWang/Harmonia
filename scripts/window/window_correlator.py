@@ -105,7 +105,7 @@ def initialise():
         Initialisation tag.
 
     """
-    param_dict = vars(params)
+    param_dict = params.__dict__
     for par_name, par_val in param_dict.items():
         globals()[par_name] = par_val
 
@@ -134,7 +134,9 @@ def process():
     results = defaultdict(list)
 
     if kmin is None:
-        kmin = 1e-4
+        kwargs = dict(poles=orders, kmin=1e-4, kmax=kmax)
+    else:
+        kwargs = dict(poles=orders, kmin=kmin, kmax=kmax)
 
     if params.input_catalogue:
         for file_suffix in ["L.txt", "R.txt"]:
@@ -158,9 +160,7 @@ def process():
                 Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
             )
 
-            multipoles = ConvolvedFFTPower(
-                catalogue_mesh, poles=orders, kmin=kmin, kmax=kmax
-            ).poles
+            multipoles = ConvolvedFFTPower(catalogue_mesh, **kwargs).poles
             valid_bins = (
                 ~np.equal(multipoles['modes'], 0)
                 & ~np.equal(multipoles['modes'], 1)
@@ -195,9 +195,7 @@ def process():
                 Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
             )
 
-            multipoles = ConvolvedFFTPower(
-                catalogue_mesh, poles=orders, kmin=kmin, kmax=kmax
-            ).poles
+            multipoles = ConvolvedFFTPower(catalogue_mesh, **kwargs).poles
             valid_bins = (
                 ~np.equal(multipoles['modes'], 0)
                 & ~np.equal(multipoles['modes'], 1)

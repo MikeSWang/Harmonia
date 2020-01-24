@@ -83,19 +83,22 @@ def initialise():
             )
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
+    est_tag = bool(parsed_params.num_cov_est) \
+        * f"ncov={parsed_params.num_cov_est},"
+
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
     ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},orders={},{}{}{}".format(
-        parsed_params.map, parsed_params.fsky,
-        parsed_params.kmin, parsed_params.kmax,
-        parsed_params.rsd,
-        str(parsed_params.multipoles).replace(", ", ","),
-        sampled_tag, fixed_tag,
-        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
-    ).strip(",")
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}"\
+        .format(
+            parsed_params.map, parsed_params.fsky,
+            parsed_params.kmin, parsed_params.kmax,
+            parsed_params.rsd,
+            str(parsed_params.multipoles).replace(", ", ","),
+            sampled_tag, fixed_tag, est_tag,
+        ).strip(",")
 
     # Extract cosmology and survey specifications.
     global simu_cosmo, mask_multipoles, window_multipoles, window_correlator

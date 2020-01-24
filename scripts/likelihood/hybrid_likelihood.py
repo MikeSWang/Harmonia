@@ -100,14 +100,17 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},orders={},{}{}{}".format(
-        parsed_params.map, parsed_params.fsky,
-        parsed_params.khyb, parsed_params.kmax,
-        parsed_params.rsd,
-        str(parsed_params.multipoles).replace(", ", ","),
-        sampled_tag, fixed_tag,
-        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
-    ).strip(",")
+    est_tag = bool(parsed_params.num_cov_est) \
+        * f"ncov={parsed_params.num_cov_est},"
+
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}"\
+        .format(
+            parsed_params.map, parsed_params.fsky,
+            parsed_params.khyb, parsed_params.kmax,
+            parsed_params.rsd,
+            str(parsed_params.multipoles).replace(", ", ","),
+            sampled_tag, fixed_tag, est_tag,
+        ).strip(",")
 
     # Extract cosmology and survey specifications.
     global simu_cosmo, external_couplings, mask_multipoles, \
@@ -189,7 +192,7 @@ def process():
     )
 
     smap_file = params['input_catalogue'] \
-        + "-(map={},fsky={},knots=[{},{}],rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
             params['map'], params['fsky'],
             params['kmin'], params['khyb'],
             params['rsd']
@@ -197,7 +200,7 @@ def process():
     smap_data = np.load(SMAP_PATH/smap_file).item()
 
     cmap_file = params['input_catalogue'] \
-        + "-(map={},fsky={},knots=[{},{}],orders={},rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
             params['map'], params['fsky'], params['khyb'], params['kmax'],
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )
@@ -253,23 +256,6 @@ def process():
 
         output_data['cartesian_likelihood'].append(
             [cart_likelihood(**cart_likelihood_kwargs)]
-        )
-
-        if params['cartesian_pivot'] == 'order':
-            unfold_pivot = 'variable'
-        elif params['cartesian_pivot'] == 'scale':
-            unfold_pivot = 'coord'
-        output_data['data_vector'].append(
-            np.concatenate(
-                (
-                    spherical_data.unfold(
-                        params['spherical_pivot'], return_only='data'
-                    ),
-                    cartesian_data.unfold(
-                        unfold_pivot, return_only='data'
-                    ),
-                )
-            )
         )
 
     return output_data

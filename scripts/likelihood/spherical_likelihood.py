@@ -79,7 +79,7 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},{}{}".format(
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},{}{}".format(
         parsed_params.map, parsed_params.fsky,
         parsed_params.kmin, parsed_params.kmax,
         parsed_params.rsd, sampled_tag, fixed_tag,
@@ -135,7 +135,7 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},fsky={},knots=[{},{}],rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
             params['map'], params['fsky'],
             params['kmin'], params['kmax'],
             params['rsd']

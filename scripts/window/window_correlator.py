@@ -20,7 +20,7 @@ from harmonia.collections import harmony
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 fsky, split = None, None
-khyb, kmax, orders = None, None, None
+kmin, kmax, orders = None, None, None
 nbar, contrast = None, None
 boxsize, nmesh, niter = None, None, None
 
@@ -195,9 +195,7 @@ def process():
                 Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
             )
 
-            multipoles = ConvolvedFFTPower(
-                catalogue_mesh, poles=orders, kmin=khyb, kmax=kmax
-            ).poles
+            multipoles = ConvolvedFFTPower(catalogue_mesh, **kwargs).poles
             valid_bins = (
                 ~np.equal(multipoles['modes'], 0)
                 & ~np.equal(multipoles['modes'], 1)

@@ -7,20 +7,14 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, parse_external_args, script_name
-from likelihood_rc import domain_cut
+from likelihood_rc import PATHIN, PATHOUT, DATAPATH, script_name
+from likelihood_rc import parse_external_args
 from harmonia.algorithms import (
     CartesianArray,
     DiscreteSpectrum,
     SphericalArray,
 )
 from harmonia.collections import confirm_directory_path
-from harmonia.mapper import (
-    CartesianMap,
-    RandomCatalogue,
-    SphericalMap,
-    load_catalogue_from_file,
-)
 from harmonia.reader import (
     TwoPointFunction,
     WindowedCorrelation,
@@ -32,22 +26,23 @@ from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 # Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
+# Catalogue map input.
+SMAP_PATH = DATAPATH/"spherical_map"
+CMAP_PATH = DATAPATH/"cartesian_map"
+
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-COUPLINGS_FILE = "couplings-(pivot={},kmax={},fsky={:.2f}).npy"
+COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={}).npy"
 MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
 WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
 FIDUCIAL_ESTIMATE_FILENAME = (
-    "fiducial_estimate-(fsky={:.2f},orders={},knots=[{},{}]).npy"
+    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={}).npy"
 )
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
 SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
-
-# Survey catalogue input.
-CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 # Global quantities.
 simu_cosmo = None
@@ -101,15 +96,16 @@ def initialise():
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
     rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
+    ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},pivots=[{},{}],knots=[{},{}],orders={},{}{}{}{}".format(
-        parsed_params.map,
-        parsed_params.spherical_pivot, parsed_params.cartesian_pivot,
+    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},orders={},{}{}{}".format(
+        parsed_params.map, parsed_params.fsky,
         parsed_params.khyb, parsed_params.kmax,
+        parsed_params.rsd,
         str(parsed_params.multipoles).replace(", ", ","),
-        rsd_tag, sampled_tag, fixed_tag,
+        sampled_tag, fixed_tag,
         bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
     ).strip(",")
 
@@ -130,9 +126,7 @@ def initialise():
         try:
             external_couplings = np.load(
                 SPECS_PATH/COUPLINGS_FILE.format(
-                    parsed_params.spherical_pivot,
-                    str(parsed_params.khyb).rstrip("0"),
-                    parsed_params.fsky
+                    parsed_params.fsky, str(parsed_params.khyb).rstrip("0"),
                 )
             ).item()
         except FileNotFoundError:
@@ -151,10 +145,8 @@ def initialise():
     fiducial_estimate = np.load(
         SPECS_PATH/(
             FIDUCIAL_ESTIMATE_FILENAME.format(
-                parsed_params.fsky,
-                str(parsed_params.multipoles).replace(", ", ","),
-                str(np.around(parsed_params.khyb, decimals=3)).rstrip("0"),
-                str(np.around(parsed_params.kmax, decimals=3)).rstrip("0")
+                parsed_params.fsky, parsed_params.khyb, parsed_params.kmax,
+                str(parsed_params.multipoles).replace(", ", ",")
             )
         )
     ).item()
@@ -196,53 +188,31 @@ def process():
         couplings=external_couplings
     )
 
+    smap_file = params['input_catalogue'] \
+        + "-(map={},fsky={},knots=[{},{}],rsd={}).npy".format(
+            params['map'], params['fsky'],
+            params['kmin'], params['khyb'],
+            params['rsd']
+        )
+    smap_data = np.load(SMAP_PATH/smap_file).item()
+
+    cmap_file = params['input_catalogue'] \
+        + "-(map={},fsky={},knots=[{},{}],orders={},rsd={}).npy".format(
+            params['map'], params['fsky'], params['khyb'], params['kmax'],
+            str(params['multipoles']).replace(", ", ","), params['rsd']
+        )
+    cmap_data = np.load(CMAP_PATH/cmap_file).item()
+
     output_data = defaultdict(list)
     for file_suffix in ["L.txt", "R.txt"]:
-        # Build map from loaded catalogue.
-        catalogue_name = params['input_catalogue'] + file_suffix
-        catalogue_path = PATHIN/"catalogues"/catalogue_name
-
-        data_catalogue = load_catalogue_from_file(
-            str(catalogue_path), CATALOGUE_HEADINGS, params['boxsize'],
-            add_vel=params['rsd']
-        )
-        random_catalogue = RandomCatalogue(
-            params['contrast']*params['nbar'], params['boxsize']
-        )
-
-        for catalogue in [data_catalogue, random_catalogue]:
-            catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params['boxsize']/2, params['fsky']
-            )
-            catalogue['NZ'] = params['nbar'] * catalogue['Weight']
-
-        spherical_map = SphericalMap(
-            disc, data_catalogue, rand=random_catalogue,
-            mean_density_data=params['nbar'],
-            mean_density_rand=params['contrast']*params['nbar']
-        )
-        cartesian_map = CartesianMap(
-            spherical_map.pair, num_mesh=params['mesh']
-        )
-
-        # Spherical measurements.
-        overdensity_field = spherical_map.density_constrast()
-
+        # Load map data.
         spherical_data = SphericalArray.build(
-            disc=disc, filling=overdensity_field
+            disc=disc, filling=smap_data[file_suffix]
         )
-
-        # Cartesian measurements.
-        cartesian_multipoles = cartesian_map.power_multipoles(
-            orders=params['multipoles'],
-            kmin=params['khyb'],
-            kmax=params['kmax']
-        )
-
         cartesian_data = CartesianArray(
-            filling=cartesian_multipoles,
+            filling=cmap_data[file_suffix],
             coord_key='k',
-            var_key_root='power_'
+            variable_key_root='power_'
         )
 
         # Construct spherical likelihood.

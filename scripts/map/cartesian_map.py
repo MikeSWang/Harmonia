@@ -33,10 +33,11 @@ def initialise():
     """
     ini_params = parsed_params.__dict__
 
-    rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
-    ini_tag = "map={},knots=[{},{}],orders={},{}".format(
-        parsed_params.map, parsed_params.kmin, parsed_params.kmax,
-        str(parsed_params.multipoles).replace(", ", ","), rsd_tag
+    ini_tag = "map={},fsky={},knots=[{},{}],orders={},rsd={}".format(
+        parsed_params.map, parsed_params.fsky,
+        parsed_params.kmin, parsed_params.kmax,
+        str(parsed_params.multipoles).replace(", ", ","),
+        parsed_params.rsd
     ).strip(",")
 
     pprint(ini_params)

@@ -7,8 +7,8 @@ from pprint import pprint
 import numpy as np
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, DATAPATH, logger, script_name
-from likelihood_rc import domain_cut, parse_external_args
+from likelihood_rc import PATHIN, PATHOUT, DATAPATH, script_name
+from likelihood_rc import parse_external_args
 from harmonia.algorithms import DiscreteSpectrum, SphericalArray
 from harmonia.collections import confirm_directory_path
 from harmonia.reader import TwoPointFunction
@@ -17,12 +17,12 @@ from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 # Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
+# Catalogue map input.
+MAP_PATH = DATAPATH/"spherical_map"
+
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={}).npy"
-
-# Catalogue map input.
-MAP_PATH = DATAPATH/"spherical_map"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -76,15 +76,13 @@ def initialise():
             )
     ini_params.update({'sampled_params': sampled_tag.strip(",")})
 
-    rsd_tag = "rsd=on," if parsed_params.rsd else "rsd=off,"
-    ini_params.update({'rsd': rsd_tag.lstrip("rsd=").rstrip(",")})
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={},knots=[{},{}],{}{}{}".format(
+    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},{}{}".format(
         parsed_params.map, parsed_params.fsky,
         parsed_params.kmin, parsed_params.kmax,
-        rsd_tag, sampled_tag, fixed_tag,
+        parsed_params.rsd, sampled_tag, fixed_tag,
     ).strip(",")
 
     # Extract cosmology and survey specifications.
@@ -103,8 +101,7 @@ def initialise():
         try:
             external_couplings = np.load(
                 SPECS_PATH/COUPLINGS_FILE.format(
-                    parsed_params.fsky,
-                    str(parsed_params.kmax).rstrip("0"),
+                    parsed_params.fsky, str(parsed_params.kmax).rstrip("0"),
                 )
             ).item()
         except FileNotFoundError:
@@ -138,8 +135,10 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},knots=[{},{}],rsd={}).npy".format(
-            params['map'], params['kmin'], params['kmax'], params['rsd']
+        + "-(map={},fsky={},knots=[{},{}],rsd={}).npy".format(
+            params['map'], params['fsky'],
+            params['kmin'], params['kmax'],
+            params['rsd']
         )
     map_data = np.load(MAP_PATH/map_file).item()
 

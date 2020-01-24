@@ -8,26 +8,20 @@ import numpy as np
 from nbodykit.cosmology import Cosmology
 
 from likelihood_rc import PATHIN, PATHOUT, DATAPATH, script_name
-from likelihood_rc import domain_cut, parse_external_args
-from harmonia.algorithms import CartesianArray, DiscreteSpectrum
+from likelihood_rc import parse_external_args
+from harmonia.algorithms import CartesianArray
 from harmonia.collections import confirm_directory_path
-from harmonia.mapper import (
-    CartesianMap,
-    RandomCatalogue,
-    SphericalMap,
-    load_catalogue_from_file,
-)
 from harmonia.reader import WindowedCorrelation, WindowedPowerSpectrum
 from harmonia.reader import cartesian_map_log_likelihood as cart_likelihood
 
 # Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters.txt"
 
-# Survey specfications input.
-SPECS_PATH = PATHIN/"specifications"
-
 # Catalogue map input.
 MAP_PATH = DATAPATH/"cartesian_map"
+
+# Survey specfications input.
+SPECS_PATH = PATHIN/"specifications"
 
 MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
 WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
@@ -38,9 +32,6 @@ FIDUCIAL_ESTIMATE_FILENAME = (
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
 SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
-
-# Survey catalogue input.
-CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 # Global quantities.
 simu_cosmo = None
@@ -97,16 +88,14 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={},knots=[{},{}],orders={},pivot={},{}{}{}{}"\
-        .format(
-            parsed_params.map, parsed_params.fsky,
-            parsed_params.kmin, parsed_params.kmax,
-            str(parsed_params.multipoles).replace(", ", ","), 
-            parsed_params.cartesian_pivot, rsd_tag,
-            sampled_tag, fixed_tag,
-            bool(parsed_params.num_cov_est) 
-                * f"ncov={parsed_params.num_cov_est}",
-        ).strip(",")
+    ini_tag = "map={},fsky={},knots=[{},{}],rsd={},orders={},{}{}{}".format(
+        parsed_params.map, parsed_params.fsky,
+        parsed_params.kmin, parsed_params.kmax,
+        parsed_params.rsd,
+        str(parsed_params.multipoles).replace(", ", ","),
+        sampled_tag, fixed_tag,
+        bool(parsed_params.num_cov_est) * f"ncov={parsed_params.num_cov_est},",
+    ).strip(",")
 
     # Extract cosmology and survey specifications.
     global simu_cosmo, mask_multipoles, window_multipoles, window_correlator
@@ -130,9 +119,7 @@ def initialise():
     fiducial_estimate = np.load(
         SPECS_PATH/(
             FIDUCIAL_ESTIMATE_FILENAME.format(
-                parsed_params.fsky,
-                str(np.around(parsed_params.khyb, decimals=3)).rstrip("0"),
-                str(np.around(parsed_params.kmax, decimals=3)).rstrip("0"),
+                parsed_params.fsky, parsed_params.kmin, parsed_params.kmax,
                 str(parsed_params.multipoles).replace(", ", ",")
             )
         )
@@ -167,8 +154,8 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},knots=[{},{}],orders={},rsd={}).npy".format(
-            params['map'], params['kmin'], params['kmax'], 
+        + "-(map={},fsky={},knots=[{},{}],orders={},rsd={}).npy".format(
+            params['map'], params['fsky'], params['kmin'], params['kmax'],
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )
     map_data = np.load(MAP_PATH/map_file).item()

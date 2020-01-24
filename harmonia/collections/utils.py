@@ -26,6 +26,7 @@ System utilities
     allocate_tasks
     allocate_segments
     mpi_compute
+    progress_status
 
 **Formatting**
 
@@ -93,6 +94,7 @@ __all__ = [
     'allocate_tasks',
     'allocate_segments',
     'mpi_compute',
+    'progress_status',
     'clean_warning_format',
     'format_float',
     'sort_dict_to_list',
@@ -408,27 +410,6 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
             "Input `root` set to 0 as it exceeds the number of processes. "
         )
 
-    def progress_log(current_idx, task_length):
-
-        if comm.rank == 0:
-            logged_process = "first"
-        elif comm.rank == comm.size - 1:
-            logged_process = "last"
-        else:
-            logged_process = None
-
-        block_length = max(task_length // 4, 1)
-        progress_length = current_idx + 1
-        progress_percentage = 100 * progress_length / task_length
-
-        if logger and logged_process:
-            if progress_length % block_length == 0 \
-                    or progress_length == task_length:
-                logger.info(
-                    "Progress for the %s process: %d%% computed. ",
-                    logged_process, progress_percentage
-                )
-
     segments = allocate_segments(
         total_task=len(data_array), total_proc=comm.size
     )
@@ -438,7 +419,7 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     chunk_length = len(data_chunk)
     for piece_idx, data_piece in enumerate(data_chunk):
         output.append(mapping(data_piece))
-        progress_log(piece_idx, chunk_length)
+        progress_status(piece_idx, chunk_length, logger, comm, root=root)
 
     comm.Barrier()
 
@@ -451,6 +432,46 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     output_array = comm.bcast(output_array, root=root)
 
     return output_array
+
+
+def progress_status(current_idx, task_length, logger, comm=None, root=0):
+    """Log progress status.
+
+    Parameters
+    ----------
+    current_idx : int
+        Current index in the number of tasks.
+    task_length : int
+        Total number of tasks.
+    logger : :class:`logging.Logger`
+        Logger.
+    comm : :class:`mpi4py.MPI.Comm` or None, optional
+        MPI communicator (default is `None`).
+    root : int, optional
+        Root process number (default is 0).
+
+    """
+    if comm is None:
+        logged_process = 'single'
+    else:
+        if comm.rank == root:
+            logged_process = "first"
+        elif comm.rank == comm.size - 1:
+            logged_process = "last"
+        else:
+            logged_process = None
+
+    block_length = max(task_length // 4, 1)
+    progress_length = current_idx + 1
+    progress_percentage = 100 * progress_length / task_length
+
+    if logger and logged_process:
+        if progress_length % block_length == 0 \
+                or progress_length == task_length:
+            logger.info(
+                "Progress for the %s process: %d%% computed. ",
+                logged_process, progress_percentage
+            )
 
 
 def clean_warning_format(message, category, filename, lineno, line=None):

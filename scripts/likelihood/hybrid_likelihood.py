@@ -5,9 +5,10 @@ from collections import defaultdict
 from pprint import pprint
 
 import numpy as np
+from mpi4py import MPI
 from nbodykit.cosmology import Cosmology
 
-from likelihood_rc import PATHIN, PATHOUT, DATAPATH, script_name
+from likelihood_rc import PATHIN, PATHOUT, DATAPATH, logger, script_name
 from likelihood_rc import parse_external_args
 from harmonia.algorithms import (
     CartesianArray,
@@ -227,6 +228,8 @@ def process():
             pivot=params['spherical_pivot'],
             breakdown=params['breakdown'],
             independence=params['sph_mode_independence'],
+            logger=logger,
+            comm=comm,
         )
         for par_name, par_values in fixed_params.items():
             sph_likelihood_kwargs.update({par_name: par_values['spherical']})
@@ -247,7 +250,9 @@ def process():
             contrast=params['contrast'],
             pivot=params['cartesian_pivot'],
             orders=params['multipoles'],
-            num_covar_sample=params['num_cov_est']
+            num_covar_sample=params['num_cov_est'],
+            logger=logger,
+            comm=comm,
         )
         for par_name, par_values in fixed_params.items():
             cart_likelihood_kwargs.update({par_name: par_values['cartesian']})
@@ -281,6 +286,7 @@ def finalise(results, filetag):
 
 if __name__ == '__main__':
 
+    comm = MPI.COMM_WORLD
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()

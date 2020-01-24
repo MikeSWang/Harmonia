@@ -40,7 +40,7 @@ import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import mat_logdet
+from harmonia.collections import mat_logdet, progress_status
 
 
 # Probability distributions
@@ -346,7 +346,7 @@ def spherical_parametrised_covariance(b_1, f_nl, two_point_model, pivot,
 def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  two_point_model, spherical_data, pivot,
                                  breakdown=False, exclude_degrees=(),
-                                 **covariance_kwargs):
+                                 logger=None, comm=None, **covariance_kwargs):
     """Evaluate the spherical map logarithmic likelihood.
 
     Parameters
@@ -363,6 +363,10 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Spherical data array of the transformed field.
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
+    logger : :class:`logging.Logger` or None, optional
+        Logger (default is `None`).
+    comm : :class:`mpi4py.MPI.Comm` or None, optional
+        MPI communicator (default is `None`).
 
     Other parameters
     ----------------
@@ -419,7 +423,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         out_shape += (len(data_vector),)
 
     log_likelihood = []
-    for (b_1, f_nl, tpm) in it.product(bias, non_gaussianity, two_point_model):
+    for idx, (b_1, f_nl, tpm) in \
+            enumerate(it.product(bias, non_gaussianity, two_point_model)):
         sample_covar = spherical_parametrised_covariance(
             b_1, f_nl, tpm, pivot,
             nbar=mean_number_density,
@@ -431,6 +436,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             elementwise=breakdown
         )
         log_likelihood.append(sample_likelihood)
+        if logger:
+            progress_status(idx, np.product(out_shape), logger, comm=comm)
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:
@@ -522,7 +529,8 @@ def cartesian_parametrised_moments(b_1, f_nl, windowed_power_model, pivot,
 def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  windowed_power_model, cartesian_data,
                                  correlation_modeller, pivot, orders,
-                                 num_covar_sample=None, **covariance_kwargs):
+                                 num_covar_sample=None, logger=None, comm=None,
+                                 **covariance_kwargs):
     """Evaluate the Cartesian map logarithmic likelihood.
 
     Parameters
@@ -548,6 +556,10 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         If not `None` (default), this is the number of sampled used in
         estimating the covariance and the modified Student distribution is
         used.
+    logger : :class:`logging.Logger` or None, optional
+        Logger (default is `None`).
+    comm : :class:`mpi4py.MPI.Comm` or None, optional
+        MPI communicator (default is `None`).
     **covariance_kwargs
         Keyword arguments to be passed to
         :func:`~.reader.hybrid_likelihoods.cartesian_parametrised_moments`.
@@ -577,8 +589,8 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     out_shape = (len(bias), len(non_gaussianity), len(windowed_power_model))
 
     log_likelihood = []
-    for (b_1, f_nl, wpm) \
-            in it.product(bias, non_gaussianity, windowed_power_model):
+    for idx, (b_1, f_nl, wpm) in \
+            enumerate(it.product(bias, non_gaussianity, windowed_power_model)):
         sample_mean, sample_covar = cartesian_parametrised_moments(
             b_1, f_nl, wpm, pivot, orders, correlation_modeller,
             nbar=mean_number_density, **covariance_kwargs
@@ -593,6 +605,8 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                 data_vector, sample_mean, sample_covar
             )
         log_likelihood.append(sample_likelihood)
+        if logger:
+            progress_status(idx, np.product(out_shape), logger, comm=comm)
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

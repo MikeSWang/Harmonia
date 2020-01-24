@@ -33,7 +33,7 @@ def initialise():
     """
     ini_params = parsed_params.__dict__
 
-    ini_tag = "map={},fsky={},knots=[{},{}],orders={},rsd={}".format(
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}".format(
         parsed_params.map, parsed_params.fsky,
         parsed_params.kmin, parsed_params.kmax,
         str(parsed_params.multipoles).replace(", ", ","),

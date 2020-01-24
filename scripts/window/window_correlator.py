@@ -133,6 +133,11 @@ def process():
     """
     results = defaultdict(list)
 
+    if kmin is None:
+        kwargs = dict(poles=orders, kmax=kmax)
+    else:
+        kwargs = dict(poles=orders, kmin=kmin, kmax=kmax)
+
     if params.input_catalogue:
         for file_suffix in ["L.txt", "R.txt"]:
             catalogue_name = params.input_catalogue + file_suffix
@@ -155,9 +160,7 @@ def process():
                 Nmesh=nmesh, resampler='tsc', compensated=True, interlaced=True
             )
 
-            multipoles = ConvolvedFFTPower(
-                catalogue_mesh, poles=orders, kmin=khyb, kmax=kmax
-            ).poles
+            multipoles = ConvolvedFFTPower(catalogue_mesh, **kwargs).poles
             valid_bins = (
                 ~np.equal(multipoles['modes'], 0)
                 & ~np.equal(multipoles['modes'], 1)

@@ -155,7 +155,7 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},fsky={},knots=[{},{}],orders={},rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
             params['map'], params['fsky'], params['kmin'], params['kmax'],
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )

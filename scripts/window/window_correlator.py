@@ -86,7 +86,7 @@ def parse_args():
     parser.add_argument('--split', action='store_true')
     parser.add_argument('--kmin', type=float, default=None)
     parser.add_argument('--kmax', type=float, default=0.1)
-    parser.add_argument('--orders', type=int, nargs='+', default=0)
+    parser.add_argument('--orders', type=int, nargs='+', default=[0])
     parser.add_argument('--nbar', type=float, default=1e-3)
     parser.add_argument('--contrast', type=float, default=10.)
     parser.add_argument('--boxsize', type=float, default=1000.)

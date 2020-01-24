@@ -84,9 +84,9 @@ def parse_args():
 
     parser.add_argument('--fsky', type=float, default=1.)
     parser.add_argument('--split', action='store_true')
-    parser.add_argument('--khyb', type=float, default=0.04)
+    parser.add_argument('--kmin', type=float, default=None)
     parser.add_argument('--kmax', type=float, default=0.1)
-    parser.add_argument('--orders', type=int, nargs='+', default=[0, 2, 4])
+    parser.add_argument('--orders', type=int, nargs='+', default=0)
     parser.add_argument('--nbar', type=float, default=1e-3)
     parser.add_argument('--contrast', type=float, default=10.)
     parser.add_argument('--boxsize', type=float, default=1000.)
@@ -113,14 +113,11 @@ def initialise():
     print("\n")
 
     return (
-        "fsky={}{},boxsize={},knots=[{},{}],orders={},mesh={},iter={}"
+        "fsky={:.2f}{},knots=[{},{}],orders={},boxsize={},mesh={},iter={}"
     ).format(
-        np.around(fsky, decimals=2), split*"s",
-        np.int(boxsize),
-        str(np.around(khyb, decimals=3)).rstrip("0"),
-        str(np.around(kmax, decimals=3)).rstrip("0"),
+        fsky, split*"s", kmin, kmax,
         str(orders).replace(", ", ","),
-        nmesh, niter
+        np.int(boxsize), nmesh, niter
     )
 
 

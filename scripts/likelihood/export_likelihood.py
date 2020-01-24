@@ -76,15 +76,15 @@ def filter_data(full_data, remove_degrees=()):
 
 
 def read_data(collate_data=False, load_data=False, save_data=False,
-              filter_data=False, remove_degs=()):
+              filter_degs=False, remove_degs=()):
     """Collate, load and export likelihood outputs.
 
     Parameters
     ----------
-    collate_data, load_data, save_data, filter_data : bool, optional
+    collate_data, load_data, save_data, filter_degs : bool, optional
         If `True` (default is `False`), collate, load, save or filter data.
     remove_degs : int, array_like, optional
-        If not an empty tuple (default) and `filter_data`is `True`, modes
+        If not an empty tuple (default) and `filter`is `True`, modes
         whose spherical degree is an element are removed from the spherical
         likelihood.
 
@@ -116,7 +116,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
             collated_output['parameter_x'] = x_parameters
             collated_output['parameter_y'] = y_parameters
 
-        if MAP == "hybrid" or MAP == "spherical" and filter_data:
+        if MAP == "hybrid" or MAP == "spherical" and filter_degs:
             filtered_output = filter_data(
                 collated_output, remove_degrees=remove_degs
             )

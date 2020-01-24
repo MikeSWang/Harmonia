@@ -76,16 +76,17 @@ def filter_data(full_data, remove_degrees=()):
 
 
 def read_data(collate_data=False, load_data=False, save_data=False,
-              remove_degs=()):
+              filter_data=False, remove_degs=()):
     """Collate, load and export likelihood outputs.
 
     Parameters
     ----------
-    collate_data, load_data, save_data : bool, optional
-        If `True` (default is `False`), collate, load or save data.
+    collate_data, load_data, save_data, filter_data : bool, optional
+        If `True` (default is `False`), collate, load, save or filter data.
     remove_degs : int, array_like, optional
-        If not an empty tuple (default), modes whose spherical degree is an
-        element are removed from the spherical likelihood.
+        If not an empty tuple (default) and `filter_data`is `True`, modes
+        whose spherical degree is an element are removed from the spherical
+        likelihood.
 
     Returns
     -------
@@ -96,14 +97,12 @@ def read_data(collate_data=False, load_data=False, save_data=False,
     scr_outpath = PATHOUT/script_name
     collation_outpath = scr_outpath/"collated"
 
-    if MAP == "hybrid":
-        search_root = f"map={MAP},*knots=[{KHYB},{KMAX}],*{PRIOR}{FIXED}"\
-            .replace("=[", "=[[]").replace("],", "[]],")
-        program_root = f"knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
-    else:
-        search_root = f"map={MAP},*kmax={KMAX},*{PRIOR}{FIXED}"\
-            .replace("=[", "=[[]").replace("],", "[]],")
-        program_root = f"kmax={KMAX},{PRIOR}{FIXED}"
+    search_root = (
+        f"map={MAP},fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},"
+        f"*{PRIOR}{FIXED}"
+    ).replace("=[", "=[[]").replace("],", "[]],")
+    program_root = \
+        f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}"
 
     file_name = f"{script_name}-{file_root}-({program_root})"
     if collate_data:
@@ -117,7 +116,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
             collated_output['parameter_x'] = x_parameters
             collated_output['parameter_y'] = y_parameters
 
-        if MAP == "hybrid" or MAP == "spherical":
+        if MAP == "hybrid" or MAP == "spherical" and filter_data:
             filtered_output = filter_data(
                 collated_output, remove_degrees=remove_degs
             )
@@ -194,10 +193,12 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 if __name__ == '__main__':
 
     # NOTE: Change this before running.
-    MAP = "hybrid"
     NG = 0
+    MAP = "hybrid"
+    FSKY = "0.33"
     KHYB = 0.04
     KMAX = 0.1
+    RSD = False
     PRIOR = "bias_prior=[2.2,2.6],fnl_prior=[-150.0,250.0]"
     FIXED = ""
 
@@ -213,6 +214,7 @@ if __name__ == '__main__':
         collate_data=False,
         load_data=True,
         save_data=False,
+        # filter_Data=True,
         # remove_degs=(0,),
     )
 

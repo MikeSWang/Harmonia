@@ -1438,7 +1438,7 @@ class TwoPointFunction(Couplings):
 
         kwargs = dict(selection=self.selection, weight=self.weight)
 
-        self._fixed_shot_noise_ = defaultdict(dict)
+        self._fixed_shot_noise_ = {}
         with warnings.catch_warnings(record=True) as any_warnings:
             for mu, nu in product(*(index_vector,)*2):
                 k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]

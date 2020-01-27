@@ -737,7 +737,7 @@ class Couplings:
                 )
                 coeff_vector = mpi_compute(
                     index_vector, coeff_processor, self.comm,
-                    logger=self._logger, 
+                    logger=self._logger,
                     process_name=f"{coupling_type} coupling evaluation"
                 )
 
@@ -1403,7 +1403,9 @@ class TwoPointFunction(Couplings):
 
         angular_couplings = self.couplings['angular']
 
-        def _angular_sum(partial_mu, partial_nu):
+        def _angular_sum(_ind_pair):
+
+            partial_mu, partial_nu = _ind_pair
 
             _sum = {}
             for ell in self.disc.degrees:
@@ -1415,7 +1417,7 @@ class TwoPointFunction(Couplings):
 
         index_pair_vector = list(product(*(index_vector,)*2))
         index_pair_ang_sum = mpi_compute(
-            index_pair_vector, _angular_sum, self.comm, 
+            index_pair_vector, _angular_sum, self.comm,
             logger=self._logger, process_name="fixed angular sum"
         )
 
@@ -1424,7 +1426,7 @@ class TwoPointFunction(Couplings):
             self._fixed_angular_sums_[ell].update(
                 {
                     index_pair : ang_sum[ell]
-                    for index_pair, ang_sum 
+                    for index_pair, ang_sum
                     in zip(index_pair_vector, index_pair_ang_sum)
                 }
             )

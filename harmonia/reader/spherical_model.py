@@ -737,7 +737,8 @@ class Couplings:
                 )
                 coeff_vector = mpi_compute(
                     index_vector, coeff_processor, self.comm,
-                    logger=self._logger
+                    logger=self._logger, 
+                    process_name=f"{coupling_type} coupling evaluation"
                 )
 
         unique_warning_msgs = set(map(
@@ -1402,14 +1403,31 @@ class TwoPointFunction(Couplings):
 
         angular_couplings = self.couplings['angular']
 
-        self._fixed_angular_sums_ = defaultdict(dict)
-        for ell in self.disc.degrees:
-            for partial_mu, partial_nu in product(*(index_vector,)*2):
+        def _angular_sum(partial_mu, partial_nu):
+
+            _sum = {}
+            for ell in self.disc.degrees:
                 M_mu_ = angular_couplings[partial_mu][ell]
                 M_nu_ = angular_couplings[partial_nu][ell]
-                self._fixed_angular_sums_[ell].update(
-                    {(partial_mu, partial_nu) : np.sum(M_mu_ * np.conj(M_nu_))}
-                )
+                _sum.update({ell: np.sum(M_mu_ * np.conj(M_nu_))})
+
+            return _sum
+
+        index_pair_vector = list(product(*(index_vector,)*2))
+        index_pair_ang_sum = mpi_compute(
+            index_pair_vector, _angular_sum, self.comm, 
+            logger=self._logger, process_name="fixed angular sum"
+        )
+
+        self._fixed_angular_sums_ = defaultdict(dict)
+        for ell in self.disc.degrees:
+            self._fixed_angular_sums_[ell].update(
+                {
+                    index_pair : ang_sum[ell]
+                    for index_pair, ang_sum 
+                    in zip(index_pair_vector, index_pair_ang_sum)
+                }
+            )
 
         return self._fixed_angular_sums_
 

@@ -437,7 +437,10 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         )
         log_likelihood.append(sample_likelihood)
         if logger:
-            progress_status(idx, np.product(out_shape), logger, comm=comm)
+            progress_status(
+                idx, np.product(out_shape), logger, 
+                comm=comm, process_name="spherical likelihood evaluation"
+            )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:
@@ -606,7 +609,10 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             )
         log_likelihood.append(sample_likelihood)
         if logger:
-            progress_status(idx, np.product(out_shape), logger, comm=comm)
+            progress_status(
+                idx, np.product(out_shape), logger, 
+                comm=comm, process_name="cartesian likelihood evaluation"
+            )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

@@ -376,7 +376,8 @@ def allocate_segments(tasks=None, total_task=None, total_proc=None):
     return segments
 
 
-def mpi_compute(data_array, mapping, comm, root=0, logger=None):
+def mpi_compute(data_array, mapping, comm, root=0, logger=None,
+                process_name=None):
     """Multiprocess mapping of data.
 
     For each map to be applied, the input data array is scattered over the
@@ -396,6 +397,8 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
         Rank of the process taken as the root process (default is 0).
     logger : :class:`logging.Logger` or None, optional
         Logger (default is `None`).
+    process_name : str or None
+        If not `None` (default), this is the process name to be logged.
 
     Returns
     -------
@@ -419,7 +422,10 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     chunk_length = len(data_chunk)
     for piece_idx, data_piece in enumerate(data_chunk):
         output.append(mapping(data_piece))
-        progress_status(piece_idx, chunk_length, logger, comm, root=root)
+        progress_status(
+            piece_idx, chunk_length, logger, comm,
+            root=root, process_name=process_name
+        )
 
     comm.Barrier()
 
@@ -434,7 +440,8 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None):
     return output_array
 
 
-def progress_status(current_idx, task_length, logger, comm=None, root=0):
+def progress_status(current_idx, task_length, logger, comm=None, root=0,
+                    process_name=None):
     """Log progress status.
 
     Parameters
@@ -449,8 +456,15 @@ def progress_status(current_idx, task_length, logger, comm=None, root=0):
         MPI communicator (default is `None`).
     root : int, optional
         Root process number (default is 0).
+    process_name : str or None
+        If not `None` (default), this is the process name to be logged.
 
     """
+    if process_name is not None:
+        proc_name = "'{}' ".format(process_name)
+    else:
+        proc_name = ""
+
     if comm is None:
         logged_process = 'single'
     else:
@@ -469,8 +483,8 @@ def progress_status(current_idx, task_length, logger, comm=None, root=0):
         if progress_length % block_length == 0 \
                 or progress_length == task_length:
             logger.info(
-                "Progress for the %s process: %d%% computed. ",
-                logged_process, progress_percentage
+                "Progress for the %s %sprocess: %d%% computed. ",
+                logged_process, proc_name, progress_percentage
             )
 
 

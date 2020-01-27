@@ -66,10 +66,8 @@ def parse_args():
     """
     parser = ArgumentParser()
 
-    parser.add_argument('--pivot', default='spectral')
-    parser.add_argument('--rsd', action='store_true')
     parser.add_argument('--fsky', type=float, default=1.)
-
+    parser.add_argument('--rsd', action='store_true')
     parser.add_argument('--redshift', type=float, default=1.)
     parser.add_argument('--kmax', type=float, default=0.1)
     parser.add_argument('--rmax', type=float, default=500.)

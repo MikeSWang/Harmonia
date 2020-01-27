@@ -146,7 +146,7 @@ from harmonia.algorithms.integration import \
 from harmonia.algorithms.integration import \
     radial_spherical_integral as rad_int
 from harmonia.algorithms.arrays import SphericalArray
-from harmonia.collections.utils import mpi_compute
+from harmonia.collections.utils import mpi_compute, progress_status
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 
 __all__ = ['Couplings', 'TwoPointFunction']
@@ -725,12 +725,10 @@ class Couplings:
                             mu, coupling_type=coupling_type
                         )
                     )
-                    if (ind_idx + 1) % (len(index_vector) // 10) == 0 or \
-                            ind_idx + 1 == len(index_vector):
-                        progress = 100 * (ind_idx + 1) / len(index_vector)
-                        self._logger.info(
-                            "Progress: %d%% computed. ", progress
-                        )
+                    progress_status(
+                        ind_idx, len(index_vector), self._logger,
+                        process_name=f"{coupling_type} coupling evaluation"
+                    )
             else:
                 coeff_processor = lambda mu: self._couplings_fixed_index(
                     mu, coupling_type=coupling_type

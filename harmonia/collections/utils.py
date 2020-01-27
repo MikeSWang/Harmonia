@@ -423,8 +423,8 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None,
     for piece_idx, data_piece in enumerate(data_chunk):
         output.append(mapping(data_piece))
         progress_status(
-            piece_idx, chunk_length, logger, comm,
-            root=root, process_name=process_name
+            piece_idx, chunk_length, logger,
+            process_name=process_name, comm=comm, root=root,
         )
 
     comm.Barrier()
@@ -440,8 +440,8 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None,
     return output_array
 
 
-def progress_status(current_idx, task_length, logger, comm=None, root=0,
-                    process_name=None):
+def progress_status(current_idx, task_length, logger, process_name=None,
+                    comm=None, root=0):
     """Log progress status.
 
     Parameters
@@ -452,12 +452,12 @@ def progress_status(current_idx, task_length, logger, comm=None, root=0,
         Total number of tasks.
     logger : :class:`logging.Logger`
         Logger.
+    process_name : str or None
+        If not `None` (default), this is the process name to be logged.
     comm : :class:`mpi4py.MPI.Comm` or None, optional
         MPI communicator (default is `None`).
     root : int, optional
         Root process number (default is 0).
-    process_name : str or None
-        If not `None` (default), this is the process name to be logged.
 
     """
     if process_name is not None:

@@ -784,7 +784,7 @@ class Couplings:
                 lambda tup: (tup[0], None, tup[2]), index_vector
             )
 
-        return set(list(operatable_index_vector))
+        return list(set(operatable_index_vector))
 
 
 # 2-Point Correlators

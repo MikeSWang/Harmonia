@@ -90,13 +90,12 @@ def initialise():
     """
     ini_params = parsed_params.__dict__
 
-    rsd_tag = 'on' if parsed_params.rsd else 'off'
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
     ini_tag = "fsky={:.2f},rmax={}.,kmax={},rsd={}".format(
         parsed_params.fsky, int(np.around(parsed_params.rmax)),
-        parsed_params.kmax, rsd_tag
+        parsed_params.kmax, parsed_params.rsd
     )
 
     return ini_params, ini_tag

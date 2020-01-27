@@ -188,7 +188,8 @@ def process():
         redshift=params['redshift'],
         growth_rate=params['growth_rate'],
         cosmo=simu_cosmo,
-        couplings=external_couplings
+        couplings=external_couplings,
+        comm=comm
     )
 
     smap_file = params['input_catalogue'] \

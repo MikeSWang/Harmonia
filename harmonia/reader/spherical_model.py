@@ -784,7 +784,8 @@ class Couplings:
                 lambda tup: (tup[0], None, tup[2]), index_vector
             )
 
-        return list(set(operatable_index_vector))
+        # ``Sorted`` orders ``set`` output.
+        return sorted(list(set(operatable_index_vector)))
 
 
 # 2-Point Correlators
@@ -1397,7 +1398,7 @@ class TwoPointFunction(Couplings):
                 lambda tup: (tup[0], tup[1], None),
                 self._natural_indices.unfold('natural', return_only='index')
             )
-        index_vector = list(set(operatable_index_vector))
+        index_vector = sorted(list(set(operatable_index_vector)))
 
         angular_couplings = self.couplings['angular']
 
@@ -1452,7 +1453,7 @@ class TwoPointFunction(Couplings):
                 lambda tup: (tup[0], None, tup[2]),
                 self._natural_indices.unfold('natural', return_only='index')
             )
-        index_vector = list(set(operatable_index_vector))
+        index_vector = sorted(list(set(operatable_index_vector)))
 
         kwargs = dict(selection=self.selection, weight=self.weight)
 

@@ -182,10 +182,8 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
         )
 
     if savefig:
-        if MAP == "hybrid":
-            program_root = f"knots=[{KHYB},{KMAX}],{PRIOR}{FIXED}"
-        else:
-            program_root = f"kmax={KMAX},{PRIOR}{FIXED}"
+        program_root = \
+            f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}"
         file_name = f"{script_name}-{file_root}-({program_root}).pdf"
         plt.savefig(PATHOUT/script_name/file_name, transparency=True)
 
@@ -202,10 +200,10 @@ if __name__ == '__main__':
     PRIOR = "bias_prior=[2.2,2.6],fnl_prior=[-150.0,250.0]"
     FIXED = ""
 
-    # NOTE: Change this before running.
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
+    # NOTE: Change this before running.
     x_parameters = np.linspace(-150.0, 250.0, 401)
     y_parameters = np.linspace(2.2, 2.6, 41)
 

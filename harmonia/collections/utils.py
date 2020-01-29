@@ -760,16 +760,7 @@ def covar_to_corr(covar):
     corr : float, array_like
         Correlation matrix.
 
-    Raises
-    ------
-    NotImplementedError
-        If `covar` is complex.
-
     """
-    if np.iscomplexobj(covar):
-        raise NotImplementedError(
-            "Complex covariance matrices are not supported. "
-        )
 
     inv_diag = np.diag(np.power(np.diag(covar), -1/2))
     corr = inv_diag @ covar @ inv_diag

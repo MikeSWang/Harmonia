@@ -193,25 +193,25 @@ if __name__ == '__main__':
     # NOTE: Change this before running.
     NG = 0
     MAP = "hybrid"
-    FSKY = "0.33"
-    KHYB = 0.04
+    FSKY = "1.00"
+    KHYB = None
     KMAX = 0.1
     RSD = False
-    PRIOR = "bias_prior=[2.2,2.6],fnl_prior=[-150.0,250.0]"
+    PRIOR = "bias_prior=[2.05,2.65],fnl_prior=[-375.0,375.0]"
     FIXED = ""
 
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
     # NOTE: Change this before running.
-    x_parameters = np.linspace(-150.0, 250.0, 401)
-    y_parameters = np.linspace(2.2, 2.6, 41)
+    x_parameters = np.linspace(-375.0, 375.0, 751)
+    y_parameters = np.linspace(2.05, 2.65, 61)
 
     # NOTE: Change this before running.
     output = read_data(
-        collate_data=False,
-        load_data=True,
-        save_data=False,
+        collate_data=True,
+        load_data=False,
+        save_data=True,
         # filter_Data=True,
         # remove_degs=(0,),
     )
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        # plot_ranges=([-150.0, 250.0], [2.2, 2.6]),
+        # plot_ranges=([-375.0, 375.0], [2.05, 2.65]),
         # savefig=True,
         # cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],

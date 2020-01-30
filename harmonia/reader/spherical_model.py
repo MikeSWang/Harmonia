@@ -569,7 +569,7 @@ class Couplings:
                 if any_warning and not np.isclose(coupling_coeff, 0.):
                     warnings.warn(
                         "Angular integration warning for index pair "
-                        "{} and {}: {}.\n"
+                        "{} and {}: {}\n"
                         .format(mu, nu, any_warning[-1].message),
                         category=CouplingCoefficientWarning
                     )
@@ -593,7 +593,7 @@ class Couplings:
                 if any_warning:
                     warnings.warn(
                         "Radial integration warning for index pair "
-                        "{} and {}: {}.\n"
+                        "{} and {}: {}\n"
                         .format(mu, nu, any_warning[-1].message),
                         category=CouplingCoefficientWarning
                     )
@@ -611,7 +611,7 @@ class Couplings:
             if any_warning:
                 warnings.warn(
                     "RSD integration warning for index pair "
-                    "{} and {}: {}.\n"
+                    "{} and {}: {}\n"
                     .format(mu, nu, any_warning[-1].message),
                     category=CouplingCoefficientWarning
                 )
@@ -1473,7 +1473,7 @@ class TwoPointFunction(Couplings):
         ))
         for msg in unique_warning_msgs:
             warnings.warn(
-                "Shot noise integration warning emitted: {}.\n".format(msg),
+                "Shot noise integration warning emitted: {}\n".format(msg),
                 category=IntegrationWarning
             )
 

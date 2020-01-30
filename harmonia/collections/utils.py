@@ -741,8 +741,10 @@ def mat_logdet(matrix, diag=False):
     else:
         sign_det, log_det = np.linalg.slogdet(matrix)
 
-    if sign_det != 1.:
-        raise ValueError("`matrix` is not positive definite. ")
+    if not np.isclose(sign_det, 1.):
+        raise ValueError(
+            "`matrix` is not positive definite: sign {}. ".format(sign_det)
+        )
 
     return log_det
 

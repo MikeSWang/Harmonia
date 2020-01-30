@@ -139,8 +139,11 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
     if elementwise:
         var_vector = np.diag(cov_matrix)
         sign_product = np.prod(np.sign(var_vector))
-        if sign_product != 1.:
-            raise ValueError("`cov_matrix` is not positive definite. ")
+        if not np.isclose(sign_product, 1.):
+            raise ValueError(
+                "`cov_matrix` is not positive definite: sign {}. "
+                .format(sign_product)
+            )
         log_det_cov_mat = np.log(np.abs(var_vector))
     else:
         log_det_cov_mat = mat_logdet(cov_matrix)

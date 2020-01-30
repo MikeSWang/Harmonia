@@ -45,10 +45,9 @@ def get_hybrid_maps():
 
     """
     output_filename = (
-        f"halos-(NG={NG},z=1.)-(map=hybrid,"
-        f"fsky={FSKY},knots=[{KHYB},{KMAX}],orders={ORDERS},rsd={RSD}"
-        ").npy"
-    )
+        "halos-(NG={},z=1.)-(map=hybrid,fsky={},"
+        "pivots=[{},{}],knots=[{},{}],orders={},rsd={}).npy"
+    ).format(NG, FSKY, SPIVOT, CPIVOT, KHYB, KMAX, ORDERS, RSD)
 
     catalogue_root = "halos-(NG={},z=1.)-{}-"
     smap_suffix = "(map=spherical,fsky={},knots=[{},{}],rsd={}).npy"
@@ -70,25 +69,23 @@ def get_hybrid_maps():
             for serial_index in CATALOGUE_SERIAL_IND:
                 smap_vector = SphericalArray.build(
                     filling=sort_dict_to_list(smap_data[serial_index])
-                )
+                ).unfold(SPIVOT, return_only='data')
+
                 cmap_vector = CartesianArray(
                     cmap_data[serial_index], 'k', 'power_'
+                ).unfold(CPIVOT, return_only='data')
+
+                hybrid_map_data.append(
+                    np.concatenate((smap_vector, cmap_vector))
                 )
-                hmap_vector = np.concatenate(
-                    (
-                        smap_vector.unfold(SPIVOT, return_only='data'),
-                        cmap_vector.unfold(CPIVOT, return_only='data')
-                    )
-                )
-                hybrid_map_data.append(hmap_vector)
-        safe_save(hybrid_data, PATHOUT/"hybrid_map", output_filename)
+        safe_save(hybrid_map_data, PATHOUT/"hybrid_map", output_filename)
     else:
         hybrid_map_data = np.load(PATHOUT/"hybrid_map"/output_filename)
 
     return hybrid_map_data
 
 
-def inspect_hybrid_map():
+def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
     """Inspect statistical properties of hybrid map data.
 
     Returns
@@ -100,22 +97,51 @@ def inspect_hybrid_map():
     sample_cov = np.cov(hybrid_data, rowvar=False)
     sample_corr = covar_to_corr(sample_cov).real
 
+    output_filename = "hybrid_corr-(fsky={},pivots=[{},{}],rsd={}).pdf"\
+        .format(FSKY, SPIVOT, CPIVOT, RSD)
+
+    plt.close('all')
     plt.style.use(harmony)
     sns.set(style='ticks', font='serif')
-    sns.heatmap(sample_corr, square=True, cmap='YlGn')
+
+    view_corr = sample_corr.copy()
+    view_offcorr = sample_corr[zoom:, :zoom]
+
+    view_corr[np.abs(view_corr) < thredshold] = 0.
+    sns.heatmap(
+        (view_corr),
+        square=True, cmap='coolwarm', rasterized=True
+    )
+    if savefig:
+        plt.savefig(
+            PATHOUT/"hybrid_map"/output_filename.replace("_corr", "_corr"),
+            format='pdf', transparency=True
+        )
+    if zoom:
+
+
+        plt.figure()
+        sns.heatmap((view_offcorr), cmap='coolwarm')
+        if savefig:
+            plt.savefig(
+                PATHOUT/"hybrid_map"/(
+                    output_filename.replace("_corr", "_offcorr")
+                ),
+                format='pdf', transparency=True
+            )
 
     return sample_corr
 
 
-COLLATE_DATA = False
+COLLATE_DATA = True
 
 NG = "0."
 FSKY = "1.00"
 KHYB, KMAX = 0.04, 0.1
 ORDERS = "[0]"
-SPIVOT, CPIVOT = 'spectral', 'variable'
+SPIVOT, CPIVOT = 'natural', 'variable'
 RSD = False
 
 if __name__ == '__main__':
     hybrid_data = get_hybrid_maps()
-    hybrid_corr = inspect_hybrid_map()
+    hybrid_corr = inspect_hybrid_map(thredshold=0., savefig=True, zoom=456)

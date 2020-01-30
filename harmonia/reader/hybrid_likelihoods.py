@@ -34,13 +34,13 @@ Cartesian likelihood
 
 """
 import collections as coll
-import itertools as it
+from itertools import product
 
 import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import mat_logdet, progress_status
+from harmonia.collections import mat_logdet, mpi_compute
 
 
 # Probability distributions
@@ -422,25 +422,30 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     if breakdown:
         out_shape += (len(data_vector),)
 
-    log_likelihood = []
-    for idx, (b_1, f_nl, tpm) in \
-            enumerate(it.product(bias, non_gaussianity, two_point_model)):
+    sampled_points = product(bias, non_gaussianity, two_point_model)
+
+    def _likelihood_eval(sample_point):
+
+        b_1, f_nl, tpm = sample_point
+
         sample_covar = spherical_parametrised_covariance(
             b_1, f_nl, tpm, pivot,
             nbar=mean_number_density,
             **covariance_kwargs
         )[:, ~excluded_deg][~excluded_deg, :]
+
         sample_likelihood = complex_normal_pdf(
             data_vector, sample_covar,
             downscale=_OVERFLOW_DOWNSCALE,
             elementwise=breakdown
         )
-        log_likelihood.append(sample_likelihood)
-        if logger:
-            progress_status(
-                idx, np.product(out_shape), logger, comm=comm,
-                process_name="spherical likelihood evaluation"
-            )
+
+        return sample_likelihood
+
+    log_likelihood = mpi_compute(
+        sampled_points, _likelihood_eval, comm,
+        logger=logger, process_name="spherical likelihood evaluation"
+    )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:
@@ -590,14 +595,17 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         axis_to_squeeze += (2,)
 
     out_shape = (len(bias), len(non_gaussianity), len(windowed_power_model))
+    sampled_points = product(bias, non_gaussianity, windowed_power_model)
 
-    log_likelihood = []
-    for idx, (b_1, f_nl, wpm) in \
-            enumerate(it.product(bias, non_gaussianity, windowed_power_model)):
+    def _likelihood_eval(sample_point):
+
+        b_1, f_nl, wpm = sample_point
+
         sample_mean, sample_covar = cartesian_parametrised_moments(
             b_1, f_nl, wpm, pivot, orders, correlation_modeller,
             nbar=mean_number_density, **covariance_kwargs
         )
+
         if num_covar_sample:
             sample_likelihood = modified_student_pdf(
                 data_vector, sample_mean, sample_covar,
@@ -607,12 +615,13 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             sample_likelihood = multivariate_normal_pdf(
                 data_vector, sample_mean, sample_covar
             )
-        log_likelihood.append(sample_likelihood)
-        if logger:
-            progress_status(
-                idx, np.product(out_shape), logger, comm=comm,
-                process_name="cartesian likelihood evaluation"
-            )
+
+        return sample_likelihood
+
+    log_likelihood = mpi_compute(
+        sampled_points, _likelihood_eval, comm,
+        logger=logger, process_name="cartesian likelihood evaluation"
+    )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

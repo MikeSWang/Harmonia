@@ -107,10 +107,13 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
     view_corr = sample_corr.copy()
     view_offcorr = sample_corr[zoom:, :zoom]
 
+    mask = np.zeros_like(view_corr)
+    mask[np.triu_indices_from(mask)] = True
+
     view_corr[np.abs(view_corr) < thredshold] = 0.
     sns.heatmap(
         (view_corr),
-        square=True, cmap='coolwarm', rasterized=True
+        square=True, mask=mask, cmap='coolwarm', rasterized=True
     )
     if savefig:
         plt.savefig(
@@ -118,8 +121,6 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
             format='pdf', transparency=True
         )
     if zoom:
-
-
         plt.figure()
         sns.heatmap((view_offcorr), cmap='coolwarm')
         if savefig:

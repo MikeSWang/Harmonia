@@ -138,11 +138,14 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
         if save_data:
             confirm_directory_path(collation_outpath)
-            safe_save(collated_output, collation_outpath, file_name + ".npy")
+            safe_save(
+                collated_output, collation_outpath, (file_name + ".npy")
+                # .replace("])", "],exdeg=[0])")
+            )
 
     if load_data:
         collated_output = np.load(
-            collation_outpath/str(file_name + ".npy")
+            collation_outpath/(file_name + ".npy")
             # .replace("])", "],exdeg=[0])")
         ).item()
 

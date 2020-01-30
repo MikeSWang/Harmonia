@@ -194,7 +194,7 @@ if __name__ == '__main__':
     NG = 0
     MAP = "hybrid"
     FSKY = "1.00"
-    KHYB = None
+    KHYB = 0.04
     KMAX = 0.1
     RSD = False
     PRIOR = "bias_prior=[2.05,2.65],fnl_prior=[-375.0,375.0]"
@@ -212,7 +212,7 @@ if __name__ == '__main__':
         collate_data=True,
         load_data=False,
         save_data=True,
-        # filter_Data=True,
+        # filter_degs=True,
         # remove_degs=(0,),
     )
 

@@ -763,8 +763,7 @@ def covar_to_corr(covar):
         Correlation matrix.
 
     """
-
-    inv_diag = np.diag(np.power(np.diag(covar), -1/2))
+    inv_diag = np.diag(np.power(np.abs(np.diag(covar)), -1/2))
     corr = inv_diag @ covar @ inv_diag
 
     return corr

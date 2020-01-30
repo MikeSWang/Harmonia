@@ -94,8 +94,15 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
         Hybrid map data sample correlation matrix.
 
     """
-    sample_cov = np.cov(hybrid_data, rowvar=False)
-    sample_corr = covar_to_corr(sample_cov).real
+    mean_data = np.average(hybrid_data, axis=0)
+    sample_cov = np.conj(hybrid_data - mean_data).T \
+        @ np.array(hybrid_data - mean_data) \
+        / len(hybrid_data)
+    sample_corr = covar_to_corr(sample_cov)
+
+    reflection_mask = np.triu_indices(len(sample_cov), k=1)
+    view_corr = sample_corr.real
+    view_corr[reflection_mask] = sample_corr.imag[reflection_mask]
 
     output_filename = "hybrid_corr-(fsky={},pivots=[{},{}],rsd={}).pdf"\
         .format(FSKY, SPIVOT, CPIVOT, RSD)
@@ -104,16 +111,12 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
     plt.style.use(harmony)
     sns.set(style='ticks', font='serif')
 
-    view_corr = sample_corr.copy()
-    view_offcorr = sample_corr[zoom:, :zoom]
-
-    mask = np.zeros_like(view_corr)
-    mask[np.triu_indices_from(mask)] = True
+    view_offcorr = view_corr[zoom:, :zoom]  # real part only
 
     view_corr[np.abs(view_corr) < thredshold] = 0.
     sns.heatmap(
-        (view_corr),
-        square=True, mask=mask, cmap='coolwarm', rasterized=True
+        (view_corr), square=True,
+        cmap='coolwarm', rasterized=True
     )
     if savefig:
         plt.savefig(

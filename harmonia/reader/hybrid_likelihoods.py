@@ -422,7 +422,7 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     if breakdown:
         out_shape += (len(data_vector),)
 
-    sampled_points = product(bias, non_gaussianity, two_point_model)
+    sampled_points = list(product(bias, non_gaussianity, two_point_model))
 
     def _likelihood_eval(sample_point):
 
@@ -595,7 +595,7 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         axis_to_squeeze += (2,)
 
     out_shape = (len(bias), len(non_gaussianity), len(windowed_power_model))
-    sampled_points = product(bias, non_gaussianity, windowed_power_model)
+    sampled_points = list(product(bias, non_gaussianity, windowed_power_model))
 
     def _likelihood_eval(sample_point):
 

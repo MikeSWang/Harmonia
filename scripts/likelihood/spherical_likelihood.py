@@ -126,7 +126,9 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
+    disc = DiscreteSpectrum(
+        params['boxsize']/2, 'dirichlet', params['kmax'], comm=comm
+    )
 
     two_point_model = TwoPointFunction(
         disc,

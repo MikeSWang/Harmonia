@@ -174,7 +174,9 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['khyb'])
+    disc = DiscreteSpectrum(
+        params['boxsize']/2, 'dirichlet', params['khyb'], comm=comm
+    )
 
     windowed_power_model = WindowedPowerSpectrum(
         redshift=params['redshift'],

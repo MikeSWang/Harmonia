@@ -123,7 +123,9 @@ def process():
         pprint(params)
         print(f"\nRunning on {COMM.size} process(es).\n")
 
-    disc = DiscreteSpectrum(params['rmax'], 'Dirichlet', params['kmax'])
+    disc = DiscreteSpectrum(
+        params['rmax'], 'Dirichlet', params['kmax'], comm=COMM
+    )
 
     with open(COSMOLOGY_FILE) as cosmology_file:
         cosmological_parameters = eval(cosmology_file.read())

@@ -569,8 +569,7 @@ class Couplings:
                 if any_warning and not np.isclose(coupling_coeff, 0.):
                     warnings.warn(
                         "Angular integration warning for index pair "
-                        "{} and {}: {}\n"
-                        .format(mu, nu, any_warning[-1].message),
+                        "{} and {}.\n".format(mu, nu),
                         category=CouplingCoefficientWarning
                     )
         elif coupling_type == 'radial':
@@ -593,8 +592,7 @@ class Couplings:
                 if any_warning:
                     warnings.warn(
                         "Radial integration warning for index pair "
-                        "{} and {}: {}\n"
-                        .format(mu, nu, any_warning[-1].message),
+                        "{} and {}.\n".format(mu, nu),
                         category=CouplingCoefficientWarning
                     )
         elif coupling_type == 'RSD':
@@ -611,8 +609,7 @@ class Couplings:
             if any_warning:
                 warnings.warn(
                     "RSD integration warning for index pair "
-                    "{} and {}: {}\n"
-                    .format(mu, nu, any_warning[-1].message),
+                    "{} and {}.\n".format(mu, nu),
                     category=CouplingCoefficientWarning
                 )
 
@@ -743,7 +740,7 @@ class Couplings:
             lambda warning_obj: warning_obj.message, captured_warnings
         ))
         for msg in unique_warning_msgs:
-            warnings.warn(msg, IntegrationWarning)
+            warnings.warn(msg, CouplingCoefficientWarning)
 
         sequenced_couplings = dict(zip(index_vector, coeff_vector))
 

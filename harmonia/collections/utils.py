@@ -99,6 +99,7 @@ __all__ = [
     'format_float',
     'sort_dict_to_list',
     'sort_list_to_dict',
+    'PositiveDefinitenessWarning',
     'zero_const',
     'unit_const',
     'const_function',

@@ -289,7 +289,7 @@ class SurveyWindow:
                 "they are now being overwritten. "
             )
 
-        if not hasattr(self._raw_power_multipoles, max(orders)):
+        if max(orders) not in self._raw_power_multipoles:
             _ = self.power_spectrum_multipoles(orders, **multipoles_kwargs)
 
         k = self._raw_power_multipoles['k']

@@ -99,7 +99,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
     search_root = (
         f"map={MAP},fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},"
-        f"*{PRIOR}{FIXED}"
+        f"*{PRIOR}{FIXED}*"
     ).replace("=[", "=[[]").replace("],", "[]],")
     program_root = \
         f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}"

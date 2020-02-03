@@ -656,6 +656,13 @@ def sort_list_to_dict(list_data, int_keys):
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
 
+class PositiveDefinitenessWarning(UserWarning):
+    """Non-positive definiteness warning for covariance matrices.
+
+    """
+    pass
+
+
 def zero_const(*args, **kwargs):
     """Return constant 0 with arbitrary arguments.
 
@@ -728,8 +735,6 @@ def mat_logdet(matrix, diag=False):
     ------
     ValueError
         If `matrix` is not in an equivalent shape for a 2-d square matrix.
-    ValueError
-        If `matrix` is not positive definite.
 
     """
     if np.array(matrix).ndim != 2 or len(set(np.shape(matrix))) != 1:
@@ -742,8 +747,9 @@ def mat_logdet(matrix, diag=False):
         sign_det, log_det = np.linalg.slogdet(matrix)
 
     if not np.isclose(sign_det, 1.):
-        raise ValueError(
-            "`matrix` is not positive definite: sign {}. ".format(sign_det)
+        warnings.warn(
+            "`matrix` is not positive definite: sign {}. ".format(sign_det),
+            PositiveDefinitenessWarning
         )
 
     return log_det

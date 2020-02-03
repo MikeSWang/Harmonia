@@ -33,13 +33,15 @@ Cartesian likelihood
     cartesian_map_log_likelihood
 
 """
-import collections as coll
+import collections
+import warnings
 from itertools import product
 
 import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
+from harmonia.collections import PositiveDefinitenessWarning
 from harmonia.collections import mat_logdet, mpi_compute
 
 
@@ -140,7 +142,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
         var_vector = np.diag(cov_matrix)
         sign_product = np.prod(np.sign(var_vector))
         if not np.isclose(sign_product, 1.):
-            raise ValueError(
+            warnings.warn(
                 "`cov_matrix` is not positive definite: sign {}. "
                 .format(sign_product)
             )
@@ -411,13 +413,13 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
     data_vector = data_vector[~excluded_deg]
 
     axis_to_squeeze = ()
-    if not isinstance(bias, coll.Iterable):
+    if not isinstance(bias, collections.Iterable):
         bias = (bias,)
         axis_to_squeeze += (0,)
-    if not isinstance(non_gaussianity, coll.Iterable):
+    if not isinstance(non_gaussianity, collections.Iterable):
         non_gaussianity = (non_gaussianity,)
         axis_to_squeeze += (1,)
-    if not isinstance(two_point_model, coll.Iterable):
+    if not isinstance(two_point_model, collections.Iterable):
         two_point_model = (two_point_model,)
         axis_to_squeeze += (2,)
 
@@ -445,10 +447,14 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
         return sample_likelihood
 
-    log_likelihood = mpi_compute(
-        sampled_points, _likelihood_eval, comm,
-        logger=logger, process_name="spherical likelihood evaluation"
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action='module', category=PositiveDefinitenessWarning
+        )
+        log_likelihood = mpi_compute(
+            sampled_points, _likelihood_eval, comm,
+            logger=logger, process_name="spherical likelihood evaluation"
+        )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:
@@ -587,13 +593,13 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         data_vector = cartesian_data.unfold('coord', return_only='data')
 
     axis_to_squeeze = ()
-    if not isinstance(bias, coll.Iterable):
+    if not isinstance(bias, collections.Iterable):
         bias = (bias,)
         axis_to_squeeze += (0,)
-    if not isinstance(non_gaussianity, coll.Iterable):
+    if not isinstance(non_gaussianity, collections.Iterable):
         non_gaussianity = (non_gaussianity,)
         axis_to_squeeze += (1,)
-    if not isinstance(windowed_power_model, coll.Iterable):
+    if not isinstance(windowed_power_model, collections.Iterable):
         windowed_power_model = (windowed_power_model,)
         axis_to_squeeze += (2,)
 

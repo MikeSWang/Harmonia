@@ -82,7 +82,7 @@ def view_pdf(samples, xlabel, ylabel, scaling='normalised', precision=None,
         likelihoods = np.exp(log_likelihoods)
         avg_likelihood = np.exp(avg_log_likelihood)
 
-        distribution = np.array([
+        distribution = np.asarray([
             cumtrapz(values, parameters, initial=0.) for values in likelihoods
         ])
         avg_distribution = cumtrapz(avg_likelihood, parameters, initial=0.)
@@ -264,7 +264,7 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
         )
 
         # Marginal likelihoods.
-        marginal_x = np.array([
+        marginal_x = np.asarray([
             simps(likelihood_y, _samples['parameter_y'])
             for likelihood_y in hh
         ])
@@ -303,7 +303,7 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
                 color=_cmap(_cmap.N), antialiased=True, alpha=0.33
             )
 
-        marginal_y = np.array([
+        marginal_y = np.asarray([
             simps(likelihood_x, _samples['parameter_x'])
             for likelihood_x in hh.T
         ])

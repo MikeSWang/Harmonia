@@ -103,7 +103,7 @@ def diagonal_smoothing():
 
     global bin_coords, counts
 
-    depth_zero_wavenumbers = np.array(
+    depth_zero_wavenumbers = np.asarray(
         [wavenumbers[0] for deg, wavenumbers in disc.wavenumbers.items()]
     )
     bins = np.concatenate(

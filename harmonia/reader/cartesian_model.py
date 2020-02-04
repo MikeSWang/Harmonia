@@ -609,7 +609,7 @@ class WindowedCorrelation:
         dimension = len(self.orders) \
             * len(self.fiducial_multipoles.coord_array)
 
-        covar_estimate = np.squeeze(np.array(covar_estimate))
+        covar_estimate = np.squeeze(np.asarray(covar_estimate))
         if covar_estimate.ndim != 2 \
                 or covar_estimate.shape != (dimension,) * 2:
             raise ValueError(

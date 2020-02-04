@@ -297,7 +297,7 @@ class LogNormalCatalogue(CatalogSource):
             self._vel_offset = growth_rate * displacement
             if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \
-                    * np.array(line_of_sight)
+                    * np.asarray(line_of_sight)
             else:
                 self['Position'] += self['VelocityOffset'] \
                     * normalise_vector(self['Position'])
@@ -451,7 +451,7 @@ class GaussianCatalogue(CatalogSource):
             self._vel_offset = growth_rate * displacement
             if line_of_sight is not None:
                 self['Position'] += self['VelocityOffset'] \
-                    * np.array(line_of_sight)
+                    * np.asarray(line_of_sight)
             else:
                 self['Position'] += self['VelocityOffset'] \
                     * normalise_vector(self['Position'])

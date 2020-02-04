@@ -738,7 +738,7 @@ def mat_logdet(matrix, diag=False):
         If `matrix` is not in an equivalent shape for a 2-d square matrix.
 
     """
-    if np.array(matrix).ndim != 2 or len(set(np.shape(matrix))) != 1:
+    if np.asarray(matrix).ndim != 2 or len(set(np.shape(matrix))) != 1:
         raise ValueError("`matrix` is not a 2-d square matrix. ")
 
     if diag:
@@ -898,7 +898,7 @@ def binary_search(func, a, b, maxnum=None, precision=1.e-5):
         else:
             break
 
-    return np.array(roots, dtype=float)
+    return np.asarray(roots, dtype=float)
 
 
 def normalise_vector(vector, axis=-1):
@@ -1057,7 +1057,7 @@ def bin_edges_from_centres(centres, extremes, align='low'):
         Bin edges.
 
     """
-    if np.array(centres).ndim == 1:
+    if np.asarray(centres).ndim == 1:
         centres = np.squeeze(centres)
     if np.allclose(centres[0], 0):
         centres = np.delete(centres, 0)

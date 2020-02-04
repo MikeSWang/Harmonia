@@ -277,8 +277,8 @@ class SphericalMap:
                 n_ell = np.concatenate((n_ell, n_ell_parity))
                 nbar_ell = np.concatenate((nbar_ell, nbar_ell_parity))
 
-            n_coeff[ell] = np.array(n_ell)
-            nbar_coeff[ell] = np.array(nbar_ell)
+            n_coeff[ell] = np.asarray(n_ell)
+            nbar_coeff[ell] = np.asarray(nbar_ell)
 
         self._n_coeff, self._nbar_coeff = n_coeff, nbar_coeff
 

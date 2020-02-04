@@ -123,7 +123,7 @@ class SphericalArray:
                 raise ValueError(
                     "Length of `filling` is not consistent with `degrees`. "
                 )
-            self.data_array = [np.array(fillblock) for fillblock in filling]
+            self.data_array = [np.asarray(fillblock) for fillblock in filling]
 
     @classmethod
     def build(cls, filling=None, disc=None):
@@ -235,7 +235,7 @@ class SphericalArray:
 
         data_flat = None
         if not empty_flag:
-            data_flat = np.array(
+            data_flat = np.asarray(
                 self._flatten(dat_arr, 'data', subarray_transpose=transpose)
             )
 
@@ -403,7 +403,7 @@ class SphericalArray:
 
         if subarray_type == 'data':
             return np.concatenate(
-                [np.array(array_block).flatten() for array_block in array]
+                [np.asarray(array_block).flatten() for array_block in array]
             )
         if subarray_type == 'index':
             return [
@@ -485,7 +485,7 @@ class SphericalArray:
 
         """
         if subarray_type == 'data':
-            return [np.array(ell_block).T for ell_block in array]
+            return [np.asarray(ell_block).T for ell_block in array]
         if subarray_type == 'index':
             return [list(map(list, zip(*ell_block))) for ell_block in array]
         raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")

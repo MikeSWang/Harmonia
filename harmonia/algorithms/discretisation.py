@@ -279,7 +279,7 @@ class DiscreteSpectrum:
             else:
                 degrees.append(ell)
                 depths.append(n_ell)
-                roots[ell] = np.array(u_ell)
+                roots[ell] = np.asarray(u_ell)
                 mode_count += (2*ell + 1) * n_ell
 
                 if to_log:

@@ -72,7 +72,7 @@ def generate_regular_grid(cell_size, num_mesh, variable='norm'):
 
     """
     indices = np.indices((num_mesh,) * 3)
-    origin = np.array([(num_mesh-1)/2] * 3)
+    origin = np.asarray([(num_mesh-1)/2] * 3)
 
     grid_coords = [
         cell_size * (index - centre)
@@ -292,7 +292,7 @@ def threshold_clip(density_contrast, threshold=-1.):
         Clipped density contrast field.
 
     """
-    density_contrast = np.array(density_contrast)
+    density_contrast = np.asarray(density_contrast)
 
     clipping_mask = density_contrast < threshold
 
@@ -379,7 +379,7 @@ def poisson_sample(density_contrast, mean_density, boxsize, seed=None):
         If `density_contrast` is not given on a regular grid.
 
     """
-    density_contrast = np.array(density_contrast)
+    density_contrast = np.asarray(density_contrast)
     _is_regular_grid(density_contrast, "density_contrast")
 
     num_mesh = max(density_contrast.shape)
@@ -422,7 +422,7 @@ def populate_particles(sampled_field, mean_density, boxsize,
         Displacement of particles from their `position`.
 
     """
-    sampled_field = np.array(sampled_field)
+    sampled_field = np.asarray(sampled_field)
     _is_regular_grid(sampled_field, "sampled_field")
 
     num_mesh = max(sampled_field.shape)
@@ -526,7 +526,7 @@ def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,
         counting for wave vector parity).
 
     """
-    num_mesh = max(np.array(field).shape)
+    num_mesh = max(np.asarray(field).shape)
     vol, num_cell = boxsize**3, num_mesh**3
 
     k_norm = generate_regular_grid(2*np.pi/boxsize, num_mesh, variable='norm')

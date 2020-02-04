@@ -673,7 +673,7 @@ class Couplings:
 
         couplings_component = {}
         for ell in self.disc.degrees:
-            couplings_component[ell] = np.array(
+            couplings_component[ell] = np.asarray(
                 [
                     self.coupling_coefficient(mu, sigma, coupling_type)
                     for sigma in sigma_gen(ell)

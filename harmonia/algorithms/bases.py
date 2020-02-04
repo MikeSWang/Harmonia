@@ -110,7 +110,7 @@ def spherical_besselj_root(ell, nmax, only=True, derivative=False):
         if only:
             u_ell = float(besseljzero(ell+1/2, nmax, derivative=0))
         else:
-            u_ell = np.array(
+            u_ell = np.asarray(
                 [
                     float(besseljzero(ell+1/2, n, derivative=0))
                     for n in range(1, nmax+1)

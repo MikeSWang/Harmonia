@@ -96,7 +96,7 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
     """
     mean_data = np.average(hybrid_data, axis=0)
     sample_cov = np.conj(hybrid_data - mean_data).T \
-        @ np.array(hybrid_data - mean_data) \
+        @ np.asarray(hybrid_data - mean_data) \
         / len(hybrid_data)
     sample_corr = covar_to_corr(sample_cov)
 

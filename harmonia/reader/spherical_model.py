@@ -1469,10 +1469,11 @@ class TwoPointFunction(Couplings):
             lambda warning_obj: warning_obj.message, any_warnings
         ))
         for msg in unique_warning_msgs:
-            warnings.warn(
-                "Shot noise integration warning emitted: {}\n".format(msg),
-                category=IntegrationWarning
-            )
+            if self.comm is None or self.comm.rank == 0:
+                warnings.warn(
+                    "Shot noise integration warning emitted: {}\n".format(msg),
+                    category=IntegrationWarning
+                )
 
         return self._fixed_shot_noise_
 

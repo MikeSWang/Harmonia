@@ -449,7 +449,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            action='module', category=PositiveDefinitenessWarning
+            action='module', category=PositiveDefinitenessWarning,
+            message="`matrix` is not positive definite: sign.*"
         )
         log_likelihood = mpi_compute(
             sampled_points, _likelihood_eval, comm,

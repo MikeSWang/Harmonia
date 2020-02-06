@@ -749,7 +749,7 @@ def mat_logdet(matrix, diag=False):
 
     if not np.isclose(sign_det, 1.):
         warnings.warn(
-            "`matrix` is not positive definite: sign {}. ".format(sign_det),
+            "`matrix` is not positive definite. ",
             PositiveDefinitenessWarning
         )
 

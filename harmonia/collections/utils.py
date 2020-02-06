@@ -99,6 +99,7 @@ __all__ = [
     'format_float',
     'sort_dict_to_list',
     'sort_list_to_dict',
+    'LikelihoodWarning',
     'PositiveDefinitenessWarning',
     'zero_const',
     'unit_const',
@@ -656,6 +657,13 @@ def sort_list_to_dict(list_data, int_keys):
 
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
+
+class LikelihoodWarning(UserWarning):
+    """Likelihood evaluation warning.
+
+    """
+    pass
+
 
 class PositiveDefinitenessWarning(UserWarning):
     """Non-positive definiteness warning for covariance matrices.

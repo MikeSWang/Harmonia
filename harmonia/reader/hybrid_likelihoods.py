@@ -41,7 +41,7 @@ import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import PositiveDefinitenessWarning
+from harmonia.collections import LikelihoodWarning, PositiveDefinitenessWarning
 from harmonia.collections import mat_logdet, mpi_compute
 
 
@@ -447,15 +447,24 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
         return sample_likelihood
 
-    with warnings.catch_warnings():
+    with warnings.catch_warnings(record=True) as captured_warnings:
         warnings.filterwarnings(
-            action='module', category=PositiveDefinitenessWarning,
+            action='once', category=PositiveDefinitenessWarning,
             message="`matrix` is not positive definite: sign.*"
         )
-        log_likelihood = mpi_compute(
-            sampled_points, _likelihood_eval, comm,
-            logger=logger, process_name="spherical likelihood evaluation"
-        )
+        if comm is None:
+            log_likelihood = list(map(_likelihood_eval, sampled_points))
+        else:
+            log_likelihood = mpi_compute(
+                sampled_points, _likelihood_eval, comm,
+                logger=logger, process_name="spherical likelihood evaluation"
+            )
+
+    unique_warning_msgs = set(map(
+        lambda warning_obj: warning_obj.message, captured_warnings
+    ))
+    for msg in unique_warning_msgs:
+        warnings.warn(msg, LikelihoodWarning)
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

@@ -285,7 +285,8 @@ def finalise(results, filetag):
 
     filename = f"{params['input_catalogue']}-({filetag}).npy"
 
-    np.save(PATHOUT/script_name/filename, results)
+    if comm.rank == 0:
+        np.save(PATHOUT/script_name/filename, results)
 
 
 if __name__ == '__main__':

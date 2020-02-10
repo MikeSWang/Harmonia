@@ -464,7 +464,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         lambda warning_obj: warning_obj.message, captured_warnings
     ))
     for msg in unique_warning_msgs:
-        warnings.warn(msg, LikelihoodWarning)
+        if comm is None or comm.rank == 0:
+            warnings.warn(msg, LikelihoodWarning)
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

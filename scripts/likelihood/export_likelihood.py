@@ -99,10 +99,10 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
     search_root = (
         f"map={MAP},fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},"
-        f"*{PRIOR}{FIXED}*"
+        f"*{PRIOR}{FIXED}{EXCL}*"
     ).replace("=[", "=[[]").replace("],", "[]],")
     program_root = \
-        f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}"
+        f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}{EXCL}"
 
     file_name = f"{script_name}-{file_root}-({program_root})"
     if collate_data:
@@ -140,13 +140,11 @@ def read_data(collate_data=False, load_data=False, save_data=False,
             confirm_directory_path(collation_outpath)
             safe_save(
                 collated_output, collation_outpath, (file_name + ".npy")
-                # .replace("])", "],exdeg=[0])")
             )
 
     if load_data:
         collated_output = np.load(
             collation_outpath/(file_name + ".npy")
-            # .replace("])", "],exdeg=[0])")
         ).item()
 
     return collated_output
@@ -186,7 +184,7 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 
     if savefig:
         program_root = \
-            f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}"
+            f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}{EXCL}"
         file_name = f"{script_name}-{file_root}-({program_root}).pdf"
         plt.savefig(PATHOUT/script_name/file_name, transparency=True)
 
@@ -199,6 +197,7 @@ if __name__ == '__main__':
     FSKY = "1.00"
     KHYB = 0.04
     KMAX = 0.1
+    EXCL = ""  # ,exdeg=[0]
     RSD = False
     PRIOR = "bias_prior=[2.05,2.65],fnl_prior=[-375.0,375.0]"
     FIXED = ""

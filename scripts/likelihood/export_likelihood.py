@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     # NOTE: Change this before running.
     x_parameters = np.linspace(-375.0, 375.0, 751)
-    y_parameters = np.linspace(2.05, 2.65, 61)
+    y_parameters = np.linspace(2.1, 2.6, 51)
 
     # NOTE: Change this before running.
     output = read_data(

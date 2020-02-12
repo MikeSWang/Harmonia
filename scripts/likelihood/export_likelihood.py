@@ -116,7 +116,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
             collated_output['parameter_x'] = x_parameters
             collated_output['parameter_y'] = y_parameters
 
-        if MAP == "hybrid" or MAP == "spherical" and filter_degs:
+        if (MAP == "hybrid" or MAP == "spherical") and filter_degs:
             filtered_output = filter_data(
                 collated_output, remove_degrees=remove_degs
             )
@@ -184,7 +184,7 @@ def view_data(data_to_view, savefig=False, **plot_kwargs):
 
     if savefig:
         program_root = \
-            f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD},{PRIOR}{FIXED}{EXCL}"
+            f"fsky={FSKY},knots=[{KHYB},{KMAX}],rsd={RSD}{EXCL}"
         file_name = f"{script_name}-{file_root}-({program_root}).pdf"
         plt.savefig(PATHOUT/script_name/file_name, transparency=True)
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     KMAX = 0.1
     EXCL = ""  # ,exdeg=[0]
     RSD = False
-    PRIOR = "bias_prior=[2.05,2.65],fnl_prior=[-375.0,375.0]"
+    PRIOR = "bias_prior=[2.1,2.6],fnl_prior=[-375.0,375.0]"
     FIXED = ""
 
     script_name = f"{MAP}_likelihood"
@@ -223,7 +223,7 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        # plot_ranges=([-375.0, 375.0], [2.05, 2.65]),
+        # plot_ranges=([-375.0, 375.0], [2.1, 2.6]),
         # savefig=True,
         # cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],

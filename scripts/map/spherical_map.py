@@ -17,7 +17,6 @@ from harmonia.mapper import (
 )
 
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-TO_MESH_KWARGS = dict(resampler='tsc', compensated=True, interlaced=True)
 
 
 def initialise():
@@ -57,7 +56,7 @@ def process():
     disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
 
     output_data = defaultdict(list)
-    for file_suffix in ["L.txt", "R.txt"]:
+    for file_suffix in [".txt"]: #["L.txt", "R.txt"]:
         # Build map from loaded catalogue.
         catalogue_name = params['input_catalogue'] + file_suffix
         catalogue_path = PATHIN/"catalogues"/catalogue_name

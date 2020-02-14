@@ -26,7 +26,7 @@ from harmonia.algorithms.integration import \
 from harmonia.algorithms.arrays import SphericalArray
 from harmonia.collections.utils import cartesian_to_spherical as c2s
 from harmonia.collections.utils import spherical_indicator as spherical_cut
-from harmonia.collections.utils import unit_const
+from harmonia.collections.utils import unit_const, mpi_compute
 
 
 class SphericalMap:
@@ -92,15 +92,17 @@ class SphericalMap:
     }
 
     def __init__(self, disc, data, rand=None, source='simulation',
-                 mean_density_data=None, mean_density_rand=None):
+                 mean_density_data=None, mean_density_rand=None, comm=None):
 
+        self.comm = comm
         self.disc = disc
         if np.min(disc.degrees) > 0:
-            warnings.warn(
-                "Fourier modes up to degree {0} are missing. It is "
-                "recommended they be removed in post-processing instead. "
-                .format(np.min(disc.degrees) - 1)
-            )
+            if self.comm is None or self.comm.rank == 0:
+                warnings.warn(
+                    "Fourier modes up to degree {0} are missing. It is "
+                    "recommended they be removed in post-processing instead. "
+                    .format(np.min(disc.degrees) - 1)
+                )
 
         radius = disc.attrs['boundary_radius']
         volume = disc.attrs['bounded_volume']
@@ -108,21 +110,25 @@ class SphericalMap:
         if source == 'simulation':
             data_boxsize = data.attrs['BoxSize']
             if np.any(data_boxsize < 2*radius):
-                self._logger.debug(
-                    self._msg['inscribing'], "data", data_boxsize, 2*radius
-                )
+                if self.comm is None or self.comm.rank == 0:
+                    self._logger.debug(
+                        self._msg['inscribing'], "data", data_boxsize, 2*radius
+                    )
 
             data['Location'] = data['Position'] - np.divide(data_boxsize, 2)
-            self._logger.debug(self._msg['centering'], "data")
+            if self.comm is None or self.comm.rank == 0:
+                self._logger.debug(self._msg['centering'], "data")
 
             data['Selection'] *= spherical_cut(data['Location'], radius)
-            self._logger.debug(self._msg['spherical_cut'], "data")
+            if self.comm is None or self.comm.rank == 0:
+                self._logger.debug(self._msg['spherical_cut'], "data")
 
             if rand is None:
                 if mean_density_data is None:
                     mean_density_data = 1 / volume \
                         * np.sum(data['Selection'] * data['Weight'])
-                    self._logger.warning(self._msg['integral_constraint'])
+                    if self.comm is None or self.comm.rank == 0:
+                        self._logger.warning(self._msg['integral_constraint'])
                 mean_density = float(mean_density_data)
 
                 pair = None
@@ -130,28 +136,33 @@ class SphericalMap:
             else:
                 rand_boxsize = rand.attrs['BoxSize']
                 if not np.allclose(data_boxsize, rand_boxsize):
-                    warnings.warn(
-                        self._msg['boxsizes'], data_boxsize, rand_boxsize
-                    )
+                    if self.comm is None or self.comm.rank == 0:
+                        warnings.warn(
+                            self._msg['boxsizes'], data_boxsize, rand_boxsize
+                        )
                 if np.any(data_boxsize < 2*radius):
-                    self._logger.info(
-                        self._msg['inscribing'],
-                        "random", rand_boxsize, 2*radius
-                    )
+                    if self.comm is None or self.comm.rank == 0:
+                        self._logger.info(
+                            self._msg['inscribing'],
+                            "random", rand_boxsize, 2*radius
+                        )
 
                 rand['Location'] = rand['Position'] \
                     - np.divide(rand_boxsize, 2)
-                self._logger.debug(self._msg['centering'], "random")
+                if self.comm is None or self.comm.rank == 0:
+                    self._logger.debug(self._msg['centering'], "random")
 
                 rand['Selection'] *= spherical_cut(rand['Location'], radius)
-                self._logger.debug(self._msg['spherical_cut'], "random")
+                if self.comm is None or self.comm.rank == 0:
+                    self._logger.debug(self._msg['spherical_cut'], "random")
 
                 if mean_density_data is None or mean_density_rand is None:
                     mean_density_data = 1 / volume \
                         * np.sum(data['Selection'] * data['Weight'])
                     mean_density_rand = 1 / volume \
                         * np.sum(rand['Selection'] * rand['Weight'])
-                    self._logger.warning(self._msg['integral_constraint'])
+                    if self.comm is None or self.comm.rank == 0:
+                        self._logger.warning(self._msg['integral_constraint'])
                 mean_density = float(mean_density_data)
 
                 # FIXME: Correctly implement 'NZ' columns.
@@ -216,14 +227,15 @@ class SphericalMap:
                 method = 'integrate'
             else:
                 method = 'sum'
-            self._logger.info(self._msg['method'], method)
+            if self.comm is None or self.comm.rank == 0:
+                self._logger.info(self._msg['method'], method)
 
         loc_data = c2s(self.data['Location'])
         sel_data = self.data['Selection']
         wgt_data = self.data['Weight']
 
-        n_coeff, nbar_coeff = {}, {}
-        for ell in self.disc.degrees:
+        def _transform_deg(ell):
+
             n_ell, nbar_ell = [], []
             for m_ell in range(-ell, 1):
                 n_ellm, nbar_ellm = [], []
@@ -277,6 +289,16 @@ class SphericalMap:
                 n_ell = np.concatenate((n_ell, n_ell_parity))
                 nbar_ell = np.concatenate((nbar_ell, nbar_ell_parity))
 
+            return n_ell, nbar_ell
+
+        transformed_arrays = mpi_compute(
+            self.disc.degrees, _transform_deg, self.comm,
+            logger=self._logger, process_name='spherical transform'
+        )
+
+        n_coeff, nbar_coeff = {}, {}
+        for ell, (n_ell, nbar_ell) \
+                in zip(self.disc.degrees, transformed_arrays):
             n_coeff[ell] = np.asarray(n_ell)
             nbar_coeff[ell] = np.asarray(nbar_ell)
 

@@ -435,7 +435,14 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None,
 
     output_array = None
     if comm.rank == root:
-        output_array = np.concatenate(output, axis=0)
+        try:
+            output_array = np.concatenate(output, axis=0)
+        except ValueError:
+            output_array = [
+                array_in_block
+                for output_block in output
+                for array_in_block in output_block
+            ]
 
     output_array = comm.bcast(output_array, root=root)
 

@@ -6,6 +6,7 @@ from collections import defaultdict
 from pprint import pprint
 
 import numpy as np
+from mpi4py import MPI
 
 from map_rc import PATHIN, PATHOUT, domain_cut, script_name
 from harmonia.algorithms import DiscreteSpectrum
@@ -18,7 +19,7 @@ from harmonia.mapper import (
 )
 
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-
+COMM = None
 
 def parse_external_args():
     """Parse command line arguments.
@@ -68,8 +69,9 @@ def initialise():
         parsed_params.rsd,
     ).strip(",")
 
-    pprint(ini_params)
-    print("\n")
+    if COMM is not None and COMM.rank == 0:
+        pprint(ini_params)
+        print("\n")
 
     return ini_params, ini_tag
 
@@ -83,7 +85,14 @@ def process():
         Program output.
 
     """
-    disc = DiscreteSpectrum(params['boxsize']/2, 'dirichlet', params['kmax'])
+    if params['map'].startswith('s'):
+        disc = DiscreteSpectrum(
+            params['boxsize']/2, 'dirichlet', params['kmax']
+        )
+    elif params['map'].startswith('c'):
+        disc = DiscreteSpectrum(
+            params['boxsize']/2, 'dirichlet', params['kmin']
+        )
 
     # Build map from loaded catalogue.
     catalogue_name = params['input_catalogue'] + ".txt"
@@ -106,7 +115,8 @@ def process():
     spherical_map = SphericalMap(
         disc, data_catalogue, rand=random_catalogue,
         mean_density_data=params['nbar'],
-        mean_density_rand=params['contrast']*params['nbar']
+        mean_density_rand=params['contrast']*params['nbar'],
+        comm=COMM
     )
 
     output_data = defaultdict(list)
@@ -152,6 +162,7 @@ def finalise(results, filetag):
 
 if __name__ == '__main__':
 
+    COMM = MPI.COMM_WORLD
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()

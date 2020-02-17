@@ -106,6 +106,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
 
     file_name = f"{script_name}-{file_root}-({program_root})"
     if collate_data:
+        print("Collating filename patterns: {}. ".format(search_root))
         collated_output, _, _ = collate_data_files(
             f"{scr_outpath}/*{file_root}-*-*{search_root}*.npy", 'npy'
         )

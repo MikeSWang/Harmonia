@@ -446,8 +446,6 @@ class WindowedPowerSpectrum:
         if self.cosmo is None:
             raise ValueError("`cosmo` cannot be None for scale modification. ")
 
-        _kernel = scale_dependence_modification(self.cosmo, self.redshift)
-
         self._mode_scale_dependence_modifications_ = \
             self._mod_kernel(self.wavenumbers)
 

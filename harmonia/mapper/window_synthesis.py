@@ -291,7 +291,7 @@ class SurveyWindow:
 
         if self._raw_power_multipoles is None \
                 or max(orders) not in self._raw_power_multipoles:
-            _ = self.power_spectrum_multipoles(orders, **multipoles_kwargs)
+            self.power_spectrum_multipoles(orders, **multipoles_kwargs)
 
         k = self._raw_power_multipoles['k']
         k_interpol = np.logspace(*np.log10(k[[0, -1]]), num=NUM_INTERPOL)

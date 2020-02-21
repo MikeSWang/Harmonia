@@ -139,43 +139,45 @@ def process():
         comm=comm
     )
 
-    map_file = params['input_catalogue'] \
-        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
-            params['map'], params['fsky'],
-            params['kmin'], params['kmax'],
-            params['rsd']
-        )
-    map_data = np.load(MAP_PATH/map_file).item()
+    return two_point_model
 
-    output_data = defaultdict(list)
-    for file_suffix in ["L.txt", "R.txt"]:
-        # Load map data.
-        spherical_data = SphericalArray.build(
-            disc=disc, filling=map_data[file_suffix]
-        )
-
-        # Construct spherical likelihood.
-        sph_likelihood_kwargs = dict(
-            two_point_model=two_point_model,
-            spherical_data=spherical_data,
-            mean_number_density=params['nbar'],
-            contrast=params['contrast'],
-            pivot=params['spherical_pivot'],
-            breakdown=params['breakdown'],
-            independence=params['sph_mode_independence'],
-            logger=logger,
-            comm=comm,
-        )
-        for par_name, par_values in fixed_params.items():
-            sph_likelihood_kwargs.update({par_name: par_values['spherical']})
-        for par_name, par_values in sampled_params.items():
-            sph_likelihood_kwargs.update({par_name: par_values})
-
-        output_data['spherical_likelihood'].append(
-            [sph_likelihood(**sph_likelihood_kwargs)]
-        )
-
-    return output_data
+#    map_file = params['input_catalogue'] \
+#        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
+#            params['map'], params['fsky'],
+#            params['kmin'], params['kmax'],
+#            params['rsd']
+#        )
+#    map_data = np.load(MAP_PATH/map_file).item()
+#
+#    output_data = defaultdict(list)
+#    for file_suffix in ["L.txt", "R.txt"]:
+#        # Load map data.
+#        spherical_data = SphericalArray.build(
+#            disc=disc, filling=map_data[file_suffix]
+#        )
+#
+#        # Construct spherical likelihood.
+#        sph_likelihood_kwargs = dict(
+#            two_point_model=two_point_model,
+#            spherical_data=spherical_data,
+#            mean_number_density=params['nbar'],
+#            contrast=params['contrast'],
+#            pivot=params['spherical_pivot'],
+#            breakdown=params['breakdown'],
+#            independence=params['sph_mode_independence'],
+#            logger=logger,
+#            comm=comm,
+#        )
+#        for par_name, par_values in fixed_params.items():
+#            sph_likelihood_kwargs.update({par_name: par_values['spherical']})
+#        for par_name, par_values in sampled_params.items():
+#            sph_likelihood_kwargs.update({par_name: par_values})
+#
+#        output_data['spherical_likelihood'].append(
+#            [sph_likelihood(**sph_likelihood_kwargs)]
+#        )
+#
+#    return output_data
 
 
 def finalise(results, filetag):
@@ -203,4 +205,4 @@ if __name__ == '__main__':
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()
-    finalise(output, tag)
+    # finalise(output, tag)

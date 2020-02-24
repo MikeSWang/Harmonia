@@ -127,7 +127,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
         if MAP == "hybrid":
             collated_output['likelihood'] = np.squeeze(
                 filtered_output['spherical_likelihood']
-                #+ filtered_output['cartesian_likelihood']
+                + filtered_output['cartesian_likelihood']
             )
             del collated_output['spherical_likelihood']
             del collated_output['cartesian_likelihood']
@@ -195,37 +195,37 @@ if __name__ == '__main__':
     # NOTE: Change this before running.
     NG = 0
     MAP = "hybrid"
-    FSKY = "0.33"
+    FSKY = "1.00"
     KHYB = 0.04
     KMAX = 0.1
     EXCL = ""  # ,exdeg=[0]
     RSD = False
-    PRIOR = "bias_prior=[2.0,3.0],fnl_prior=[-250.0,750.0]"
+    PRIOR = "bias_prior=[2.1,2.6],fnl_prior=[-400.0,400.0]"
     FIXED = ""
 
     script_name = f"{MAP}_likelihood"
     file_root = f"(NG={int(NG)}.,z=1.)"
 
     # NOTE: Change this before running.
-    x_parameters = np.linspace(-250.0, 750.0, 401)
-    y_parameters = np.linspace(2.0,3.0, 51)
+    x_parameters = np.linspace(-400.0, 400.0, 801)
+    y_parameters = np.linspace(2.1, 2.6, 51)
 
     # NOTE: Change this before running.
-    output1 = read_data(
+    output = read_data(
         collate_data=True,
         load_data=False,
-        save_data=False,
+        save_data=True,
         # filter_degs=True,
         # remove_degs=(0,),
     )
 
     view_data(
-        [output, output1],
+        output,
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
+        # cmap=['Purples', 'Greens'],
         # plot_ranges=([-375.0, 375.0], [2.1, 2.6]),
         # savefig=True,
-        cmap=['Purples', 'Greens'],
         # alpha=[1., 0.8],
     )

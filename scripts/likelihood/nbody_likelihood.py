@@ -163,7 +163,7 @@ def initialise():
 
     return ini_params, ini_tag
 
-@profile
+
 def process():
     """Process program.
 

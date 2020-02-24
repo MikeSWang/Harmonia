@@ -1471,8 +1471,18 @@ class TwoPointFunction(Couplings):
         self._fixed_shot_noise_ = {}
         with warnings.catch_warnings(record=True) as any_warnings:
             paired_indices_vector = list(product(*(index_vector,)*2))
-            for mu_nu in paired_indices_vector:
-                self._fixed_shot_noise_[mu_nu] = _shot_noise_unit_amp(mu_nu)
+            if self.comm is None:
+                for mu_nu in paired_indices_vector:
+                    self._fixed_shot_noise_[mu_nu] = \
+                        _shot_noise_unit_amp(mu_nu)
+            else:
+                _fixed_shot_noise_vals = mpi_compute(
+                    paired_indices_vector, _shot_noise_unit_amp, self.comm,
+                    logger=self._logger, process_name="fixed shot noise unit"
+                )
+                self._fixed_shot_noise_.update(
+                    dict(zip(paired_indices_vector, _fixed_shot_noise_vals))
+                )
 
         unique_warning_msgs = set(map(
             lambda warning_obj: warning_obj.message, any_warnings

@@ -54,8 +54,9 @@ Computational utilities
     unit_const
     const_function
     mat_logdet
+    check_positive_definiteness
+    ensure_positive_definiteness
     covar_to_corr
-    find_nearest_covar
     binary_search
 
 **Geometrical utilities**
@@ -106,8 +107,9 @@ __all__ = [
     'unit_const',
     'const_function',
     'mat_logdet',
+    'check_positive_definiteness',
+    'ensure_positive_definiteness',
     'covar_to_corr',
-    'find_nearest_covar',
     'binary_search',
     'normalise_vector',
     'spherical_indicator',
@@ -667,22 +669,15 @@ def sort_list_to_dict(list_data, int_keys):
 # COMPUTATIONAL UTILITIES
 # -----------------------------------------------------------------------------
 
+class PositiveDefinitenessWarning(UserWarning):
+    """Positive definiteness warning for covariance matrices when failed.
+
+    """
+    pass
+
+
 class LikelihoodWarning(UserWarning):
     """Likelihood evaluation warning.
-
-    """
-    pass
-
-
-class PositiveDefinitenessWarning(UserWarning):
-    """Non-positive definiteness warning for covariance matrices.
-
-    """
-    pass
-
-
-class IterationLimitWarning(UserWarning):
-    """Maximum iteration warning.
 
     """
     pass
@@ -739,7 +734,7 @@ def const_function(const):
     return lambda *args, **kwargs: const
 
 
-def mat_logdet(matrix, diag=False):
+def mat_logdet(matrix):
     """Calculate logarithm of the determinant of a positive-definite
     matrix.
 
@@ -747,37 +742,78 @@ def mat_logdet(matrix, diag=False):
     ----------
     matrix : float or complex, array_like
         Positive definite 2-d matrix.
-    diag : bool, optional
-        If `True` (default is `False`), the input matrix is assumed to be
-        diagonal.
 
     Returns
     -------
     log_det : float
         Logarithm of the matrix determinant.
 
-    Raises
-    ------
-    ValueError
-        If `matrix` is not in an equivalent shape for a 2-d square matrix.
-
     """
-    if np.asarray(matrix).ndim != 2 or len(set(np.shape(matrix))) != 1:
-        raise ValueError("`matrix` is not a 2-d square matrix. ")
-
-    if diag:
-        sign_det = np.prod(np.sign(np.diag(matrix)))
-        log_det = np.sum(np.log(np.abs(np.diag(matrix))))
-    else:
-        sign_det, log_det = np.linalg.slogdet(matrix)
-
-    if not np.isclose(sign_det, 1.):
-        warnings.warn(
-            "`matrix` is not positive definite.\n",
-            PositiveDefinitenessWarning
-        )
+    _, log_det = np.linalg.slogdet(matrix)
 
     return log_det
+
+
+def check_positive_definiteness(matrix):
+    """Check the positive definiteness of a square matrix by attempting a
+    Cholecsky decomposition.
+
+    Parameters
+    ----------
+    matrix : float or complex, array_like
+        Positive definite 2-d matrix.
+
+    Returns
+    -------
+    bool
+        Positive definiteness.
+
+    """
+    try:
+        _ = np.linalg.cholesky(matrix)
+    except np.linalg.LinAlgError:
+        return False
+    else:
+        return True
+
+
+def ensure_positive_definiteness(matrix, tweak_param=5e-4, maxiter=5):
+    """Ensure the positive definiteness of a square matrix.
+
+    Parameters
+    ----------
+    matrix : float or complex, array_like
+        Matrix.
+    tweak_param : float
+        Amount of proportional inflation of digonal elements.
+    maxiter : int, optional
+        Maximum number of iterative operations to ensure positive
+        definiteness (default is 5).
+
+    Returns
+    -------
+    modified_matrix : float or complex, array_like
+        Modified matrix.
+    pos_def : bool
+        Positive-definiteness of the returned matrix.
+
+    """
+    modified_matrix = matrix.copy()
+    dimension = len(modified_matrix)
+
+    def _enhance_diagonal(mat, dim):
+        m = mat.copy()
+        m[range(dim), range(dim)] *= 1 + tweak_param
+        return m
+
+    pos_def = check_positive_definiteness(modified_matrix)
+    past_iter = 0
+    while not pos_def and past_iter <= maxiter:
+        modified_matrix = _enhance_diagonal(modified_matrix, dimension)
+        pos_def = check_positive_definiteness(modified_matrix)
+        past_iter += 1
+
+    return modified_matrix, pos_def
 
 
 def covar_to_corr(covar):
@@ -798,59 +834,6 @@ def covar_to_corr(covar):
     corr = inv_diag @ covar @ inv_diag
 
     return corr
-
-
-def find_nearest_covar(covar, threshold=0.):
-    """Find the nearest positive semi-definite covariance matrix to the
-    given one, if it is not already so.
-
-    Parameters
-    ----------
-    covar : float, array_like
-        Covariance matrix which may not be positive semi-definite.
-
-    Returns
-    -------
-    covar_near : float, array_like
-        Nearest positive semi-definite covariance matrix.
-
-    """
-    MAXITER_RATIO = 100
-
-    def _clip_evals(mat, threshold):
-
-        eigvals, eigvecs = np.linalg.eigh(mat)
-
-        clipped_flag = np.any(eigvals < threshold)
-
-        clipped_mat = np.dot(
-            eigvecs * np.maximum(eigvals, threshold), eigvecs.T
-        )
-
-        return clipped_mat, clipped_flag
-
-    diag_amplitude = np.abs(np.diag(covar))
-    inv_diag_amplitude = np.power(diag_amplitude, -1/2)
-    corr = np.diag(inv_diag_amplitude) @ covar @ np.diag(inv_diag_amplitude)
-
-    corr_near = corr.copy()
-    diffcorr = np.zeros(corr.shape)
-
-    for ii in range(int(len(corr) * MAXITER_RATIO)):
-        corr_adjusted = corr_near - diffcorr
-        corr_psd, clipped_flag = _clip_evals(corr_adjusted, threshold)
-        if not clipped_flag:
-            corr_near = corr_psd
-            break
-        diffcorr = corr_psd - corr_adjusted
-        corr_near = corr_psd.copy()
-        np.fill_diagonal(corr_near, 1)
-    else:
-        warnings.warn("", IterationLimitWarning)
-
-    covar_near = np.diag(diag_amplitude) @ corr_near @ np.diag(diag_amplitude)
-
-    return covar_near
 
 
 def binary_search(func, a, b, maxnum=None, precision=1.e-5):

@@ -33,7 +33,7 @@ MAP_PATH = DATAPATH/"nbody_map"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={},boxsize={}).npy"
+COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={})-BigMDPL.npy"
 MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky-BigMDPL.npy"
 WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky-BigMDPL.npy"
 FIDUCIAL_ESTIMATE_FILENAME = (
@@ -163,7 +163,7 @@ def initialise():
 
     return ini_params, ini_tag
 
-
+@profile
 def process():
     """Process program.
 
@@ -211,60 +211,60 @@ def process():
     windowed_power_model.wavenumbers = cmap_data['k']
 
     output_data = defaultdict(list)
-    for file_suffix in ["L.txt", "R.txt"]:
-        # Load map data.
-        spherical_data = SphericalArray.build(
-            disc=disc, filling=smap_data[file_suffix]
-        )
-        cartesian_data = CartesianArray(
-            filling=cmap_data[file_suffix],
-            coord_key='k',
-            variable_key_root='power_'
-        )
 
-        # Construct spherical likelihood.
-        sph_likelihood_kwargs = dict(
-            two_point_model=two_point_model,
-            spherical_data=spherical_data,
-            mean_number_density=params['nbar'],
-            contrast=params['contrast'],
-            pivot=params['spherical_pivot'],
-            breakdown=params['breakdown'],
-            independence=params['sph_mode_independence'],
-            logger=logger,
-            comm=comm,
-        )
-        for par_name, par_values in fixed_params.items():
-            sph_likelihood_kwargs.update({par_name: par_values['spherical']})
-        for par_name, par_values in sampled_params.items():
-            sph_likelihood_kwargs.update({par_name: par_values})
+    # Load map data.
+    spherical_data = SphericalArray.build(
+        disc=disc, filling=smap_data['smap']
+    )
+    cartesian_data = CartesianArray(
+        filling=cmap_data['cmap'],
+        coord_key='k',
+        variable_key_root='power_'
+    )
 
-        output_data['spherical_likelihood'].append(
-            [sph_likelihood(**sph_likelihood_kwargs)]
-        )
+    # Construct spherical likelihood.
+    sph_likelihood_kwargs = dict(
+        two_point_model=two_point_model,
+        spherical_data=spherical_data,
+        mean_number_density=params['nbar'],
+        contrast=params['contrast'],
+        pivot=params['spherical_pivot'],
+        breakdown=params['breakdown'],
+        independence=params['sph_mode_independence'],
+        logger=logger,
+        comm=comm,
+    )
+    for par_name, par_values in fixed_params.items():
+        sph_likelihood_kwargs.update({par_name: par_values['spherical']})
+    for par_name, par_values in sampled_params.items():
+        sph_likelihood_kwargs.update({par_name: par_values})
 
-        # Construct Cartesian likelihood.
-        windowed_power_model.wavenumbers = cartesian_data.coord_array
-        cart_likelihood_kwargs = dict(
-            windowed_power_model=windowed_power_model,
-            correlation_modeller=window_correlator,
-            cartesian_data=cartesian_data,
-            mean_number_density=params['nbar'],
-            contrast=params['contrast'],
-            pivot=params['cartesian_pivot'],
-            orders=params['multipoles'],
-            num_covar_sample=params['num_cov_est'],
-            logger=logger,
-            comm=comm,
-        )
-        for par_name, par_values in fixed_params.items():
-            cart_likelihood_kwargs.update({par_name: par_values['cartesian']})
-        for par_name, par_values in sampled_params.items():
-            cart_likelihood_kwargs.update({par_name: par_values})
+    output_data['spherical_likelihood'].append(
+        [sph_likelihood(**sph_likelihood_kwargs)]
+    )
 
-        output_data['cartesian_likelihood'].append(
-            [cart_likelihood(**cart_likelihood_kwargs)]
-        )
+    # Construct Cartesian likelihood.
+    windowed_power_model.wavenumbers = cartesian_data.coord_array
+    cart_likelihood_kwargs = dict(
+        windowed_power_model=windowed_power_model,
+        correlation_modeller=window_correlator,
+        cartesian_data=cartesian_data,
+        mean_number_density=params['nbar'],
+        contrast=params['contrast'],
+        pivot=params['cartesian_pivot'],
+        orders=params['multipoles'],
+        num_covar_sample=params['num_cov_est'],
+        logger=logger,
+        comm=comm,
+    )
+    for par_name, par_values in fixed_params.items():
+        cart_likelihood_kwargs.update({par_name: par_values['cartesian']})
+    for par_name, par_values in sampled_params.items():
+        cart_likelihood_kwargs.update({par_name: par_values})
+
+    output_data['cartesian_likelihood'].append(
+        [cart_likelihood(**cart_likelihood_kwargs)]
+    )
 
     return output_data
 

@@ -44,7 +44,7 @@ from harmonia.algorithms import CartesianArray, SphericalArray
 from harmonia.collections import LikelihoodWarning, PositiveDefinitenessWarning
 from harmonia.collections import (
     check_positive_definiteness,
-    ensure_positive_definiteness
+    ensure_positive_definiteness,
 )
 from harmonia.collections import mat_logdet, mpi_compute
 
@@ -456,10 +456,6 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         return sample_likelihood
 
     with warnings.catch_warnings(record=True) as captured_warnings:
-        warnings.filterwarnings(
-            action='once', category=PositiveDefinitenessWarning,
-            message="`matrix` is not positive definite: sign.*"
-        )
         if comm is None:
             log_likelihood = list(map(_likelihood_eval, sampled_points))
         else:

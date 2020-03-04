@@ -16,7 +16,7 @@ from .scale_dependence import (
     scale_dependent_bias,
 )
 
-fiducial_cosmology = cosmology.Planck15
+FIDUCIAL_COSMOLOGY = cosmology.Planck15
 """:class:`nbodykit.cosmology.cosmology.Cosmology`: Default *Planck15*
 cosmology [`arXiv:1502.01589 <https://arxiv.org/abs/1502.01589>`_].
 

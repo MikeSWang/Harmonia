@@ -41,8 +41,19 @@ import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import LikelihoodWarning, PositiveDefinitenessWarning
+from harmonia.collections import PositiveDefinitenessWarning
+from harmonia.collections import (
+    check_positive_definiteness,
+    ensure_positive_definiteness,
+)
 from harmonia.collections import mat_logdet, mpi_compute
+
+
+class LikelihoodWarning(UserWarning):
+    """Likelihood evaluation warning.
+
+    """
+    pass
 
 
 # Probability distributions
@@ -117,7 +128,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
     Returns
     -------
     density : float, array_like
-        (Logarithmic) probability density value.
+        Logarithmic probability density value.
 
     """
     dat_vector, cov_matrix = np.squeeze(dat_vector), np.squeeze(cov_matrix)
@@ -138,15 +149,22 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
         cov_matrix = cov_matrix / downscale**2
         log_normalisation_const -= 2 * dat_dim * np.log(downscale)
 
-    if elementwise:
-        var_vector = np.diag(cov_matrix)
-        sign_product = np.prod(np.sign(var_vector))
-        if not np.isclose(sign_product, 1.):
+    if not check_positive_definiteness(cov_matrix):
+        cov_matrix, ensured = ensure_positive_definiteness(
+            cov_matrix, tweak_param=1e-4, maxiter=5
+        )
+        warnings.warn(
+            "`cov_matrix` is modified to ensure positive definiteness. ",
+            PositiveDefinitenessWarning
+        )
+        if not ensured:
             warnings.warn(
-                "`cov_matrix` is not positive definite: sign {}. "
-                .format(sign_product)
+                "Modified `cov_matrix` still fails positive definiteness. ",
+                PositiveDefinitenessWarning
             )
-        log_det_cov_mat = np.log(np.abs(var_vector))
+
+    if elementwise:
+        log_det_cov_mat = np.log(np.abs(np.diag(cov_matrix)))
     else:
         log_det_cov_mat = mat_logdet(cov_matrix)
 
@@ -180,7 +198,7 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
     Returns
     -------
     density : float, array_like
-        (Logarithmic) probability density value.
+        Logarithmic probability density value.
 
     Raises
     ------
@@ -211,9 +229,7 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
     log_det_cov_mat = mat_logdet(cov_matrix)
 
     exponent = _chi_square(
-        data_vector - mean_vector,
-        cov_matrix,
-        elementwise=False
+        data_vector - mean_vector, cov_matrix, elementwise=False
     )
 
     density = 1/2 * (- log_normalisation_const - log_det_cov_mat - exponent)
@@ -448,10 +464,6 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         return sample_likelihood
 
     with warnings.catch_warnings(record=True) as captured_warnings:
-        warnings.filterwarnings(
-            action='once', category=PositiveDefinitenessWarning,
-            message="`matrix` is not positive definite: sign.*"
-        )
         if comm is None:
             log_likelihood = list(map(_likelihood_eval, sampled_points))
         else:

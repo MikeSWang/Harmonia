@@ -9,8 +9,8 @@ population.
 
 .. warning::
 
-    Experimental module in replacement of ``nbodykit`` catalogue makers.
-    Use with caution.
+    Use with caution: this is an experimental module in lieu of
+    ``nbodykit`` catalogue makers.
 
 **Generation**
 
@@ -491,9 +491,9 @@ def _is_regular_grid(field, name="field"):
         Name of the field (default is ``"field"``).
 
     """
-    field = np.asarray(field)
-    if len(set(field.shape)) > 1:
+    if len(set(np.asarray(field).shape)) > 1:
         raise ValueError(f"'{name}' is not a regular grid. ")
+    return
 
 
 def _cal_isotropic_power_spectrum(field, boxsize, kmax=None, num_bin=12,

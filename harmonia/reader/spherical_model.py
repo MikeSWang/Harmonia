@@ -1068,7 +1068,8 @@ class TwoPointFunction(Couplings):
 
         return signal
 
-    def two_point_shot_noise(self, mu, nu, nbar, contrast=np.inf):
+    def two_point_shot_noise(self, mu, nu, nbar, contrast=np.inf,
+                             M_mu_nu=None):
         """Compute shot noise 2-point function for given triplet indices.
 
         Parameters
@@ -1078,8 +1079,11 @@ class TwoPointFunction(Couplings):
         nbar : float
             Mean particle number density (in cubic :math:`h`/Mpc).
         contrast : float, optional
-            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default is
-            ``numpy.inf``.
+            Effectively downscale `nbar` by ``1 + 1/constrast``.  Default
+            is ``numpy.inf``.
+        M_mu_nu : complex or None, optional
+            If provided (default is `None`), this is used in lieu of
+            currently stored angular coupling coefficients, if any.
 
         Returns
         -------
@@ -1090,26 +1094,31 @@ class TwoPointFunction(Couplings):
         ell_mu, m_mu, n_mu = mu
         ell_nu, m_nu, n_nu = nu
 
-        if self.couplings['angular'] is None:
-            if ell_mu != ell_nu or m_mu != m_nu:
-                return 0.j
-            M_mu_nu = 1.
-        else:
-            M_mu_nu = \
-                self._access_couplings('angular', mu)[ell_nu][m_nu+ell_nu]
+        if M_mu_nu is None:
+            if self.couplings['angular'] is None:
+                if ell_mu != ell_nu or m_mu != m_nu:
+                    return 0.j
+                M_mu_nu = 1.
+            else:
+                M_mu_nu = self._access_couplings('angular', mu, nu)
 
         rmax = self.disc.attrs['boundary_radius']
-
-        u_mu = self.disc.roots[ell_mu][n_mu-1]
 
         if not callable(self.selection) and not callable(self.weight) \
                 and ell_mu == ell_nu:
             if n_mu == n_nu:
+                u_mu = self.disc.roots[ell_mu][n_mu-1]
                 shot_noise = rmax**3 * spherical_besselj(ell_mu+1, u_mu)**2 / 2
             else:
                 shot_noise = 0.
         else:
-            shot_noise = self._access_shot_noise(mu, nu)
+            k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
+            k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
+            kwargs = dict(selection=self.selection, weight=self.weight)
+            shot_noise = rad_int(
+                lambda r: _shot_noise_kernel(r, mu, nu, k_mu, k_nu, **kwargs),
+                rmax
+            )
 
         shot_noise *= (1 + 1/contrast) * M_mu_nu / nbar
 
@@ -1178,7 +1187,7 @@ class TwoPointFunction(Couplings):
         if pivot in ['root', 'scale']:
             raise ValueError(
                 "Pivot by 'root' or 'scale' is not supported by this method. "
-                "Apply `variance` method instead for order-collapse cases "
+                "Use `mode_variance` method instead for order-collapse cases "
                 "where no masking, selection, weighting, evolution or "
                 "geometrical effects are present. "
             )
@@ -1187,13 +1196,15 @@ class TwoPointFunction(Couplings):
         if part == 'both':
             two_point_component = lambda mu, nu: \
                 self.two_point_signal(mu, nu, b_1, **scale_mod_kwargs) \
-                + self.two_point_shot_noise(mu, nu, nbar, contrast=contrast)
+                + self._access_couplings('angular', mu, nu) \
+                    * self._access_shot_noise(mu, nu, nbar, contrast)
         elif part == 'signal':
             two_point_component = lambda mu, nu: \
                 self.two_point_signal(mu, nu, b_1, **scale_mod_kwargs)
         elif part == 'shotnoise':
             two_point_component = lambda mu, nu: \
-                self.two_point_shot_noise(mu, nu, nbar, contrast=contrast)
+                self._access_couplings('angular', mu, nu) \
+                * self._access_shot_noise(mu, nu, nbar, contrast)
         else:
             raise ValueError(f"Invalid covariance part: {part}. ")
 
@@ -1452,17 +1463,25 @@ class TwoPointFunction(Couplings):
             )
         index_vector = sorted(list(set(operatable_index_vector)))
 
-        kwargs = dict(selection=self.selection, weight=self.weight)
+        def _shot_noise_unit_amp(paired_tuples):
+            return self.two_point_shot_noise(
+                *paired_tuples, nbar=1., contrast=np.inf, M_mu_nu=1.
+            )
 
         self._fixed_shot_noise_ = {}
         with warnings.catch_warnings(record=True) as any_warnings:
-            for mu, nu in product(*(index_vector,)*2):
-                k_mu = self.disc.wavenumbers[mu[0]][mu[-1]-1]
-                k_nu = self.disc.wavenumbers[nu[0]][nu[-1]-1]
-                self._fixed_shot_noise_[(mu, nu)] = rad_int(
-                    lambda r: \
-                        _shot_noise_kernel(r, mu, nu, k_mu, k_nu, **kwargs),
-                    self.disc.attrs['boundary_radius']
+            paired_indices_vector = list(product(*(index_vector,)*2))
+            if self.comm is None:
+                for mu_nu in paired_indices_vector:
+                    self._fixed_shot_noise_[mu_nu] = \
+                        _shot_noise_unit_amp(mu_nu)
+            else:
+                _fixed_shot_noise_vals = mpi_compute(
+                    paired_indices_vector, _shot_noise_unit_amp, self.comm,
+                    logger=self._logger, process_name="fixed shot noise unit"
+                )
+                self._fixed_shot_noise_.update(
+                    dict(zip(paired_indices_vector, _fixed_shot_noise_vals))
                 )
 
         unique_warning_msgs = set(map(
@@ -1477,13 +1496,20 @@ class TwoPointFunction(Couplings):
 
         return self._fixed_shot_noise_
 
-    def _access_couplings(self, coupling_type, mu):
+    def _access_couplings(self, coupling_type, mu, nu=None):
 
         if coupling_type == 'angular':
             _tuple_key = (mu[0], mu[1], None)
         else:
             _tuple_key = (mu[0], None, mu[2])
-        return self.couplings[coupling_type][_tuple_key]
+
+        accessed_couplings = self.couplings[coupling_type][_tuple_key]
+
+        if nu is None:
+            return accessed_couplings
+        return accessed_couplings[nu[0]][nu[1]+nu[0]] \
+            if coupling_type == 'angular' \
+            else accessed_couplings[nu[0]][nu[-1]-1]
 
     def _access_angular_sums(self, ell, mu, nu):
 
@@ -1491,8 +1517,8 @@ class TwoPointFunction(Couplings):
 
         return self._fixed_angular_sums[ell][_tuple_key]
 
-    def _access_shot_noise(self, mu, nu):
+    def _access_shot_noise(self, mu, nu, nbar=1., contrast=np.inf):
 
         _tuple_key = ((mu[0], None, mu[2]), (nu[0], None, nu[2]))
 
-        return self._fixed_shot_noise[_tuple_key]
+        return (1 + 1/contrast) / nbar * self._fixed_shot_noise[_tuple_key]

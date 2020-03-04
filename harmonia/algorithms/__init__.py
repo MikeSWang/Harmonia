@@ -3,10 +3,11 @@
 Core Algorithms (:mod:`~harmonia.algorithms`)
 ***************************************************************************
 
-Construction, decomposition and transformation algorithms for cosmological
+Generation, decomposition and transformation algorithms for cosmological
 fields.
 
 """
+from .arrays import CartesianArray, SphericalArray
 from .bases import (
     spherical_besselj,
     spherical_besselj_root,
@@ -28,4 +29,3 @@ from .integration import (
     radial_besselj_integral,
     radial_spherical_integral,
 )
-from .arrays import CartesianArray, SphericalArray

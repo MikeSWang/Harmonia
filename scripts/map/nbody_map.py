@@ -19,7 +19,7 @@ from harmonia.mapper import (
 )
 
 CATALOGUE_HEADINGS = ["x", "y", "z", "vx", "vy", "vz", "mass"]
-COMM = None
+
 
 def parse_external_args():
     """Parse command line arguments.
@@ -69,7 +69,7 @@ def initialise():
         parsed_params.rsd,
     ).strip(",")
 
-    if COMM is not None and COMM.rank == 0:
+    if comm is not None and comm.rank == 0:
         pprint(ini_params)
         print("\n")
 
@@ -87,11 +87,11 @@ def process():
     """
     if params['map'].startswith('s'):
         disc = DiscreteSpectrum(
-            params['boxsize']/2, 'dirichlet', params['kmax']
+            params['boxsize']/2, 'dirichlet', params['kmax'], comm=comm
         )
     elif params['map'].startswith('c'):
         disc = DiscreteSpectrum(
-            params['boxsize']/2, 'dirichlet', params['kmin']
+            params['boxsize']/2, 'dirichlet', params['kmin'], comm=comm
         )
 
     # Build map from loaded catalogue.
@@ -116,7 +116,7 @@ def process():
         disc, data_catalogue, rand=random_catalogue,
         mean_density_data=params['nbar'],
         mean_density_rand=params['contrast']*params['nbar'],
-        comm=COMM
+        comm=comm
     )
 
     output_data = defaultdict(list)
@@ -160,9 +160,9 @@ def finalise(results, filetag):
     np.save(PATHOUT/script_name/filename, results)
 
 
+comm = None
 if __name__ == '__main__':
-
-    COMM = MPI.COMM_WORLD
+    comm = MPI.COMM_WORLD
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()

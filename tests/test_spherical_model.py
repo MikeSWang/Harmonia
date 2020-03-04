@@ -3,7 +3,7 @@ import pytest
 
 from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.collections import unit_const
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.cosmology import FIDUCIAL_COSMOLOGY
 from harmonia.reader import Couplings, TwoPointFunction
 
 DISC_PARAMS = dict(
@@ -75,7 +75,7 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
     two_point_model = TwoPointFunction(
         discrete_spectrum,
         growth_rate=0,
-        cosmo=fiducial_cosmology,
+        cosmo=FIDUCIAL_COSMOLOGY,
         survey_specs=TWO_POINT_SURVEY_SPECS
     )
     covariance_matrix = two_point_model.two_point_covariance(
@@ -83,14 +83,14 @@ def test_TwoPointFunction(discrete_spectrum, pivot, part):
     )
 
     variance_model = TwoPointFunction(
-        discrete_spectrum, growth_rate=0, cosmo=fiducial_cosmology,
+        discrete_spectrum, growth_rate=0, cosmo=FIDUCIAL_COSMOLOGY,
     )
     variance_matrix = variance_model.mode_variance(
         pivot, part=part, **TWO_POINT_TEST_PARAMS
     )
 
     two_point_model_angular_reduction = TwoPointFunction(
-        discrete_spectrum, growth_rate=0, cosmo=fiducial_cosmology
+        discrete_spectrum, growth_rate=0, cosmo=FIDUCIAL_COSMOLOGY
     )
     covariance_matrix_angular_reduction = \
         two_point_model_angular_reduction.two_point_covariance(

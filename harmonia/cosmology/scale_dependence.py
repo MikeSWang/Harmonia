@@ -104,18 +104,18 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.):
     return b_of_k
 
 
-def modified_power_spectrum(f_nl, b_1, cosmo, redshift=0., tracer_parameter=1.,
+def modified_power_spectrum(b_1, f_nl, cosmo, redshift=0., tracer_parameter=1.,
                             power_spectrum=None):
     """Return the biased power spectrum with non-Gaussianity
     scale-dependence modification.
 
     Parameters
     ----------
-    f_nl : float
-        Local primordial non-Gaussnianity.
     b_1 : float
         Scale-independent linear bias.  Must be the value at the specified
         redshift.
+    f_nl : float
+        Local primordial non-Gaussnianity.
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology`
         Cosmological model for density parameters and the transfer
         function.

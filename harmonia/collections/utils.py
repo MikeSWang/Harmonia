@@ -1,16 +1,16 @@
 """
-Utility tools (:mod:`~harmonia.collections.utils`)
+Utilities (:mod:`~harmonia.collections.utils`)
 ===========================================================================
 
-Provide utilities for input/output handling, processing, formatting and
-data type manipulation, and common algebraic, geometric and statistical
-algorithms.
+Provide utilities for input/output handling, multi-processing, string
+formatting, data type manipulation, and common algebraic, geometric and
+statistical algorithms.
 
 
 System utilities
 ---------------------------------------------------------------------------
 
-**File handling**
+**I/O handling**
 
 .. autosummary::
 
@@ -83,8 +83,8 @@ from __future__ import division
 import os
 import warnings
 from collections import defaultdict
-from pathlib import Path
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 
@@ -101,7 +101,6 @@ __all__ = [
     'format_float',
     'sort_dict_to_list',
     'sort_list_to_dict',
-    'LikelihoodWarning',
     'PositiveDefinitenessWarning',
     'zero_const',
     'unit_const',
@@ -214,7 +213,6 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
 
         collated_data = dict.fromkeys(all_data[-1].keys())
         for key in collated_data:
-            to_concat = [np.atleast_1d(data[key]) for data in all_data]
             # to_concat = []
             # for data in all_data:
             #     block_entry = [
@@ -222,6 +220,7 @@ def collate_data_files(file_path_pattern, file_extension, headings=None,
             #         if len(line_entry) == 6
             #     ]
             #     to_concat.append(np.atleast_1d(block_entry))
+            to_concat = [np.atleast_1d(data[key]) for data in all_data]
             collated_data[key] = np.concatenate(to_concat, axis=0)
 
         collation_count = max(map(len, collated_data.values()))
@@ -265,9 +264,8 @@ def overwrite_protection(outpath, outname):
     Parameters
     ----------
     outpath : str or :class:`pathlib.Path`
-        Write-out directory path.
-    outname : str
-        Write-out filename.
+        Output directory path.
+    outnOutput filename.
 
     Returns
     -------
@@ -286,13 +284,14 @@ def overwrite_protection(outpath, outname):
 
     grant_permission = input(
         "Saving would overwrite existing file at destination. "
-        "Do you want to continue? [y/n] "
+        "Do you want to continue? (y/[n]) "
     )
 
     if grant_permission.lower().startswith('y'):
         return True
 
     warnings.warn("Overwrite permission denied. File not saved. ")
+
     return False
 
 
@@ -409,8 +408,8 @@ def mpi_compute(data_array, mapping, comm, root=0, logger=None,
     Returns
     -------
     output_array : array_like or None
-        Output data processed from `mapping`.  `None` for process ranks
-        other than `root`.
+        Output data processed from `mapping`.  Returns `None` for process
+        ranks other than `root`.
 
     """
     if root + 1 > comm.size:
@@ -457,6 +456,9 @@ def progress_status(current_idx, task_length, logger, process_name=None,
                     comm=None, root=0):
     """Log progress status.
 
+    If multiple processes exist, progress status is only reported for the
+    first and last of them.
+
     Parameters
     ----------
     current_idx : int
@@ -473,6 +475,8 @@ def progress_status(current_idx, task_length, logger, process_name=None,
         Root process number (default is 0).
 
     """
+    NUM_CHECK_POINTS = 4
+
     if process_name is not None:
         proc_name = "'{}' ".format(process_name)
     else:
@@ -488,7 +492,7 @@ def progress_status(current_idx, task_length, logger, process_name=None,
         else:
             logged_process = None
 
-    block_length = max(task_length // 4, 1)
+    block_length = max(task_length // NUM_CHECK_POINTS, 1)
     progress_length = current_idx + 1
     progress_percentage = 100 * progress_length / task_length
 
@@ -518,6 +522,8 @@ def clean_warning_format(message, category, filename, lineno, line=None):
         Warning message format.
 
     """
+    filename = "".join(filename.partition("harmonia")[1:])
+
     return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
 
 
@@ -670,14 +676,7 @@ def sort_list_to_dict(list_data, int_keys):
 # -----------------------------------------------------------------------------
 
 class PositiveDefinitenessWarning(UserWarning):
-    """Positive definiteness warning for covariance matrices when failed.
-
-    """
-    pass
-
-
-class LikelihoodWarning(UserWarning):
-    """Likelihood evaluation warning.
+    """Positive definiteness warning for covariance matrices.
 
     """
     pass
@@ -751,8 +750,6 @@ def mat_logdet(matrix):
     """
     _, log_det = np.linalg.slogdet(matrix)
 
-    return log_det
-
 
 def check_positive_definiteness(matrix):
     """Check the positive definiteness of a square matrix by attempting a
@@ -777,15 +774,16 @@ def check_positive_definiteness(matrix):
         return True
 
 
-def ensure_positive_definiteness(matrix, tweak_param=5e-4, maxiter=5):
+def ensure_positive_definiteness(matrix, tweak_param=1.e-4, maxiter=5):
     """Ensure the positive definiteness of a square matrix.
 
     Parameters
     ----------
     matrix : float or complex, array_like
         Matrix.
-    tweak_param : float
-        Amount of proportional inflation of digonal elements.
+    tweak_param : float, optionak
+        Amount of proportional inflation of digonal elements (default is
+        1.e-4).
     maxiter : int, optional
         Maximum number of iterative operations to ensure positive
         definiteness (default is 5).
@@ -798,17 +796,17 @@ def ensure_positive_definiteness(matrix, tweak_param=5e-4, maxiter=5):
         Positive-definiteness of the returned matrix.
 
     """
-    modified_matrix = matrix.copy()
-    dimension = len(modified_matrix)
+    dimension = len(matrix)
 
     def _enhance_diagonal(mat, dim):
         m = mat.copy()
         m[range(dim), range(dim)] *= 1 + tweak_param
         return m
 
+    modified_matrix = matrix.copy()
     pos_def = check_positive_definiteness(modified_matrix)
     past_iter = 0
-    while not pos_def and past_iter <= maxiter:
+    while not pos_def and past_iter < maxiter:
         modified_matrix = _enhance_diagonal(modified_matrix, dimension)
         pos_def = check_positive_definiteness(modified_matrix)
         past_iter += 1

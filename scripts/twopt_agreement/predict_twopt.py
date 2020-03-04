@@ -12,7 +12,7 @@ from harmonia.collections import (
     unit_const,
     zero_const,
 )
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.cosmology import FIDUCIAL_COSMOLOGY
 from harmonia.reader import TwoPointFunction
 
 
@@ -39,8 +39,8 @@ def initialise():
     bias = params.bias
     redshift = params.redshift
     kmax = params.kmax
-    rmax = fiducial_cosmology.comoving_distance(params.zmax)
-    growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
+    rmax = FIDUCIAL_COSMOLOGY.comoving_distance(params.zmax)
+    growth_rate = FIDUCIAL_COSMOLOGY.scale_independent_growth_rate(redshift)
 
     if len(pivots) > 1:
         pivot_tag = "{}".format(pivots)
@@ -86,7 +86,7 @@ def process(runtime_info):
 
     kwargs = dict(
         growth_rate=growth_rate,
-        cosmo=fiducial_cosmology,
+        cosmo=FIDUCIAL_COSMOLOGY,
         comm=COMM,
     )
 

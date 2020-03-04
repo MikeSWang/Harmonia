@@ -1,6 +1,6 @@
 import pytest
 
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.cosmology import FIDUCIAL_COSMOLOGY
 from harmonia.cosmology.geometry import fiducial_distance
 
 

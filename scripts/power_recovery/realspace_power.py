@@ -16,7 +16,7 @@ from harmonia.collections import (
     harmony,
     sort_dict_to_list,
 )
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.cosmology import FIDUCIAL_COSMOLOGY
 from harmonia.mapper import (
     LogNormalCatalogue,
     NBKCatalogue,
@@ -53,7 +53,7 @@ def initialise():
     contrast = params.contrast
     bias = params.bias
     redshift = params.redshift
-    rmax = fiducial_cosmology.comoving_distance(params.zmax)
+    rmax = FIDUCIAL_COSMOLOGY.comoving_distance(params.zmax)
     kmax = params.kmax
     dk = params.dk
     expand = params.expand
@@ -72,7 +72,7 @@ def initialise():
     global Plin
 
     Plin = cosmology.LinearPower(
-        fiducial_cosmology,
+        FIDUCIAL_COSMOLOGY,
         redshift=redshift,
         transfer='CLASS'
     )

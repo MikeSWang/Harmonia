@@ -41,12 +41,19 @@ import numpy as np
 from scipy.special import loggamma
 
 from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import LikelihoodWarning, PositiveDefinitenessWarning
+from harmonia.collections import PositiveDefinitenessWarning
 from harmonia.collections import (
     check_positive_definiteness,
     ensure_positive_definiteness,
 )
 from harmonia.collections import mat_logdet, mpi_compute
+
+
+class LikelihoodWarning(UserWarning):
+    """Likelihood evaluation warning.
+
+    """
+    pass
 
 
 # Probability distributions
@@ -121,7 +128,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
     Returns
     -------
     density : float, array_like
-        (Logarithmic) probability density value.
+        Logarithmic probability density value.
 
     """
     dat_vector, cov_matrix = np.squeeze(dat_vector), np.squeeze(cov_matrix)
@@ -143,7 +150,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
 
     if not check_positive_definiteness(cov_matrix):
         cov_matrix, ensured = ensure_positive_definiteness(
-            cov_matrix, tweak_param=5e-3, maxiter=2
+            cov_matrix, tweak_param=1e-4, maxiter=5
         )
         warnings.warn(
             "`cov_matrix` is modified to ensure positive definiteness. ",
@@ -151,7 +158,7 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
         )
         if not ensured:
             warnings.warn(
-                "`cov_matrix` still fails positive definiteness. ",
+                "Modified `cov_matrix` still fails positive definiteness. ",
                 PositiveDefinitenessWarning
             )
 
@@ -190,7 +197,7 @@ def multivariate_normal_pdf(data_vector, mean_vector, cov_matrix,
     Returns
     -------
     density : float, array_like
-        (Logarithmic) probability density value.
+        Logarithmic probability density value.
 
     Raises
     ------

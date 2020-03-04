@@ -12,7 +12,7 @@ from harmonia.collections import (
     confirm_directory_path as confirm_dir,
     format_float,
 )
-from harmonia.cosmology import fiducial_cosmology
+from harmonia.cosmology import FIDUCIAL_COSMOLOGY
 from harmonia.mapper import (
     GaussianCatalogue,
     LogNormalCatalogue,
@@ -51,7 +51,7 @@ def initialise():
     nbar = params.nbar
     bias = params.bias
     redshift = params.redshift
-    rmax = fiducial_cosmology.comoving_distance(params.zmax)
+    rmax = FIDUCIAL_COSMOLOGY.comoving_distance(params.zmax)
     kmax = params.kmax
     expand = params.expand
     mesh_gen = params.mesh_gen
@@ -69,14 +69,14 @@ def initialise():
     global Plin
 
     Plin = cosmology.LinearPower(
-        fiducial_cosmology,
+        FIDUCIAL_COSMOLOGY,
         redshift=redshift,
         transfer='CLASS'
     )
 
     gen_tag = f"gen={gen_name},"
 
-    growth_rate = fiducial_cosmology.scale_independent_growth_rate(redshift)
+    growth_rate = FIDUCIAL_COSMOLOGY.scale_independent_growth_rate(redshift)
     if rsd_flag:
         rsd_tag = "{:.2f}".format(growth_rate)
     else:

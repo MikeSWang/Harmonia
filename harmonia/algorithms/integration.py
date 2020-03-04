@@ -172,7 +172,6 @@ def angular_harmonic_integral(angular_func, ell, m, *args, conjugate=True,
 
     """
     def _int_kernel(theta, phi):
-
         return angular_func(theta, phi, *args, **kwargs) \
             * spherical_harmonic(ell, m, theta, phi)
 
@@ -206,7 +205,6 @@ def radial_besselj_integral(radial_func, ell, k, rmax, *args, **kwargs):
 
     """
     def _int_kernel(r):
-
         return radial_func(r, *args, **kwargs) * spherical_besselj(ell, k*r)
 
     return radial_spherical_integral(_int_kernel, rmax)

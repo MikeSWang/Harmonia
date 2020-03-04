@@ -87,7 +87,7 @@ def process():
     """
     if params['map'].startswith('s'):
         disc = DiscreteSpectrum(
-            params['boxsize']/2, 'dirichlet', params['kmax'], coom=comm
+            params['boxsize']/2, 'dirichlet', params['kmax'], comm=comm
         )
     elif params['map'].startswith('c'):
         disc = DiscreteSpectrum(

@@ -1187,7 +1187,7 @@ class TwoPointFunction(Couplings):
         if pivot in ['root', 'scale']:
             raise ValueError(
                 "Pivot by 'root' or 'scale' is not supported by this method. "
-                "Apply `variance` method instead for order-collapse cases "
+                "Use `mode_variance` method instead for order-collapse cases "
                 "where no masking, selection, weighting, evolution or "
                 "geometrical effects are present. "
             )

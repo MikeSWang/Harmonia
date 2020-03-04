@@ -389,10 +389,7 @@ class WindowedPowerSpectrum:
 
         """
         ell, b = order, np.atleast_1d(bias)
-        if growth_rate is None:
-            f = 0.
-        else:
-            f = growth_rate
+        f = 0. if growth_rate is None else growth_rate
 
         if ell == 0:
             kaiser_factor = b**2 + 2/3 * b * f + 1/5 * f**2
@@ -525,13 +522,11 @@ class WindowedCorrelation:
 
     Attributes
     ----------
-    fiducial_multipoles : dict
+    fiducial_multipoles : :class:`~.algorithms.arrays.CartesianArray`
         The fiducial windowed power multipoles based at which the
-        window-induced correlation is estimated, with the mandatory
-        key ``'k'`` for the wavenumbers corresponding to the correlation
-        matrix components.
+        window-induced correlation is estimated.
     orders : list of int
-        Order of the power multipoles.
+        Order of the power spectrum multipoles.
 
     """
 
@@ -607,7 +602,7 @@ class WindowedCorrelation:
         dimension = len(self.orders) \
             * len(self.fiducial_multipoles.coord_array)
 
-        covar_estimate = np.squeeze(np.asarray(covar_estimate))
+        covar_estimate = np.squeeze(covar_estimate)
         if covar_estimate.ndim != 2 \
                 or covar_estimate.shape != (dimension,) * 2:
             raise ValueError(

@@ -1,8 +1,8 @@
 """
-Morphable arrays (:mod:`~harmonia.algorithms.arrays`)
+Structured arrays (:mod:`~harmonia.algorithms.arrays`)
 ===========================================================================
 
-Manipulate cosmological field data arrays.
+Manipulate data arrays of cosmological field.
 
 .. autosummary::
 
@@ -92,18 +92,17 @@ class SphericalArray:
         self.degrees, self.depths = tuple(degrees), tuple(depths)
 
         if roots is None:
-            roots = [
+            self.roots = [
                 spherical_besselj_root(ell, nmax, only=False)
                 for ell, nmax in zip(degrees, depths)
             ]
         elif isinstance(roots, dict):
-            roots = sort_dict_to_list(roots)
+            self.roots = sort_dict_to_list(roots)
         else:
             try:
-                roots = list(roots)
+                self.roots = list(roots)
             except TypeError:
                 raise TypeError(f"Invalid type for `roots`: {type(roots)}. ")
-        self.roots = roots
 
         self.index_array = self._gen_index_array(degrees, depths)
 
@@ -115,9 +114,10 @@ class SphericalArray:
                 for ell, nmax, fillblock in zip(degrees, depths, filling):
                     if np.shape(fillblock) != (2*ell+1, nmax):
                         raise ValueError(
-                            f"Element of spherical degree {ell} in `filling` "
+                            "Element of spherical degree {:d} in `filling` "
                             "is not a rectangular array whose shape "
                             "is consistent with `degrees` and `depths`. "
+                            .format(ell)
                         )
             else:
                 raise ValueError(
@@ -131,7 +131,7 @@ class SphericalArray:
 
         If `disc` is not provided, the natural structure is inferred from
         `filling`; if only `disc` is provided, a natural structue index
-        array is returned with null :attr:`data_array`.
+        array is returned with :attr:`data_array` being `None`.
 
         Parameters
         ----------
@@ -144,9 +144,10 @@ class SphericalArray:
         Raises
         ------
         ValueError
-            `disc` and `filling` are both `None`.
+            `filling` and `disc` are both `None`.
         ValueError
-            `filling` has inconsistent shape or ordering with any spectrum.
+            `filling` has inconsistent shape or ordering with any
+            possible spectrum.
 
         """
         if disc is not None:
@@ -155,7 +156,7 @@ class SphericalArray:
             )
 
         if filling is None:
-            raise ValueError("`disc` and `filling` cannot both be None. ")
+            raise ValueError("`filling` and `disc` cannot both be None. ")
 
         if not all([len(fillblock) % 2 for fillblock in filling]):
             raise ValueError(
@@ -166,7 +167,7 @@ class SphericalArray:
 
         if sorted(degrees) != degrees:
             raise ValueError(
-                "`filling` subarrays should be in ascending order of length. "
+                "`filling` subarrays should be in ascending order by length. "
             )
 
         depths = [np.size(fillblock, axis=-1) for fillblock in filling]
@@ -214,12 +215,10 @@ class SphericalArray:
 
         if axis_order == 'ln':
             axis_order = 'lmn'
-            if collapse is None:
-                collapse = 'mean'
+            collapse = 'mean' if collapse is None else collapse
         if axis_order == 'u':
             axis_order = 'k'
-            if collapse is None:
-                collapse = 'mean'
+            collapse = 'mean' if collapse is None else collapse
 
         if collapse:
             square = (collapse == 'rms')
@@ -240,7 +239,7 @@ class SphericalArray:
             )
 
         if axis_order == 'k':
-            roots = self.roots
+            roots = self.roots.copy()
             if not collapse:
                 roots = self._repeat_subarray(
                     roots, 'data', degrees=self.degrees
@@ -413,24 +412,7 @@ class SphericalArray:
 
     @staticmethod
     def _alias(structure_name):
-        """Replace aliases of stucture names by the default structure name.
 
-        Parameters
-        ----------
-        structure_name : str
-            Array structure name.
-
-        Returns
-        -------
-        str
-            Equivalent array structure name.
-
-        Raises
-        ------
-        ValueError
-            If `structure_name` is not a valid structure name.
-
-        """
         if structure_name == 'natural':
             return 'lmn'
         if structure_name == 'transposed':
@@ -443,6 +425,7 @@ class SphericalArray:
             return 'u'
         if structure_name in ['lmn', 'lnm', 'ln', 'k', 'u']:
             return structure_name
+
         raise ValueError(
             f"Invalid `structure_name` value: {structure_name}. "
         )
@@ -486,8 +469,10 @@ class SphericalArray:
         """
         if subarray_type == 'data':
             return [np.asarray(ell_block).T for ell_block in array]
+
         if subarray_type == 'index':
             return [list(map(list, zip(*ell_block))) for ell_block in array]
+
         raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
 
     @staticmethod
@@ -525,11 +510,13 @@ class SphericalArray:
                 )
                 for ell_block in array
             ]
+
         if subarray_type == 'data' and not square:
             return [
                 np.mean(ell_block, axis=0, keepdims=True)
                 for ell_block in array
             ]
+
         if subarray_type == 'index':
             return [
                 [
@@ -542,6 +529,7 @@ class SphericalArray:
                 ]
                 for ell_block in array
             ]
+
         raise ValueError(f"Invalid `subarray_type` value: {subarray_type}. ")
 
     @staticmethod

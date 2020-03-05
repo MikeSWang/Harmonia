@@ -2,7 +2,7 @@
 
 """
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
 
 import numpy as np
 from nbodykit.cosmology import Cosmology
@@ -93,7 +93,7 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
-    pprint(ini_params)
+    print("---Program parameters---", pformat(ini_params), sep="\n")
 
     return ini_params, ini_tag
 

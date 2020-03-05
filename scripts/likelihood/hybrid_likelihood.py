@@ -2,7 +2,7 @@
 
 """
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
 
 import numpy as np
 from mpi4py import MPI
@@ -159,7 +159,7 @@ def initialise():
         fiducial_estimate['fiducial_covariance']
 
     if comm.rank == 0:
-        pprint(ini_params)
+        print("---Program parameters---", pformat(ini_params), sep="\n")
 
     return ini_params, ini_tag
 

@@ -2,7 +2,7 @@
 
 """
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def initialise():
         parsed_params.rsd
     ).strip(",")
 
-    pprint(ini_params)
+    print("---Program parameters---", pformat(ini_params), sep="\n")
 
     return ini_params, ini_tag
 

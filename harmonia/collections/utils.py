@@ -28,6 +28,13 @@ System utilities
     mpi_compute
     progress_status
 
+**Program logging**
+
+.. autosummary::
+
+    LoggerFormatter
+    setup_logger
+
 **Formatting**
 
 .. autosummary::
@@ -80,7 +87,10 @@ Computational utilities
 """
 from __future__ import division
 
+import logging
 import os
+import sys
+import time
 import warnings
 from collections import defaultdict
 from glob import glob
@@ -97,6 +107,8 @@ __all__ = [
     'allocate_segments',
     'mpi_compute',
     'progress_status',
+    'LoggerFormatter',
+    'setup_logger',
     'clean_warning_format',
     'format_float',
     'sort_dict_to_list',
@@ -503,6 +515,46 @@ def progress_status(current_idx, task_length, logger, process_name=None,
                 "Progress for the %s %sprocess: %d%% computed. ",
                 logged_process, proc_name, progress_percentage
             )
+
+
+class LoggerFormatter(logging.Formatter):
+    """Customised logging formatter.
+
+    """
+
+    start_time = time.time()
+
+    def format(self, record):
+
+        elapsed_time = record.created - self.start_time
+        h, remainder_time = divmod(elapsed_time, 3600)
+        m, s = divmod(remainder_time, 60)
+
+        record.elapsed = "(+{}:{:02d}:{:02d})".format(int(h), int(m), int(s))
+
+        return logging.Formatter.format(self, record)
+
+
+def setup_logger():
+    """Return the root logger suitably formatted.
+
+    Returns
+    -------
+    logger : :class:`logging.Logger`
+        Formatted root logger.
+
+    """
+    logger = logging.getLogger()
+    logging_handler = logging.StreamHandler(sys.stdout)
+    logging_formatter = LoggerFormatter(
+        fmt='[%(asctime)s %(elapsed)s %(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    logging_handler.setFormatter(logging_formatter)
+    logger.addHandler(logging_handler)
+
+    return logger
 
 
 def clean_warning_format(message, category, filename, lineno, line=None):

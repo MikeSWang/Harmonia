@@ -4,7 +4,6 @@
 import logging
 import os
 import sys
-import time
 import warnings
 from argparse import ArgumentParser
 from pathlib import Path
@@ -14,48 +13,12 @@ import numpy as np
 _cwd = os.path.dirname(__file__)
 sys.path.insert(0, os.path.realpath(os.path.join(_cwd, "../../")))
 
-from harmonia.collections import cartesian_to_spherical
-from harmonia.collections import clean_warning_format, get_filename
-
-
-class LoggerFormatter(logging.Formatter):
-    """Customised logging formatter.
-
-    """
-
-    start_time = time.time()
-
-    def format(self, record):
-
-        elapsed_time = record.created - self.start_time
-        h, remainder_time = divmod(elapsed_time, 3600)
-        m, s = divmod(remainder_time, 60)
-
-        record.elapsed = "(+{}:{:02d}:{:02d})".format(int(h), int(m), int(s))
-
-        return logging.Formatter.format(self, record)
-
-
-def setup_logger():
-    """Return the root logger suitably formatted.
-
-    Returns
-    -------
-    logger : :class:`logging.Logger`
-        Formatted root logger.
-
-    """
-    _logger = logging.getLogger()
-    logging_handler = logging.StreamHandler(sys.stdout)
-    logging_formatter = LoggerFormatter(
-        fmt='[%(asctime)s %(elapsed)s %(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-
-    logging_handler.setFormatter(logging_formatter)
-    _logger.addHandler(logging_handler)
-
-    return _logger
+from harmonia.collections import (
+    cartesian_to_spherical,
+    clean_warning_format,
+    get_filename,
+    setup_logger,
+)
 
 
 def parse_external_args():

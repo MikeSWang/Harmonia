@@ -574,7 +574,9 @@ def clean_warning_format(message, category, filename, lineno, line=None):
         Warning message format.
 
     """
-    filename = "".join(filename.partition("harmonia")[1:])
+    filename = "".join(filename.partition("harmonia")[1:]) \
+        if "harmonia" in filename \
+        else filename
 
     return '%s:%s: %s: %s\n' % (filename, lineno, category.__name__, message)
 

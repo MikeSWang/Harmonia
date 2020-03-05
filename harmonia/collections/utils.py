@@ -750,6 +750,8 @@ def mat_logdet(matrix):
     """
     _, log_det = np.linalg.slogdet(matrix)
 
+    return log_det
+
 
 def check_positive_definiteness(matrix):
     """Check the positive definiteness of a square matrix by attempting a

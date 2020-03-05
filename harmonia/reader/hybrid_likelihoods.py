@@ -148,7 +148,16 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
         cov_matrix = cov_matrix / downscale**2
         log_normalisation_const -= 2 * dat_dim * np.log(downscale)
 
+    if elementwise:
+        log_det_cov_mat = np.log(np.abs(np.diag(cov_matrix)))
+    else:
+        log_det_cov_mat = mat_logdet(cov_matrix)
+
     if not check_positive_definiteness(cov_matrix):
+        warnings.warn(
+            "`cov_matrix` fails positive definiteness. ",
+            PositiveDefinitenessWarning
+        )
         cov_matrix, ensured = ensure_positive_definiteness(
             cov_matrix, tweak_param=1e-4, maxiter=5
         )
@@ -161,11 +170,6 @@ def complex_normal_pdf(dat_vector, cov_matrix, return_log=True, downscale=None,
                 "Modified `cov_matrix` still fails positive definiteness. ",
                 PositiveDefinitenessWarning
             )
-
-    if elementwise:
-        log_det_cov_mat = np.log(np.abs(np.diag(cov_matrix)))
-    else:
-        log_det_cov_mat = mat_logdet(cov_matrix)
 
     chi_sq = _chi_square(dat_vector, cov_matrix, elementwise=elementwise)
 

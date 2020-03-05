@@ -94,7 +94,6 @@ def initialise():
         ).match(cosmological_parameters['sigma8'])
 
     pprint(ini_params)
-    print("\n")
 
     return ini_params, ini_tag
 

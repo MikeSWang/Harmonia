@@ -134,7 +134,6 @@ def initialise():
 
     if comm.rank == 0:
         pprint(ini_params)
-        print("\n")
 
     return ini_params, ini_tag
 
@@ -166,7 +165,10 @@ def process():
     windowed_power_model.wavenumbers = map_data['k']
 
     output_data = defaultdict(list)
-    for file_suffix in ["L.txt", "R.txt"]:
+    file_suffices = [".txt"] if "halos" not in params['input_catalogue'] \
+        else ["L.txt", "R.txt"]
+
+    for file_suffix in file_suffices:
         # Load map data.
         cartesian_data = CartesianArray(
             filling=map_data[file_suffix],

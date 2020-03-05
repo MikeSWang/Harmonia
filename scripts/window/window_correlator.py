@@ -110,7 +110,6 @@ def initialise():
         globals()[par_name] = par_val
 
     pprint(param_dict)
-    print("\n")
 
     return (
         "fsky={:.2f}{},knots=[{},{}],orders={},boxsize={},mesh={},iter={}"

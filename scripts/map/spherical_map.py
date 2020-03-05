@@ -41,7 +41,6 @@ def initialise():
 
     if comm is None or comm.rank == 0:
         pprint(ini_params)
-        print("\n")
 
     return ini_params, ini_tag
 
@@ -60,7 +59,10 @@ def process():
     )
 
     output_data = defaultdict(list)
-    for file_suffix in [".txt"]: #["L.txt", "R.txt"]:
+    file_suffices = [".txt"] if "halos" not in params['input_catalogue'] \
+        else ["L.txt", "R.txt"]
+
+    for file_suffix in file_suffices:
         # Build map from loaded catalogue.
         catalogue_name = params['input_catalogue'] + file_suffix
         catalogue_path = PATHIN/"catalogues"/catalogue_name

@@ -71,7 +71,6 @@ def initialise():
 
     if comm is not None and comm.rank == 0:
         pprint(ini_params)
-        print("\n")
 
     return ini_params, ini_tag
 

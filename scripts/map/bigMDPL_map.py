@@ -70,7 +70,7 @@ def initialise():
     ).strip(",")
 
     if comm is not None and comm.rank == 0:
-        print("---Program parameters---", pformat(ini_params), sep="\n")
+        print("---Program parameters---", pformat(ini_params), "", sep="\n")
 
     return ini_params, ini_tag
 

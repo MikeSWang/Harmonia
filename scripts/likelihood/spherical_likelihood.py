@@ -111,7 +111,7 @@ def initialise():
             ini_params.update({'sph_mode_independence': False})
 
     if comm.rank == 0:
-        print("---Program parameters---", pformat(ini_params), sep="\n")
+        print("---Program parameters---", pformat(ini_params), "", sep="\n")
 
     return ini_params, ini_tag
 

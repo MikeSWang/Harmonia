@@ -93,7 +93,7 @@ def initialise():
             Omega_cdm=cosmological_parameters['Omega_cdm']
         ).match(cosmological_parameters['sigma8'])
 
-    print("---Program parameters---", pformat(ini_params), sep="\n")
+    print("---Program parameters---", pformat(ini_params), "", sep="\n")
 
     return ini_params, ini_tag
 

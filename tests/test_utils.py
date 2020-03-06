@@ -157,8 +157,6 @@ def test_const_function(const, x):
 )
 def test_mat_logdet(matrix, logdet):
     assert utils.mat_logdet(matrix) == pytest.approx(logdet)
-    with pytest.raises(ValueError):
-        utils.mat_logdet(-matrix)
 
 
 @pytest.mark.parametrize("ndim,nsize", [(3, 10), (5, 8)])

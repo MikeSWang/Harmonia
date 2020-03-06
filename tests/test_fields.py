@@ -61,9 +61,6 @@ def test_threshold_clip(num_mesh):
 
 def test_lognormal_transform():
 
-    with pytest.raises(TypeError):
-        lognormal_transform('correlation_function', 'correlation')
-
     with pytest.raises(ValueError):
         lognormal_transform(power_spectrum, 'invalid_obj_type')
 

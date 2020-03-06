@@ -40,13 +40,13 @@ from itertools import product
 import numpy as np
 from scipy.special import loggamma
 
-from harmonia.algorithms import CartesianArray, SphericalArray
-from harmonia.collections import PositiveDefinitenessWarning
-from harmonia.collections import (
+from harmonia.algorithms.arrays import CartesianArray, SphericalArray
+from harmonia.collections.utils import PositiveDefinitenessWarning
+from harmonia.collections.utils import (
     check_positive_definiteness,
     ensure_positive_definiteness,
 )
-from harmonia.collections import mat_logdet, mpi_compute
+from harmonia.collections.utils import mat_logdet, mpi_compute, progress_status
 
 
 class LikelihoodWarning(UserWarning):
@@ -468,7 +468,13 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
     with warnings.catch_warnings(record=True) as captured_warnings:
         if comm is None:
-            log_likelihood = list(map(_likelihood_eval, sampled_points))
+            log_likelihood = []
+            for idx, sample_point in enumerate(sampled_points):
+                log_likelihood.append(_likelihood_eval(sample_point))
+                progress_status(
+                    idx, len(sampled_points), logger,
+                    process_name=f"spherical likelihood evaluation"
+                )
         else:
             log_likelihood = mpi_compute(
                 sampled_points, _likelihood_eval, comm,
@@ -653,10 +659,19 @@ def cartesian_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
         return sample_likelihood
 
-    log_likelihood = mpi_compute(
-        sampled_points, _likelihood_eval, comm,
-        logger=logger, process_name="cartesian likelihood evaluation"
-    )
+    if comm is None:
+        log_likelihood = []
+        for idx, sample_point in enumerate(sampled_points):
+            log_likelihood.append(_likelihood_eval(sample_point))
+            progress_status(
+                idx, len(sampled_points), logger,
+                process_name=f"cartesian likelihood evaluation"
+            )
+    else:
+        log_likelihood = mpi_compute(
+            sampled_points, _likelihood_eval, comm,
+            logger=logger, process_name="cartesian likelihood evaluation"
+        )
 
     log_likelihood = np.reshape(log_likelihood, out_shape)
     if axis_to_squeeze:

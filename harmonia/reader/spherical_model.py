@@ -1423,10 +1423,19 @@ class TwoPointFunction(Couplings):
             return _sum
 
         index_pair_vector = list(product(*(index_vector,)*2))
-        index_pair_ang_sum = mpi_compute(
-            index_pair_vector, _angular_sum, self.comm,
-            logger=self._logger, process_name="fixed angular sum"
-        )
+        if self.comm is None:
+            index_pair_ang_sum = []
+            for idx, index_pair in enumerate(index_pair_vector):
+                index_pair_ang_sum.append(_angular_sum(index_pair))
+                progress_status(
+                    idx, len(index_pair_vector), self._logger,
+                    process_name="fixed angular sum"
+                )
+        else:
+            index_pair_ang_sum = mpi_compute(
+                index_pair_vector, _angular_sum, self.comm,
+                logger=self._logger, process_name="fixed angular sum"
+            )
 
         self._fixed_angular_sums_ = defaultdict(dict)
         for ell in self.disc.degrees:
@@ -1472,9 +1481,13 @@ class TwoPointFunction(Couplings):
         with warnings.catch_warnings(record=True) as any_warnings:
             paired_indices_vector = list(product(*(index_vector,)*2))
             if self.comm is None:
-                for mu_nu in paired_indices_vector:
+                for idx, mu_nu in enumerate(paired_indices_vector):
                     self._fixed_shot_noise_[mu_nu] = \
                         _shot_noise_unit_amp(mu_nu)
+                    progress_status(
+                        idx, len(paired_indices_vector), self._logger,
+                        process_name="fixed shot noise unit"
+                    )
             else:
                 _fixed_shot_noise_vals = mpi_compute(
                     paired_indices_vector, _shot_noise_unit_amp, self.comm,

@@ -21,8 +21,8 @@ from mcfit import P2xi, xi2P
 from nbodykit.lab import cosmology
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
-from harmonia.algorithms import CartesianArray
-from harmonia.cosmology import scale_dependence_modification
+from harmonia.algorithms.arrays import CartesianArray
+from harmonia.cosmology.scale_dependence import scale_dependence_modification
 
 
 class WindowedPowerSpectrum:

@@ -26,7 +26,7 @@ from harmonia.algorithms.integration import \
 from harmonia.algorithms.arrays import SphericalArray
 from harmonia.collections.utils import cartesian_to_spherical as c2s
 from harmonia.collections.utils import spherical_indicator as spherical_cut
-from harmonia.collections.utils import unit_const, mpi_compute
+from harmonia.collections.utils import mpi_compute, progress_status, unit_const
 
 
 class SphericalMap:
@@ -291,10 +291,19 @@ class SphericalMap:
 
             return n_ell, nbar_ell
 
-        transformed_arrays = mpi_compute(
-            self.disc.degrees, _transform_deg, self.comm,
-            logger=self._logger, process_name='spherical transform'
-        )
+        if self.comm is None:
+            transformed_arrays = []
+            for idx, ell in enumerate(self.disc.degrees):
+                transformed_arrays.append(_transform_deg(ell))
+                progress_status(
+                    idx, len(self.disc.degrees), self._logger,
+                    process_name=f"spherical transform"
+                )
+        else:
+            transformed_arrays = mpi_compute(
+                self.disc.degrees, _transform_deg, self.comm,
+                logger=self._logger, process_name='spherical transform'
+            )
 
         n_coeff, nbar_coeff = {}, {}
         for ell, (n_ell, nbar_ell) \

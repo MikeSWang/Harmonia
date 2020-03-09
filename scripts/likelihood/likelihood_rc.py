@@ -8,6 +8,7 @@ import warnings
 from argparse import ArgumentParser
 from pathlib import Path
 
+import matplotlib as mpl
 import numpy as np
 
 _cwd = os.path.dirname(__file__)
@@ -97,6 +98,8 @@ def domain_cut(cartesian_position, radius, fraction, split_caps=False):
     return veto
 
 
+mpl.rcParams['text.latex.preamble'] = r'\newcommand{\mathdefault}[1][]{}'
+
 warnings.formatwarning = clean_warning_format
 
 PATHIN = Path("../../data/survey/")
@@ -107,3 +110,4 @@ if __name__ != '__main__':
     script_name = get_filename(sys.argv[0])
     logger = setup_logger()
     logger.setLevel(logging.INFO)
+    logging.captureWarnings(True)

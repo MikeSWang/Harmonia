@@ -25,7 +25,7 @@ legend.fontsize : large
 legend.handlelength : 2.5
 legend.loc : best
 legend.markerscale : 0.8
-legend.scatterpoints : 2
+legend.scatterpoints : 1
 
 lines.antialiased : True
 lines.linewidth : 1.5

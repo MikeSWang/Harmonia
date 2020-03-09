@@ -1,43 +1,55 @@
-lines.linewidth: 1.75
-lines.markeredgewidth: 0.
-lines.markersize: 3.
-lines.antialiased: True
-
-font.family: serif
-font.monospace: Computer Modern Typewriter
-font.size: 11.0
-
-text.usetex: True
-
+axes.formatter.limits : -4, 4
 axes.formatter.use_mathtext : True
-axes.prop_cycle: cycler('color', ['000000', 'C40233', '0087BD', 'FFD300', '009F6B'])
+axes.labelsize : large
+axes.linewidth : 1.2
+axes.prop_cycle : cycler('color', ['000000', 'C40233', '0087BD', 'FFD300', '009F6B'])
+axes.titlesize : large
 
-xtick.top: True
-xtick.major.size: 5
-xtick.minor.size: 3
-xtick.major.width: 0.75
-xtick.minor.width: 0.75
-xtick.direction: out
+errorbar.capsize : 0.
 
-ytick.right: True
-ytick.major.size: 5
-ytick.minor.size: 3
-ytick.major.width: 0.75
-ytick.minor.width: 0.75
-ytick.direction: out
-
-legend.loc: best
-legend.frameon: False
-legend.fancybox: False
-legend.handlelength: 2.0
-
-figure.figsize: 8, 5
+figure.figsize : 8., 5.
 figure.subplot.wspace: 0
 figure.subplot.hspace: 0
-figure.titlesize: large
+figure.titlesize : large
 
-errorbar.capsize: 0.
+font.family : serif
+font.size : 11
 
-savefig.format: pdf
-savefig.bbox: tight
-savefig.transparent: True
+image.aspect : auto
+image.cmap : inferno
+image.origin : lower
+
+legend.fancybox : False
+legend.frameon : False
+legend.fontsize : large
+legend.handlelength : 2.5
+legend.loc : best
+legend.markerscale : 0.8
+legend.scatterpoints : 2
+
+lines.antialiased : True
+lines.linewidth : 1.5
+lines.markeredgewidth: 0.
+lines.markersize : 5
+
+savefig.bbox : tight
+savefig.format : pdf
+savefig.transparent : True
+
+text.usetex : True
+
+xtick.direction : in
+xtick.labelsize : large
+xtick.major.size : 6
+xtick.major.width : 0.5
+xtick.minor.size : 3
+xtick.minor.width : 0.5
+xtick.top : True
+
+ytick.direction : in
+ytick.labelsize : large
+ytick.major.size : 6
+ytick.major.width : 0.5
+ytick.minor.size : 3
+ytick.minor.width : 0.5
+ytick.right : True

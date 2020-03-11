@@ -5,7 +5,6 @@ from collections import defaultdict
 from pprint import pformat
 
 import numpy as np
-from mpi4py import MPI
 
 from map_rc import PATHIN, PATHOUT, script_name
 from map_rc import domain_cut, parse_external_args
@@ -39,8 +38,7 @@ def initialise():
         parsed_params.rsd,
     ).strip(",")
 
-    if comm is None or comm.rank == 0:
-        print("---Program parameters---", pformat(ini_params), "", sep="\n")
+    print("---Program parameters---", pformat(ini_params), "", sep="\n")
 
     return ini_params, ini_tag
 
@@ -55,7 +53,7 @@ def process():
 
     """
     disc = DiscreteSpectrum(
-        params['boxsize']/2, 'dirichlet', params['kmax'], comm=comm
+        params['boxsize']/2, 'dirichlet', params['kmax']
     )
 
     output_data = defaultdict(list)
@@ -84,8 +82,7 @@ def process():
         spherical_map = SphericalMap(
             disc, data_catalogue, rand=random_catalogue,
             mean_density_data=params['nbar'],
-            mean_density_rand=params['contrast']*params['nbar'],
-            comm=comm
+            mean_density_rand=params['contrast']*params['nbar']
         )
 
         # Compute measurements.
@@ -112,9 +109,8 @@ def finalise(results, filetag):
     np.save(PATHOUT/script_name/filename, results)
 
 
-comm = None
 if __name__ == '__main__':
-    comm = MPI.COMM_WORLD
+
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()

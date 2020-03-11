@@ -6,7 +6,6 @@ from collections import defaultdict
 from pprint import pformat
 
 import numpy as np
-from mpi4py import MPI
 
 from map_rc import PATHIN, PATHOUT, domain_cut, script_name
 from harmonia.algorithms import DiscreteSpectrum
@@ -69,8 +68,7 @@ def initialise():
         parsed_params.rsd,
     ).strip(",")
 
-    if comm is not None and comm.rank == 0:
-        print("---Program parameters---", pformat(ini_params), "", sep="\n")
+    print("---Program parameters---", pformat(ini_params), "", sep="\n")
 
     return ini_params, ini_tag
 
@@ -86,11 +84,11 @@ def process():
     """
     if params['map'].startswith('s'):
         disc = DiscreteSpectrum(
-            params['boxsize']/2, 'dirichlet', params['kmax'], comm=comm
+            params['boxsize']/2, 'dirichlet', params['kmax']
         )
     elif params['map'].startswith('c'):
         disc = DiscreteSpectrum(
-            params['boxsize']/2, 'dirichlet', params['kmin'], comm=comm
+            params['boxsize']/2, 'dirichlet', params['kmin']
         )
 
     # Build map from loaded catalogue.
@@ -114,8 +112,7 @@ def process():
     spherical_map = SphericalMap(
         disc, data_catalogue, rand=random_catalogue,
         mean_density_data=params['nbar'],
-        mean_density_rand=params['contrast']*params['nbar'],
-        comm=comm
+        mean_density_rand=params['contrast']*params['nbar']
     )
 
     output_data = defaultdict(list)
@@ -159,9 +156,8 @@ def finalise(results, filetag):
     np.save(PATHOUT/script_name/filename, results)
 
 
-comm = None
 if __name__ == '__main__':
-    comm = MPI.COMM_WORLD
+
     parsed_params = parse_external_args()
     params, tag = initialise()
     output = process()

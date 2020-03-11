@@ -70,6 +70,9 @@ def domain_cut(cartesian_position, radius, fraction, split_caps=False):
         Domain veto value.
 
     """
+    if np.isclose(fraction, 1.):
+        return True
+
     spherical_position = cartesian_to_spherical(
         cartesian_position - [radius] * 3
     )

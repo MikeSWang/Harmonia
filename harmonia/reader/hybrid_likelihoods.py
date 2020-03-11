@@ -292,7 +292,7 @@ def modified_student_pdf(data_vector, mean_vector, cov_matrix, num_sample,
     dat_dim = np.size(data_vector)
 
     log_normalisation_const = - dat_dim/2 * np.log((num_sample - 1)*np.pi) \
-        + loggamma(num_sample/2) - loggamma((num_sample -dat_dim)/2)
+        + loggamma(num_sample/2) - loggamma((num_sample - dat_dim)/2)
 
     log_det_cov_mat = mat_logdet(cov_matrix)
 

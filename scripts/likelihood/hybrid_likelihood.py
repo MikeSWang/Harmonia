@@ -105,13 +105,13 @@ def initialise():
     est_tag = bool(parsed_params.num_cov_est) \
         * f"ncov={parsed_params.num_cov_est},"
 
-    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}"\
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}{}"\
         .format(
             parsed_params.map, parsed_params.fsky,
             parsed_params.khyb, parsed_params.kmax,
             parsed_params.rsd,
             str(parsed_params.multipoles).replace(", ", ","),
-            sampled_tag, fixed_tag, est_tag,
+            sampled_tag, fixed_tag, est_tag, parsed_params.nomono * "nomono"
         ).strip(",")
 
     # Extract cosmology and survey specifications.

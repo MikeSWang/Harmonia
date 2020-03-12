@@ -50,7 +50,7 @@ def initialise():
     """
     ini_params = parsed_params.__dict__
 
-    exclude_degrees = (0,) if parsed_params.nomono else ()
+    exclude_monopole = (0,) * parsed_params.nomono
     ini_params.update({'exclude_degrees': exclude_degrees})
 
     # Extract fixed parameter values and sampled parameter ranges.

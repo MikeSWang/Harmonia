@@ -69,6 +69,9 @@ def initialise():
     """
     ini_params = parsed_params.__dict__
 
+    exclude_degrees = (0,) if parsed_params.nomono else ()
+    ini_params.update({'exclude_degrees': exclude_degrees})
+
     # Extract fixed parameter values and sampled parameter ranges.
     global fixed_params, sampled_params
 
@@ -234,6 +237,7 @@ def process():
             pivot=params['spherical_pivot'],
             breakdown=params['breakdown'],
             independence=params['sph_mode_independence'],
+            exclude_degrees=params['exclude_degrees'],
             logger=logger,
             comm=comm,
         )

@@ -259,8 +259,13 @@ def view_contour(samples, xlabel, ylabel, precision=None, truth=None,
         if _cmap is None:
             _cmap = ListedColormap(sns.color_palette('Greens'))
 
-        main.contourf(
-            xx, yy, hh, h_levels, antialiased=True, cmap=_cmap, alpha=_alpha
+        contour = main.contourf(
+            xx, yy, hh, h_levels,
+            antialiased=True, cmap=_cmap, alpha=_alpha
+        )
+        main.contour(
+            contour,
+            linewidths=1.25, colors=_cmap(_cmap.N), alpha=min(2*_alpha, 1.)
         )
 
         # Marginal likelihoods.

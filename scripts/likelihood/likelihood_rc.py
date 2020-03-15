@@ -48,7 +48,7 @@ def parse_external_args():
     parser.add_argument('--load-couplings', action='store_true')
     parser.add_argument('--num-cov-est', type=int, default=None)
 
-    parser.add_argument('--nbar', type=float, default=2.4883e-4)
+    parser.add_argument('--nbar', type=float, default=2.49e-4)
     parser.add_argument('--contrast', type=float, default=10.)
     parser.add_argument('--redshift', type=float, default=1.)
     parser.add_argument('--boxsize', type=float, default=1000.)

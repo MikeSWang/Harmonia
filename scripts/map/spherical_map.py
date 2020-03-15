@@ -104,7 +104,7 @@ def finalise(results, filetag):
     """
     assert confirm_directory_path(PATHOUT/script_name)
 
-    filename = f"{params['input_catalogue']}-({filetag}).npy"
+    filename = f"{params['input_catalogue']}-({filetag},theta).npy"
 
     np.save(PATHOUT/script_name/filename, results)
 

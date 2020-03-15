@@ -61,7 +61,7 @@ def domain_cut(cartesian_position, radius, fraction, split_caps=False):
             )
         )
     else:
-        veto *= spherical_position[:, 2] <= fraction * (2*np.pi)
+        veto *= spherical_position[:, 1] <= np.arccos(1 - 2*fraction)
 
     return veto
 
@@ -237,7 +237,7 @@ def export():
         _tag = tag.replace(f",iter={niter}", "")
     else:
         _tag = tag
-    filename = "{}-({})".format(
+    filename = "{}-({},theta)".format(
         FILE_ROOT, _tag.replace(f"iter={niter}", f"iter={itercount}")
     )
     np.save(PATHOUT/script_name/"collated"/f"{filename}.npy", collated_output)
@@ -318,13 +318,13 @@ if __name__ == '__main__':
         confirm_directory_path(PATHOUT/script_name)
         if params.sessionid:
             np.save(
-                PATHOUT/script_name/"{}-({})-[{}].npy"
+                PATHOUT/script_name/"{}-({},theta)-[{}].npy"
                 .format(FILE_ROOT, tag, params.sessionid),
                 output
             )
         else:
             np.save(
-                PATHOUT/script_name/"{}-({}).npy".format(FILE_ROOT, tag),
+                PATHOUT/script_name/"{}-({},theta).npy".format(FILE_ROOT, tag),
                 output
             )
     elif params.task.startswith('agg'):

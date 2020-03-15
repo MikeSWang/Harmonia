@@ -89,7 +89,7 @@ def domain_cut(cartesian_position, radius, fraction, split_caps=False):
             )
         )
     else:
-        veto = spherical_position[:, 2] <= fraction * (2*np.pi)
+        veto = spherical_position[:, 1] <= np.arccos(1 - 2*fraction)
 
     return veto
 

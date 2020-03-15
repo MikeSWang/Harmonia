@@ -70,7 +70,7 @@ def sky_mask(cartesian_position, fraction, split_caps=False):
             )
         )
     else:
-        mask = spherical_position[:, -1] <= fraction * (2*np.pi)
+        mask = spherical_position[:, 1] <= np.arccos(1 - 2*fraction)
 
     return mask
 
@@ -130,14 +130,14 @@ if __name__ == '__main__':
 
     np.save(
         PATHOUT/"window_multipoles"/(
-            f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+            f"mask_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh-theta.npy"
             .format(fsky, split*"-split", padding, mesh)
         ),
         xi_ell
     )
     np.save(
         PATHOUT/"window_multipoles"/(
-            f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh.npy"
+            f"window_multipoles-{{:.2f}}sky{{}}-{{:.0f}}pad-{{}}mesh-theta.npy"
             .format(fsky, split*"-split", padding, mesh)
         ),
         pk_ell

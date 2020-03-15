@@ -48,7 +48,7 @@ def angular_mask(fraction, split_caps=False):
                 )
             )
         else:
-            mask_val = (phi <= fraction * (2*np.pi))
+            mask_val = (theta <= np.arccos(1 - 2*fraction))
 
         return mask_val
 

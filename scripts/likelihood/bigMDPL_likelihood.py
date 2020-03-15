@@ -27,9 +27,6 @@ from harmonia.reader import spherical_map_log_likelihood as sph_likelihood
 # Cosmological input.
 COSMOLOGY_FILE = PATHIN/"cosmology"/"cosmological_parameters-BigMDPL.txt"
 
-# Catalogue map input.
-MAP_PATH = DATAPATH/"nbody_map"
-
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
@@ -198,14 +195,14 @@ def process():
             params['kmin'], params['khyb'],
             params['rsd']
         )
-    smap_data = np.load(MAP_PATH/smap_file).item()
+    smap_data = np.load(DATAPATH/'spherical_map'/smap_file).item()
 
     cmap_file = params['input_catalogue'] \
         + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
             'cartesian', params['fsky'], params['khyb'], params['kmax'],
             str(params['multipoles']).replace(", ", ","), params['rsd']
         )
-    cmap_data = np.load(MAP_PATH/cmap_file).item()
+    cmap_data = np.load(DATAPATH/'cartesian_map'/cmap_file).item()
 
     windowed_power_model.wavenumbers = cmap_data['k']
 

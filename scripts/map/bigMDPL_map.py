@@ -7,7 +7,7 @@ from pprint import pformat
 
 import numpy as np
 
-from map_rc import PATHIN, PATHOUT, domain_cut, script_name
+from map_rc import PATHIN, PATHOUT, domain_cut
 from harmonia.algorithms import DiscreteSpectrum
 from harmonia.collections import confirm_directory_path
 from harmonia.mapper import (
@@ -149,6 +149,8 @@ def finalise(results, filetag):
         Output file tag.
 
     """
+    script_name = params['map'] + '_map'
+
     assert confirm_directory_path(PATHOUT/script_name)
 
     filename = f"{params['input_catalogue']}-({filetag}).npy"

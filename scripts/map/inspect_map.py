@@ -134,7 +134,7 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
                 format='pdf', transparency=True
             )
 
-    return sample_corr
+    return sample_cov, sample_corr
 
 
 COLLATE_DATA = True
@@ -148,4 +148,6 @@ RSD = False
 
 if __name__ == '__main__':
     hybrid_data = get_hybrid_maps()
-    hybrid_corr = inspect_hybrid_map(thredshold=0., savefig=True, zoom=456)
+    hybrid_cov, hybrid_corr = inspect_hybrid_map(
+        thredshold=0., savefig=False, zoom=456
+    )

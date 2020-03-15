@@ -3,12 +3,12 @@
 """
 from argparse import ArgumentParser
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from nbodykit.lab import ConvolvedFFTPower, FKPCatalog, UniformCatalog
+from nbodykit.lab import UniformCatalog
 
 from map_rc import PATHOUT, script_name, domain_cut
 from harmonia.algorithms import DiscreteSpectrum
@@ -67,12 +67,10 @@ def initialise():
         Initialisation tag.
 
     """
-    param_dict = vars(params)
-
-    pprint(param_dict)
+    print("---Program parameters---", pformat(vars(params)), "", sep="\n")
 
     return (
-        "fsky={:.2f},knots=[{},{},{}],orders={},boxsize={:.0f},iter={:d}"
+        "fsky={:.2f},knots=[{},{},{}],orders={},boxsize={:.0f},iter={:d},theta"
     ).format(
         params.fsky, params.kmin, params.khyb, params.kmax,
         str(params.orders).replace(", ", ","), params.boxsize, params.iter
@@ -89,7 +87,9 @@ def generate():
         Multipole measurements.
 
     """
-    results = {'cmap': defaultdict(list), 'smap': defaultdict(list)}
+    disc = DiscreteSpectrum(params.boxsize/2, 'dirichlet', params.khyb)
+
+    results = {'smap': [], 'cmap': defaultdict(list)}
     for _ in range(params.iter):
         data_catalogue = UniformCatalog(params.nbar, params.boxsize)
         rand_catalogue = UniformCatalog(
@@ -98,27 +98,44 @@ def generate():
 
         for catalogue in [data_catalogue, rand_catalogue]:
             catalogue['Selection'] *= domain_cut(
-                catalogue['Position'] - [params.boxsize/2] * 3,
-                params.boxsize/2, params.fsky,
+                catalogue['Position'], params.boxsize/2, params.fsky,
             )
             catalogue['NZ'] = params.nbar * catalogue['Weight']
 
-        catalogue_pair = FKPCatalog(data_catalogue, rand_catalogue)
-        cartesian_map = CartesianMap(catalogue_pair, num_mesh=params.mesh)
+        spherical_map = SphericalMap(
+            disc, data_catalogue, rand=rand_catalogue,
+            mean_density_data=params.nbar,
+            mean_density_rand=params.contrast*params.nbar
+        )
+        spherical_data = spherical_map.density_constrast()
+
+        results['smap'].append(spherical_data)
+
+        cartesian_map = CartesianMap(spherical_map.pair, num_mesh=params.mesh)
         cartesian_power = cartesian_map.power_multipoles(
             params.orders, kmin=params.khyb, kmax=params.kmax, dk=params.dk
         )
 
-        results['k'].append(cartesian_power['k'])
-        results['Nk'].append(cartesian_power['Nk'])
-        for ell in params.orders:
-            results[f'power_{ell}'].append(cartesian_power[f'power_{ell}'])
+        for key, value in cartesian_power.item():
+            results['cmap'][key].append(value)
 
     return results
 
 
 if __name__ == '__main__':
 
+    confirm_directory_path(PATHOUT/script_name)
+
     params = parse_args()
     tag = initialise()
 
+    if params.task == 'gen':
+
+        output = generate()
+        np.save(
+            PATHOUT/script_name/"rancorr-({}){}.npy"
+            .format(
+                tag, '-[{}]'.format(params.batchno) * bool(params.batchno)
+            ),
+            output
+        )

@@ -34,11 +34,11 @@ CMAP_PATH = DATAPATH/"cartesian_map"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={}).npy"
-MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
-WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
+COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={},theta).npy"
+MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky-theta.npy"
+WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky-theta.npy"
 FIDUCIAL_ESTIMATE_FILENAME = (
-    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={}).npy"
+    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={},theta).npy"
 )
 
 # Likelihood input.
@@ -105,14 +105,15 @@ def initialise():
     est_tag = bool(parsed_params.num_cov_est) \
         * f"ncov={parsed_params.num_cov_est},"
 
-    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}{}"\
-        .format(
-            parsed_params.map, parsed_params.fsky,
-            parsed_params.khyb, parsed_params.kmax,
-            parsed_params.rsd,
-            str(parsed_params.multipoles).replace(", ", ","),
-            sampled_tag, fixed_tag, est_tag, parsed_params.nomono * "nomono"
-        ).strip(",")
+    ini_tag = (
+        "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}{},theta"
+    ).format(
+        parsed_params.map, parsed_params.fsky,
+        parsed_params.khyb, parsed_params.kmax,
+        parsed_params.rsd,
+        str(parsed_params.multipoles).replace(", ", ","),
+        sampled_tag, fixed_tag, est_tag, parsed_params.nomono * "nomono"
+    ).strip(",")
 
     # Extract cosmology and survey specifications.
     global simu_cosmo, external_couplings, mask_multipoles, \
@@ -197,7 +198,7 @@ def process():
     )
 
     smap_file = params['input_catalogue'] \
-        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={},theta).npy".format(
             'spherical', params['fsky'],
             params['kmin'], params['khyb'],
             params['rsd']
@@ -205,10 +206,11 @@ def process():
     smap_data = np.load(SMAP_PATH/smap_file).item()
 
     cmap_file = params['input_catalogue'] \
-        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
-            'cartesian', params['fsky'], params['khyb'], params['kmax'],
-            str(params['multipoles']).replace(", ", ","), params['rsd']
-        )
+        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={},theta).npy"\
+            .format(
+                'cartesian', params['fsky'], params['khyb'], params['kmax'],
+                str(params['multipoles']).replace(", ", ","), params['rsd']
+            )
     cmap_data = np.load(CMAP_PATH/cmap_file).item()
 
     windowed_power_model.wavenumbers = cmap_data['k']

@@ -24,10 +24,10 @@ MAP_PATH = DATAPATH/"cartesian_map"
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
 
-MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky.npy"
-WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky.npy"
+MASK_MULTIPOLES_FILE = "mask_multipoles-{:.2f}sky-theta.npy"
+WINDOW_MULTIPOLES_FILE = "window_multipoles-{:.2f}sky-theta.npy"
 FIDUCIAL_ESTIMATE_FILENAME = (
-    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={}).npy"
+    "fiducial_estimate-(fsky={:.2f},knots=[{},{}],orders={},theta).npy"
 )
 
 # Likelihood input.
@@ -90,7 +90,7 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{}"\
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},orders={},{}{}{},theta"\
         .format(
             parsed_params.map, parsed_params.fsky,
             parsed_params.kmin, parsed_params.kmax,
@@ -156,10 +156,11 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={}).npy".format(
-            params['map'], params['fsky'], params['kmin'], params['kmax'],
-            str(params['multipoles']).replace(", ", ","), params['rsd']
-        )
+        + "-(map={},fsky={:.2f},knots=[{},{}],orders={},rsd={},theta).npy"\
+            .format(
+                params['map'], params['fsky'], params['kmin'], params['kmax'],
+                str(params['multipoles']).replace(", ", ","), params['rsd']
+            )
     map_data = np.load(MAP_PATH/map_file).item()
 
     windowed_power_model.wavenumbers = map_data['k']

@@ -46,12 +46,13 @@ def get_hybrid_maps():
     """
     output_filename = (
         "halos-(NG={},z=1.)-(map=hybrid,fsky={},"
-        "pivots=[{},{}],knots=[{},{}],orders={},rsd={}).npy"
+        "pivots=[{},{}],knots=[{},{}],orders={},rsd={},theta).npy"
     ).format(NG, FSKY, SPIVOT, CPIVOT, KHYB, KMAX, ORDERS, RSD)
 
     catalogue_root = "halos-(NG={},z=1.)-{}-"
-    smap_suffix = "(map=spherical,fsky={},knots=[{},{}],rsd={}).npy"
-    cmap_suffix = "(map=cartesian,fsky={},knots=[{},{}],orders={},rsd={}).npy"
+    smap_suffix = "(map=spherical,fsky={},knots=[{},{}],rsd={},theta).npy"
+    cmap_suffix = \
+        "(map=cartesian,fsky={},knots=[{},{}],orders={},rsd={},theta).npy"
 
     if COLLATE_DATA:
         hybrid_map_data = []
@@ -104,7 +105,7 @@ def inspect_hybrid_map(thredshold=0., savefig=False, zoom=False):
     view_corr = sample_corr.real
     view_corr[reflection_mask] = sample_corr.imag[reflection_mask]
 
-    output_filename = "hybrid_corr-(fsky={},pivots=[{},{}],rsd={}).pdf"\
+    output_filename = "hybrid_corr-(fsky={},pivots=[{},{}],rsd={},theta).pdf"\
         .format(FSKY, SPIVOT, CPIVOT, RSD)
 
     plt.close('all')

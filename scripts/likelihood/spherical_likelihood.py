@@ -23,7 +23,7 @@ MAP_PATH = DATAPATH/"spherical_map"
 
 # Survey specfications input.
 SPECS_PATH = PATHIN/"specifications"
-COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={}).npy"
+COUPLINGS_FILE = "couplings-(fsky={:.2f},kmax={},theta).npy"
 
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
@@ -83,7 +83,7 @@ def initialise():
     growth_rate = None if parsed_params.rsd else 0
     ini_params.update({'growth_rate': growth_rate})
 
-    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},{}{}{}".format(
+    ini_tag = "map={},fsky={:.2f},knots=[{},{}],rsd={},{}{}{},theta".format(
         parsed_params.map, parsed_params.fsky,
         parsed_params.kmin, parsed_params.kmax,
         parsed_params.rsd, sampled_tag, fixed_tag,
@@ -143,7 +143,7 @@ def process():
     )
 
     map_file = params['input_catalogue'] \
-        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={}).npy".format(
+        + "-(map={},fsky={:.2f},knots=[{},{}],rsd={},theta).npy".format(
             params['map'], params['fsky'],
             params['kmin'], params['kmax'],
             params['rsd']

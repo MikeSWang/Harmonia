@@ -1,6 +1,8 @@
 """Generate random correlated hybrid maps.
 
 """
+import logging
+import time
 from argparse import ArgumentParser
 from collections import defaultdict
 from pprint import pformat
@@ -9,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from nbodykit.lab import UniformCatalog
+from tqdm import tqdm
 
 from map_rc import PATHOUT, script_name, domain_cut
 from harmonia.algorithms import DiscreteSpectrum
@@ -67,7 +70,13 @@ def initialise():
         Initialisation tag.
 
     """
+    global disc
+
+    disc = DiscreteSpectrum(params.boxsize/2, 'dirichlet', params.khyb)
+
     print("---Program parameters---", pformat(vars(params)), "", sep="\n")
+
+    time.sleep(5)
 
     return (
         "fsky={:.2f},knots=[{},{},{}],orders={},boxsize={:.0f},iter={:d},theta"
@@ -77,7 +86,7 @@ def initialise():
     )
 
 
-def generate():
+def generate(results={'smap': [], 'cmap': defaultdict(list)}):
     """Generate FKP-paired random catalogues with the desired survey window
     and process them into power spectrum measurements.
 
@@ -87,37 +96,35 @@ def generate():
         Multipole measurements.
 
     """
-    disc = DiscreteSpectrum(params.boxsize/2, 'dirichlet', params.khyb)
+    logging.getLogger().setLevel(logging.WARNING)
 
-    results = {'smap': [], 'cmap': defaultdict(list)}
-    for _ in range(params.iter):
-        data_catalogue = UniformCatalog(params.nbar, params.boxsize)
-        rand_catalogue = UniformCatalog(
-            params.contrast*params.nbar, params.boxsize
+    data_catalogue = UniformCatalog(params.nbar, params.boxsize)
+    rand_catalogue = UniformCatalog(
+        params.contrast*params.nbar, params.boxsize
+    )
+
+    for catalogue in [data_catalogue, rand_catalogue]:
+        catalogue['Selection'] *= domain_cut(
+            catalogue['Position'], params.boxsize/2, params.fsky,
         )
+        catalogue['NZ'] = params.nbar * catalogue['Weight']
 
-        for catalogue in [data_catalogue, rand_catalogue]:
-            catalogue['Selection'] *= domain_cut(
-                catalogue['Position'], params.boxsize/2, params.fsky,
-            )
-            catalogue['NZ'] = params.nbar * catalogue['Weight']
+    spherical_map = SphericalMap(
+        disc, data_catalogue, rand=rand_catalogue,
+        mean_density_data=params.nbar,
+        mean_density_rand=params.contrast*params.nbar
+    )
+    spherical_data = spherical_map.density_constrast()
 
-        spherical_map = SphericalMap(
-            disc, data_catalogue, rand=rand_catalogue,
-            mean_density_data=params.nbar,
-            mean_density_rand=params.contrast*params.nbar
-        )
-        spherical_data = spherical_map.density_constrast()
+    results['smap'].append(spherical_data)
 
-        results['smap'].append(spherical_data)
+    cartesian_map = CartesianMap(spherical_map.pair, num_mesh=params.mesh)
+    cartesian_power = cartesian_map.power_multipoles(
+        params.orders, kmin=params.khyb, kmax=params.kmax, dk=params.dk
+    )
 
-        cartesian_map = CartesianMap(spherical_map.pair, num_mesh=params.mesh)
-        cartesian_power = cartesian_map.power_multipoles(
-            params.orders, kmin=params.khyb, kmax=params.kmax, dk=params.dk
-        )
-
-        for key, value in cartesian_power.item():
-            results['cmap'][key].append(value)
+    for key, value in cartesian_power.items():
+        results['cmap'][key].append(value)
 
     return results
 
@@ -131,7 +138,9 @@ if __name__ == '__main__':
 
     if params.task == 'gen':
 
-        output = generate()
+        for _ in tqdm(range(params.iter)):
+            output = generate()
+
         np.save(
             PATHOUT/script_name/"rancorr-({}){}.npy"
             .format(

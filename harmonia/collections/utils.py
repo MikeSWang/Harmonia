@@ -277,7 +277,8 @@ def overwrite_protection(outpath, outname):
     ----------
     outpath : str or :class:`pathlib.Path`
         Output directory path.
-    outnOutput filename.
+    outname : str
+        Output filename.
 
     Returns
     -------

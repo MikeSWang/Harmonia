@@ -146,7 +146,7 @@ class DiscreteSpectrum:
         return state
 
     @classmethod
-    def _from_state(cls, state, comm=None):  # internal private classmethod
+    def _from_state(cls, state, comm=None):  # internal classmethod
 
         self = object.__new__(cls)
 

@@ -17,6 +17,7 @@ import logging
 import numpy as np
 from nbodykit.lab import ConvolvedFFTPower
 
+from harmonia.algorithms.discretisation import DiscreteSpectrum
 from harmonia.algorithms.arrays import CartesianArray, SphericalArray
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 from harmonia.surveyor.coordinates import cartesian_to_spherical as c2s
@@ -53,7 +54,7 @@ class SphericalMap:
         self.catalogues = catalogues
         self.disc = disc
 
-        self.attrs = {'transformed': False}
+        self.attrs = {}
         self.attrs.update(self.catalogues.attrs)
         self.attrs.update(self.disc.attrs)
 
@@ -79,13 +80,25 @@ class SphericalMap:
     def __setstate__(self, state):
 
         for attr, val in state.items():
-            setattr(self, attr, val)
+            if attr == 'disc':
+                self.disc = DiscreteSpectrum._from_state(state['disc'])
+            elif attr == 'density_contrast':
+                self.density_contrast = \
+                    SphericalArray._from_state(state['density_contrast'])
+            elif attr.endswith('_coeff'):
+                setattr(self, '_' + attr, val)
+            else:
+                setattr(self, attr, val)
 
     def __getstate__(self):
 
         state = {
-            attr: getattr(self, attr)
-            for attr in ['attrs', 'disc', 'density_contrast', 'mode_power']
+            'attrs': self.attrs,
+            'disc': self.disc.__getstate__(),
+            'data_coeff': self._data_coeff,
+            'rand_coeff': self._rand_coeff,
+            'density_contrast': self.density_contrast.__getstate__(),
+            'mode_power': self.mode_power,
         }
 
         return state
@@ -171,18 +184,23 @@ class SphericalMap:
 
         density_contrast = SphericalArray(self.disc)
 
-        progress = Progress(
-            density_contrast.size,
-            process_name="spherical transform",
-            logger=self.logger
-        )
+        if not self._data_coeff or not self._rand_coeff:  # if either is empty
+            progress = Progress(
+                density_contrast.size,
+                process_name="spherical transform",
+                logger=self.logger
+            )
 
-        self.logger.info("Transforming %s.", self)
+            self.logger.info("Transforming %s.", self)
 
-        # Transform degree by degree and update the coefficient directory.
-        for deg_idx, deg in enumerate(self.disc.degrees):
-            self._transform_degree(deg)
-            progress.report(sum(self.disc.mode_counts[:(deg_idx + 1)]) - 1)
+            # Transform degree by degree and update the coefficient directory.
+            for deg_idx, deg in enumerate(self.disc.degrees):
+                self._transform_degree(deg)
+                progress.report(sum(self.disc.mode_counts[:(deg_idx + 1)]) - 1)
+
+            self.logger.info("%s transformed.", self)
+
+        self.logger.info("Computing density contrast for %s.", self)
 
         # Subtract random catalogue coefficients and normalise by data
         # catalogue mean number density to obtain density contrast.
@@ -192,9 +210,7 @@ class SphericalMap:
                 - self._rand_coeff[tuple(mode_index)]
             ) / self.catalogues.data_catalogue.attrs['nbar']
 
-        self.logger.info("%s transformed.", self)
-
-        self.attrs.update({'transformed': True})
+        self.logger.info("Computed density contrast for %s.", self)
 
         return density_contrast
 
@@ -322,6 +338,29 @@ class CartesianMap:
         )
 
         return f"{self.__class__.__name__}({str_info})"
+
+    def __setstate__(self, state):
+
+        for attr, val in state.items():
+            setattr(self, attr, val)
+
+    def __getstate__(self):
+
+        state = {
+            'attrs': self.attrs,
+            'power_multipoles': self.power_multipoles,
+        }
+
+        return state
+
+    @classmethod
+    def _from_state(cls, state):  # internal classmethod
+
+        self = object.__new__(cls)
+
+        self.__setstate__(state)
+
+        return self
 
     def _compress(self, orders, kmin, kmax, dk):
 

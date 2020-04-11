@@ -220,6 +220,15 @@ class SphericalArray(BaseArray):
 
         return state
 
+    @classmethod
+    def _from_state(cls, state):  # internal classmethod
+
+        self = object.__new__(cls)
+
+        self.__setstate__(state)
+
+        return self
+
     def vectorise(self, pivot, collapse=None):
         r"""Returrn a data vector from the 'coefficient' field.
 

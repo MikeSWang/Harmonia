@@ -44,14 +44,21 @@ class CartesianMultipoles:
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` *or None, optional*
         Cosmological model used to produce the transfer function and
         power spectrum and to compute the linear growth rate.  If `None`
-        (default), non-Gaussianity modifications cannot be computed.
+        (default) and not subsequently provided when calling some of the
+        methods, non-Gaussianity modifications cannot be computed.  This
+        can be subsequently updated when calling
+        :meth:`~.convolved_power_multipoles`.
     power_spectrum : callable or None, optional
         Linear matter power spectrum model at `redshift`.  When `cosmo`
-        is provided, this is ignored; otherwise this cannot be `None`.
+        is provided, this is ignored; otherwise this cannot be `None`
+        unless it is subsequently provided when calling some of the
+        methods.  This can be subsequently updated when calling
+        :meth:`~.convolved_power_multipoles`.
     growth_rate : float or None, optional
         Linear growth rate at `redshift`.  If `None` (default), this is
-        set by `cosmo` if it is provided; if `cosmo` is not provided this
-        is overriden to 0.
+        set by `cosmo` if it is provided; otherwise this is set to 0.
+        This can be subsequently updated when calling
+        :meth:`~.convolved_power_multipoles`.
     mask_multipoles : :class:`numpy.ndarray` *or None, optional*
         Survey mask multipoles given at sampled separations (default
         is `None`).  Orders and sampled separations must be sorted.
@@ -62,6 +69,10 @@ class CartesianMultipoles:
 
     Attributes
     ----------
+    mask_multipoles : :class:`numpy.ndarray` or None
+        Survey mask multipoles given at sampled separations.
+    window_multipoles : :class:`~.CartesianArray` or None
+        Survey window multipoles given at sampled wavenumbers.
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` or None
         Cosmological model.
     matter_power_spectrum : callable
@@ -78,8 +89,8 @@ class CartesianMultipoles:
     _PREDICTED_ORDERS = [0, 2, 4]
 
     def __init__(self, wavenumbers, redshift, cosmo=None, power_spectrum=None,
-                 growth_rate=None, mask_multipoles=None,
-                 window_multipoles=None):
+                 growth_rate=None,
+                 mask_multipoles=None, window_multipoles=None):
 
         self.attrs = {
             'wavenumbers': wavenumbers,
@@ -94,31 +105,13 @@ class CartesianMultipoles:
         # Dense sampling wavenumbers for window convolution.
         self._k_samp = np.logspace(*self._LOG_K_RANGE_SAMP, num=self._NUM_SAMP)
 
-        # If `cosmo` is available, `self._kernel` as A(k) (see docstring),
-        # and `self._mode_modification` is its evaluation at wavenumbers.
-        # `self._mode_powers` is the evaluated matter power spectrum.
-        self.cosmo = cosmo
-        if self.cosmo is None:
-            self.matter_power_spectrum = power_spectrum
-            self.growth_rate = growth_rate or 0.
-            self._kernel = None
-            self._mode_modification = None
-            self._mode_modification_samp = None
-        else:
-            self.matter_power_spectrum = cosmology.LinearPower(
-                self.cosmo, redshift=self._z, transfer='CLASS'
-            )
-            self.growth_rate = growth_rate if growth_rate is not None \
-                else self.cosmo.scale_independent_growth_rate(self._z)
-            self._kernel = scale_dependence_modification(self.cosmo, self._z)
-            self._mode_modification = self._kernel(self._k)
-            self._mode_modification_samp = self._kernel(self._k_samp)
-
-        self._mode_powers = self.matter_power_spectrum(self._k)
-        self._mode_powers_samp = self.matter_power_spectrum(self._k_samp)
+        # Set a baseline model.  May be subsequently updated.  Also
+        # pre-compute quantities at set wavenumbers.
+        self._set_baseline_model(cosmo, power_spectrum, growth_rate)
 
     def convolved_power_multipoles(self, orders, b_1, f_nl=None, nbar=None,
-                                   contrast=None, tracer_p=1.):
+                                   contrast=None, tracer_p=1.,
+                                   baseline_model_kwargs=None):
         """Compute the convolved power spectrum multipoles.
 
         Parameters
@@ -139,6 +132,9 @@ class CartesianMultipoles:
         tracer_p : float, optional
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
+        baseline_model_kwargs : dict or None, optional
+            Parameters `cosmo`, `power_spectrum` and `growth_rate` passed
+            as keyword arguments to reset the baseline cosmological model.
 
         Returns
         -------
@@ -146,6 +142,11 @@ class CartesianMultipoles:
             Convolved power spectrum multipoles.
 
         """
+        # Updated initial baseline cosmological model if relevant
+        # arguments specified.
+        if baseline_model_kwargs is not None:
+            self._set_baseline_model(**baseline_model_kwargs)
+
         if f_nl is not None and self.cosmo is None:
             raise TypeError(
                 "Cannot accept `f_nl` values without input `cosmo`."
@@ -313,6 +314,39 @@ class CartesianMultipoles:
 
         return factor
 
+    def _set_baseline_model(self, cosmo=None, power_spectrum=None,
+                            growth_rate=None):
+
+        # If `cosmo` is not `None`, `self._kernel` as A(k) (see docstring),
+        # `self._mode_modification` is its evaluation at wavenumbers.
+        # `self._mode_powers` is the evaluated matter power spectrum.
+        self.cosmo = cosmo
+        if self.cosmo is None:
+            self.matter_power_spectrum = power_spectrum
+            self.growth_rate = growth_rate or 0.
+            self._kernel = None
+            self._mode_modification = None
+            self._mode_modification_samp = None
+        else:
+            self.matter_power_spectrum = cosmology.LinearPower(
+                self.cosmo, redshift=self._z, transfer='CLASS'
+            )
+            self.growth_rate = growth_rate if growth_rate is not None \
+                else self.cosmo.scale_independent_growth_rate(self._z)
+            self._kernel = scale_dependence_modification(self.cosmo, self._z)
+            self._mode_modification = self._kernel(self._k)
+            self._mode_modification_samp = self._kernel(self._k_samp)
+
+        # (Re-)set pre-computed quantities.
+        try:
+            self._mode_powers = self.matter_power_spectrum(self._k)
+            self._mode_powers_samp = self.matter_power_spectrum(self._k_samp)
+        except TypeError:
+            warnings.warn(
+                "Cannot evaluate :attr:`matter_power_spectrum`. "
+                "No baseline model is current set."
+            )
+
     @staticmethod
     def _convolve(order, correlation, mask):
 
@@ -357,33 +391,43 @@ class SphericalCorrelator:
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` *or None, optional*
         Cosmological model used to produce the transfer function and
         power spectrum and to compute the linear growth rate.  If `None`
-        (default), non-Gaussianity modifications cannot be computed.
+        (default) and not subsequently provided when calling some of the
+        methods, non-Gaussianity modifications cannot be computed.  This
+        can be subsequently updated when calling
+        :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     power_spectrum : callable or None, optional
         Linear matter power spectrum model at `redshift`.  When `cosmo`
-        is provided, this is ignored; otherwise this cannot be `None`.
+        is provided, this is ignored; otherwise this cannot be `None`
+        unless it is subsequently provided when calling some of the
+        methods.  This can be subsequently updated when calling
+        :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     growth_rate : float or None, optional
         Linear growth rate at `redshift`.  If `None` (default), this is
         set by `cosmo` if it is provided; otherwise this is set to 0.
-    couplings : dict or None, optional
+        This can be subsequently updated when calling
+        :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
+    couplings : :class:`~.couplings.Couplings` *or None, optional*
         Compiled coupling coefficients for the same cosmological model
         `cosmo`.  If `None` (default), this is compiled from
         `survey_specs` and `cosmo_specs` if either is provided; otherwise
         couplings are assumed to be trivial (i.e. reduced to Kronecker
         deltas).
     survey_specs : dict{str: callable or None} or None, optional
-        Survey specification functions to be passed to
+        Survey specification functions to be passed as `survey_specs` to
         :class:`~harmonia.reader.couplings.Couplings`.  Also used in
         shot noise calculations.
     cosmo_specs : dict{str: callable or None} or None, optional
-        Cosmological specification functions to be passed to
-        :class:`~harmonia.reader.couplings.Couplings`.
+        Cosmological specification functions to be passed as `cosmo_specs`
+        to :class:`~harmonia.reader.couplings.Couplings`.  If this is set,
+        its attributes must be consistent with the baseline model `cosmo`.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
 
-
     Attributes
     ----------
+    couplings : :class:`nbodykit.cosmology.cosmology.Cosmology`
+        Spherical coupling coefficients.
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` or None
         Cosmological model.
     matter_power_spectrum : callable
@@ -392,7 +436,6 @@ class SphericalCorrelator:
         Linear growth rate at `redshift`.
     attrs : dict
         Any other attributes inherited from input parameters.
-
 
     """
 
@@ -412,51 +455,32 @@ class SphericalCorrelator:
         self._z = redshift
 
         self._survey_specs = survey_specs
-        self._cosmo_specs = cosmo_specs
 
         if couplings is not None:
-            self._couplings = couplings
+            self.couplings = couplings
         elif survey_specs is not None or cosmo_specs is not None:
-            # Internal private attribute for different accessing method.
-            self._couplings = Couplings(
+            self.couplings = Couplings(
                 self._disc, survey_specs=survey_specs, cosmo_specs=cosmo_specs
-            )._couplings
-        else:
-            self._couplings = None
-
-        # If `cosmo` is available, `self._kernel` as A(k) (see docstring),
-        # and `self._mode_modification` is its evaluation at wavenumbers.
-        # `self._mode_powers` is the evaluated matter power spectrum.
-        self.cosmo = cosmo
-        if self.cosmo is None:
-            self.matter_power_spectrum = power_spectrum
-            self.growth_rate = growth_rate or 0.
-            self._kernel = None
-            self._mode_modification = None
-        else:
-            self.matter_power_spectrum = cosmology.LinearPower(
-                self.cosmo, redshift=self._z, transfer='CLASS'
             )
-            self.growth_rate = growth_rate if growth_rate is not None \
-                else self.cosmo.scale_independent_growth_rate(self._z)
-            self._kernel = scale_dependence_modification(self.cosmo, self._z)
-            self._mode_modification = {
-                index: self._kernel(mode)
-                for index, mode in self._disc.wavenumbers.items()
-            }
+        else:
+            self.couplings = None
+
+        # Set a baseline model.  May be subsequently updated.  Also
+        # pre-compute quantities.
+        self._set_baseline_model(
+            cosmo, power_spectrum, growth_rate, cosmo_specs,
+            update_couplings=False
+        )
 
         # Compile powers of fixed modes, cosmology-independent angular
         # coupling sums and shot noise levels as directories to reduce
         # computational redundancy.
-        self._mode_powers = {
-            index: self.matter_power_spectrum(mode)
-            for index, mode in self._disc.wavenumbers.items()
-        }
         self._angular_sums = self._compile_angular_sums()
         self._shot_noise_levels = self._compile_shot_noise_levels()
 
     def two_point_correlator(self, mu, nu, b_1, f_nl=None, nbar=None,
-                             contrast=None, tracer_p=1.):
+                             contrast=None, tracer_p=1.,
+                             baseline_model_kwargs=None):
         """Compute two-point correlator for given triplet indices.
 
         Parameters
@@ -476,19 +500,31 @@ class SphericalCorrelator:
         tracer_p : float, optional
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
+        baseline_model_kwargs : dict or None, optional
+            Parameters `cosmo`, `power_spectrum`, `growth_rate` and
+            `cosmo_specs` passed as keyword arguments to reset the
+            baseline cosmological model.
 
         Returns
         -------
         complex
             Cosmological signal 2-point function value for given triplet
-            indices.
+            indices.  If `cosmo_specs` is passed, radial and RSD couplings
+            will be updated.
 
         """
+        if baseline_model_kwargs is not None:
+            self._set_baseline_model(
+                update_couplings=True, **baseline_model_kwargs
+            )
+
         # Aliases for readability and brevity.
         kappa, p_k, f = \
             self._disc.normalisations, self._mode_powers, self.growth_rate
 
-        Phi, Upsilon = self._couplings['radial'], self._couplings['rsd']
+        # pylint: disable=protected-access
+        Phi = self.couplings._couplings['radial']
+        Upsilon = self.couplings._couplings['rsd']
 
         # Summing contributions over degree index (say, ell_sigma).
         signal = 0.
@@ -534,7 +570,7 @@ class SphericalCorrelator:
 
     def correlator_matrix(self, pivot, b_1=None, f_nl=None, nbar=None,
                           contrast=None, tracer_p=1., radialise=False,
-                          shot_noise_only=False):
+                          shot_noise_only=False, baseline_model_kwargs=None):
         """Compute two-point correlator matrix for some vetorisation of all
         spectrum modes.
 
@@ -555,11 +591,15 @@ class SphericalCorrelator:
         tracer_p : float, optional
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
-        radialisation : bool, optional
-            If `True`, return the diagonal of the matrix assuming
-            mutual mode independence (only valid for no survey or
-            cosmological specifications, i.e. trivial coupling
-            coefficients.)
+        radialise : bool, optional
+            If `True`, return the diagonal matrix assuming mutual mode
+            independence (only valid for no survey or cosmological
+            specifications, i.e. trivial coupling coefficients.)
+        baseline_model_kwargs : dict or None, optional
+            Parameters `cosmo`, `power_spectrum`, `growth_rate` and
+            `cosmo_specs` passed as keyword arguments to reset the
+            baseline cosmological model.  If `cosmo_specs` is passed,
+            radial and RSD couplings will be updated.
 
         Returns
         -------
@@ -571,10 +611,25 @@ class SphericalCorrelator:
         :class:`~harmonia.algorithms.arrays.SphericalArray`
 
         """
-        index_array = SphericalArray(self._disc)
-        index_array[:] = self._gen_operable_indices()
+        if baseline_model_kwargs is not None:
+            self._set_baseline_model(
+                update_couplings=True, **baseline_model_kwargs
+            )
 
-        index_vector = index_array.vectorise(pivot)
+        index_array = SphericalArray(self._disc)
+        if pivot == 'natural':
+            index_vector = [
+                tuple(index)
+                for index in index_array.array['index']
+            ]
+        elif pivot == 'spectral':
+            index_vector = [
+                tuple(index)
+                for index in index_array.array['index'][
+                    np.argsort(index_array['wavenumber'])
+                ]
+            ]
+
         dim = len(index_vector)
 
         ## Radialisation: Only return diagonal matrix.
@@ -640,6 +695,55 @@ class SphericalCorrelator:
 
         return two_point_corr_mat
 
+    def _set_baseline_model(self, cosmo=None, power_spectrum=None,
+                            growth_rate=None, cosmo_specs=None,
+                            update_couplings=False):
+
+        # Only necessary to update radial and RSD couplings when `cosmo_specs`
+        # is specified.  Previously compute angular couplings are attached.
+        if cosmo_specs is not None and update_couplings:
+            # pylint: disable=protected-access
+            couplings = Couplings(
+                self._disc,
+                survey_specs=self._survey_specs, cosmo_specs=cosmo_specs,
+                external_angular_couplings=self.couplings._couplings['angular']
+            )
+            couplings.compile_couplings()
+        self._cosmo_specs = cosmo_specs
+
+        # If `cosmo` is not `None`, `self._kernel` as A(k) (see docstring),
+        # `self._mode_modification` is its evaluation at wavenumbers.
+        # `self._mode_powers` is the evaluated matter power spectrum.
+        self.cosmo = cosmo
+        if self.cosmo is None:
+            self.matter_power_spectrum = power_spectrum
+            self.growth_rate = growth_rate or 0.
+            self._kernel = None
+            self._mode_modification = None
+        else:
+            self.matter_power_spectrum = cosmology.LinearPower(
+                self.cosmo, redshift=self._z, transfer='CLASS'
+            )
+            self.growth_rate = growth_rate if growth_rate is not None \
+                else self.cosmo.scale_independent_growth_rate(self._z)
+            self._kernel = scale_dependence_modification(self.cosmo, self._z)
+            self._mode_modification = {
+                index: self._kernel(mode)
+                for index, mode in self._disc.wavenumbers.items()
+            }
+
+        # (Re-)set pre-computed quantities.
+        try:
+            self._mode_powers = {
+                index: self.matter_power_spectrum(mode)
+                for index, mode in self._disc.wavenumbers.items()
+            }
+        except TypeError:
+            warnings.warn(
+                "Cannot evaluate :attr:`matter_power_spectrum`. "
+                "No baseline model is current set."
+            )
+
     def _compile_angular_sums(self):
 
         # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m).
@@ -673,7 +777,7 @@ class SphericalCorrelator:
 
         # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m).
         index_pair_vector = list(product(
-            *(self._gen_operable_indices(subtype='angular'), ) * 2
+            *(self._gen_operable_indices(), ) * 2
         ))
 
         # Compile, for each index pair of the form above, the shot noise
@@ -711,8 +815,8 @@ class SphericalCorrelator:
         # of M_{mu, sigma} * conj(M_{nu, sigma}).
         angular_sums_for_index_pair_by_degree = {
             ell_sigma: sum([
-                self._couplings['angular'][mu, (ell_sigma, m_sigma)]
-                * np.conj(self._couplings['angular'][nu, (ell_sigma, m_sigma)])
+                self.couplings['angular', mu, (ell_sigma, m_sigma)]
+                * np.conj(self.couplings['angular', nu, (ell_sigma, m_sigma)])
                 for m_sigma in range(- ell_sigma, ell_sigma + 1)
             ])
             for ell_sigma in self._disc.degrees
@@ -724,20 +828,27 @@ class SphericalCorrelator:
 
         mu, nu = index_pair
 
-        M_mu_nu = self._couplings['angular'][mu, nu]
+        M_mu_nu = self.couplings['angular', mu, nu]
 
         k_mu = self._disc.wavenumbers[mu[0], mu[-1]]
         k_nu = self._disc.wavenumbers[nu[0], nu[-1]]
 
         # Return the radial integral over selection(r) * weight(r)^2 *
         # sph_besselj(ell_mu, k_mu) * sph_besselj(ell_nu, k_nu).
-        shot_noise_integral = radial_integral(
-            lambda r: shot_noise_kernel(
-                r, mu, nu, k_mu, k_nu,
-                selection=getattr(self._survey_specs, 'selection', None),
-                weight=getattr(self._survey_specs, 'weight', None)
-            ), self._disc.attrs['boundary_radius']
-        )
+        with warnings.catch_warnings(record=True) as any_warning:
+            shot_noise_integral = radial_integral(
+                lambda r: shot_noise_kernel(
+                    r, mu, nu, k_mu, k_nu,
+                    selection=getattr(self._survey_specs, 'selection', None),
+                    weight=getattr(self._survey_specs, 'weight', None)
+                ), self._disc.attrs['boundary_radius']
+            )
+        if any_warning and not np.isclose(shot_noise_integral, 0.):
+            warnings.warn(
+                "Poorly determined shot noise integral "
+                "for index pair {} and {}.".format(mu, nu),
+                category=IntegrationWarning
+            )
 
         return M_mu_nu * shot_noise_integral
 
@@ -747,7 +858,7 @@ class SphericalCorrelator:
             operable_indices = [
                 (ell, m)
                 for ell in self._disc.degrees
-                for m in (- ell, ell + 1)
+                for m in range(- ell, ell + 1)
             ]
         elif subtype == 'radial':
             operable_indices = [
@@ -759,7 +870,7 @@ class SphericalCorrelator:
             operable_indices = [
                 (ell, m, n)
                 for ell, nmax in zip(self._disc.degrees, self._disc.depths)
-                for m in (- ell, ell + 1)
+                for m in range(- ell, ell + 1)
                 for n in range(1, nmax + 1)
             ]
 

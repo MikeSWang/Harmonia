@@ -102,7 +102,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
 
     multipole_model = {
         order: cartesian_model.convolved_power_multipoles(
-            orders=[order], b_1=2.35, f_nl=NG, nbar=2.5e-4, contrast=10.
+            orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
         ).array['power']
         for order in multipole_data.keys()
     }
@@ -115,28 +115,34 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
     sns.set(style='ticks', font='serif')
     plt.figure()
     for order in multipole_data.keys():
-#        plt.loglog(
-#            wavenumbers, multipole_model[order],
-#            ls='--', label='model'
-#        )
+        plt.loglog(
+            wavenumbers, multipole_model[order],
+            ls='--', label='model'
+        )
         plt.errorbar(
             wavenumbers, multipole_data[order],
-            yerr=std_estimate*multipole_data[order]/len(source_tags),
-            label='measurements'
+            yerr=std_estimate*multipole_data[order]/np.sqrt(len(source_tags)),
+            marker='s', label='measurements'
         )
+    plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
+    plt.ylabel(r"$P(k)\ \ [(\mathrm{{Mpc}}/h)^3]$")
     plt.legend()
+    plt.title(",  ".join([
+        r"$f_\mathrm{{NL}} = {}$".format(NG),
+        "mask={}".format(mask_tag), "selection={}".format(selection_tag)
+    ]))
 
     return ratios
 
 
 REDSHIFT = 1.
-NG = 100
+NG = 0
 
 if __name__ == '__main__':
 
     mask_tag = "random0_BOSS_DR12v5_CMASS_North"
     selection_tag = "[100.0,500.0]"
-    source_tags = list(product(("NG={}.".format(NG),), range(1, 21)))
+    source_tags = list(product(("NG={}.".format(NG),), range(1, 25)))
 
     # Set I/O paths.
     ## Map data.

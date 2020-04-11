@@ -98,10 +98,21 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         mask_multipoles=mask_multipoles, window_multipoles=window_multipoles
     )
 
+    null_cartesian_model = CartesianMultipoles(
+        wavenumbers, redshift=REDSHIFT, cosmo=simulation_cosmo, growth_rate=0.
+    )
+
     orders = multipole_data.keys()
 
     multipole_model = {
         order: cartesian_model.convolved_power_multipoles(
+            orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
+        ).array['power']
+        for order in orders
+    }
+
+    multipole_null_model = {
+        order: null_cartesian_model.convolved_power_multipoles(
             orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
         ).array['power']
         for order in orders
@@ -115,6 +126,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
     output_file = output_dir/output_filename
 
     sns.set(style='ticks', font='serif')
+    plt.figure()
     subplots = []
     for ord_idx, order in enumerate(orders):
         sharex = None if ord_idx == 0 else subplots[0]
@@ -124,10 +136,15 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         else:
             subplots.append(ax)
 
-        model_label = 'model' if ord_idx == 0 else None
+        model_label = 'convolved model' if ord_idx == 0 else None
+        null_model_label = 'underlying model' if ord_idx == 0 else None
         plt.loglog(
             wavenumbers, multipole_model[order],
             ls='--', label=model_label
+        )
+        plt.loglog(
+            wavenumbers, multipole_null_model[order],
+            ls=':', label=null_model_label
         )
 
         data_label = 'measurements' if ord_idx == 0 else None

@@ -124,8 +124,8 @@ class SourceCatalogue(CSVCatalog):
         for converting Kpc/:math:`h` to Mpc/:math:`h`.  The velocity offset
         should include the redshift conversion factor (the conformal
         Hubble parameter).
-    *args, **kwargs
-        Any other parameters to be passed to
+    **kwargs
+        Parameters (other than `path` and `names`) to be passed to
         :class:`nbodykit.source.catalog.CSVCatalog`.
 
     Notes
@@ -136,11 +136,10 @@ class SourceCatalogue(CSVCatalog):
 
     """
 
-    def __init__(self, source_file, headings, *args,
-                 mean_density=None, boxsize=None, upscale=1.,
-                 offset=False, offset_upscale=1.e-3, **kwargs):
+    def __init__(self, source_file, headings, mean_density=None, boxsize=None,
+                 upscale=1., offset=False, offset_upscale=1.e-3, **kwargs):
 
-        super().__init__(str(source_file), headings, *args, **kwargs)
+        super().__init__(str(source_file), headings, **kwargs)
 
         # WARNING: Unresolved MPI bug with `nbodykit`.
         if self.comm is not None and self.comm.size > 1:

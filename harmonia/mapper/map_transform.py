@@ -163,7 +163,15 @@ class SphericalMap:
             return self._mode_power
 
         # Sort all variables by wavenumber.
-        wavenumbers = np.sort(np.concatenate(self.disc.wavenumbers.values()))
+        sort_order = np.argsort(
+            list(self.disc.wavenumbers.values())
+        )
+        wavenumbers = np.array(
+            list(self.disc.wavenumbers.values())
+        )[sort_order]
+        normalisations = np.array(
+            list(self.disc.normalisations.values())
+        )[sort_order]
         mode_counts = np.zeros_like(wavenumbers)
         mode_powers = np.zeros_like(wavenumbers)
 
@@ -172,7 +180,8 @@ class SphericalMap:
             selector = (self.density_contrast.array['wavenumber'] == k)
             subarray = self.density_contrast.array['coefficient'][selector]
             mode_counts[idx] = np.sum(selector)
-            mode_powers[idx] = np.mean(subarray)
+            mode_powers[idx] = \
+                normalisations[idx] * np.mean(np.abs(subarray) ** 2)
 
         return {
             'wavenumbers': wavenumbers,

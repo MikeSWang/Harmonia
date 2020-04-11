@@ -459,11 +459,13 @@ class CovarianceEstimator:
     ----------
     realisations : sequence of :class:`~.algorithms.arrays.CartesianArray`
         Independent realisations of power spectrum multipoles from which
-        the covariance matrix is estimated.
+        the covariance matrix is estimated.  For each realisation, orders
+        and wavenumbers of the multipoles must be sorted.
     reference : :class:`~.arrays.CartesianArray` *or None, optional*
         Underlying power spectrum multipoles binned in wavenumber that
-        are realised for covariance estimation.  If `None` (default),
-        this is determined by the average of `realisations`.
+        are realised for covariance estimation.  Orders and wavenumbers of
+        the multipoles must be sorted.  If `None` (default), this is
+        determined by the average of `realisations`.
 
     Attributes
     ----------
@@ -490,13 +492,11 @@ class CovarianceEstimator:
         self.reference = reference
 
         if self.reference is not None:
-            self.wavenumbers = np.sort(np.unique(
-                self.reference.array['wavenumber']
-            ))
+            self.wavenumbers = np.unique(self.reference.array['wavenumber'])
         else:
-            self.wavenumbers = np.sort(np.unique(
+            self.wavenumbers = np.unique(
                 self.realisations[0].array['wavenumber']
-            ))
+            )
 
     def __setstate__(self, state):
 

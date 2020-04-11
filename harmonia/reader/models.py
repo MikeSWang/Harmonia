@@ -54,11 +54,11 @@ class CartesianMultipoles:
         is overriden to 0.
     mask_multipoles : :class:`numpy.ndarray` *or None, optional*
         Survey mask multipoles given at sampled separations (default
-        is `None`).
+        is `None`).  Orders and sampled separations must be sorted.
     window_multipoles : :class:`~.CartesianArray` *or None, optional*
         Survey window multipoles given at sampled wavenumbers (default
         is `None`).  If provided, integral constraint corrections
-        are applied.
+        are applied.  Orders and sampled wavenumbers must be sorted.
 
     Attributes
     ----------
@@ -174,7 +174,7 @@ class CartesianMultipoles:
             return convolved_power
 
         # Get mask multipoles as a directory.
-        s_mask = np.sort(np.unique(self._mask_multipoles['separation']))
+        s_mask = np.unique(self._mask_multipoles['separation'])
         mask = {
             ell: self._mask_multipoles['correlation'][
                 self._mask_multipoles['order'] == ell
@@ -243,9 +243,9 @@ class CartesianMultipoles:
             )
         else:
             # Get window multipoles.
-            k_win = np.sort(np.unique(
+            k_win = np.unique(
                 self._window_multipoles.array['wavenumber']
-            ))
+            )
             window = {
                 ell: self._window_multipoles.array['power'][
                     self._window_multipoles.array['order'] == ell

@@ -243,6 +243,7 @@ def export_window_or_mask():
             ],
             label=r'$\ell={}$'.format(ell)
         )
+    plt.ylim(-1.1, 1.1)
     plt.xlabel(r"$k$")
     plt.ylabel(r"$Q_\ell(k)$")
     plt.legend()
@@ -254,6 +255,7 @@ def export_window_or_mask():
             mask_multipoles['correlation'][mask_multipoles['order'] == ell],
             label=r'$\ell={}$'.format(ell)
         )
+    plt.ylim(-1.1, 1.1)
     plt.xlabel(r"$s$")
     plt.ylabel(r"$Q_\ell(s)$")
     plt.legend()

@@ -292,7 +292,7 @@ def _allocate_tasks(total_task, total_proc):
 
     """
     try:
-        total_task, total_proc = map(int, (total_task, total_proc))
+        total_task, total_proc = int(total_task), int(total_proc)
     except TypeError as err:
         raise TypeError(
             "`total_task` and `total_proc` must have integer values."

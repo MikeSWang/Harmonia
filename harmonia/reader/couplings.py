@@ -136,6 +136,8 @@ class Couplings:
         Cosmological specification functions as detailed above.
     initialise : bool, optional
         If `True`, compile all coupling coefficients upon creation.
+    external_angular_couplings : dict{tuple(tuple, tuple): complex} or None, optional
+        Pre-compute angular couplings (default is `None`).
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator (default is `None`).
 
@@ -159,7 +161,7 @@ class Couplings:
     ])
 
     def __init__(self, disc, survey_specs=None, cosmo_specs=None,
-                 initialise=True, comm=None):
+                 initialise=True, external_angular_couplings=None, comm=None):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.comm = comm
@@ -176,6 +178,8 @@ class Couplings:
             coupling_type: {}
             for coupling_type in self._coupling_types
         }
+        if external_angular_couplings is not None:
+            self.load_angular_couplings(external_angular_couplings)
         if initialise:
             self.compile_couplings()
 
@@ -246,13 +250,46 @@ class Couplings:
 
         return self._couplings[coupling_type][mu, nu]
 
+    def load_angular_couplings(self, angular_couplings):
+        """Load pre-computed angular coupling coefficients which are
+        independent of the cosmological model.
+
+        Parameters
+        ----------
+        angular_couplings : dict{tuple(tuple, tuple): complex}
+            Pre-compute angular couplings.
+
+        Raises
+        ------
+        ValueError
+            If the number of entries in `angular_couplings` do not match
+            the class instance.
+
+        """
+        num_unordered_index_pair = sum(range(
+            1, sum([2 * deg + 1 for deg in self.disc.degrees])
+        ))
+        num_ordered_index_pair = sum(
+            [2 * deg + 1 for deg in self.disc.degrees]
+        ) ** 2
+
+        if len(angular_couplings) \
+                not in [num_unordered_index_pair, num_ordered_index_pair]:
+            raise ValueError(
+                "Number of index pairs in loaded angular couplings "
+                "do not match the `disc` attribute."
+            )
+
+        self._couplings.update({'angular': angular_couplings})
+
     def compile_couplings(self):
         """Compile all coupling coefficients and set initialisation state
         to `True`.
 
         """
         for coupling_type in self._coupling_types:
-            self._compile_couplings_by_type(coupling_type)
+            if not self._couplings[coupling_type]:
+                self._compile_couplings_by_type(coupling_type)
 
         self.initialised = True
 

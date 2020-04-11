@@ -45,7 +45,7 @@ def initialise():
     )
     parser.add_argument(
         '--source-file', type=str, required=True,
-        help="catalogue source file name with extension"
+        help="catalogue source filename with extension"
     )
     parser.add_argument(
         '--cosmology-file', type=str, required=True,

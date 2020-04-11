@@ -237,7 +237,7 @@ def clean_warning_format(message, category, filename, lineno, line=None):
     Parameters
     ----------
     message, category, filename, lineno : str
-        Warning message, warning catagory, origin file name, line number.
+        Warning message, warning catagory, origin filename, line number.
     line : str or None, optional
         Source code line to be included in the warning message (default is
         `None`).

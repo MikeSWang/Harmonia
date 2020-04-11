@@ -78,7 +78,6 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         Ratio of the measured multipoles to model predictions.
 
     """
-    global cartesian_model
     simulation_cosmo = BaseModel(cosmo_dir/cosmo_file)
 
     mask_multipoles = np.load(survey_product_dir/mask_file)
@@ -107,7 +106,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         for order in multipole_data.keys()
     }
 
-    ratios = {
+    data_to_model_ratios = {
         order: multipole_data[order] / multipole_model[order] - 1
         for order in multipole_data.keys()
     }
@@ -132,7 +131,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         "mask={}".format(mask_tag), "selection={}".format(selection_tag)
     ]))
 
-    return ratios
+    return data_to_model_ratios
 
 
 REDSHIFT = 1.

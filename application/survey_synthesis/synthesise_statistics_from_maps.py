@@ -2,6 +2,7 @@
 
 """
 import os
+import re
 import sys
 from argparse import ArgumentParser
 
@@ -55,11 +56,11 @@ def initialise():
     )
     parser.add_argument(
         '--map-source-root', type=str, default='',
-        help="catalogue source file name common root"
+        help="catalogue source filename common root"
     )
     parser.add_argument(
         '--map-source-names', type=str, nargs='+', required=True,
-        help="catalogue source file names without extension"
+        help="catalogue source filenames without extension"
     )
 
     parser.add_argument(
@@ -132,16 +133,19 @@ def tag():
 
     """
     if params.mask_file is not None:
-        mask_info = params.mask_file.rstrip(".fits")\
-            .split("(")[-1].split(")")[0].split(",")[0].split("=")[-1]
+        # Only take mask '(source=<>,...)' information.
+        mask_info = re.search(
+            "source=(?P<source>?.*?),", params.mask_file
+        ).group('source')
     else:
         mask_info = params.sky_fraction
 
     if params.selection_file is not None:
-        # Only take mask '(source=...,...)' information.
+        # Only take selection '(source=<>,...)' information.
+        selection_info = re.search(
+            "source=(?P<source>?.*?),", params.selection_file
+        ).group('source')
         # Also remove double records if the same as `mask_file` source.
-        selection_info = params.selection_file.rstrip(".txt")\
-            .split("(")[-1].split(")")[0].split(",")[0].split("=")[-1]
         selection_info = 'same' if selection_info == mask_info \
             else selection_info
     else:

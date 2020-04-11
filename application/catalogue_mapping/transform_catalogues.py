@@ -2,6 +2,7 @@
 
 """
 import os
+import re
 import sys
 from argparse import ArgumentParser
 
@@ -78,7 +79,7 @@ def initialise():
     )
     parser.add_argument(
         '--source-file', type=str, required=True,
-        help="catalogue source file name with extension"
+        help="catalogue source filename with extension"
     )
     parser.add_argument(
         '--density', type=float, default=None,
@@ -149,17 +150,19 @@ def tag():
 
     """
     if params.mask_file is not None:
-        # Only take mask '(source=...,...)' information.
-        mask_info = params.mask_file.rstrip(".fits")\
-            .split("(")[-1].split(")")[0].split(",")[0].split("=")[-1]
+        # Only take mask '(source=<>,...)' information.
+        mask_info = re.search(
+            "source=(?P<source>?.*?),", params.mask_file
+        ).group('source')
     else:
         mask_info = params.sky_fraction
 
     if params.selection_file is not None:
-        # Only take mask '(source=...,...)' information.
+        # Only take selection '(source=<>,...)' information.
+        selection_info = re.search(
+            "source=(?P<source>?.*?),", params.selection_file
+        ).group('source')
         # Also remove double records if the same as `mask_file` source.
-        selection_info = params.selection_file.rstrip(".txt")\
-            .split("(")[-1].split(")")[0].split(",")[0].split("=")[-1]
         selection_info = 'same' if selection_info == mask_info \
             else selection_info
     else:

@@ -249,7 +249,7 @@ class LikelihoodWarning(UserWarning):
     """
 
 
-def spherical_covariance(b_1, f_nl, spherical_model, pivot, **model_kwargs):
+def spherical_covariance(b_1, f_nl, spherical_model, pivot, **kwargs):
     r"""Compute the parametrised covariance matrix of spherical Fourier
     coefficients.
 
@@ -263,9 +263,9 @@ def spherical_covariance(b_1, f_nl, spherical_model, pivot, **model_kwargs):
         Spherical correlator base model.
     pivot : {'natural', 'spectral'}
         Pivot order for vectorisation.
-    **model_kwargs
-        Parameters to be passed to |correlator_matrix|
-        of `spherical_correlator`.
+    **kwargs
+        Parameters (other than `b_1`, `f_nl` and `pivot`) to be passed to
+        |correlator_matrix| of `spherical_correlator`.
 
     Returns
     -------
@@ -278,14 +278,14 @@ def spherical_covariance(b_1, f_nl, spherical_model, pivot, **model_kwargs):
 
     """
     covariance_matrix = spherical_model.correlator_matrix(
-        pivot, b_1=b_1, f_nl=f_nl, **model_kwargs
+        pivot, b_1=b_1, f_nl=f_nl, **kwargs
     )
 
     return covariance_matrix
 
 
 def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
-                      orders, pivot, **model_kwargs):
+                      orders, pivot, **kwargs):
     """Compute the parametrised mean and covariance of Cartesian
     power spectrum multipoles.
 
@@ -305,8 +305,9 @@ def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
         Orders of the power spectrum multipoles.
     pivot : {'order', 'wavenumber'}
         Pivot order for vectorisation.
-    **model_kwargs
-        Keyword arguments to be passed to `cartesian_model`.
+    **kwargs
+        Parameters (other than `b_1`, `f_nl` and `orders`) to be passed to
+        |convolved_power_multipoles| of `cartesian_model`.
 
     Returns
     -------
@@ -329,7 +330,7 @@ def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
     fiducial_covariance = covariance_estimator.get_fiducial_covariance(pivot)
 
     expectation = cartesian_model.convolved_power_multipoles(
-        orders, b_1, f_nl=f_nl, **model_kwargs
+        orders, b_1, f_nl=f_nl, **kwargs
     ).vectorise(pivot)
 
     covariance = np.linalg.multi_dot([
@@ -373,7 +374,7 @@ class LogLikelihood:
 
     def spherical_map_likelihood(self, spherical_model, b_1, f_nl,
                                  pivot='natural', exclude_degrees=(),
-                                 compression_mat=None, **model_kwargs):
+                                 compression_matrix=None, **kwargs):
         """Evaluate the spherical map logarithmic likelihood.
 
         Parameters
@@ -395,9 +396,9 @@ class LogLikelihood:
             must be compatible with `exclude_degrees`, i.e. it accounts
             for elements removed from the data vector and covariance
             matrix by `exclude_degrees`.
-        **model_kwargs
-            Parameters to be passed to :func:`spherical_covariance` (and
-            possibly |correlator_matrix| of `spherical_model`).
+        **kwargs
+            Additional parameters to be passed to
+            :func:`spherical_covariance`.
 
         Returns
         -------
@@ -406,9 +407,7 @@ class LogLikelihood:
 
         See Also
         --------
-        :class:`~harmonia.surveyor.processing`:
-
-            Related to `compression_mat`.
+        :class:`~harmonia.surveyor.synthesis.generate_compression_matrix`
 
         """
         _OVERFLOW_DOWNSCALE = 10**4
@@ -416,7 +415,7 @@ class LogLikelihood:
         data_vector = self.spherical_data.vectorise(pivot)
 
         covariance_matrix = spherical_covariance(
-            b_1, f_nl, spherical_model, pivot, **model_kwargs
+            b_1, f_nl, spherical_model, pivot, **kwargs
         )
 
         # pylint: disable=no-member
@@ -430,11 +429,13 @@ class LogLikelihood:
             covariance_matrix = \
                 covariance_matrix[~deselector, :][:, ~deselector]
 
-        if compression_mat is not None:
-            data_vector = np.linalg.multi_dot([compression_mat, data_vector])
-            covariance_matrix = np.linalg.multi_dot(
-                [compression_mat, data_vector, np.conj(compression_mat.T)]
-            )
+        if compression_matrix is not None:
+            data_vector = np.linalg.multi_dot([
+                compression_matrix, data_vector
+            ])
+            covariance_matrix = np.linalg.multi_dot([
+                compression_matrix, data_vector, np.conj(compression_matrix.T)
+            ])
 
         log_likelihood = complex_normal_pdf(
             data_vector, covariance_matrix, downscale=_OVERFLOW_DOWNSCALE,
@@ -444,7 +445,7 @@ class LogLikelihood:
 
     def cartesian_map_likelihood(self, cartesian_model, covariance_estimator,
                                  b_1, f_nl, orders, pivot, num_samples=None,
-                                 **model_kwargs):
+                                 **kwargs):
         """Evaluate the Cartesian map logarithmic likelihood.
 
         Parameters
@@ -468,9 +469,9 @@ class LogLikelihood:
             correction for covariance estimation uncertainty; otherwise
             it is passed as `degree` to :func:`modified_student_pdf` for
             covariance estimation uncertainty correction (see [1]_).
-        **model_kwargs
-            Parameters to be passed to :func:`cartesian_moments` (and
-            possibly |convolved_power_multipoles| of `cartesian_model.`).
+        **kwargs
+            Additional parameters to be passed to
+            :func:`cartesian_moments`.
 
         Returns
         -------
@@ -486,7 +487,7 @@ class LogLikelihood:
 
         expectation_vector, covariance_matrix = cartesian_moments(
             b_1, f_nl, cartesian_model, covariance_estimator, orders, pivot,
-            **model_kwargs
+            **kwargs
         )
 
         if num_samples is None:

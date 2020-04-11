@@ -34,32 +34,31 @@ def collate_map_data():
 
     Returns
     -------
-    wavenumbers : float :class:`numpy.ndarray`
+    float :class:`numpy.ndarray`
         Wavenumber of Cartesian map multipoles.
-    multipoles : dict{int: float :class:`numpy.ndarray`}
+    dict{int: float :class:`numpy.ndarray`}
         Power multipoles of different Legendre orders at `wavenumbers`.
 
     """
-    wavenumbers = []
-    multipoles = defaultdict(list)
+    _wavenumbers = []
+    _multipoles = defaultdict(list)
     for source_tag in source_tags:
         map_data = CartesianArray.load(
             map_data_dir/map_data_file.format(*source_tag)
         )
 
-        wavenumbers.append(np.unique(map_data.array['wavenumber']))
         orders = np.unique(map_data.array['order'])
+        _wavenumbers.append(np.unique(map_data.array['wavenumber']))
         for ell in orders:
             power = map_data.array['power'][map_data.array['order'] == ell]
-            multipoles[ell].append(power)
+            _multipoles[ell].append(power)
 
-    wavenumbers = np.mean(wavenumbers, axis=0)
-    multipoles = {
-        ell: np.mean(multipoles[ell], axis=0)
-        for ell in multipoles.keys()
+    _wavenumbers = np.mean(_wavenumbers, axis=0)
+    _multipoles = {
+        ell: np.mean(_multipoles[ell], axis=0) for ell in _multipoles.keys()
     }
 
-    return wavenumbers, multipoles
+    return _wavenumbers, _multipoles
 
 
 def compare_with_cartesian_model(wavenumbers, multipole_data):
@@ -74,7 +73,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
 
     Returns
     -------
-    ratios : dict{int: float :class:`numpy.ndarray`}
+    dict{int: float :class:`numpy.ndarray`}
         Ratio of the measured multipoles to model predictions.
 
     """
@@ -99,39 +98,63 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
         mask_multipoles=mask_multipoles, window_multipoles=window_multipoles
     )
 
+    orders = multipole_data.keys()
+
     multipole_model = {
         order: cartesian_model.convolved_power_multipoles(
             orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
         ).array['power']
-        for order in multipole_data.keys()
+        for order in orders
     }
 
-    data_to_model_ratios = {
+    _ratios = {
         order: multipole_data[order] / multipole_model[order] - 1
-        for order in multipole_data.keys()
+        for order in orders
     }
+
+    output_file = output_dir/output_filename
 
     sns.set(style='ticks', font='serif')
-    plt.figure()
-    for order in multipole_data.keys():
+    subplots = []
+    for ord_idx, order in enumerate(orders):
+        sharex = None if ord_idx == 0 else subplots[0]
+        ax = plt.subplot2grid((len(orders), 1), (ord_idx, 0), sharex=sharex)
+        if ord_idx == 0:
+            subplots.insert(0, ax)
+        else:
+            subplots.append(ax)
+
+        model_label = 'model' if ord_idx == 0 else None
         plt.loglog(
             wavenumbers, multipole_model[order],
-            ls='--', label='model'
+            ls='--', label=model_label
         )
+
+        data_label = 'measurements' if ord_idx == 0 else None
         plt.errorbar(
             wavenumbers, multipole_data[order],
             yerr=std_estimate*multipole_data[order]/np.sqrt(len(source_tags)),
-            marker='s', label='measurements'
+            marker='s', label=data_label
         )
-    plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
-    plt.ylabel(r"$P(k)\ \ [(\mathrm{{Mpc}}/h)^3]$")
-    plt.legend()
-    plt.title(",  ".join([
+
+        if ord_idx == len(orders) - 1:
+            plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
+        else:
+            plt.setp(ax.get_xticklabels(), visible=False)
+
+        plt.ylabel(r"$P_{}(k)\ \ [(\mathrm{{Mpc}}/h)^3]$".format(order))
+
+        if ord_idx == 0:
+            plt.legend()
+
+    plt.suptitle(",  ".join([
         r"$f_\mathrm{{NL}} = {}$".format(NG),
         "mask={}".format(mask_tag), "selection={}".format(selection_tag)
     ]))
+    plt.subplots_adjust(hspace=0)
+    plt.savefig(output_file.with_suffix('.pdf'))
 
-    return data_to_model_ratios
+    return _ratios
 
 
 REDSHIFT = 1.
@@ -141,16 +164,22 @@ if __name__ == '__main__':
 
     mask_tag = "random0_BOSS_DR12v5_CMASS_North"
     selection_tag = "[100.0,500.0]"
-    source_tags = list(product(("NG={}.".format(NG),), range(1, 25)))
+
+    scale_tag = "[None,0.1]"
+    order_tag = "[0]"
+    rsd_tag = "False"
 
     # Set I/O paths.
     ## Map data.
+    source_tags = list(product(("NG={}.".format(NG),), range(1, 25)))
+
     map_data_dir = data_dir/"raw"/"catalogue_maps"
 
     map_data_file = "catalogue-map-({}).npz".format(
         ",".join([
-            "source=halo-({},z=1.)-{}",
-            "map=cartesian", "scale=[None,0.1]", "orders=[0]", "rsd=False",
+            "source=halo-({},z=1.)-{}", "map=cartesian",
+            "scale={}".format(scale_tag), "orders={}".format(order_tag),
+            "rsd={}".format(rsd_tag),
             "mask={}".format(mask_tag), "selection={}".format(selection_tag)
         ])
     )
@@ -168,7 +197,8 @@ if __name__ == '__main__':
     window_file = "window-({}).npz".format(mask_or_file_info)
 
     covariance_estimate_info = ",".join([
-        "source=1-2500", "map=cartesian", "scale=[None,0.1]", "orders=[0]",
+        "source=1-2500", "map=cartesian",
+        "scale={}".format(scale_tag), "orders={}".format(order_tag),
         "mask={}".format(mask_tag), "selection={}".format(selection_tag)
     ])
 
@@ -184,8 +214,17 @@ if __name__ == '__main__':
     ## Outputs.
     output_dir = data_dir/"processed"/"survey_validation"
 
+    output_filename = "cartesian-validation-({})".format(
+        ",".join([
+            "NG={}.".format(NG), "scale={}".format(scale_tag),
+            "rsd={}".format(rsd_tag),
+            "mask={}".format(mask_tag), "selection={}".format(selection_tag)
+        ])
+    )
+
     # Validate Cartesian modelling.
     confirm_directory(output_dir)
 
-    k, pk = collate_map_data()
-    ratios = compare_with_cartesian_model(k, pk)
+    k, multipoles = collate_map_data()
+    ratios = compare_with_cartesian_model(k, multipoles)
+    print("Measurement-to-model relative difference for orders:", ratios)

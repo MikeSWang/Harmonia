@@ -14,7 +14,6 @@ multipoles, covariance estimates and data compressor.
 
 """
 from .definition import (
-    generate_compression_matrix,
     generate_mask_by_sky_fraction,
     generate_mask_from_map,
     generate_selection_by_cut,

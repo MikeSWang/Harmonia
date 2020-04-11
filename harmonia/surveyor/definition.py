@@ -12,7 +12,6 @@ cosmological data.
     generate_selection_by_distribution
     generate_selection_from_samples
     generate_selection_samples
-    generate_compression_matrix
 
 |
 
@@ -24,7 +23,6 @@ from scipy.interpolate import InterpolatedUnivariateSpline as Interpolation
 from scipy.special import loggamma
 from scipy.stats import gamma, norm
 
-from harmonia.reader.likelihoods import spherical_covariance
 from harmonia.surveyor.coordinates import (
     sky_to_spherical,
     to_box_coords,
@@ -366,75 +364,3 @@ def generate_selection_from_samples(sample_selections, sample_coords):
         return Interpolation(sample_coords, sample_selections, ext=1)(r)
 
     return selection_function
-
-
-def generate_compression_matrix(fiducial_model_kwargs,
-                                extremal_model_kwargs=None,
-                                sensitivity_threshold=0.01, discard=None):
-    r"""Generate a compression matrix for spherical modes.
-
-    Notes
-    -----
-    Compression is achieved by discarding non-positive eigenvalue modes
-    that are at least :math:`10^{-8}` times smaller than the largest and
-    in addition any of the following means:
-
-        * `discard` is passed to discard a number of low-eigenvalue modes;
-        * `extremal_model_kwargs` is passed and eigenvalues of the
-          resulting model covariance are compared with those from
-          `fiducial_covariance`.  Modes corresponding to low, insensitive
-          (i.e. relative difference less than `sensitivity_threshold`)
-          are discarded.
-        * A combination of the above if the appropriate parameters
-          are passed.
-
-    Parameters
-    ----------
-    fiducial_model_kwargs : dict
-        Fiducial model parameters to be passed to
-        :func:`~.reader.likelihoods.spherical_covariance`.
-    extremal_model_kwargs : dict or None, optional
-        Extremal model parameters to be passed to
-        :func:`~.reader.likelihoods.spherical_covariance`.
-    sensitivity_threshold: float, optional
-        Sensitivity threshold for modes deemed discardable
-        (default is 0.01).
-    discard : int or None, optional
-        Number of low-eigenvalue modes to discard from all modes
-        (default is `None`).
-
-    Returns
-    -------
-    compression_mat : :class:`numpy.ndarray`
-        Compression matrix.
-
-    """
-    fiducial_covariance = spherical_covariance(**fiducial_model_kwargs)
-
-    evals_fiducial, evecs = np.linalg.eigh(fiducial_covariance)
-
-    selectors = []
-
-    # Compression by positive magnitude.
-    selectors.append(evals_fiducial > 1.e-8 * np.max(evals_fiducial))
-
-    # Compression by discard.
-    if discard is not None:
-        selectors.append(np.indices(evals_fiducial) >= discard)
-
-    # Compression by comparison for sensitivity.
-    extremal_covariance = spherical_covariance(**extremal_model_kwargs)
-
-    evals_extremal = np.linalg.eigvalsh(extremal_covariance)
-
-    selectors.append(
-        ~np.isclose(evals_extremal, evals_fiducial, rtol=sensitivity_threshold)
-    )
-
-    # pylint: disable=no-member
-    # Compress and reverse order.
-    evecs = evecs[np.logical_and.reduce(selectors)][:, ::-1]
-
-    compression_mat = np.conj(evecs).T
-
-    return compression_mat

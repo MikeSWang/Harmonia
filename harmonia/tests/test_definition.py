@@ -1,11 +1,18 @@
 import pytest
 
 from harmonia.surveyor.definition import (
-    generate_compression_matrix,
-    generate_mask_from_map,
-    generate_selection_from_samples,
     generate_mask_by_sky_fraction,
+    generate_mask_from_map,
+    generate_selection_by_distribution,
+    generate_selection_from_samples,
+    generate_selection_samples,
 )
+
+
+@pytest.mark.skip(reason="Unimplemented.")
+def test_generate_mask_by_sky_fraction():
+    print("Unimplemented test.")
+    raise NotImplementedError
 
 
 @pytest.mark.skip(reason="Unimplemented.")
@@ -15,7 +22,7 @@ def test_generate_mask_from_map():
 
 
 @pytest.mark.skip(reason="Unimplemented.")
-def test_generate_mask_by_sky_fraction():
+def test_generate_selection_by_distribution():
     print("Unimplemented test.")
     raise NotImplementedError
 
@@ -27,6 +34,6 @@ def test_generate_selection_from_samples():
 
 
 @pytest.mark.skip(reason="Unimplemented.")
-def test_generate_compression_matrix():
+def test_generate_selection_samples():
     print("Unimplemented test.")
     raise NotImplementedError

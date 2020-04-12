@@ -14,7 +14,6 @@ Compute Fourier-space two-point correlator models.
 """
 import logging
 import warnings
-from itertools import product
 
 import numpy as np
 from mcfit import P2xi, xi2P
@@ -25,7 +24,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 from harmonia.algorithms.arrays import CartesianArray, SphericalArray
 from harmonia.algorithms.integration import radial_integral
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
-from harmonia.utils import mpi_compute, restore_warnings
+from harmonia.utils import Progress, mpi_compute, restore_warnings
 
 from .couplings import Couplings, SphericalCoefficientWarning
 from ._kernels import shot_noise_kernel
@@ -573,7 +572,8 @@ class SphericalCorrelator:
 
     def correlator_matrix(self, pivot, b_1=None, f_nl=None, nbar=None,
                           contrast=None, tracer_p=1., radialise=False,
-                          shot_noise_only=False, baseline_model_kwargs=None):
+                          shot_noise_only=False, baseline_model_kwargs=None,
+                          report_progress=False):
         """Compute two-point correlator matrix for some vetorisation of all
         spectrum modes.
 
@@ -603,6 +603,9 @@ class SphericalCorrelator:
             `cosmo_specs` passed as keyword arguments to reset the
             baseline cosmological model.  If `cosmo_specs` is passed,
             radial and RSD couplings will be updated.
+        report_progress : bool, optional
+            If `True` (default is `False`), progress status will be
+            reported.
 
         Returns
         -------
@@ -681,14 +684,26 @@ class SphericalCorrelator:
             return shot_noise_mat
 
         # Signal contribution.
-        signal_mat = np.zeros((dim,) * 2, dtype=complex)
+        if report_progress:
+            progress = Progress(
+                (1 + dim) * dim / 2,
+                process_name="correlator matrix",
+                logger=self.logger, comm=self.comm
+            )
+            idx = 0
+        else:
+            progress = None
 
+        signal_mat = np.zeros((dim,) * 2, dtype=complex)
         for row_idx in range(dim):
             for col_idx in range(row_idx + 1):
                 mu, nu = index_vector[row_idx], index_vector[col_idx]
                 signal_mat[row_idx, col_idx] = self.two_point_correlator(
                     mu, nu, b_1=b_1, f_nl=f_nl, tracer_p=tracer_p
                 )
+                # pylint: disable=multiple-statements
+                if progress:
+                    progress.report(idx); idx += 1
 
         # Use Hermitian property to fill in the strictly upper triangular part.
         two_point_corr_mat = signal_mat + shot_noise_mat

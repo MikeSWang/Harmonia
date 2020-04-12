@@ -174,9 +174,9 @@ if __name__ == '__main__':
     params = initialise()
 
     # Initialise I/O paths.
-    input_path = data_dir/params.source_dir/params.source_file
-
     cosmo_dir = data_dir/"cosmology"
+
+    input_path = data_dir/params.source_dir/params.source_file
 
     output_dir = data_dir/"raw"/"survey_specifications"
 

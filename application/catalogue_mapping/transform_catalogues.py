@@ -318,15 +318,14 @@ if __name__ == '__main__':
 
     params = initialise()
 
-    # Set I/O paths.
-    input_path = data_dir/params.source_dir/params.source_file
-
-    mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
-
     mask_tag, selection_tag, order_tag = tag()
 
-    output_dir = data_dir/"raw"/"catalogue_maps"
+    # Set I/O paths.
+    mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
 
+    input_path = data_dir/params.source_dir/params.source_file
+
+    output_dir = data_dir/"raw"/"catalogue_maps"
     output_filename = "catalogue-map-({})".format(",".join([
         "source={}".format(params.source_file.rstrip(".txt")),
         "map={}".format(params.map),

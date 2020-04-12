@@ -273,13 +273,12 @@ if __name__ == '__main__':
 
     params = initialise()
 
+    mask_tag, selection_tag, order_tag = tag()
+
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
 
-    mask_tag, selection_tag, order_tag = tag()
-
     output_dir = data_dir/"raw"/"survey_products"
-
     output_filename = "mask_or_window-({})".format(",".join([
         "orders={}".format(order_tag),
         "boxsize={}".format(params.boxsize),

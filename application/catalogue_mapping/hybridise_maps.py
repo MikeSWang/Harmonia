@@ -298,11 +298,10 @@ if __name__ == '__main__':
 
     params = initialise()
 
-    # Set I/O paths.
-    input_dir = data_dir/params.map_dir
-
     mask_tag, selection_tag, order_tag, pivot_tag = tag()
 
+    # Set I/O paths.
+    input_dir = data_dir/params.map_dir
     input_filename = "catalogue-map-({})".format(",".join([
         "source={}", "map={}", "scale=[{},{}]", "orders={}",
         "rsd={}".format(params.rsd),
@@ -311,7 +310,6 @@ if __name__ == '__main__':
     ]))
 
     output_dir = input_dir
-
     output_filename = "hybrid-({})".format(",".join([
         "source={}".format(params.map_source_root),
         "scale=[{},{},{}]".format(params.kmin, params.khyb, params.kmax),

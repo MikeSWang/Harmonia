@@ -193,13 +193,12 @@ if __name__ == '__main__':
 
     params = initialise()
 
+    mask_tag, selection_tag = tag()
+
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
 
-    mask_tag, selection_tag = tag()
-
     output_dir = data_dir/"raw"/"survey_products"
-
     output_filename = "couplings-({})".format(",".join([
         "kmax={}".format(params.kmax),
         "mask={}".format(mask_tag),

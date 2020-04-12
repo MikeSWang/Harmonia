@@ -316,11 +316,15 @@ if __name__ == '__main__':
 
     params = initialise()
 
-    # Set I/O paths.
-    input_dir = data_dir/params.map_dir
-
     mask_tag, selection_tag, order_tag, pivot_tag = tag()
 
+    try:
+        source_range = sorted(params.map_source_names, key=int)
+    except ValueError:
+        source_range = sorted(params.map_source_names)
+
+    # Set I/O paths.
+    input_dir = data_dir/params.map_dir
     input_filename = "random-map-({})".format(",".join([
         "source={}", "map={}", "scale=[{},{}]", "orders={}",
         "mask={}".format(mask_tag),
@@ -328,12 +332,6 @@ if __name__ == '__main__':
     ]))
 
     output_dir = data_dir/"raw"/"survey_products"
-
-    try:
-        source_range = sorted(params.map_source_names, key=int)
-    except ValueError:
-        source_range = sorted(params.map_source_names)
-
     output_filename = "covar-estimate-({})".format(",".join([
         "source={}-{}".format(source_range[0], source_range[-1]),
         "map={}", "scale={}", "orders={}",

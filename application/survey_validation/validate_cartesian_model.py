@@ -186,12 +186,11 @@ if __name__ == '__main__':
     order_tag = "[0]"
     rsd_tag = "False"
 
-    # Set I/O paths.
-    ## Map data.
     source_tags = list(product(("NG={}.".format(NG),), range(1, 25)))
 
+    # Set I/O paths.
+    ## Map data.
     map_data_dir = data_dir/"raw"/"catalogue_maps"
-
     map_data_file = "catalogue-map-({}).npz".format(
         ",".join([
             "source=halo-({},z=1.)-{}", "map=cartesian",
@@ -208,7 +207,6 @@ if __name__ == '__main__':
         "orders=[0,2,4,6,8]", "boxsize=1000.0", "expansion=70.0", "mesh=768",
         "mask={}".format(mask_tag), "selection={}".format(selection_tag)
     ])
-
     mask_file = "mask-({}).npy".format(mask_or_file_info)
 
     window_file = "window-({}).npz".format(mask_or_file_info)
@@ -218,19 +216,16 @@ if __name__ == '__main__':
         "scale={}".format(scale_tag), "orders={}".format(order_tag),
         "mask={}".format(mask_tag), "selection={}".format(selection_tag)
     ])
-
     covariance_estimate_file = "covar-estimate-({}).npz".format(
         covariance_estimate_info
     )
 
     ## Cosmological inputs.
     cosmo_dir = data_dir/"external"/"cosmology"
-
     cosmo_file = "simulation.txt"
 
     ## Outputs.
     output_dir = data_dir/"processed"/"survey_validation"
-
     output_filename = "cartesian-validation-({})".format(
         ",".join([
             "NG={}.".format(NG), "scale={}".format(scale_tag),

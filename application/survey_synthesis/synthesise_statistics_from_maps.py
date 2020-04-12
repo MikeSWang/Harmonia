@@ -231,19 +231,15 @@ def export_map_statistics():
             for spherical_map_data in spherical_data
         ]
 
-        spherical_covariance_estimate = np.linalg.multi_dot([
+        spherical_correlation_estimate = covar_to_corr(np.linalg.multi_dot([
             np.conj(spherical_data_array).T, spherical_data_array
-        ]) / len(spherical_data_array)
-
-        spherical_correlation_estimate = covar_to_corr(
-            spherical_covariance_estimate
-        )
+        ])) / len(spherical_data_array)
 
         output_file = output_dir/output_filename.format(
             'spherical', "[{},{}]".format(params.kmin, params.khyb), None
         )
 
-        np.save(output_file, spherical_covariance_estimate)
+        np.save(output_file, spherical_correlation_estimate)
 
         spherical_correlation = np.zeros_like(
             spherical_correlation_estimate, dtype=float

@@ -64,9 +64,6 @@ class RandomCatalogue(UniformCatalog):
 
     """
 
-    # NOTE: The purpose of this class is to override American spelling
-    # in publicly exposed codes for consistency within the package.
-
     def __init__(self, mean_density, boxsize, seed=None, comm=None):
 
         super().__init__(mean_density, boxsize, seed=seed, comm=comm)

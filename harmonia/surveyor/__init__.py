@@ -13,6 +13,7 @@ multipoles, covariance estimates and data compressor.
     in units of Mpc/:math:`h`.
 
 """
+# No import from ``.synthesis`` to avoid circular import.
 from .definition import (
     generate_mask_by_sky_fraction,
     generate_mask_from_map,
@@ -28,4 +29,3 @@ from .coordinates import (
     spherical_to_sky,
     to_box_coords,
 )
-# NOTE: No import from ``.synthesis`` to avoid circular import.

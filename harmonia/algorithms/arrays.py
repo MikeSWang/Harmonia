@@ -6,7 +6,7 @@ Provide structured arrays for cosmological data.
 
 .. autosummary::
 
-    BaseArray
+    DataArray
     SphericalArray
     CartesianArray
 
@@ -28,12 +28,12 @@ except ModuleNotFoundError:
 
 class IndexingError(Exception):
     """Exception raised for unsupported slicing or indexing in
-    `__getitem__` special methods.
+    `__getitem__` methods.
 
     """
 
 
-class BaseArray:
+class DataArray:
     """Abstract structured array with saving and loading methods.
 
     """
@@ -105,7 +105,7 @@ class BaseArray:
         return self
 
 
-class SphericalArray(BaseArray):
+class SphericalArray(DataArray):
     r"""Structured array for spherical decomposition of cosmological data.
 
     Array is initialised with a discrete spectrum of spherical modes
@@ -383,7 +383,7 @@ class SphericalArray(BaseArray):
         return index_directory
 
 
-class CartesianArray(BaseArray):
+class CartesianArray(DataArray):
     r"""Structured array for Cartesian decomposition of cosmological data.
 
     Array is initialised with three fields: the 'order' field of the

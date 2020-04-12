@@ -27,7 +27,7 @@ from harmonia.algorithms.integration import radial_integral
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 from harmonia.utils import mpi_compute, restore_warnings
 
-from .couplings import Couplings
+from .couplings import Couplings, SphericalCoefficientWarning
 from ._kernels import shot_noise_kernel
 
 
@@ -94,7 +94,7 @@ class CartesianMultipoles:
 
         self.attrs = {
             'wavenumbers': wavenumbers,
-            'redshift': redshift
+            'redshift': redshift,
         }
 
         self._k = wavenumbers
@@ -704,11 +704,10 @@ class SphericalCorrelator:
         # Only necessary to update radial and RSD couplings when `cosmo_specs`
         # is specified.  Previously compute angular couplings are attached.
         if cosmo_specs is not None and update_couplings:
-            # pylint: disable=protected-access
             couplings = Couplings(
                 self._disc,
                 survey_specs=self._survey_specs, cosmo_specs=cosmo_specs,
-                external_angular_couplings=self.couplings._couplings['angular']
+                external_angular_couplings=self.couplings.couplings['angular']
             )
             couplings.compile_couplings()
         self._cosmo_specs = cosmo_specs
@@ -847,9 +846,9 @@ class SphericalCorrelator:
             )
         if any_warning and not np.isclose(shot_noise_integral, 0.):
             warnings.warn(
-                "Poorly determined shot noise integral "
+                "Poorly determined shot noise coefficient "
                 "for index pair {} and {}.".format(mu, nu),
-                category=IntegrationWarning
+                category=SphericalCoefficientWarning
             )
 
         return M_mu_nu * shot_noise_integral

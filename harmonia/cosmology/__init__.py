@@ -46,7 +46,7 @@ class BaseModel(Cosmology):
 
         with open(source_file) as cosmo_source:
             source_params = {
-                k: round(v, ndigits=4)
+                k: round(v, ndigits=8)
                 for k, v in eval(cosmo_source.read()).items()
             }
 

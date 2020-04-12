@@ -137,8 +137,7 @@ class DiscreteSpectrum:
         state = {
             attr: getattr(self, attr)
             for attr in [
-                'attrs',
-                'degrees', 'depths', 'mode_counts',
+                'attrs', 'degrees', 'depths', 'mode_counts',
                 'roots', 'wavenumbers', 'normalisations'
             ]
         }

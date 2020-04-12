@@ -58,7 +58,7 @@ class SphericalMap:
         self.attrs.update(self.catalogues.attrs)
         self.attrs.update(self.disc.attrs)
 
-        # These are coefficient directory which internally store the
+        # Coefficient directories which internally store the
         # transformed results.
         self._data_coeff = {}
         self._rand_coeff = {}
@@ -166,12 +166,15 @@ class SphericalMap:
         sort_order = np.argsort(
             list(self.disc.wavenumbers.values())
         )
+
         wavenumbers = np.array(
             list(self.disc.wavenumbers.values())
         )[sort_order]
+
         normalisations = np.array(
             list(self.disc.normalisations.values())
         )[sort_order]
+
         mode_counts = np.zeros_like(wavenumbers)
         mode_powers = np.zeros_like(wavenumbers)
 
@@ -377,7 +380,7 @@ class CartesianMap:
             self.mesh, poles=orders, kmin=kmin, kmax=kmax, dk=dk
         ).poles
 
-        # HINT: Remove spurious leading bins from `nbodykit`.
+        # Remove spurious leading bins from `nbodykit`.
         valid_bins = ~np.equal(results['modes'], 0) \
             & ~np.equal(results['modes'], 1)
 

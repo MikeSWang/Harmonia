@@ -7,7 +7,7 @@ spefications and cosmological models.
 
 .. autosummary::
 
-    CouplingCoefficientWarning
+    SphericalCoefficientWarning
     Couplings
 
 
@@ -93,8 +93,8 @@ from harmonia.utils import mpi_compute, restore_warnings
 from ._kernels import angular_kernel, radial_kernel, RSD_kernel
 
 
-class CouplingCoefficientWarning(UserWarning):
-    """Warning issued for poorly determined coupling coefficient.
+class SphericalCoefficientWarning(UserWarning):
+    """Warning issued for poorly determined spherical coefficient.
 
     """
 
@@ -145,6 +145,9 @@ class Couplings:
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
         Discrete spectrum associated with the couplings.
+    couplings : dict{str: dict}
+        Directory for all coupling coefficients of different
+        coupling types.
 
     """
 
@@ -174,7 +177,7 @@ class Couplings:
         if cosmo_specs is not None:
             self._cosmo_specs.update(cosmo_specs)
 
-        self._couplings = {
+        self.couplings = {
             coupling_type: {}
             for coupling_type in self._coupling_types
         }
@@ -195,7 +198,7 @@ class Couplings:
 
         state = {
             'disc': self.disc.__getstate__(),
-            '_couplings': self._couplings,
+            'couplings': self.couplings,
         }
 
         return state
@@ -235,20 +238,20 @@ class Couplings:
 
         coupling_type, mu, nu = key
 
-        coupling_type = self._alias(key[0])
+        coupling_type = self._alias(coupling_type)
 
         if coupling_type == 'angular':
             mu, nu = (mu[0], mu[1]), (nu[0], nu[1])
             # Use parity to return an angular coupling coefficient
             # that is not internally stored.
             if mu > nu:
-                return np.conj(self._couplings['angular'][nu, mu])
+                return np.conj(self.couplings['angular'][nu, mu])
 
-            return self._couplings['angular'][mu, nu]
+            return self.couplings['angular'][mu, nu]
 
         mu, nu = (mu[0], mu[-1]), (nu[0], nu[-1])
 
-        return self._couplings[coupling_type][mu, nu]
+        return self.couplings[coupling_type][mu, nu]
 
     def load_angular_couplings(self, angular_couplings):
         """Load pre-computed angular coupling coefficients which are
@@ -280,7 +283,7 @@ class Couplings:
                 "do not match the `disc` attribute."
             )
 
-        self._couplings.update({'angular': angular_couplings})
+        self.couplings.update({'angular': angular_couplings})
 
     def compile_couplings(self):
         """Compile all coupling coefficients and set initialisation state
@@ -288,7 +291,7 @@ class Couplings:
 
         """
         for coupling_type in self._coupling_types:
-            if not self._couplings[coupling_type]:
+            if not self.couplings[coupling_type]:
                 self._compile_couplings_by_type(coupling_type)
 
         self.initialised = True
@@ -326,7 +329,7 @@ class Couplings:
                     warnings.warn(
                         "Poorly determined angular coupling coefficients "
                         "for index pair {} and {}.".format(mu, nu),
-                        category=CouplingCoefficientWarning
+                        category=SphericalCoefficientWarning
                     )
             return coefficient
 
@@ -362,7 +365,7 @@ class Couplings:
                     warnings.warn(
                         "Poorly determined radial coupling coefficients "
                         "for index pair {} and {}.".format(mu, nu),
-                        category=CouplingCoefficientWarning
+                        category=SphericalCoefficientWarning
                     )
             return coefficient
 
@@ -386,7 +389,7 @@ class Couplings:
                 warnings.warn(
                     "Poorly determined RSD coupling coefficients "
                     "for index pair {} and {}.".format(mu, nu),
-                    category=CouplingCoefficientWarning
+                    category=SphericalCoefficientWarning
                 )
 
         return coefficient
@@ -454,11 +457,11 @@ class Couplings:
             warnings.warn(
                 "Poor coefficient determinations for {} couplings."
                 .format(coupling_type),
-                CouplingCoefficientWarning
+                SphericalCoefficientWarning
             )
 
         for compiled_couplings in list_of_compiled_couplings_:
-            self._couplings[coupling_type].update(compiled_couplings)
+            self.couplings[coupling_type].update(compiled_couplings)
 
         if self.comm is not None:
             self.comm.Barrier()

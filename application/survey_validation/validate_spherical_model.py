@@ -181,7 +181,7 @@ if __name__ == '__main__':
     )
 
     # NOTE: Not used yet.
-    output_dir = data_dir/"processed"/"survey_validation"
+    output_dir = data_dir/"raw"/"survey_validation"
 
     # Validate spherical modelling.
     confirm_directory(output_dir)  # NOTE: Not used yet.

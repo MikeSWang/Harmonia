@@ -225,7 +225,7 @@ if __name__ == '__main__':
     cosmo_file = "simulation.txt"
 
     ## Outputs.
-    output_dir = data_dir/"processed"/"survey_validation"
+    output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "cartesian-validation-({})".format(
         ",".join([
             "NG={}.".format(NG), "scale={}".format(scale_tag),

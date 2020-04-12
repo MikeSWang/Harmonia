@@ -42,9 +42,11 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     sort_order = np.argsort(
         list(fullsky_couplings.disc.wavenumbers.values())
     )
+
     wavenumbers = np.array(
         list(fullsky_couplings.disc.wavenumbers.values())
     )[sort_order]
+
     normalisations = np.array(
         list(fullsky_couplings.disc.normalisations.values())
     )[sort_order]
@@ -79,6 +81,7 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     _ratios = spherical_spectrum / cartesian_spectrum - 1
 
     sns.set(style='ticks', font='serif')
+    plt.figure("full sky spherical model validation")
     plt.loglog(wavenumbers, spherical_spectrum, label='spherical')
     plt.loglog(wavenumbers, cartesian_spectrum, ls='--', label='Cartesian')
     plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
@@ -89,7 +92,7 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     return _ratios
 
 
-def validate_spherical_correlator_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
+def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
                                         contrast=10.):
     """Validate generic spherical correlator predictions against estimates
     from large sample sets.
@@ -102,8 +105,8 @@ def validate_spherical_correlator_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
         survey_product_dir/couplings_file.format(kmax, mask_tag, selection_tag)
     )
 
-    spherical_correlator_estimate = covar_to_corr(np.load(
-        raw_product_dir/covar_estimate_file
+    spherical_correlation_estimate = covar_to_corr(np.load(
+        raw_product_dir/corr_estimate_file
     ))
 
     # Spherical model.
@@ -123,10 +126,10 @@ def validate_spherical_correlator_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
         )
     )
 
-    _ratios = spherical_correlator_estimate / spherical_correlation_model - 1
+    _ratios = spherical_correlation_estimate / spherical_correlation_model - 1
 
     sns.set(style='ticks', font='serif')
-    plt.figure(figsize=(10, 2.75))
+    plt.figure("partial sky spherical model validation", figsize=(10, 2.75))
     plt.subplot2grid((1, 3), (0, 0))
     sns.heatmap(
         spherical_correlation_model.real,
@@ -134,12 +137,12 @@ def validate_spherical_correlator_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     )
     plt.subplot2grid((1, 3), (0, 1))
     sns.heatmap(
-        spherical_correlator_estimate.real,
+        spherical_correlation_estimate.real,
         rasterized=True, square=True, center=0., vmin=-1., vmax=1.
     )
     plt.subplot2grid((1, 3), (0, 2))
     sns.heatmap(
-        spherical_correlator_estimate.real - spherical_correlation_model.real,
+        spherical_correlation_estimate.real - spherical_correlation_model.real,
         cmap='coolwarm', rasterized=True, square=True, center=0.
     )
 
@@ -172,7 +175,7 @@ if __name__ == '__main__':
     )
 
     raw_product_dir = data_dir/"raw"/"survey_products"
-    covar_estimate_file = "covar-estimate-({}).npy".format(
+    corr_estimate_file = "covar-estimate-({}).npy".format(
         ",".join([
             "source=1-2500", "map=spherical",
             "scale=[None,{}]".format(kmax), "orders=None",

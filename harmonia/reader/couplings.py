@@ -192,7 +192,8 @@ class Couplings:
             if attr == 'disc':
                 self.disc = DiscreteSpectrum._from_state(state['disc'])
             else:
-                setattr(self, attr, value)
+                # Strip '_' for backward compatibility.
+                setattr(self, attr.strip('_'), value)
 
     def __getstate__(self):
 

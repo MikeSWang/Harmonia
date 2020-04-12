@@ -45,7 +45,7 @@ rank = comm.Get_rank()
 
 
 @display_args(logger=logger, comm=comm)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -61,10 +61,12 @@ def initialise():
         help="redshift for model evaluation"
     )
     parser.add_argument(
-        '--kmax', type=float, default=None, help="maximum wavenumber"
+        '--kmax', type=float, default=None,
+        help="maximum wavenumber of the spherical Fourier spectrum"
     )
     parser.add_argument(
-        '--rmax', type=float, default=500., help="boundary radius"
+        '--rmax', type=float, default=500.,
+        help="maximum radius at which boundary conditions are applied"
     )
 
     parser.add_argument(
@@ -98,7 +100,7 @@ def initialise():
     return parser.parse_args()
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -125,13 +127,12 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     return mask_info, selection_info
 
 
-def synthesise():
+def synthesise_couplings():
     """Synthesise spherical couplings from baseline cosmology and
     survey specifications.
 
@@ -191,9 +192,9 @@ def synthesise():
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag = tag()
+    mask_tag, selection_tag = write_tags()
 
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
@@ -205,7 +206,8 @@ if __name__ == '__main__':
         "selection={}".format(selection_tag),
     ]))
 
-    # Process catalogues.
     confirm_directory(output_dir)
-    couplings = synthesise()
+
+    # Compute and save couplings.
+    couplings = synthesise_couplings()
     couplings.save(output_dir/output_filename)

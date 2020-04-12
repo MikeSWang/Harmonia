@@ -28,7 +28,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -87,8 +87,8 @@ def initialise():
     return parsed_args
 
 
-def define(random_catalogue_file):
-    """Process a random catalogue file into a selection function.
+def define_survey_selection(random_catalogue_file):
+    """Define survey selection functionfrom a random catalogue.
 
     Parameters
     ----------
@@ -99,6 +99,8 @@ def define(random_catalogue_file):
     -------
     selection_function : float :class:`numpy.ndarray`
         Selection function samples at discrete radii.
+    sky_fraction : float
+        Sky fractional coverage.
 
     """
     # pylint: disable=no-member
@@ -134,8 +136,8 @@ def define(random_catalogue_file):
     return sampled_selection, sky_fraction
 
 
-def export_selection(sampled_selection, sky_fraction):
-    """Export and visualise the selection function.
+def export_survey_selection(sampled_selection, sky_fraction):
+    """Export and visualise the survey selection function.
 
     Parameters
     ----------
@@ -145,7 +147,7 @@ def export_selection(sampled_selection, sky_fraction):
         Sky fraction covered.
 
     """
-    output_path = output_dir/output_filename
+    output_path = output_dir/output_filename.format(sky_fraction)
 
     # Write the sampled selection function out to a .txt file.
     output_file = output_path.with_suffix(output_path.suffix + '.txt')
@@ -159,7 +161,7 @@ def export_selection(sampled_selection, sky_fraction):
     output_file = output_path.with_suffix(output_path.suffix + '.pdf')
     unit = r' [Mpc/$h$]' if params.coord == 'r' else ''
     if params.plot_distr:
-        fig = plt.figure()
+        fig = plt.figure("survey selection function")
         plt.plot(*sampled_selection)
         plt.xlabel(r'${}$'.format(params.coord) + unit)
         plt.ylabel(r'$\phi({})$'.format(params.coord))
@@ -171,25 +173,24 @@ def export_selection(sampled_selection, sky_fraction):
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    # Initialise I/O paths.
+    # Set I/O paths.
     cosmo_dir = data_dir/"cosmology"
 
     input_path = data_dir/params.source_dir/params.source_file
 
     output_dir = data_dir/"raw"/"survey_specifications"
-
-    # Process the random catalogue into a mask map and export/visualise.
-    confirm_directory(output_dir)
-
-    selection_func_samples, fsky = define(input_path)
-
     output_filename = "selection_func-({})".format(",".join([
         "source={}".format(params.source_file.split(".fits")[0]),
         "coord={}".format(params.coord),
         "nside={}".format(params.nside),
-        "fsky={:.2f}".format(fsky)
+        "fsky={:.2f}"
     ]))
 
-    export_selection(selection_func_samples, fsky)
+    confirm_directory(output_dir)
+
+    # Define the survey selection and export/visualise selection
+    # function samples.
+    selection_func_samples, fsky = define_survey_selection(input_path)
+    export_survey_selection(selection_func_samples, fsky)

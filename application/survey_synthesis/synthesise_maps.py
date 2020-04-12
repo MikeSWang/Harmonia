@@ -44,7 +44,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -57,11 +57,11 @@ def initialise():
 
     parser.add_argument(
         '--iter', type=int, default=100,
-        help="number of map samples to produce"
+        help="number of iterations in producing random maps"
     )
     parser.add_argument('--batch', type=int, default=None, help="bacth number")
     parser.add_argument(
-        '--only-cartesian', action='store_true',
+        '--cartesian-only', action='store_true',
         help="do not produce spherial maps"
     )
 
@@ -79,7 +79,7 @@ def initialise():
     )
     parser.add_argument(
         '--orders', type=int, nargs='+', default=None,
-        help="power spectrum multipoles of the Cartesian map to make"
+        help="power spectrum multipole orders of the Cartesian map to make"
     )
 
     parser.add_argument(
@@ -135,7 +135,7 @@ def initialise():
     return parsed_args
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -162,16 +162,15 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     order_info = str(params.orders).replace(" ", "")
 
     return mask_info, selection_info, order_info
 
 
-def manufacture():
-    """Manufacture maps samples.
+def synthesise_random_maps():
+    """Synthesise random maps.
 
     """
     radius = params.boxsize / 2.
@@ -218,7 +217,7 @@ def manufacture():
     else:
         selection = None
 
-    # Load and make catalogues.
+    # Manufacture random catalogue maps.
     progress = Progress(
         params.iter, num_checkpts=5, process_name='synthesis', logger=logger
     )
@@ -236,7 +235,7 @@ def manufacture():
             apply_selection_as_veto=apply_selection_as_veto
         )
 
-        output_map = output_filename.format(
+        output_file = output_filename.format(
             batch_no, 'cartesian', params.khyb, params.kmax,
             str(params.orders).replace(" ", "")
         )
@@ -246,27 +245,27 @@ def manufacture():
             kmin=params.khyb, kmax=params.kmax, num_mesh=params.mesh
         )
         cartesian_map_data = cartesian_map.power_multipoles
-        cartesian_map_data.save(output_dir/output_map, 'npz')
+        cartesian_map_data.save(output_dir/output_file, 'npz')
 
-        if not params.only_cartesian:
+        if not params.cartesian_only:
             disc = DiscreteSpectrum(radius, 'dirichlet', params.khyb)
 
-            output_map = output_filename.format(
+            output_file = output_filename.format(
                 batch_no, 'spherical', params.kmin, params.khyb, None
             )
 
             spherical_map = SphericalMap(catalogues, disc)
             spherical_map_data = spherical_map.density_contrast
-            spherical_map_data.save(output_dir/output_map, 'npz')
+            spherical_map_data.save(output_dir/output_file, 'npz')
 
         progress.report(iter_num)
 
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag, order_tag = tag()
+    mask_tag, selection_tag, order_tag = write_tags()
 
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
@@ -278,6 +277,7 @@ if __name__ == '__main__':
         "selection={}".format(selection_tag),
     ]))
 
-    # Process catalogues.
     confirm_directory(output_dir)
-    manufacture()
+
+    # Synthesise random catalogues nd save resulting random maps.
+    synthesise_random_maps()

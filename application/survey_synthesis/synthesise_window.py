@@ -1,4 +1,4 @@
-"""Determine the window (mask) multipoles for Cartesian two-point
+"""Determine the survey window/mask multipoles for Cartesian two-point
 correlators.
 
 """
@@ -40,7 +40,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -53,7 +53,7 @@ def initialise():
 
     parser.add_argument(
         '--orders', type=int, nargs='+', default=[0, 2, 4, 6, 8],
-        help="multipoles of the window (mask) function"
+        help="multipole orders of the window/mask function"
     )
 
     parser.add_argument(
@@ -103,7 +103,7 @@ def initialise():
 
     parser.add_argument(
         '--plot-multipoles', action='store_true',
-        help="plot the determined window (mask) function"
+        help="plot the determined window/mask function"
     )
 
     parsed_args = parser.parse_args()
@@ -111,7 +111,7 @@ def initialise():
     return parsed_args
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -138,15 +138,14 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     order_info = str(params.orders).replace(" ", "")
 
     return mask_info, selection_info, order_info
 
 
-def synthesise():
+def synthesise_window_and_mask():
     """Synthesise the window and mask multipoles from a high-density
     random catalogue.
 
@@ -221,8 +220,8 @@ def synthesise():
     return window_function, mask_function
 
 
-def export_window_or_mask():
-    """Export and visualise window (mask) multipoles from the
+def export_window_and_mask():
+    """Export and visualise window/mask multipoles from the
     synthetic catalogue.
 
     """
@@ -236,7 +235,7 @@ def export_window_or_mask():
 
     np.save(output_mask_file, mask_multipoles)
 
-    plt.figure(figsize=(8, 11))
+    plt.figure("window/mask function multipoles", figsize=(8, 11))
 
     plt.subplot2grid((2, 1), (0, 0))
     for ell in params.orders:
@@ -271,9 +270,9 @@ def export_window_or_mask():
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag, order_tag = tag()
+    mask_tag, selection_tag, order_tag = write_tags()
 
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
@@ -288,7 +287,8 @@ if __name__ == '__main__':
         "selection={}".format(selection_tag),
     ]))
 
-    # Synthesise survey window and mask multipoles.
     confirm_directory(output_dir)
-    window_multipoles, mask_multipoles = synthesise()
-    export_window_or_mask()
+
+    # Synthesise survey window/mask multipoles and export/visualise multipoles.
+    window_multipoles, mask_multipoles = synthesise_window_and_mask()
+    export_window_and_mask()

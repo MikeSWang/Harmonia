@@ -30,7 +30,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -43,14 +43,14 @@ def initialise():
 
     parser.add_argument(
         '--map-dir', type=str, default='raw/catalogue_maps',
-        help="map directory relative to 'storage/'"
+        help="catalogue map directory relative to 'storage/'"
     )
     parser.add_argument(
-        '--map-file-extension', type=str, nargs='+', default=['.npz', '.npz'],
-        help="map file extension"
+        '--map-file-extension', type=str, nargs=2, default=['.npz', '.npz'],
+        help="catalogue map file extension"
     )
     parser.add_argument(
-        '--map-source-root', type=str, required=True,
+        '--map-source-root', type=str, default='',
         help="catalogue source filename common root"
     )
     parser.add_argument(
@@ -77,12 +77,12 @@ def initialise():
     )
     parser.add_argument(
         '--orders', type=int, nargs='+', default=[0],
-        help="power spectrum multipoles of the Cartesian map"
+        help="power spectrum multipole orders of the Cartesian map"
     )
 
     parser.add_argument(
         '--rsd', action='store_true',
-        help="add velocity displacement to create RSD effects"
+        help="velocity displacement added to create RSD effects"
     )
 
     parser.add_argument(
@@ -123,7 +123,7 @@ def initialise():
     return parsed_args
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -150,8 +150,7 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     order_info = str(params.orders).replace(" ", "")
     pivot_info = str(params.pivots).replace(" ", "").replace("'", "")
@@ -159,8 +158,8 @@ def tag():
     return mask_info, selection_info, order_info, pivot_info
 
 
-def hybridise():
-    """Load and process map data for hybridisation.
+def hybridise_maps():
+    """Load and hybridise map data.
 
     Returns
     -------
@@ -192,12 +191,10 @@ def hybridise():
             )
         )
 
-        hybrid_map_data_vector = list(
+        hybrid_map_data_array.append(list(
             spherical_map_data.vectorise(params.pivots[0]).tolist()
             + cartesian_map_data.vectorise(params.pivots[1]).tolist()
-        )
-
-        hybrid_map_data_array.append(hybrid_map_data_vector)
+        ))
 
     return hybrid_map_data_array
 
@@ -263,18 +260,17 @@ def export_hybrid_maps(hybrid_map_data, thredshold=0.):
     cross_correlation = sample_corr[split_index:, :split_index]
 
     sns.set(style='ticks', font='serif')
-
-    plt.figure(figsize=(20, 3.5))
+    plt.figure("hybrid map statistics", figsize=(20, 3.5))
 
     plt.subplot2grid((1, 4), (0, 0))
     sns.heatmap(
         np.abs(spherical_correlation), cmap='Blues',
-        vmin=0., vmax=1., square=True
+        square=True, vmin=0., vmax=1.
     )
     plt.subplot2grid((1, 4), (0, 1))
     sns.heatmap(
         np.real_if_close(cartesian_correlation), cmap='coolwarm',
-        center=0., vmin=-1., vmax=1., square=True
+        square=True, center=0., vmin=-1., vmax=1.
     )
     plt.subplot2grid((1, 4), (0, 2))
     sns.heatmap(
@@ -290,15 +286,15 @@ def export_hybrid_maps(hybrid_map_data, thredshold=0.):
     plt.subplots_adjust(wspace=0.25)
 
     output_path = output_dir/output_filename.replace("hybrid", "hybrid-corr")
-    if params.plot_corrmat:
+    if params.plot_correlation:
         plt.savefig(output_path.with_suffix(output_path.suffix + '.pdf'))
 
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag, order_tag, pivot_tag = tag()
+    mask_tag, selection_tag, order_tag, pivot_tag = write_tags()
 
     # Set I/O paths.
     input_dir = data_dir/params.map_dir
@@ -321,5 +317,5 @@ if __name__ == '__main__':
     ]))
 
     # Hybridise maps and export/visualise data statistics.
-    hybrid_maps = hybridise()
+    hybrid_maps = hybridise_maps()
     export_hybrid_maps(hybrid_maps)

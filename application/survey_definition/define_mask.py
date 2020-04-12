@@ -26,7 +26,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -47,7 +47,7 @@ def initialise():
     )
 
     parser.add_argument(
-        '--nside', type=int, default=512,
+        '--nside', type=int, default=32,
         help="'NSIDE' parameter to pass to 'healpy' map"
     )
 
@@ -65,7 +65,7 @@ def initialise():
     return parsed_args
 
 
-def define(random_catalogue_file):
+def define_survey_mask(random_catalogue_file):
     """Process a random catalogue file into a `healpy` sky map.
 
     Parameters
@@ -101,7 +101,7 @@ def define(random_catalogue_file):
     return sky_map
 
 
-def export_mask(sky_map):
+def export_survey_mask(sky_map):
     """Export and visualise a pixelated sky mask map.
 
     Parameters
@@ -121,10 +121,10 @@ def export_mask(sky_map):
     # Visualise the pixelated map.
     output_file = output_path.with_suffix(output_path.suffix + '.pdf')
     if params.plot_map:
-        num = 0
-        fig = plt.figure(num)
+        fignum = "survey mask map"
+        fig = plt.figure(fignum)
         hp.mollview(
-            sky_map, fig=num, cmap='binary_r', cbar=False,
+            sky_map, fig=fignum, cmap='binary_r', cbar=False,
             title=r"{}, $n_\mathrm{{side}}={}$".format(
                 input_path.stem, params.nside
             )
@@ -134,7 +134,7 @@ def export_mask(sky_map):
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
     # Set I/O paths.
     input_path = data_dir/params.source_dir/params.source_file
@@ -145,7 +145,8 @@ if __name__ == '__main__':
         "nside={}".format(params.nside)
     ]))
 
-    # Process the random catalogue into a mask map and export/visualise.
     confirm_directory(output_dir)
-    mask_map = define(input_path)
-    export_mask(mask_map)
+
+    # Define the survey mask and export/visualise the mask map.
+    mask_map = define_survey_mask(input_path)
+    export_survey_mask(mask_map)

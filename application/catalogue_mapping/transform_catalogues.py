@@ -45,7 +45,7 @@ CATALOGUE_HEADER = ["x", "y", "z", "vx", "vy", "vz", "mass"]
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -70,7 +70,7 @@ def initialise():
     )
     parser.add_argument(
         '--orders', type=int, nargs='+', default=None,
-        help="power spectrum multipoles of the Cartesian map to make"
+        help="power spectrum multipole orders of the Cartesian map to make"
     )
 
     parser.add_argument(
@@ -140,7 +140,7 @@ def initialise():
     return parsed_args
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -167,16 +167,15 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     order_info = str(params.orders).replace(" ", "")
 
     return mask_info, selection_info, order_info
 
 
-def process():
-    """Process program.
+def transform_catalogues():
+    """Transform input catalogues to maps.
 
     Returns
     -------
@@ -280,8 +279,8 @@ def process():
     raise ValueError(f"Unknown map catagory: {params.map}.")
 
 
-def visualise_catalogue_map():
-    """Visualise catalogue map.
+def view_catalogue_map():
+    """Visualise processed catalogues.
 
     """
     boxsize = catalogue_map.catalogues.data_catalogue.attrs['BoxSize']
@@ -295,7 +294,7 @@ def visualise_catalogue_map():
         Nmesh=params.mesh, resampler='tsc', compensated=True
     )
 
-    plt.figure(figsize=(11, 6))
+    plt.figure("painted catalogues", figsize=(11, 6))
     for idx, axes in enumerate([[0, 1], [0, 2], [1, 2]]):
         plt.subplot2grid((2, 3), (0, idx))
         plt.imshow(
@@ -316,9 +315,9 @@ def visualise_catalogue_map():
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag, order_tag = tag()
+    mask_tag, selection_tag, order_tag = write_tags()
 
     # Set I/O paths.
     mask_or_selection_dir = data_dir/"processed"/"survey_specifications"
@@ -336,8 +335,9 @@ if __name__ == '__main__':
         "selection={}".format(selection_tag),
     ]))
 
-    # Process catalogues.
     confirm_directory(output_dir)
-    catalogue_map = process()
+
+    # Transform catalogues and save maps/visualise processed catalogues.
+    catalogue_map = transform_catalogues()
     if params.plot_catalogue:
-        visualise_catalogue_map()
+        view_catalogue_map()

@@ -30,7 +30,7 @@ except ImportError:
 
 
 @display_args(logger=logger)
-def initialise():
+def initialise_parameters():
     """Initialise the program parameters passed from ``stdin``.
 
     Returns
@@ -42,25 +42,25 @@ def initialise():
     parser = ArgumentParser()
 
     parser.add_argument(
-        '--only-cartesian', action='store_true',
+        '--cartesian-only', action='store_true',
         help="do not process spherial maps"
     )
 
     parser.add_argument(
         '--map-dir', type=str, default='raw/random_maps',
-        help="map directory relative to 'storage/'"
+        help="random map directory relative to 'storage/'"
     )
     parser.add_argument(
         '--map-file-extension', type=str, nargs='+', default=['.npz', '.npz'],
-        help="map file extension"
+        help="random map file extension"
     )
     parser.add_argument(
         '--map-source-root', type=str, default='',
-        help="catalogue source filename common root"
+        help="random map filename common root"
     )
     parser.add_argument(
         '--map-source-names', type=str, nargs='+', required=True,
-        help="catalogue source filenames without extension"
+        help="random map filenames without extension"
     )
 
     parser.add_argument(
@@ -123,7 +123,7 @@ def initialise():
     return parsed_args
 
 
-def tag():
+def write_tags():
     """Write output file tags.
 
     Returns
@@ -150,8 +150,7 @@ def tag():
             else selection_info
     else:
         selection_info = params.selection_distribution or params.selection_cut
-
-    selection_info = str(selection_info).replace(" ", "").replace("'", "")
+        selection_info = str(selection_info).replace(" ", "").replace("'", "")
 
     order_info = str(params.orders).replace(" ", "")
     pivot_info = str(params.pivots).replace(" ", "").replace("'", "")
@@ -160,7 +159,7 @@ def tag():
 
 
 def extract_map_data():
-    """Load and process map data for covariance estimation.
+    """Load and process random map data for covariance estimation.
 
     Returns
     -------
@@ -184,7 +183,7 @@ def extract_map_data():
         )
         _cartesian_data.append(cartesian_map_data)
 
-        if not params.only_cartesian:
+        if not params.cartesian_only:
             spherical_map_file = input_dir/input_filename.format(
                 source_name, 'spherical', params.kmin, params.khyb, None
             )
@@ -198,12 +197,10 @@ def extract_map_data():
     return _spherical_data, _cartesian_data
 
 
-def export_statistics():
+def export_map_statistics():
     """Export and visualise statistical properties of random maps.
 
     """
-    sns.set(style='ticks', font='serif')
-
     # Export Cartesian covariance estimator.
     cartesian_covariance_estimator = CovarianceEstimator(cartesian_data)
 
@@ -219,9 +216,10 @@ def export_statistics():
         )
     )
 
-    plt.figure()
+    sns.set(style='ticks', font='serif')
+    plt.figure("random map correlation estimates")
     sns.heatmap(
-        cartesian_correlation, vmin=-1., vmax=1., cmap='coolwarm', square=True
+        cartesian_correlation, cmap='coolwarm', square=True, vmin=-1., vmax=1.
     )
     if params.plot_estimate:
         plt.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))
@@ -314,9 +312,9 @@ def export_statistics():
 
 if __name__ == '__main__':
 
-    params = initialise()
+    params = initialise_parameters()
 
-    mask_tag, selection_tag, order_tag, pivot_tag = tag()
+    mask_tag, selection_tag, order_tag, pivot_tag = write_tags()
 
     try:
         source_range = sorted(params.map_source_names, key=int)
@@ -340,4 +338,4 @@ if __name__ == '__main__':
 
     # Extract/export/visualise map statistics.
     spherical_data, cartesian_data = extract_map_data()
-    export_statistics()
+    export_map_statistics()

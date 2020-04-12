@@ -522,10 +522,6 @@ class SphericalCorrelator:
         kappa, p_k, f = \
             self._disc.normalisations, self._mode_powers, self.growth_rate
 
-        # pylint: disable=protected-access
-        Phi = self.couplings._couplings['radial']
-        Upsilon = self.couplings._couplings['rsd']
-
         # Summing contributions over degree index (say, ell_sigma).
         signal = 0.
         for ell_sigma, nmax_sigma in \
@@ -540,26 +536,32 @@ class SphericalCorrelator:
 
             if f:
                 radial_sum = np.sum([
-                    Phi[mu, (ell_sigma, n_sigma)]
-                    * Phi[nu, (ell_sigma, n_sigma)]
-                    * b_k**2 * p_k[ell_sigma, n_sigma]
-                    / kappa[ell_sigma, n_sigma]
-                    for n_sigma in range(1, nmax_sigma + 1)
+                    (
+                        b_k[n_idx]
+                        * self.couplings['radial', mu, (ell_sigma, n_sigma)]
+                        + f
+                        * self.couplings['rsd', mu, (ell_sigma, n_sigma)]
+                    )
+                    * (
+                        b_k[n_idx]
+                        * self.couplings['radial', nu, (ell_sigma, n_sigma)]
+                        + f
+                        * self.couplings['rsd', nu, (ell_sigma, n_sigma)]
+                    )
+                    * p_k[ell_sigma, n_sigma] / kappa[ell_sigma, n_sigma]
+                    for n_idx, n_sigma in enumerate(range(1, nmax_sigma + 1))
                 ])
             else:
                 radial_sum = np.sum([
-                    (
-                        b_k * Phi[mu, (ell_sigma, n_sigma)]
-                        + f * Upsilon[mu, (ell_sigma, n_sigma)]
-                    ) * (
-                        b_k * Phi[nu, (ell_sigma, n_sigma)]
-                        + f * Upsilon[nu, (ell_sigma, n_sigma)]
-                    )
-                    * p_k[ell_sigma, n_sigma] / kappa[ell_sigma, n_sigma]
-                    for n_sigma in range(1, nmax_sigma + 1)
+                    self.couplings['radial', mu, (ell_sigma, n_sigma)]
+                    * self.couplings['radial', nu, (ell_sigma, n_sigma)]
+                    * b_k[n_idx]**2 * p_k[ell_sigma, n_sigma]
+                    / kappa[ell_sigma, n_sigma]
+                    for n_idx, n_sigma in enumerate(range(1, nmax_sigma + 1))
                 ])
 
-            signal += self._angular_sums[mu, nu][ell_sigma] * radial_sum
+            signal += radial_sum \
+                * self._angular_sums[(mu[0], mu[1]), (nu[0], nu[1])][ell_sigma]
 
         if nbar is not None:
             alpha = 0. if contrast is None else 1 / contrast
@@ -626,7 +628,7 @@ class SphericalCorrelator:
             index_vector = [
                 tuple(index)
                 for index in index_array.array['index'][
-                    np.argsort(index_array['wavenumber'])
+                    np.argsort(index_array.array['wavenumber'])
                 ]
             ]
 

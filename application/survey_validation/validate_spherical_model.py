@@ -50,6 +50,7 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     )[sort_order]
 
     # Spherical model.
+    # pylint: disable=global-statement
     global spherical_model
 
     spherical_model = SphericalCorrelator(
@@ -106,6 +107,7 @@ def validate_spherical_correlator_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     ))
 
     # Spherical model.
+    # pylint: disable=global-statement
     global spherical_model
 
     spherical_model = SphericalCorrelator(

@@ -123,7 +123,7 @@ def write_tags():
     if params.mask_file is not None:
         # Only take mask '(source=<>,...)' information.
         mask_info = re.search(
-            "source=(?P<source>?.*?),", params.mask_file
+            "source=(?P<source>.*?),", params.mask_file
         ).group('source')
     else:
         mask_info = params.sky_fraction
@@ -131,7 +131,7 @@ def write_tags():
     if params.selection_file is not None:
         # Only take selection '(source=<>,...)' information.
         selection_info = re.search(
-            "source=(?P<source>?.*?),", params.selection_file
+            "source=(?P<source>.*?),", params.selection_file
         ).group('source')
         # Also remove double records if the same as `mask_file` source.
         selection_info = 'same' if selection_info == mask_info \

@@ -127,7 +127,7 @@ def read_data(collate_data=False, load_data=False, save_data=False,
         if MAP == "hybrid":
             collated_output['likelihood'] = np.squeeze(
                 filtered_output['spherical_likelihood']
-                # + filtered_output['cartesian_likelihood']
+                + filtered_output['cartesian_likelihood']
             )
             del collated_output['spherical_likelihood']
             del collated_output['cartesian_likelihood']
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     file_root = f"(NG={int(NG)}.,z=1.)"
 
     # NOTE: Change this before running.
-    x_parameters = np.linspace(-375.0, 375.0, 751)
+    x_parameters = np.linspace(-350.0, 350.0, 701)
     y_parameters = np.linspace(2.1, 2.6, 51)
 
     # NOTE: Change this before running.
@@ -224,6 +224,7 @@ if __name__ == '__main__':
         precision=(0, 2),
         estimate='median',
         truth=(NG, None),
-        # cmap=['Purples', 'Greens'],
+        # cmap=['Greens', 'Oranges', 'Purples'],
+        # alpha=[0.66,]*3,
         # savefig=True,
     )

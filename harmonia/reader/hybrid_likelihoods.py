@@ -370,7 +370,8 @@ def spherical_parametrised_covariance(b_1, f_nl, two_point_model, pivot,
 def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
                                  two_point_model, spherical_data, pivot,
                                  breakdown=False, exclude_degrees=(),
-                                 logger=None, comm=None, **covariance_kwargs):
+                                 rotation=None, logger=None, comm=None,
+                                 **covariance_kwargs):
     """Evaluate the spherical map logarithmic likelihood.
 
     Parameters
@@ -387,6 +388,8 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
         Spherical data array of the transformed field.
     pivot : {'natural', 'transposed', 'spectral', 'root', 'scale'}
         Pivot axis for unpacking indexed data into a 1-d vector.
+    rotation : float, array_like or None, optional
+        Rotation matrix to apply to the data vector and its moments.
     logger : :class:`logging.Logger` or None, optional
         Logger (default is `None`).
     comm : :class:`mpi4py.MPI.Comm` or None, optional
@@ -431,6 +434,10 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
 
     data_vector = data_vector[~excluded_deg]
 
+    if rotation is not None:
+        data_dim = len(data_vector) // 2
+        data_vector = (rotation @ data_vector)[:data_dim]
+
     axis_to_squeeze = ()
     if not isinstance(bias, collections.Iterable):
         bias = (bias,)
@@ -457,6 +464,11 @@ def spherical_map_log_likelihood(bias, non_gaussianity, mean_number_density,
             nbar=mean_number_density,
             **covariance_kwargs
         )[:, ~excluded_deg][~excluded_deg, :]
+
+        if rotation is not None:
+            sample_covar = (
+                rotation @ sample_covar @ np.conj(rotation.T)
+            )[:data_dim, :data_dim]
 
         sample_likelihood = complex_normal_pdf(
             data_vector, sample_covar,

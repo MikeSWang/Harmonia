@@ -44,6 +44,7 @@ FIDUCIAL_ESTIMATE_FILENAME = (
 # Likelihood input.
 FIXED_PARAMS_FILE = PATHIN/"fixed_parameters.txt"
 SAMPLED_PARAMS_FILE = PATHIN/"sampled_parameters.txt"
+COMPRESSION_FILE = PATHIN/"rotation.npy"
 
 # Global quantities.
 simu_cosmo = None
@@ -197,6 +198,8 @@ def process():
         comm=comm
     )
 
+    rotation = np.load(COMPRESSION_FILE)
+
     smap_file = params['input_catalogue'] \
         + "-(map={},fsky={:.2f},knots=[{},{}],rsd={},theta).npy".format(
             'spherical', params['fsky'],
@@ -240,6 +243,7 @@ def process():
             breakdown=params['breakdown'],
             independence=params['sph_mode_independence'],
             exclude_degrees=params['exclude_degrees'],
+            rotation=rotation,
             logger=logger,
             comm=comm,
         )

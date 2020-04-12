@@ -3,7 +3,7 @@
 Cosmological models (:mod:`~harmonia.cosmology`)
 ***************************************************************************
 
-Compute  quantities related to a specified cosmological model with
+Compute quantities related to a specified cosmological model with
 :class:`nbodykit.cosmology`.
 
 """

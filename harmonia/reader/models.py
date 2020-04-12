@@ -523,6 +523,7 @@ class SphericalCorrelator:
             self._disc.normalisations, self._mode_powers, self.growth_rate
 
         # Summing contributions over degree index (say, ell_sigma).
+        angular_sum_subdir = self._get_angular_sums(mu, nu)
         signal = 0.
         for ell_sigma, nmax_sigma in \
                 zip(self._disc.degrees, self._disc.depths):
@@ -560,12 +561,12 @@ class SphericalCorrelator:
                     for n_idx, n_sigma in enumerate(range(1, nmax_sigma + 1))
                 ])
 
-            signal += radial_sum \
-                * self._angular_sums[(mu[0], mu[1]), (nu[0], nu[1])][ell_sigma]
+            signal += radial_sum * angular_sum_subdir[ell_sigma]
 
         if nbar is not None:
             alpha = 0. if contrast is None else 1 / contrast
-            shot_noise = (1 + alpha) / nbar * self._shot_noise_levels[mu, nu]
+            shot_noise = (1 + alpha) / nbar \
+                * self._get_shot_noise_level(mu, nu)
             return signal + shot_noise
 
         return signal
@@ -643,7 +644,7 @@ class SphericalCorrelator:
             else:
                 alpha = 0. if contrast is None else 1 / contrast
                 shot_noise_diag = (1 + alpha) / nbar * np.asarray([
-                    self._shot_noise_levels[mu, mu]
+                    self._get_shot_noise_level(mu, mu)
                     for mu in index_vector
                 ])
 
@@ -673,8 +674,8 @@ class SphericalCorrelator:
             for row_idx in range(dim):
                 for col_idx in range(row_idx + 1):
                     mu, nu = index_vector[row_idx], index_vector[col_idx]
-                    shot_noise_mat[row_idx, col_idx] = \
-                        shot_noise_amplitude * self._shot_noise_levels[mu, nu]
+                    shot_noise_mat[row_idx, col_idx] = shot_noise_amplitude * \
+                        self._get_shot_noise_level(mu, nu)
 
         if shot_noise_only:
             return shot_noise_mat
@@ -747,10 +748,16 @@ class SphericalCorrelator:
 
     def _compile_angular_sums(self):
 
-        # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m).
-        index_pair_vector = list(product(
-            *(self._gen_operable_indices(subtype='angular'), ) * 2
-        ))
+        # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m)
+        # where `nu` is a higher index than `mu` (the other cases are obtained
+        # by Hermitian conjuate).
+        index_pair_vector = list(
+            (first_index, second_index)
+            for first_index in self._gen_operable_indices(subtype='angular')
+            for second_index in self._gen_operable_indices(
+                subtype='angular', reduce_by=first_index
+            )
+        )
 
         # Compile, for each index pair of the form above, all its angular sums
         # indexed by a new degree index (say, ell_sigma) of the form:
@@ -776,10 +783,14 @@ class SphericalCorrelator:
 
     def _compile_shot_noise_levels(self):
 
-        # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m).
-        index_pair_vector = list(product(
-            *(self._gen_operable_indices(), ) * 2
-        ))
+        # Compiles all index pairs (mu, nu) where `nu` is a higher index
+        # than `mu` (the other cases are obtained by Hermitian conjuate).
+        index_pair_vector = list(
+            (first_index, second_index)
+            for first_index in self._gen_operable_indices()
+            for second_index in \
+                self._gen_operable_indices(reduce_by=first_index)
+        )
 
         # Compile, for each index pair of the form above, the shot noise
         # level of the form: M_{mu, nu} * radial integral [selection, weight].
@@ -807,6 +818,20 @@ class SphericalCorrelator:
             )
 
         return shot_noise_levels
+
+    def _get_angular_sums(self, mu, nu):
+
+        try:
+            return self._angular_sums[(mu[0], mu[1]), (nu[0], nu[1])]
+        except KeyError:
+            return self._angular_sums[(nu[0], nu[1]), (mu[0], mu[1])]
+
+    def _get_shot_noise_level(self, mu, nu):
+
+        try:
+            return self._shot_noise_levels[mu, nu]
+        except KeyError:
+            return self._shot_noise_levels[nu, mu]
 
     def _compile_angular_sums_by_index_pair(self, index_pair):
 
@@ -853,7 +878,7 @@ class SphericalCorrelator:
 
         return M_mu_nu * shot_noise_integral
 
-    def _gen_operable_indices(self, subtype=None):
+    def _gen_operable_indices(self, subtype=None, reduce_by=None):
 
         if subtype == 'angular':
             operable_indices = [
@@ -873,6 +898,11 @@ class SphericalCorrelator:
                 for ell, nmax in zip(self._disc.degrees, self._disc.depths)
                 for m in range(- ell, ell + 1)
                 for n in range(1, nmax + 1)
+            ]
+
+        if reduce_by is not None:
+            operable_indices = [
+                index for index in operable_indices if index >= reduce_by
             ]
 
         return operable_indices

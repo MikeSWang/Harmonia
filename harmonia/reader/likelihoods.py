@@ -249,23 +249,19 @@ class LikelihoodWarning(UserWarning):
     """
 
 
-def spherical_covariance(b_1, f_nl, spherical_model, pivot, **kwargs):
+def spherical_covariance(pivot, spherical_model, **kwargs):
     r"""Compute the parametrised covariance matrix of spherical Fourier
     coefficients.
 
     Parameters
     ----------
-    b_1 : float
-        Scale-independent linear bias.
-    f_nl : float or None
-        Local primordial non-Gaussianity.
-    spherical_model : :class:`~harmonia.reader.models.SphericalCorrelator`
-        Spherical correlator base model.
     pivot : {'natural', 'spectral'}
         Pivot order for vectorisation.
+    spherical_model : :class:`~harmonia.reader.models.SphericalCorrelator`
+        Spherical correlator base model.
     **kwargs
-        Parameters (other than `b_1`, `f_nl` and `pivot`) to be passed to
-        |correlator_matrix| of `spherical_correlator`.
+        Parameters (other than `pivot`) to be passed to |correlator_matrix|
+        of `spherical_correlator`.
 
     Returns
     -------
@@ -277,24 +273,20 @@ def spherical_covariance(b_1, f_nl, spherical_model, pivot, **kwargs):
     :class:`~harmonia.reader.models.SphericalCorrelator`
 
     """
-    covariance_matrix = spherical_model.correlator_matrix(
-        pivot, b_1=b_1, f_nl=f_nl, **kwargs
-    )
+    covariance_matrix = spherical_model.correlator_matrix(pivot, **kwargs)
 
     return covariance_matrix
 
 
-def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
-                      orders, pivot, **kwargs):
+def cartesian_moments(pivot, cartesian_model, covariance_estimator, orders,
+                      **kwargs):
     """Compute the parametrised mean and covariance of Cartesian
     power spectrum multipoles.
 
     Parameters
     ----------
-    b_1 : float
-        Scale-independent linear bias of the tracer particles.
-    f_nl : float or None
-        Local primordial non-Gaussianity.
+    pivot : {'order', 'wavenumber'}
+        Pivot order for vectorisation.
     cartesian_model : :class:`~.models.CartesianMultipoles`
         Cartesian power multipoles base model.
     covariance_estimator : :class:`~.synthesis.CovarianceEstimator`
@@ -303,10 +295,8 @@ def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
         with `cartesian_model`.
     orders : list of int
         Orders of the power spectrum multipoles.
-    pivot : {'order', 'wavenumber'}
-        Pivot order for vectorisation.
     **kwargs
-        Parameters (other than `b_1`, `f_nl` and `orders`) to be passed to
+        Parameters (other than `orders`) to be passed to
         |convolved_power_multipoles| of `cartesian_model`.
 
     Returns
@@ -330,7 +320,7 @@ def cartesian_moments(b_1, f_nl, cartesian_model, covariance_estimator,
     fiducial_covariance = covariance_estimator.get_fiducial_covariance(pivot)
 
     expectation = cartesian_model.convolved_power_multipoles(
-        orders, b_1, f_nl=f_nl, **kwargs
+        orders, **kwargs
     ).vectorise(pivot)
 
     covariance = np.linalg.multi_dot([
@@ -352,41 +342,81 @@ class LogLikelihood:
         Spherical Fourier coefficient data (default is `None`).
     cartesian_data : :class:`~.arrays.CartesianArray` *or None, optional*
         Spherical Fourier coefficient data (default is `None`).
+    covariance_estimator : :class:`~.CovarianceEstimator` *or None, optional*
+        Cartesian multipole covariance estimator (default is `None`).
+    base_spherical_model : :class:`~.SphericalCorrelator` *or None, optional*
+        Baseline spherical correlator model (default is `None`).
+    base_cartesian_model : :class:`~.CartesianMultipoles` *or None, optional*
+        Baseline Cartesian multipole model (default is `None`).
+    spherical_pivot : {'natural', 'spectral'}, optional
+        Pivot order for spherical map data vectorisation (default is
+        'natural').
+    cartesian_pivot : {'order', 'wavenumber'}, optional
+        Pivot order for Cartesian map data vectorisation (default is
+        'order').
+    nbar : float or None, optional
+        Mean particle number density (in cubic :math:`h`/Mpc).  If
+        `None` (default), shot noise is neglected.
+    contrast : float or None, optional
+        If not `None` (default), this adds additional shot noise level
+        ``1 / (contrast * nbar)`` due to a FKP-style random catalogue.
+    tracer_p : float, optional
+        Tracer-dependent parameter for bias modulation by `f_nl`
+        (default is 1.).
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator (default is `None`).
 
     Attributes
     ----------
+    attrs : dict
+        Directory holding input parameters not corresponding to any of
+        the following attributes.
     spherical_data : :class:`~.algorithms.arrays.SphericalArray` or None
         Spherical Fourier coefficient data.
     cartesian_data : :class:`~.algorithms.arrays.CartesianArray` or None
         Spherical Fourier coefficient data.
+    covariance_estimator : :class:`~.CovarianceEstimator` or None
+        Cartesian multipole covariance estimator.
+    base_spherical_model : :class:`~.SphericalCorrelator` or None
+        Baseline spherical correlator model.
+    base_cartesian_model : :class:`~.CartesianMultipoles` or None
+        Baseline Cartesian multipole model.
 
     """
 
-    def __init__(self, spherical_data=None, cartesian_data=None, comm=None):
+    def __init__(self, spherical_data=None, cartesian_data=None,
+                 covariance_estimator=None, base_spherical_model=None,
+                 base_cartesian_model=None, spherical_pivot='natural',
+                 cartesian_pivot='order', nbar=None, contrast=None,
+                 tracer_p=1., comm=None):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.comm = comm
 
+        self.attrs = {
+            'spherical_pivot': spherical_pivot,
+            'cartesian_pivot': cartesian_pivot,
+            'nbar': nbar,
+            'contrast': contrast,
+            'tracer_p': tracer_p,
+        }
+
         self.spherical_data = spherical_data
         self.cartesian_data = cartesian_data
+        self.covariance_estimator = covariance_estimator
+        self.base_spherical_model = base_spherical_model
+        self.base_cartesian_model = base_cartesian_model
 
-    def spherical_map_likelihood(self, spherical_model, b_1, f_nl,
-                                 pivot='natural', exclude_degrees=(),
+    def spherical_map_likelihood(self, b_1, f_nl, exclude_degrees=(),
                                  compression_matrix=None, **kwargs):
         """Evaluate the spherical map logarithmic likelihood.
 
         Parameters
         ----------
-        spherical_model : :class:`~.reader.models.SphericalCorrelator`
-            Spherical correlator base model.
         b_1 : float
             Scale-independent linear bias.
         f_nl : float or None
             Local primordial non-Gaussianity.
-        pivot : {'natural', 'spectral'}, optional
-            Pivot order for vectorisation (default is 'natural').
         exclude_degrees : tuple of int, optional
             If not empty (default), modes whose spherical degree
             match one of its elements are removed from the likelihood.
@@ -397,8 +427,8 @@ class LogLikelihood:
             for elements removed from the data vector and covariance
             matrix by `exclude_degrees`.
         **kwargs
-            Additional parameters to be passed to
-            :func:`spherical_covariance`.
+            Additional parameters to be passed to |correlator_matrix| of
+            :attr:`base_spherical_model`.
 
         Returns
         -------
@@ -412,10 +442,16 @@ class LogLikelihood:
         """
         _OVERFLOW_DOWNSCALE = 10**4
 
-        data_vector = self.spherical_data.vectorise(pivot)
+        data_vector = \
+            self.spherical_data.vectorise(self.attrs['spherical_pivot'])
 
         covariance_matrix = spherical_covariance(
-            b_1, f_nl, spherical_model, pivot, **kwargs
+            self.attrs['spherical_pivot'], self.base_spherical_model,
+            b_1=b_1, f_nl=f_nl,
+            nbar=self.attrs['nbar'],
+            contrast=self.attrs['contrast'],
+            tracer_p=self.attrs['tracer_p'],
+            **kwargs
         )
 
         # pylint: disable=no-member
@@ -443,27 +479,19 @@ class LogLikelihood:
 
         return log_likelihood
 
-    def cartesian_map_likelihood(self, cartesian_model, covariance_estimator,
-                                 b_1, f_nl, orders, pivot, num_samples=None,
-                                 **kwargs):
+    def cartesian_map_likelihood(self, b_1, f_nl, orders=None,
+                                 num_samples=None, **kwargs):
         """Evaluate the Cartesian map logarithmic likelihood.
 
         Parameters
         ----------
-        cartesian_model : :class:`~.models.CartesianMultipoles`
-            Cartesian power multipoles base model.
-        covariance_estimator : :class:`~.synthesis.CovarianceEstimator`
-            Cartesian power multipole covariance estimator.  Its
-            :attr:`wavenumbers` must match wavenumbers associated
-            with `cartesian_model`.
         b_1 : float
             Scale-independent linear bias of the tracer particles.
         f_nl : float or None
             Local primordial non-Gaussianity.
-        orders : list of int
-            Orders of the power spectrum multipoles.
-        pivot : {'order', 'wavenumber'}
-            Pivot order for vectorisation.
+        orders : list of int or None, optional
+            Orders of the power spectrum multipoles.  If `None` (default),
+            only the monopole is used.
         num_samples : int or None, optional
             If `None` (default), the normal distribution is used without
             correction for covariance estimation uncertainty; otherwise
@@ -471,7 +499,7 @@ class LogLikelihood:
             covariance estimation uncertainty correction [1]_.
         **kwargs
             Additional parameters to be passed to
-            :func:`cartesian_moments`.
+            |convolved_power_multipoles| of :attr:`base_cartesian_model`.
 
         Returns
         -------
@@ -483,10 +511,18 @@ class LogLikelihood:
            [arXiv: `1511.05969 <https://arxiv.org/abs/1511.05969>`_]
 
         """
-        data_vector = self.cartesian_data.vectorise(pivot)
+        orders = orders or [0]
+
+        data_vector = \
+            self.cartesian_data.vectorise(self.attrs['cartesian_pivot'])
 
         expectation_vector, covariance_matrix = cartesian_moments(
-            b_1, f_nl, cartesian_model, covariance_estimator, orders, pivot,
+            self.attrs['cartesian_pivot'],
+            self.base_cartesian_model, self.covariance_estimator, orders,
+            b_1=b_1, f_nl=f_nl,
+            nbar=self.attrs['nbar'],
+            contrast=self.attrs['contrast'],
+            tracer_p=self.attrs['tracer_p'],
             **kwargs
         )
 

@@ -174,8 +174,8 @@ class CartesianMultipoles:
         # pre-compute quantities at set wavenumbers.
         self._set_baseline_model(cosmo, power_spectrum, growth_rate)
 
-    def convolved_power_multipoles(self, orders, b_1, f_nl=None, nbar=None,
-                                   contrast=None, tracer_p=1.,
+    def convolved_power_multipoles(self, orders, b_1=None, f_nl=None,
+                                   nbar=None, contrast=None, tracer_p=1.,
                                    update_model_kwargs=None):
         """Compute the convolved power spectrum multipoles.
 
@@ -184,8 +184,10 @@ class CartesianMultipoles:
         orders : list of int
             Orders of the power spectrum multipoles.  Values only allowed
             from the set {0, 2, 4}.
-        b_1 : float
-            Scale-independent linear bias at input redshift.
+        b_1 : float or None, optional
+            Scale-independent linear bias at input redshift.  If `None`
+            (default), no tracer bias is assumed relative to the matter
+            power spectrum.
         f_nl : float or None, optional
             Local primordial non-Gaussianity (default is `None`).
         nbar : float or None, optional
@@ -211,6 +213,8 @@ class CartesianMultipoles:
         # arguments specified.
         if update_model_kwargs is not None:
             self._set_baseline_model(**update_model_kwargs)
+
+        b_1 = b_1 or 1.
 
         if f_nl is not None and self.cosmo is None:
             raise TypeError(

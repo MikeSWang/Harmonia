@@ -1,19 +1,13 @@
 # To-Do List
 
-## Current items
+## Extensions
 
-- [ ] [mapper/spherical_transform.py](./harmonia/mapper/spherical_transform.py):
-      generalise for non-uniform mask/selection FKP catalogues.
-- [ ] [reader/spherical_model.py](./harmonia/reader/spherical_model.py):
-      add support for variable growth rate.
-
-## Future items
-
-Add evolution and AP functions in module ``cosmology``, and include
-corresponding effects into ``mapper`` catalogue maker.
+Add bias, clustering and growth rate evolution and fiducial 
+redshift-from-distance functions in subpackage ``cosmology``.
 
 ## Publishing
 
-- [ ] tests: [tests/](./tests/)
-- [ ] tutorial build: [examples/](./examples/)
-- [ ] distribution build: [./](./)
+- [ ] readme ([README.md](./README.MD)): complete introduction & instructions.
+- [ ] build: add ``setup.py`` and ``requirements.txt``; use Travis.
+- [ ] tests ([tests/](./tests/)): complete unit testing.
+- [ ] tutorials: [tutorials/](./examples/): add tutorials.

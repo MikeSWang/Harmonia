@@ -192,7 +192,7 @@ class Couplings:
             if attr == 'disc':
                 self.disc = DiscreteSpectrum._from_state(state['disc'])
             else:
-                # Strip '_' for backward compatibility.
+                # NOTE: Strip '_' for backward compatibility.
                 setattr(self, attr.strip('_'), value)
 
     def __getstate__(self):
@@ -233,8 +233,8 @@ class Couplings:
         """
         if not self.initialised:
             raise AttributeError(
-                "Please call `compile_couplings` first. "
-                "No coupling coefficients can be accessed when uninitialised."
+                "Unitialised state: coupling coefficients not compiled. "
+                "Please call `compile_couplings` first."
             )
 
         coupling_type, mu, nu = key
@@ -287,11 +287,11 @@ class Couplings:
         self.couplings.update({'angular': angular_couplings})
 
     def compile_couplings(self):
-        """Compile all coupling coefficients and set initialisation state
-        to `True`.
+        """Compile all coupling coefficients.
 
         """
         for coupling_type in self._coupling_types:
+            # Only compile empty coupling directories.
             if not self.couplings[coupling_type]:
                 self._compile_couplings_by_type(coupling_type)
 

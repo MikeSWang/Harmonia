@@ -49,7 +49,10 @@ def initialise_parameters():
     )
     parser.add_argument(
         '--cosmology-file', type=str, required=True,
-        help="cosmological parameter file relative to 'storage/cosmology'"
+        help=(
+            "cosmological parameter file "
+            "relative to 'storage/external/cosmology/'"
+        )
     )
 
     parser.add_argument(

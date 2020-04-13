@@ -4,6 +4,49 @@ Two-point correlator models (:mod:`~harmonia.reader.models`)
 
 Compute Fourier-space two-point correlator models.
 
+
+Cartesian multipoles
+---------------------------------------------------------------------------
+
+The standard Kaiser model of plane-parallel power spectrum multipoles is
+implemented with window convolution and integral constraints taken into
+account.
+
+
+Spherical correlator
+---------------------------------------------------------------------------
+
+Spherical 2-point correlators are computed from coupling coefficients as a
+sum of the signal part
+
+.. math::
+
+    \left\langle \delta_\mu \delta_\nu \right\rangle = \sum_\sigma
+        M_{\mu\sigma} M^*_{\nu\sigma} \left[
+            b_*(k_\sigma) \Phi_{\mu\sigma} + f_* \Upsilon_{\mu\sigma}
+        \right] \left[
+            b_*(k_\sigma) \Phi_{\nu\sigma} + f_* \Upsilon_{\nu\sigma}
+        \right] \kappa_\sigma^{-1} P_{\textrm{m}*}(k_\sigma) \,,
+
+and the shot noise part
+
+.. math::
+
+    \left\langle \epsilon_\mu \epsilon_\nu \right\rangle =
+        \frac{1}{\bar{n}} M_{\mu\nu} \int \operatorname{d}\!r r^2
+        (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
+
+where the scale-dependent bias :math:`b(k) = b_1 + f_\textrm{NL}
+\Delta b(k)` includes the modification :math:`\Delta b` due to local
+primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the fiducial
+epoch :math:`z_*` (see :mod:`~harmonia.cosmology.scale_dependence` and
+:mod:`~harmonia.reader.couplings`); :math:`P_{\textrm{m}*}` is the matter
+power spectrum at the fiducial epoch; :math:`\kappa` denotes the
+normalisation coefficients (see
+:mod:`~harmonia.algorithms.discretisation`); and
+:math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
+
+
 .. autosummary::
 
     CartesianMultipoles

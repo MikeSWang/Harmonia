@@ -110,8 +110,8 @@ class CartesianMultipoles:
         Baseline cosmological model used to produce the transfer function
         and power spectrum and to compute the linear growth rate.
         If `None` (default) and not subsequently provided when calling
-        some of the methods, non-Gaussianity modifications cannot be
-        computed.  This can be subsequently updated when calling
+        some of the methods, primordial non-Gaussianity modifications
+        cannot be computed.  This can be subsequently updated when calling
         :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     power_spectrum : callable or None, optional
         Baseline linear matter power spectrum model at `redshift`.
@@ -461,8 +461,8 @@ class SphericalCorrelator:
         Baseline cosmological model used to produce the transfer function
         and power spectrum and to compute the linear growth rate.
         If `None` (default) and not subsequently provided when calling
-        some of the methods, non-Gaussianity modifications cannot be
-        computed.  This can be subsequently updated when calling
+        some of the methods, primordial non-Gaussianity modifications
+        cannot be computed.  This can be subsequently updated when calling
         :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     power_spectrum : callable or None, optional
         Baseline linear matter power spectrum model at `redshift`.

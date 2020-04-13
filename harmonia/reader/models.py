@@ -9,15 +9,43 @@ Cartesian multipoles
 ---------------------------------------------------------------------------
 
 The standard Kaiser model of plane-parallel power spectrum multipoles is
-implemented with window convolution and integral constraints taken into
-account.
+implemented,
+
+.. math::
+
+    \begin{align*}
+        P_0(k, z) &=
+            \left[
+                b_1(z)^2 + \frac{2}{3} b(z, k) f(z) + \frac{1}{5} f(z)^2
+            \right] P_\mathrm{m}(k, z) \,, \\
+        P_2(k, z) &=
+            \left[
+                \frac{4}{3} b(z, k) f(z) + \frac{4}{7} f(z)^2
+            \right] P_\mathrm{m}(k, z) \,, \\
+        P_4(k, z) &= \frac{8}{35} f(z)^2 P_\mathrm{m}(k, z) \,,
+    \end{align*}
+
+with shot noise, window convolution and the integral constraint taken
+into account [1]_ [2]_; here :math:`f(z)` is the linear growth rate,
+:math:`b(z, k) = b_1(z) + f_\textrm{NL} \Delta b(k, z)` is the
+scale-dependent linear bias including the modification :math:`\Delta b`
+due to local primordial non-Gaussianity :math:`f_\textrm{NL}` (see
+:mod:`~harmonia.cosmology.scale_dependence`), and :math:`P_{\textrm{m}}`
+is the matter power spectrum.
+
+
+.. [1] Wilson M. J. et al., 2017. MNRAS 464(3), 3121–3130.
+    [arXiv: `1511.07799 <https://arxiv.org/abs/1511.07799>`_]
+
+.. [2] Beutler F. et al., 2017. MNRAS 466(2), 2242–2260.
+    [arXiv: `1607.03150 <https://arxiv.org/abs/1607.03150>`_]
 
 
 Spherical correlator
 ---------------------------------------------------------------------------
 
-Spherical 2-point correlators are computed from coupling coefficients as a
-sum of the signal part
+Spherical 2-point correlators are computed from coupling coefficients
+(see :mod:`~harmonia.reader.couplings`) as a sum of the signal part
 
 .. math::
 
@@ -36,14 +64,9 @@ and the shot noise part
         \frac{1}{\bar{n}} M_{\mu\nu} \int \operatorname{d}\!r r^2
         (w^2\phi)(r) j_\mu(r) j_\nu(r) \,,
 
-where the scale-dependent bias :math:`b(k) = b_1 + f_\textrm{NL}
-\Delta b(k)` includes the modification :math:`\Delta b` due to local
-primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the fiducial
-epoch :math:`z_*` (see :mod:`~harmonia.cosmology.scale_dependence` and
-:mod:`~harmonia.reader.couplings`); :math:`f_*` and :math:`P_{\textrm{m}*}`
-are the linear growth rate and the matter power spectrum at the fiducial
-epoch; :math:`\kappa` denotes the normalisation coefficients (see
-:mod:`~harmonia.algorithms.discretisation`); and
+where :math:`*` denotes quantities computed at the fiducial epoch
+:math:`z_*`, :math:`\kappa` denotes the normalisation coefficients (see
+:mod:`~harmonia.algorithms.discretisation`) and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
 

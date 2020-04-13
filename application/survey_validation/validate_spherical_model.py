@@ -11,6 +11,7 @@ from mpi4py import MPI
 
 try:
     from application import confirm_directory, data_dir
+    from harmonia.algorithms import DiscreteSpectrum
     from harmonia.cosmology import BaseModel, modified_power_spectrum
     from harmonia.reader import Couplings, SphericalCorrelator
     from harmonia.utils import covar_to_corr
@@ -21,42 +22,50 @@ except ImportError:
     ))
 
     from application import confirm_directory, data_dir
+    from harmonia.algorithms import DiscreteSpectrum
     from harmonia.cosmology import BaseModel, modified_power_spectrum
     from harmonia.reader import Couplings, SphericalCorrelator
     from harmonia.utils import covar_to_corr
 
 
 def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
-                                     contrast=10.):
+                                     contrast=10., use_shortcut=True):
     """Validate full-sky spherical modelling against baseline power
     spectrum model.
+
+    Parameters
+    ----------
+    b_1, f_nl, nbar, contrast : float, optional
+        Cosmological and model parameters to pass to the model.  Defaults
+        are 2.3415, 100., 2.5e-4 and 10. respectively.
+    use_shortcut : bool, optional
+        If `True` (default), short cuts (Kronecker delta reduction in the
+        absence of couplings and diagonalisation of correlator matrix)
+        are used.
 
     """
     # External information.
     simulation_cosmo = BaseModel(cosmo_dir/cosmo_file)
 
-    fullsky_couplings = Couplings.load(
-        survey_product_dir/couplings_file.format(kmax, "1.0", "None")
-    )
+    if use_shortcut:
+        fullsky_couplings = None
+        disc = DiscreteSpectrum(rmax, 'dirichlet', kmax)
+    else:
+        fullsky_couplings = Couplings.load(
+            survey_product_dir/couplings_file.format(kmax, "1.0", "None")
+        )
+        disc = fullsky_couplings.disc
 
-    sort_order = np.argsort(
-        list(fullsky_couplings.disc.wavenumbers.values())
-    )
-
-    wavenumbers = np.array(
-        list(fullsky_couplings.disc.wavenumbers.values())
-    )[sort_order]
-
-    normalisations = np.array(
-        list(fullsky_couplings.disc.normalisations.values())
-    )[sort_order]
+    sort_order = np.argsort(list(disc.wavenumbers.values()))
+    wavenumbers = np.array(list(disc.wavenumbers.values()))[sort_order]
+    normalisations = np.array(list(disc.normalisations.values()))[sort_order]
 
     # Spherical model.
     # pylint: disable=global-statement
     global spherical_model
 
     spherical_model = SphericalCorrelator(
-        fullsky_couplings.disc, REDSHIFT,
+        disc, REDSHIFT,
         cosmo=simulation_cosmo, growth_rate=0., couplings=fullsky_couplings,
         comm=comm
     )
@@ -96,6 +105,12 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
                                         contrast=10.):
     """Validate generic spherical correlator predictions against estimates
     from large sample sets.
+
+    Parameters
+    ----------
+    b_1, f_nl, nbar, contrast : float, optional
+        Cosmological and model parameters to pass to the model.  Defaults
+        are 1., 0., 2.5e-4 and 10. respectively.
 
     """
     # External information.
@@ -161,6 +176,7 @@ if __name__ == '__main__':
 
     comm = MPI.COMM_WORLD
 
+    rmax = 500.
     kmax = 0.04
     mask_tag = "0.5" # "random0_BOSS_DR12v5_CMASS_North"
     selection_tag = "None" # "[100.0,500.0]"

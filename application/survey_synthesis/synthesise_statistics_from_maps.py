@@ -224,7 +224,7 @@ def export_map_statistics():
     if params.plot_estimate:
         plt.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))
 
-    if not params.only_cartesian:
+    if not params.cartesian_only:
         # Export spherical covariance matrix.
         spherical_data_array = [
             spherical_map_data.vectorise(params.pivots[0])

@@ -278,8 +278,8 @@ def spherical_covariance(pivot, spherical_model, **kwargs):
     return covariance_matrix
 
 
-def cartesian_moments(pivot, cartesian_model, covariance_estimator, orders,
-                      **kwargs):
+def cartesian_moments(pivot, orders, cartesian_model,
+                      covariance_estimator=None, mode_counts=None, **kwargs):
     """Compute the parametrised mean and covariance of Cartesian
     power spectrum multipoles.
 
@@ -287,14 +287,20 @@ def cartesian_moments(pivot, cartesian_model, covariance_estimator, orders,
     ----------
     pivot : {'order', 'wavenumber'}
         Pivot order for vectorisation.
-    cartesian_model : :class:`~.models.CartesianMultipoles`
-        Cartesian power multipoles base model.
-    covariance_estimator : :class:`~.synthesis.CovarianceEstimator`
-        Cartesian power multipole covariance estimator.  Its
-        :attr:`wavenumbers` must match wavenumbers associated
-        with `cartesian_model`.
     orders : list of int
         Orders of the power spectrum multipoles.
+    cartesian_model : :class:`~.models.CartesianMultipoles`
+        Cartesian power multipoles base model.
+    covariance_estimator : :class:`~.CovarianceEstimator` *or None, optional*
+        Cartesian power multipole covariance estimator.  Its
+        :attr:`wavenumbers` must match wavenumbers associated
+        with `cartesian_model`.  If `None`, no correlation between power
+        spectrum multipoles is assumed but `mode_counts` must be provided
+        for calculating the power spectrum variance.
+    mode_counts : int, array_like or None, optional
+        Number of independent modes for each power spectrum measurement
+        (default is `None`) used to calculate the power spectrum variance.
+        Ignored if `covariance_estimator` is provided.
     **kwargs
         Parameters (other than `orders`) to be passed to
         |convolved_power_multipoles| of `cartesian_model`.
@@ -307,27 +313,33 @@ def cartesian_moments(pivot, cartesian_model, covariance_estimator, orders,
         Power spectrum variance at the specified wavenumbers.
 
     """
-    # Check model and estimator wavenumbers agree.
-    assert np.allclose(
-        cartesian_model.attrs['wavenumbers'], covariance_estimator.wavenumbers
-    ), (
-        "The wavenumbers at which the Cartesian power multipole model "
-        "is evaluated must match the wavenumbers at which "
-        "the fiducial covariance matrix is estimated."
-    )
-
-    fiducial_expectation = covariance_estimator.get_fiducial_vector(pivot)
-    fiducial_covariance = covariance_estimator.get_fiducial_covariance(pivot)
-
     expectation = cartesian_model.convolved_power_multipoles(
         orders, **kwargs
     ).vectorise(pivot)
 
-    covariance = np.linalg.multi_dot([
-        np.diag(expectation / fiducial_expectation),
-        fiducial_covariance,
-        np.diag(expectation / fiducial_expectation)
-    ])
+    # Check model and estimator wavenumbers agree.
+    if covariance_estimator is None:
+        covariance = expectation ** 2 / np.asarray(mode_counts)
+    else:
+        assert np.allclose(
+            cartesian_model.attrs['wavenumbers'],
+            covariance_estimator.wavenumbers
+        ), (
+            "The wavenumbers at which the Cartesian power multipole model "
+            "is evaluated must match the wavenumbers at which "
+            "the fiducial covariance matrix is estimated."
+        )
+
+        fiducial_expectation = \
+            covariance_estimator.get_fiducial_vector(pivot)
+        fiducial_covariance = \
+            covariance_estimator.get_fiducial_covariance(pivot)
+
+        covariance = np.linalg.multi_dot([
+            np.diag(expectation / fiducial_expectation),
+            fiducial_covariance,
+            np.diag(expectation / fiducial_expectation)
+        ])
 
     return expectation, covariance
 
@@ -344,6 +356,10 @@ class LogLikelihood:
         Spherical Fourier coefficient data (default is `None`).
     covariance_estimator : :class:`~.CovarianceEstimator` *or None, optional*
         Cartesian multipole covariance estimator (default is `None`).
+    mode_counts : int, array_like or None, optional
+        Number of independent modes for each Cartesian data point (default
+        is `None`) as an alternative to `covariance_estimator`.  Ignored
+        if `covariance_estimator` is provided.
     base_spherical_model : :class:`~.SphericalCorrelator` *or None, optional*
         Baseline spherical correlator model (default is `None`).
     base_cartesian_model : :class:`~.CartesianMultipoles` *or None, optional*
@@ -385,10 +401,10 @@ class LogLikelihood:
     """
 
     def __init__(self, spherical_data=None, cartesian_data=None,
-                 covariance_estimator=None, base_spherical_model=None,
-                 base_cartesian_model=None, spherical_pivot='natural',
-                 cartesian_pivot='order', nbar=None, contrast=None,
-                 tracer_p=1., comm=None):
+                 covariance_estimator=None, mode_counts=None,
+                 base_spherical_model=None, base_cartesian_model=None,
+                 spherical_pivot='natural', cartesian_pivot='order',
+                 nbar=None, contrast=None, tracer_p=1., comm=None):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.comm = comm
@@ -396,6 +412,7 @@ class LogLikelihood:
         self.attrs = {
             'spherical_pivot': spherical_pivot,
             'cartesian_pivot': cartesian_pivot,
+            'mode_counts': mode_counts,
             'nbar': nbar,
             'contrast': contrast,
             'tracer_p': tracer_p,
@@ -527,8 +544,9 @@ class LogLikelihood:
             self.cartesian_data.vectorise(self.attrs['cartesian_pivot'])
 
         expectation_vector, covariance_matrix = cartesian_moments(
-            self.attrs['cartesian_pivot'],
-            self.base_cartesian_model, self.covariance_estimator, orders,
+            self.attrs['cartesian_pivot'], orders, self.base_cartesian_model,
+            covariance_estimator=self.covariance_estimator,
+            mode_counts=self.attrs['mode_counts'],
             b_1=b_1, f_nl=f_nl,
             nbar=self.attrs['nbar'],
             contrast=self.attrs['contrast'],
@@ -536,14 +554,14 @@ class LogLikelihood:
             **kwargs
         )
 
-        if num_samples is None:
-            log_likelihood = multivariate_normal_pdf(
-                data_vector, expectation_vector, covariance_matrix
-            )
-        else:
+        if self.covariance_estimator is not None and num_samples is not None:
             log_likelihood = modified_student_pdf(
                 data_vector, expectation_vector, covariance_matrix,
                 degree=num_samples
+            )
+        else:
+            log_likelihood = multivariate_normal_pdf(
+                data_vector, expectation_vector, covariance_matrix
             )
 
         return log_likelihood

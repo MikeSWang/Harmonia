@@ -439,6 +439,10 @@ class LogLikelihood:
         --------
         :class:`~harmonia.surveyor.synthesis.generate_compression_matrix`
 
+        :class:`~harmonia.reader.likelihoods.spherical_covariance`
+
+        |correlator_matrix|
+
         """
         _OVERFLOW_DOWNSCALE = 10**4
 
@@ -505,6 +509,12 @@ class LogLikelihood:
         -------
         log_likelihood : float
             Logarithmic likelihood.
+
+        See Also
+        --------
+        :class:`~harmonia.reader.likelihoods.cartesian_moments`
+
+        |convolved_power_multipoles|
 
 
         .. [1] Sellentin E. & Heavens A. F., 2016. MNRAS 456(1), L132–L136.

@@ -40,9 +40,9 @@ where the scale-dependent bias :math:`b(k) = b_1 + f_\textrm{NL}
 \Delta b(k)` includes the modification :math:`\Delta b` due to local
 primordial non-Gaussianity :math:`f_\textrm{NL}`, computed at the fiducial
 epoch :math:`z_*` (see :mod:`~harmonia.cosmology.scale_dependence` and
-:mod:`~harmonia.reader.couplings`); :math:`P_{\textrm{m}*}` is the matter
-power spectrum at the fiducial epoch; :math:`\kappa` denotes the
-normalisation coefficients (see
+:mod:`~harmonia.reader.couplings`); :math:`f_*` and :math:`P_{\textrm{m}*}`
+are the linear growth rate and the matter power spectrum at the fiducial
+epoch; :math:`\kappa` denotes the normalisation coefficients (see
 :mod:`~harmonia.algorithms.discretisation`); and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 

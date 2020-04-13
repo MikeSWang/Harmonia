@@ -468,7 +468,7 @@ class LogLikelihood:
             If `None` (default), the normal distribution is used without
             correction for covariance estimation uncertainty; otherwise
             it is passed as `degree` to :func:`modified_student_pdf` for
-            covariance estimation uncertainty correction (see [1]_).
+            covariance estimation uncertainty correction [1]_.
         **kwargs
             Additional parameters to be passed to
             :func:`cartesian_moments`.

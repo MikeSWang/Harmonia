@@ -313,7 +313,7 @@ def evaluate_likelihood():
 
     if params.likelihood in ['spherical', 'hybrid']:
         # Radialise to speed up process when survey is trivial.
-        if params.mask_tag.startwith('1.') \
+        if params.mask_tag.startswith('1.') \
                 and params.selection_tag.lower() == 'none':
             radialise = True
         else:

@@ -676,7 +676,7 @@ def generate_compression_matrix(fiducial_model_kwargs,
 
     # pylint: disable=no-member
     # Compress and reverse order.
-    evecs = evecs[np.logical_and.reduce(selectors)][:, ::-1]
+    evecs = evecs[:, np.logical_and.reduce(selectors)][:, ::-1]
 
     compression_matrix = np.conj(evecs).T
 

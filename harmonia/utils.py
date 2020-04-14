@@ -60,7 +60,9 @@ __all__ = [
 class Progress:
     """Progress status of tasks.
 
-    If multiple parallel processes exist, progress status is only reported
+    This is an alternative to ``tqdm`` for cases where progress is not
+    uniform and only needs to be infrequently reported to a logger.  If
+    multiple parallel processes exist, progress status is only reported
     for the first and last of them.
 
     Parameters

@@ -192,7 +192,8 @@ class Couplings:
             if attr == 'disc':
                 self.disc = DiscreteSpectrum._from_state(state['disc'])
             else:
-                # NOTE: Strip '_' for backward compatibility.
+                # NOTE: Strip '_' for backward compatibility.  To
+                # be removed in the future.
                 setattr(self, attr.strip('_'), value)
 
     def __getstate__(self):
@@ -448,8 +449,7 @@ class Couplings:
 
         with warnings.catch_warnings(record=True) as any_warnings:
             list_of_compiled_couplings_ = mpi_compute(
-                indices_to_compile, index_compiler,
-                comm=self.comm, logger=self.logger,
+                indices_to_compile, index_compiler, comm=self.comm,
                 process_name="{} couplings compilation".format(coupling_type)
             )
 

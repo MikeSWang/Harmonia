@@ -323,7 +323,8 @@ def cartesian_moments(pivot, orders, cartesian_model,
     else:
         assert np.allclose(
             cartesian_model.attrs['wavenumbers'],
-            covariance_estimator.wavenumbers
+            covariance_estimator.wavenumbers,
+            rtol=0.01
         ), (
             "The wavenumbers at which the Cartesian power multipole model "
             "is evaluated must match the wavenumbers at which "
@@ -491,7 +492,9 @@ class LogLikelihood:
                 compression_matrix, data_vector
             ])
             covariance_matrix = np.linalg.multi_dot([
-                compression_matrix, data_vector, np.conj(compression_matrix.T)
+                compression_matrix,
+                covariance_matrix,
+                np.conj(compression_matrix.T)
             ])
 
         log_likelihood = complex_normal_pdf(

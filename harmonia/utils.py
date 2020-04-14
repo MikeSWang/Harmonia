@@ -352,8 +352,7 @@ def _allocate_segments(tasks=None, total_task=None, total_proc=None):
     return segments
 
 
-def mpi_compute(data_array, mapping, comm=None, root=0, logger=None,
-                process_name=None):
+def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None):
     """Multiprocess mapping of data.
 
     For each map to be applied, the input data array is scattered over the
@@ -371,8 +370,6 @@ def mpi_compute(data_array, mapping, comm=None, root=0, logger=None,
         MPI communicator.  If `None`, no multiprocessing is performed.
     root : int, optional
         Rank of the process taken as the root process (default is 0).
-    logger : :class:`logging.Logger` *or None, optional*
-        Logger (default is `None`).
     process_name : str or None
         If not `None` (default), this is the process name to be logged.
 
@@ -383,15 +380,14 @@ def mpi_compute(data_array, mapping, comm=None, root=0, logger=None,
         ranks other than `root`.
 
     """
-    if comm is None or comm.size == 1:
-        if process_name is not None:
-            process_name = process_name.capitalize()
+    if process_name is not None:
+        process_name = process_name.capitalize()
 
+    if comm is None or comm.size == 1:
         output_array = list(tqdm(
             map(mapping, data_array), total=len(data_array), mininterval=1,
             desc=process_name, file=sys.stdout
         ))
-
         return output_array
 
     if root + 1 > comm.size:
@@ -406,14 +402,26 @@ def mpi_compute(data_array, mapping, comm=None, root=0, logger=None,
 
     data_chunk = data_array[segments[comm.rank]]
 
-    progress = Progress(
-        len(data_chunk), process_name=process_name,
-        logger=logger, comm=comm, root=root
-    )
-    output = []
-    for data_idx, data_unit in enumerate(data_chunk):
-        output.append(mapping(data_unit))
-        progress.report(data_idx)
+    if comm is None:
+        which_process = " (single process)"
+    else:
+        if comm.rank == root:
+            which_process = " (first process)"
+        elif comm.rank == comm.size - 1:
+            which_process = " (last process)"
+        elif comm.rank == comm.size // 2 + 1:
+            which_process = " (middle process)"
+        else:
+            which_process = None
+
+    if which_process:
+        output = list(tqdm(
+            map(mapping, data_chunk),
+            total=len(data_chunk), mininterval=1,
+            desc=process_name+which_process, file=sys.stdout
+        ))
+    else:
+        output = list(map(mapping, data_chunk))
 
     comm.Barrier()
 

@@ -713,6 +713,7 @@ class SphericalCorrelator:
             )
 
         index_array = SphericalArray(self._disc)
+        # NOTE: Careful sorting is need here.
         if pivot == 'natural':
             index_vector = [
                 tuple(index)
@@ -914,8 +915,7 @@ class SphericalCorrelator:
         # * conj((nu_ell, nu_m, ell_sigma, m_ell)).
         angular_sums_by_index_pair = mpi_compute(
             index_pair_vector, self._compile_angular_sums_by_index_pair,
-            comm=self.comm, logger=self.logger,
-            process_name="angular sum compilation"
+            comm=self.comm, process_name="angular sum compilation"
         )
 
         # Store compiled results in a directory, where each key is an index
@@ -951,8 +951,7 @@ class SphericalCorrelator:
         # level of the form: M_{mu, nu} * radial integral [selection, weight].
         shot_noise_levels_by_index_pair = mpi_compute(
             index_pair_vector, self._compile_shot_noise_levels_by_index_pair,
-            comm=self.comm, logger=self.logger,
-            process_name="shot noise level compilation"
+            comm=self.comm, process_name="shot noise level compilation"
         )
 
         # Store compiled results in a directory, where each key is an index

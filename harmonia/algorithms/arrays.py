@@ -138,13 +138,13 @@ class SphericalArray(DataArray):
     # Class-wide ``numpy.dtype`` for the structured array and any
     # collapsed array.
     _dtype = np.dtype({
-        'names': ['index', 'wavenumber', 'coefficient'],
-        'formats': ['(3,)i4', 'f8', 'c16'],
+        'names': ['index', 'wavenumber', 'coefficient', '_position'],
+        'formats': ['(3,)i4', 'f8', 'c16', 'i4'],
     })
 
     _dtype_collapsed = np.dtype({
-        'names': ['index', 'wavenumber', 'coefficient'],
-        'formats': ['(2,)i4', 'f8', 'c16'],
+        'names': ['index', 'wavenumber', 'coefficient', '_position'],
+        'formats': ['(2,)i4', 'f8', 'c16', 'i4'],
     })
 
     def __init__(self, disc):
@@ -288,11 +288,13 @@ class SphericalArray(DataArray):
                 array['wavenumber'][pos] = \
                     self.disc.wavenumbers[tuple(ind)]
 
-        # Sort array by the pivot order.
+        # Sort array by the pivot order.  It is unsafe to sort by the
+        # 'index' field which is multi-dimensional and becomes scrambled.
+        # The private field '_position' is initialised for this purpose.
         if pivot == 'natural':
-            sort_order = ['index', 'wavenumber']
+            sort_order = ['_position', 'wavenumber']
         elif pivot == 'spectral':
-            sort_order = ['wavenumber', 'index']
+            sort_order = ['wavenumber', '_position']
         else:
             raise ValueError(f"Unknown `pivot` option: {pivot}.")
 
@@ -317,6 +319,7 @@ class SphericalArray(DataArray):
         array['wavenumber'] = [
             self.disc.wavenumbers[ell, n] for ell, _, n in triplet_list
         ]
+        array['_position'] = list(range(self.size))
 
         return array, triplet_directory
 

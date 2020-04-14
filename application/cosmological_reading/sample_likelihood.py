@@ -188,7 +188,7 @@ def setup_likelihood():
         Log-likelihood function object.
 
     """
-    simulation_cosmo = BaseModel(cosmo_dir/params.cosmology_file)
+    simulation_cosmo = BaseModel(cosmo_dir/params.cosmology_file, comm=comm)
 
     growth_rate = None if params.rsd else 0.
 
@@ -213,7 +213,7 @@ def setup_likelihood():
         spherical_model = SphericalCorrelator(
             spherical_data.disc, params.redshift,
             cosmo=simulation_cosmo, growth_rate=growth_rate,
-            couplings=couplings
+            couplings=couplings, comm=comm
         )
     else:
         spherical_data = None
@@ -312,6 +312,13 @@ def evaluate_likelihood():
         )
 
     if params.likelihood in ['spherical', 'hybrid']:
+        # Radialise to speed up process when survey is trivial.
+        if params.mask_tag.startwith('1.') \
+                and params.selection_tag.lower() == 'none':
+            radialise = True
+        else:
+            radialise = False
+
         exclude_degrees = (0,) if params.no_monopole else ()
 
         compression_matrix = generate_compression_matrix(
@@ -332,6 +339,7 @@ def evaluate_likelihood():
         spherical_likelihood_kwargs = {
             'exclude_degrees': exclude_degrees,
             'compression_matrix': compression_matrix,
+            'radialise': radialise,
         }
 
     if params.likelihood in ['cartesian', 'hybrid']:
@@ -367,13 +375,15 @@ def evaluate_likelihood():
 
     if params.likelihood in ['spherical', 'hybrid']:
         spherical_likelihood = mpi_compute(
-            list(product(b_1, f_nl)), _eval_spherical_likelihood, comm=comm
+            list(product(b_1, f_nl)), _eval_spherical_likelihood, comm=comm,
+            process_name="spherical likelihood"
         )
         log_likelihood['spherical_likelihood'].extend(spherical_likelihood)
 
     if params.likelihood in ['cartesian', 'hybrid']:
         cartesian_likelihood = mpi_compute(
-            list(product(b_1, f_nl)), _eval_cartesian_likelihood, comm=comm
+            list(product(b_1, f_nl)), _eval_cartesian_likelihood, comm=comm,
+            process_name="Cartesian likelihood"
         )
         log_likelihood['cartesian_likelihood'].extend(cartesian_likelihood)
 

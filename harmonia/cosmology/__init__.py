@@ -37,12 +37,15 @@ class BaseModel(Cosmology):
     ----------
     source_file : *str or* :class:`pathlib.Path`
         Cosmological parameter file (as a Python dictionary).
+    comm : :class:`mpi4py.Comm` *or None*, optional
+        MPI communicator (default is `None`).
 
     """
 
-    def __init__(self, source_file):
+    def __init__(self, source_file, comm=None):
 
-        logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.comm = comm
 
         with open(source_file) as cosmo_source:
             source_params = {
@@ -58,7 +61,8 @@ class BaseModel(Cosmology):
 
         self.match(sigma8=source_params['sigma8'])
 
-        logger.info(
-            "Created cosmological model with parameters:\n%s.",
-            pformat(source_params)
-        )
+        if self.comm is None or self.comm.rank == 0:
+            self.logger.info(
+                "Created cosmological model with parameters:\n%s.",
+                pformat(source_params)
+            )

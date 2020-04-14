@@ -17,6 +17,7 @@ from collections.abc import Sequence
 from itertools import product
 
 import numpy as np
+from numpy.lib import recfunctions
 
 from .discretisation import DiscreteSpectrum
 
@@ -139,12 +140,12 @@ class SphericalArray(DataArray):
     # collapsed array.
     _dtype = np.dtype({
         'names': ['index', 'wavenumber', 'coefficient', '_position'],
-        'formats': ['(3,)i4', 'f8', 'c16', 'i4'],
+        'formats': ['(3,)i4', 'f8', 'c16', 'i8'],
     })
 
     _dtype_collapsed = np.dtype({
         'names': ['index', 'wavenumber', 'coefficient', '_position'],
-        'formats': ['(2,)i4', 'f8', 'c16', 'i4'],
+        'formats': ['(2,)i4', 'f8', 'c16', 'i8'],
     })
 
     def __init__(self, disc):
@@ -211,6 +212,12 @@ class SphericalArray(DataArray):
                 self.disc = DiscreteSpectrum._from_state(state['disc'])
             else:
                 setattr(self, attr, value)
+
+        # NOTE: For backward compatibility.  To be removed in the future.
+        if '_position' not in self.array.dtype.names:
+            self.array = recfunctions.append_fields(
+                self.array, '_position', list(range(self.size))
+            )
 
     def __getstate__(self):
 

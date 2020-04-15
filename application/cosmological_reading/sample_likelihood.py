@@ -313,11 +313,12 @@ def evaluate_likelihood():
 
     if params.likelihood in ['spherical', 'hybrid']:
         # Radialise to speed up process when survey is trivial.
-        if params.mask_tag.startswith('1.') \
-                and params.selection_tag.lower() == 'none':
-            radialise = True
-        else:
-            radialise = False
+        radialise = (
+            params.mask_tag is None or params.mask_tag.startswith('1.')
+        ) and (
+            params.selection_tag is None
+            or params.selection_tag.lower() == 'none'
+        )
 
         exclude_degrees = (0,) if params.no_monopole else ()
 
@@ -362,28 +363,30 @@ def evaluate_likelihood():
         # Temporarily disable `num_samples`.
         cartesian_likelihood_kwargs.update({'num_samples': None})
 
+    sample_points = list(product(b_1, f_nl))
     log_likelihood = defaultdict(list)
-    def _eval_spherical_likelihood(sample_point):
-        return likelihood_function.spherical_map_likelihood(
-            *sample_point, **spherical_likelihood_kwargs
-        )
-
-    def _eval_cartesian_likelihood(sample_point):
-        return likelihood_function.cartesian_map_likelihood(
-            *sample_point, **cartesian_likelihood_kwargs
-        )
 
     if params.likelihood in ['spherical', 'hybrid']:
+        def _eval_likelihood(sample_point):
+            return likelihood_function.spherical_map_likelihood(
+                *sample_point, **spherical_likelihood_kwargs
+            )
         spherical_likelihood = mpi_compute(
-            list(product(b_1, f_nl)), _eval_spherical_likelihood, comm=comm,
-            process_name="spherical likelihood"
+            sample_points, _eval_likelihood, comm=comm,
+            process_name="spherical likelihood",
+            update_rate=len(sample_points)/comm.size
         )
         log_likelihood['spherical_likelihood'].extend(spherical_likelihood)
 
     if params.likelihood in ['cartesian', 'hybrid']:
+        def _eval_likelihood(sample_point):
+            return likelihood_function.cartesian_map_likelihood(
+                *sample_point, **cartesian_likelihood_kwargs
+            )
         cartesian_likelihood = mpi_compute(
-            list(product(b_1, f_nl)), _eval_cartesian_likelihood, comm=comm,
-            process_name="Cartesian likelihood"
+            sample_points, _eval_likelihood, comm=comm,
+            process_name="Cartesian likelihood",
+            update_rate=len(sample_points)/comm.size
         )
         log_likelihood['cartesian_likelihood'].extend(cartesian_likelihood)
 

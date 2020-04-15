@@ -32,6 +32,7 @@ function and algorithms.
 
 """
 import logging
+import random
 import sys
 import time
 import warnings
@@ -354,8 +355,9 @@ def _allocate_segments(tasks=None, total_task=None, total_proc=None):
     return segments
 
 
-def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None):
-    """Multiprocess mapping of data.
+def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
+                update_rate=None):
+    """Multiprocess mapping of data with optional progress bar.
 
     For each map to be applied, the input data array is scattered over the
     first axis for computation on difference process, and the computed
@@ -373,7 +375,12 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None):
     root : int, optional
         Rank of the process taken as the root process (default is 0).
     process_name : str or None
-        If not `None` (default), this is the process name to be logged.
+        If `None` (default), no progress bar is displayed; else this is
+        the process name to be displayed.
+    update_rate : int or None, optional
+        If not `None` (default), this is the progress bar update rate
+        (in inverse seconds).  Has no effect if `process_name` is
+        not provided.
 
     Returns
     -------
@@ -382,21 +389,46 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None):
         ranks other than `root`.
 
     """
-    if process_name is not None:
-        process_name = process_name.capitalize()
+    process_name = "" if process_name is None else process_name.capitalize()
+    update_rate = 1 if update_rate is None else update_rate
+
+    ## Deal with single processes.
 
     if comm is None or comm.size == 1:
-        output_array = list(tqdm(
-            map(mapping, data_array), total=len(data_array), mininterval=1,
-            desc=process_name, file=sys.stdout
-        ))
+        if process_name:
+            output_array = list(tqdm(
+                map(mapping, data_array),
+                total=len(data_array), mininterval=update_rate,
+                desc=process_name, file=sys.stdout
+            ))
+        else:
+            output_array = list(map(mapping, data_array))
         return output_array
+
+    ## Deal with multiple processes.
 
     if root + 1 > comm.size:
         root = 0
         warnings.warn(
-            "Input `root` set to 0 as it exceeds the number of processes."
+            "Root rank reset to 0 as `root` exceeds the number of processes."
         )
+
+    # Decides which process to track.
+    if comm.rank == root:
+        tracked_rank = random.randint(0, comm.size - 1)
+    else:
+        tracked_rank = None
+
+    tracked_rank = comm.bcast(tracked_rank, root=root)
+
+    if tracked_rank == 0:
+        tracked_process = " (1st process)"
+    elif tracked_rank == 1:
+        tracked_process = " (2nd process)"
+    elif tracked_rank == 2:
+        tracked_process = " (3rd process)"
+    else:
+        tracked_process = " ({:d}th process)".format(tracked_rank + 1)
 
     segments = _allocate_segments(
         total_task=len(data_array), total_proc=comm.size
@@ -404,27 +436,15 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None):
 
     data_chunk = data_array[segments[comm.rank]]
 
-    if comm is None:
-        which_process = " (single process)"
-    else:
-        if comm.rank == root:
-            which_process = " (first process)"
-        elif comm.rank == comm.size - 1:
-            which_process = " (last process)"
-        elif comm.rank == comm.size // 2 + 1:
-            which_process = " (middle process)"
-        else:
-            which_process = None
-
-    if which_process:
+    comm.Barrier()
+    if process_name and comm.rank == tracked_rank:
         output = list(tqdm(
             map(mapping, data_chunk),
-            total=len(data_chunk), mininterval=1,
-            desc=process_name+which_process, file=sys.stdout
+            total=len(data_chunk), mininterval=update_rate,
+            desc=(process_name+tracked_process).strip(), file=sys.stdout
         ))
     else:
         output = list(map(mapping, data_chunk))
-
     comm.Barrier()
 
     output = comm.gather(output, root=root)

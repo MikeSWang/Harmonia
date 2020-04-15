@@ -240,8 +240,6 @@ class Couplings:
 
         coupling_type, mu, nu = key
 
-        coupling_type = self._alias(coupling_type)
-
         if coupling_type == 'angular':
             mu, nu = (mu[0], mu[1]), (nu[0], nu[1])
             # Use parity to return an angular coupling coefficient
@@ -314,8 +312,6 @@ class Couplings:
             Coupling coefficient of the specified type.
 
         """
-        coupling_type = self._alias(coupling_type)
-
         if coupling_type == 'angular':
             if not callable(self._survey_specs['mask']):  # Kronecker delta
                 coefficient = complex(mu[0] == nu[0] and mu[1] == nu[1])
@@ -394,7 +390,9 @@ class Couplings:
                     category=SphericalCoefficientWarning
                 )
 
-        return coefficient
+            return coefficient
+
+        raise ValueError(f"Unknown coupling type: {coupling_type}.")
 
     def save(self, output_file):
         """Save compiled couplings as a .npz file.
@@ -490,22 +488,6 @@ class Couplings:
             })
 
         return couplings_for_index
-
-    @staticmethod
-    def _alias(coupling_type):
-
-        if coupling_type.lower().startswith('a'):
-            return 'angular'
-
-        if coupling_type.lower().startswith('rad'):
-            return 'radial'
-
-        if coupling_type.lower().startswith('rsd'):
-            return 'rsd'
-
-        raise ValueError(
-            f"Unrecognised `coupling_type`: {coupling_type}."
-        )
 
     def _gen_operable_indices(self, coupling_type, reduce_by=None):
 

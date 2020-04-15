@@ -185,7 +185,7 @@ def setup_likelihood():
     Returns
     -------
     :class:`~harmonia.reader.likelihoods.LogLikelihood`
-        Log-likelihood function object.
+        Log-likelihood function (object).
 
     """
     simulation_cosmo = BaseModel(cosmo_dir/params.cosmology_file, comm=comm)

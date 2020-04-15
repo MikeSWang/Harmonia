@@ -56,6 +56,7 @@ from harmonia.utils import (
 
 def _are_valid_moments(first_moment, second_moment):
 
+    # Check dimensions of the expectation and variance are consistent.
     criterion1 = (np.squeeze(first_moment).ndim == 1)
     criterion2 = (np.squeeze(second_moment).ndim == 2)
     criterion3 = (np.shape(first_moment) * 2 == np.shape(second_moment))

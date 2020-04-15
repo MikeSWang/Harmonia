@@ -441,14 +441,18 @@ class Couplings:
             self._compile_couplings_by_index(index, coupling_type)
 
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiling %s couplings.", coupling_type)
+            self.logger.info(
+                "Compiling %s couplings.", self._alias(coupling_type)
+            )
         if self.comm is not None:
             self.comm.Barrier()
 
         with warnings.catch_warnings(record=True) as any_warnings:
             list_of_compiled_couplings_ = mpi_compute(
                 indices_to_compile, index_compiler, comm=self.comm,
-                process_name="{} couplings compilation".format(coupling_type)
+                process_name="{} couplings compilation".format(
+                    self._alias(coupling_type)
+                )
             )
 
         if any_warnings:
@@ -465,7 +469,9 @@ class Couplings:
         if self.comm is not None:
             self.comm.Barrier()
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiled %s couplings.", coupling_type)
+            self.logger.info(
+                "Compiled %s couplings.", self._alias(coupling_type)
+            )
 
     def _compile_couplings_by_index(self, fixed_index, coupling_type):
 
@@ -509,3 +515,46 @@ class Couplings:
             ]
 
         return operable_indices
+
+    @staticmethod
+    def _alias(coupling_type):
+
+        return 'RSD' if coupling_type == 'rsd' else coupling_type
+
+
+def _group_couplings(couplings):
+    """Change a directory of couplings from nested dictionaries to a
+    dictionary of arrays for mass access to raidial and RSD coupling
+    coefficients of adjacent indices.
+
+    Parameters
+    ----------
+    couplings : :class:`~.reader.couplings.Couplings`
+        Couplings object (default is `None`).
+
+    Returns
+    -------
+    grouped_couplings : dict{tuple: list}
+        Radial and RSD couplings grouped for mass access.
+
+    """
+    disc = couplings.disc
+
+    # pylint: disable=protected-access
+    key_indices = couplings._gen_operable_indices('radial')
+
+    grouped_couplings = {}
+    for coupling_type in ['radial', 'rsd']:
+        coupling_arrays_dir = {
+            key_index: [
+                np.asarray([
+                    couplings[coupling_type, key_index, (ell, n)]
+                    for n in range(1, nmax + 1)
+                ])
+                for ell, nmax in zip(disc.degrees, disc.depths)
+            ]
+            for key_index in key_indices
+        }
+        grouped_couplings.update({coupling_type: coupling_arrays_dir})
+
+    return grouped_couplings

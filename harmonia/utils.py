@@ -156,7 +156,6 @@ class Progress:
             current_progress = (current_idx + 1) / self.task_length
             place_in_checkpts = np.searchsorted(
                 self.progress_checkpts, current_progress, side='right'
-
             )
 
             if place_in_checkpts > self.last_checkpt \
@@ -389,7 +388,8 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
         ranks other than `root`.
 
     """
-    process_name = "" if process_name is None else process_name.capitalize()
+    process_name = "" if process_name is None \
+        else process_name[0].upper() + process_name[1:]
     update_rate = 1 if update_rate is None else update_rate
 
     ## Deal with single processes.

@@ -61,13 +61,15 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     normalisations = np.array(list(disc.normalisations.values()))[sort_order]
 
     # Spherical model.
-    spherical_model = SphericalCorrelator(
+    # pylint: disable=global-statement
+    global spherical_model_fullsky
+    spherical_model_fullsky = SphericalCorrelator(
         disc, REDSHIFT,
         cosmo=simulation_cosmo, growth_rate=0., couplings=fullsky_couplings,
         comm=comm
     )
 
-    spherical_correlator_matrix = spherical_model.correlator_matrix(
+    spherical_correlator_matrix = spherical_model_fullsky.correlator_matrix(
         "spectral", b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
         radialise=True
     )
@@ -125,14 +127,16 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
     ))
 
     # Spherical model.
-    spherical_model = SphericalCorrelator(
+    # pylint: disable=global-statement
+    global spherical_model_generic
+    spherical_model_generic = SphericalCorrelator(
         couplings.disc, REDSHIFT,
         cosmo=simulation_cosmo, growth_rate=0., couplings=couplings,
         comm=comm
     )
 
     spherical_correlation_model = covar_to_corr(
-        spherical_model.correlator_matrix(
+        spherical_model_generic.correlator_matrix(
             "natural", b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
             report_progress=True
         )
@@ -170,7 +174,7 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
 
 REDSHIFT = 1.
 
-spherical_model = None
+spherical_model, spherical_model_fullsky = None, None
 
 if __name__ == '__main__':
 

@@ -174,7 +174,7 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
 
 REDSHIFT = 1.
 
-spherical_model, spherical_model_fullsky = None, None
+spherical_model_fullsky, spherical_model_generic = None, None
 
 if __name__ == '__main__':
 

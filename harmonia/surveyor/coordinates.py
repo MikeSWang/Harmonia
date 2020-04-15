@@ -106,8 +106,8 @@ def sky_to_spherical(sky_coords, z_to_r=None):
 
     .. math::
 
-        \theta = \pi/180 * (90 - \delta) \,, \quad
-        \phi = \pi/180 * \alpha \,.
+        \theta = \frac{\pi}{180} (90 - \delta) \,, \quad
+        \phi = \frac{\pi}{180} \alpha \,.
 
     where :math:`\delta` is the declination (DEC) and :math:`\alpha`
     the right ascension (RA) both given in degrees.
@@ -163,8 +163,8 @@ def spherical_to_sky(spherical_coords, z_from_r=None):
 
     .. math::
 
-        \delta = 90 - 180/\pi * \theta \,, \quad
-        \alpha = 180/\pi * \phi \,.
+        \delta = 90 - \frac{180}{\pi} \theta \,, \quad
+        \alpha = \frac{180}{\pi} \phi \,.
 
     where :math:`\delta` is the declination (DEC) and :math:`\alpha`
     the right ascension (RA) both given in degrees.

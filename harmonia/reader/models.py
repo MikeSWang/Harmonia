@@ -264,8 +264,7 @@ class CartesianMultipoles:
         }
 
         # Hankel transform to correlation multipoles.
-        with warnings.catch_warnings():
-            # Suppress `mcfit` warning.
+        with warnings.catch_warnings():  # suppress `mcfit` warning
             warnings.filterwarnings(
                 'ignore',
                 message=(
@@ -288,7 +287,7 @@ class CartesianMultipoles:
         }
 
         # Hankel transform back to power multipoles.
-        with warnings.catch_warnings():
+        with warnings.catch_warnings():  # suppress warnings from `mcfit`
             warnings.filterwarnings(
                 'ignore',
                 message=(
@@ -329,11 +328,20 @@ class CartesianMultipoles:
                 for ell in power_conv
             }
 
-            ic_correction = Spline(
-                *xi2P(s_mask, l=0, lowring=True)(
-                    correlation_convolved[0], extrap=False
-                ), k=1
-            )(0)
+            with warnings.catch_warnings():  # suppress warnings from `mcfit`
+                warnings.filterwarnings(
+                    'ignore',
+                    message=(
+                        "The default value of extrap has been changed "
+                        "to False, set it to True if you cannot "
+                        "reproduce previous results"
+                    )
+                )
+                ic_correction = Spline(
+                    *xi2P(s_mask, l=0, lowring=True)(
+                        correlation_convolved[0], extrap=False
+                    ), k=1
+                )(0)
 
             power_conv.update({
                 ell: power_conv[ell] - ic_correction * window_intrpl[ell]

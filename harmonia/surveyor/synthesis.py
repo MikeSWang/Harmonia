@@ -347,8 +347,7 @@ class SyntheticCatalogue:
             )
 
         # Hankel transform window function multipoles.
-        # Suppress warnings from `mcfit`.
-        with warnings.catch_warnings():
+        with warnings.catch_warnings():  # suppress warnings from `mcfit`
             warnings.filterwarnings(
                 'ignore',
                 message=(

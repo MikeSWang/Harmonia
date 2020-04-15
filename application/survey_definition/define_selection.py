@@ -188,7 +188,7 @@ if __name__ == '__main__':
         "source={}".format(params.source_file.split(".fits")[0]),
         "coord={}".format(params.coord),
         "nside={}".format(params.nside),
-        "fsky={:.2f}"
+        "fsky={:.2f}",
     ]))
 
     confirm_directory(output_dir)

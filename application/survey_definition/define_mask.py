@@ -142,7 +142,7 @@ if __name__ == '__main__':
     output_dir = data_dir/"raw"/"survey_specifications"
     output_filename = "mask_map-({})".format(",".join([
         "source={}".format(params.source_file.split(".fits")[0]),
-        "nside={}".format(params.nside)
+        "nside={}".format(params.nside),
     ]))
 
     confirm_directory(output_dir)

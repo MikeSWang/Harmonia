@@ -329,7 +329,8 @@ if __name__ == '__main__':
     output_filename = "covar-estimate-({})".format(",".join([
         "source={}-{}".format(source_range[0], source_range[-1]),
         "map={}", "scale={}", "orders={}",
-        "mask={}".format(mask_tag), "selection={}".format(selection_tag),
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
     ]))
 
     # Extract/export/visualise map statistics.

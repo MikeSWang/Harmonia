@@ -191,21 +191,23 @@ if __name__ == '__main__':
     # Set I/O paths.
     ## Map data.
     map_data_dir = data_dir/"raw"/"catalogue_maps"
-    map_data_file = "catalogue-map-({}).npz".format(
-        ",".join([
-            "source=halo-({},z=1.)-{}", "map=cartesian",
-            "scale={}".format(scale_tag), "orders={}".format(order_tag),
-            "rsd={}".format(rsd_tag),
-            "mask={}".format(mask_tag), "selection={}".format(selection_tag)
-        ])
-    )
+    map_data_file = "catalogue-map-({}).npz".format(",".join([
+        "source=halo-({},z=1.)-{}",
+        "map=cartesian",
+        "scale={}".format(scale_tag),
+        "orders={}".format(order_tag),
+        "rsd={}".format(rsd_tag),
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
+    ]))
 
     ## Survey products.
     survey_product_dir = data_dir/"processed"/"survey_products"
 
     mask_or_file_info = ",".join([
         "orders=[0,2,4,6,8]", "boxsize=1000.0", "expansion=70.0", "mesh=768",
-        "mask={}".format(mask_tag), "selection={}".format(selection_tag)
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
     ])
     mask_file = "mask-({}).npy".format(mask_or_file_info)
 
@@ -213,8 +215,10 @@ if __name__ == '__main__':
 
     covariance_estimate_info = ",".join([
         "source=1-2500", "map=cartesian",
-        "scale={}".format(scale_tag), "orders={}".format(order_tag),
-        "mask={}".format(mask_tag), "selection={}".format(selection_tag)
+        "scale={}".format(scale_tag),
+        "orders={}".format(order_tag),
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
     ])
     covariance_estimate_file = "covar-estimate-({}).npz".format(
         covariance_estimate_info
@@ -226,13 +230,13 @@ if __name__ == '__main__':
 
     ## Outputs.
     output_dir = data_dir/"raw"/"survey_validation"
-    output_filename = "cartesian-validation-({})".format(
-        ",".join([
-            "NG={}.".format(NG), "scale={}".format(scale_tag),
-            "rsd={}".format(rsd_tag),
-            "mask={}".format(mask_tag), "selection={}".format(selection_tag)
-        ])
-    )
+    output_filename = "cartesian-validation-({})".format(",".join([
+        "NG={}.".format(NG),
+        "scale={}".format(scale_tag),
+        "rsd={}".format(rsd_tag),
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
+    ]))
 
     # Validate Cartesian modelling.
     confirm_directory(output_dir)

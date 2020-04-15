@@ -61,9 +61,6 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     normalisations = np.array(list(disc.normalisations.values()))[sort_order]
 
     # Spherical model.
-    # pylint: disable=global-statement
-    global spherical_model
-
     spherical_model = SphericalCorrelator(
         disc, REDSHIFT,
         cosmo=simulation_cosmo, growth_rate=0., couplings=fullsky_couplings,
@@ -98,6 +95,9 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
     plt.legend()
     plt.title("Full-sky spherical model validation")
 
+    output_file = output_dir/output_filename.format("1.0", "None")
+    plt.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))
+
     return _ratios
 
 
@@ -125,9 +125,6 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
     ))
 
     # Spherical model.
-    # pylint: disable=global-statement
-    global spherical_model
-
     spherical_model = SphericalCorrelator(
         couplings.disc, REDSHIFT,
         cosmo=simulation_cosmo, growth_rate=0., couplings=couplings,
@@ -165,6 +162,9 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
         wspace=0.4, bottom=0.175, top=0.825, left=0.05, right=0.95
     )
 
+    output_file = output_dir/output_filename.format(mask_tag, selection_tag)
+    plt.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))
+
     return _ratios
 
 
@@ -191,18 +191,23 @@ if __name__ == '__main__':
     )
 
     raw_product_dir = data_dir/"raw"/"survey_products"
-    corr_estimate_file = "covar-estimate-({}).npy".format(
-        ",".join([
-            "source=1-2500", "map=spherical",
-            "scale=[None,{}]".format(kmax), "orders=None",
-            "mask={}".format(mask_tag), "selection={}".format(selection_tag)
-        ])
-    )
+    corr_estimate_file = "covar-estimate-({}).npy".format(",".join([
+        "source=1-2500", "map=spherical",
+        "scale=[None,{}]".format(kmax),
+        "orders=None",
+        "mask={}".format(mask_tag),
+        "selection={}".format(selection_tag),
+    ]))
 
-    # NOTE: Not used yet.
     output_dir = data_dir/"raw"/"survey_validation"
+    output_filename = "spherical-validation-({})".format(",".join([
+        "scale=[None,{}]".format(kmax),
+        "rsd=False", "mask={}", "selection={}"
+    ]))
 
     # Validate spherical modelling.
     confirm_directory(output_dir)  # NOTE: Not used yet.
     ratios_fullsky = validate_fullsky_spherical_model()
+    print("Spherical-to-Cartesian relative difference:", ratios_fullsky)
     ratios_partsky = validate_spherical_correlator_model()
+    print("Estimate-to-model relative difference:", ratios_partsky)

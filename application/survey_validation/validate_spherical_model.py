@@ -208,6 +208,5 @@ if __name__ == '__main__':
     # Validate spherical modelling.
     confirm_directory(output_dir)  # NOTE: Not used yet.
     ratios_fullsky = validate_fullsky_spherical_model()
-    print("Spherical-to-Cartesian relative difference:", ratios_fullsky)
     ratios_partsky = validate_spherical_correlator_model()
-    print("Estimate-to-model relative difference:", ratios_partsky)
+    print("Spherical-to-Cartesian relative difference:", ratios_fullsky)

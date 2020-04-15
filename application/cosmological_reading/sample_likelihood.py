@@ -322,6 +322,7 @@ def evaluate_likelihood():
 
         exclude_degrees = (0,) if params.no_monopole else ()
 
+        logger.info("Generating a spherical data compression matrix...")
         compression_matrix = generate_compression_matrix(
             {
                 'pivot': spherical_pivot,
@@ -336,6 +337,7 @@ def evaluate_likelihood():
                 'f_nl': 100.,
             } # extremal model
         )
+        logger.info("... generated a spherical data compression matrix.")
 
         spherical_likelihood_kwargs = {
             'exclude_degrees': exclude_degrees,

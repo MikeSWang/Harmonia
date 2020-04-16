@@ -203,16 +203,16 @@ class SphericalMap:
                 logger=self.logger
             )
 
-            self.logger.info("Transforming %s.", self)
+            self.logger.info("Transforming %s...", self)
 
             # Transform degree by degree and update the coefficient directory.
             for deg_idx, deg in enumerate(self.disc.degrees):
                 self._transform_degree(deg)
                 progress.report(sum(self.disc.mode_counts[:(deg_idx + 1)]) - 1)
 
-            self.logger.info("%s transformed.", self)
+            self.logger.info("... %s transformed.", self)
 
-        self.logger.info("Computing density contrast for %s.", self)
+        self.logger.info("Computing density contrast for %s...", self)
 
         # Subtract random catalogue coefficients and normalise by data
         # catalogue mean number density to obtain density contrast.
@@ -222,7 +222,7 @@ class SphericalMap:
                 - self._rand_coeff[tuple(mode_index)]
             ) / self.catalogues.data_catalogue.attrs['nbar']
 
-        self.logger.info("Computed density contrast for %s.", self)
+        self.logger.info("... computed density contrast for %s.", self)
 
         return density_contrast
 

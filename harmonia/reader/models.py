@@ -930,7 +930,7 @@ class SphericalCorrelator:
         )
 
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiling fixed angular sums.")
+            self.logger.info("Compiling fixed angular sums...")
 
         # Compile, for each index pair of the form above, all its angular sums
         # indexed by a new degree index (say, ell_sigma) of the form:
@@ -952,7 +952,7 @@ class SphericalCorrelator:
             })
 
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiled fixed angular sums.")
+            self.logger.info("... compiled fixed angular sums.")
 
         return angular_sums
 
@@ -968,7 +968,7 @@ class SphericalCorrelator:
         )
 
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiling shot noise levels.")
+            self.logger.info("Compiling shot noise levels...")
 
         # Compile, for each index pair of the form above, the shot noise
         # level of the form: M_{mu, nu} * radial integral [selection, weight].
@@ -995,7 +995,7 @@ class SphericalCorrelator:
             )
 
         if self.comm is None or self.comm.rank == 0:
-            self.logger.info("Compiled shot noise levels.")
+            self.logger.info("... compiled shot noise levels.")
 
         return shot_noise_levels
 

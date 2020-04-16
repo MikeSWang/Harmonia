@@ -442,7 +442,7 @@ class Couplings:
 
         if self.comm is None or self.comm.rank == 0:
             self.logger.info(
-                "Compiling %s couplings.", self._alias(coupling_type)
+                "Compiling %s couplings...", self._alias(coupling_type)
             )
         if self.comm is not None:
             self.comm.Barrier()
@@ -470,7 +470,7 @@ class Couplings:
             self.comm.Barrier()
         if self.comm is None or self.comm.rank == 0:
             self.logger.info(
-                "Compiled %s couplings.", self._alias(coupling_type)
+                "... compiled %s couplings.", self._alias(coupling_type)
             )
 
     def _compile_couplings_by_index(self, fixed_index, coupling_type):

@@ -422,11 +422,11 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
     tracked_rank = comm.bcast(tracked_rank, root=root)
 
     tracked_ordinal = str(tracked_rank + 1)
-    if tracked_ordinal.endswith(1):
+    if tracked_ordinal.endswith('1'):
         tracked_ordinal = "{:d}st".format(tracked_ordinal)
-    elif tracked_ordinal.endswith(2):
+    elif tracked_ordinal.endswith('2'):
         tracked_ordinal = "{:d}nd".format(tracked_ordinal)
-    elif tracked_ordinal.endswith(3):
+    elif tracked_ordinal.endswith('3'):
         tracked_ordinal = "{:d}rd".format(tracked_ordinal)
     else:
         tracked_ordinal = "{:d}th".format(tracked_ordinal)

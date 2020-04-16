@@ -421,14 +421,16 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
 
     tracked_rank = comm.bcast(tracked_rank, root=root)
 
-    if tracked_rank == 0:
-        tracked_process = " (1st process)"
-    elif tracked_rank == 1:
-        tracked_process = " (2nd process)"
-    elif tracked_rank == 2:
-        tracked_process = " (3rd process)"
+    tracked_ordinal = str(tracked_rank + 1)
+    if tracked_ordinal.endswith(1):
+        tracked_ordinal = "{:d}st".format(tracked_ordinal)
+    elif tracked_ordinal.endswith(2):
+        tracked_ordinal = "{:d}nd".format(tracked_ordinal)
+    elif tracked_ordinal.endswith(3):
+        tracked_ordinal = "{:d}rd".format(tracked_ordinal)
     else:
-        tracked_process = " ({:d}th process)".format(tracked_rank + 1)
+        tracked_ordinal = "{:d}th".format(tracked_ordinal)
+    tracked_process = " ({} process)".format(tracked_ordinal)
 
     segments = _allocate_segments(
         total_task=len(data_array), total_proc=comm.size

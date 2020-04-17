@@ -145,7 +145,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
     lkhds = np.asarray(lkhds)[:, x_selector, y_selector]
 
     # Safe exponentiation.
-    lkhds = [lkhd - np.min(lkhd) for lkhd in lkhds]
+    lkhds = [lkhd - np.median(lkhd) for lkhd in lkhds]
     likelihood = np.average(lkhds, axis=0)
 
     lkhds, likelihood = np.exp(lkhds), np.exp(likelihood)
@@ -222,7 +222,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
             dx_lower, dx_upper = x_fit - x_lower, x_upper - x_fit
             dy_lower, dy_upper = y_fit - y_lower, y_upper - y_fit
 
-            if x_precision:
+            if x_precision is not None:
                 x_fit = np.around(x_fit, decimals=x_precision)
                 dx_lower = np.around(dx_lower, decimals=x_precision)
                 dx_upper = np.around(dx_upper, decimals=x_precision)
@@ -230,7 +230,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
                     x_fit, dx_lower, dx_upper = \
                         map(int, (x_fit, dx_lower, dx_upper))
 
-            if y_precision:
+            if y_precision is not None:
                 y_fit = np.around(y_fit, decimals=y_precision)
                 dy_lower = np.around(dy_lower, decimals=y_precision)
                 dy_upper = np.around(dy_upper, decimals=y_precision)
@@ -399,7 +399,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             )
             x_results.append(x_result)
 
-        if truth_x:
+        if truth_x is not None:
             fig.axvline(x=truth_x, ls='--', label="truth {}".format(truth_x))
 
         fig.set_xlim(sample_points_x.min(), sample_points_x.max())
@@ -446,9 +446,9 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             x_results.append(x_result)
             y_results.append(y_result)
 
-        if truth_x:
+        if truth_x is not None:
             main_panel.axvline(truth_x, c='k', ls='--')
-        if truth_y:
+        if truth_y is not None:
             main_panel.axhline(truth_y, c='k', ls='--')
 
         main_panel.set_xlim(sample_points_x.min(), sample_points_x.max())
@@ -531,8 +531,8 @@ if __name__ == "__main__":
 
     NG = 0.
     MAP = "hybrid"
-    MASK_TAG = "1.0"
-    SELECTION_TAG = "None"
+    MASK_TAG = "1.0"  # random0_BOSS_DR12v5_CMASS_North
+    SELECTION_TAG = "None"  # [100.0,500.0]
 
     SCALE_TAG = "[None,0.04,0.1]"
     ORDER_TAG = "[0]"

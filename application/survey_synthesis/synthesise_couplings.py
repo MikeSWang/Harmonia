@@ -78,6 +78,11 @@ def initialise_parameters():
         help="external 'healpy' mask map"
     )
     parser.add_argument(
+        '--pixelate', type=int, default=None,
+        help='pixelate the mask map/function for integration'
+    )
+
+    parser.add_argument(
         '--selection-cut', type=float, nargs=2, default=None,
         help=(
             "cut selection parameters (low_end, high_end); "
@@ -143,6 +148,8 @@ def synthesise_couplings():
 
     """
     # Apply any survey mask or selection functions.
+    nside = params.pixelate
+
     if params.mask_file is not None:
         mask, nside = generate_mask_from_map(
             'spherical', mask_map_file=mask_or_selection_dir/params.mask_file,
@@ -152,9 +159,8 @@ def synthesise_couplings():
         mask = generate_mask_by_sky_fraction(
             'spherical', sky_fraction=params.sky_fraction
         )
-        nside = None
     else:
-        mask, nside = None, None
+        mask = None
 
     if params.selection_file is not None:
         selection = generate_selection_from_samples(

@@ -206,11 +206,19 @@ def spherical_to_sky(spherical_coords, z_from_r=None):
 
 
 def _is_coord_2d(coords):
-    return np.size(coords, axis=-1) == 2
+
+    try:
+        return np.size(coords, axis=-1) == 2
+    except IndexError: # scalars
+        return False
 
 
 def _is_coord_3d(coords):
-    return np.size(coords, axis=-1) == 3
+
+    try:
+        return np.size(coords, axis=-1) == 3
+    except IndexError: # scalars
+        return False
 
 
 # pylint: disable=unused-argument

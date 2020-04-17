@@ -79,7 +79,8 @@ def generate_mask_by_sky_fraction(coord_system, sky_fraction=1.,
 
 
 def generate_mask_from_map(coord_system, mask_map=None, nside=None,
-                           mask_map_file=None, box_shift=None):
+                           mask_map_file=None, box_shift=None,
+                           ret_nside=False):
     """Generate mask function from a veto mask map.
 
     Parameters
@@ -92,7 +93,7 @@ def generate_mask_from_map(coord_system, mask_map=None, nside=None,
         parameter `nside` (default is `None`).  Ignored if
         a `healpy`-generated .fits file for the mask map is provided.
     nside : int or None, optional
-        'nside' parameter of the `healpy` mask map (default is `None`).
+        'NSIDE' parameter of the `healpy` mask map (default is `None`).
         Ignored if  a `healpy`-generated .fits file for the
         mask map is provided.
     mask_map_file : *str or* :class:`pathlib.Path`
@@ -103,6 +104,9 @@ def generate_mask_from_map(coord_system, mask_map=None, nside=None,
         that the resulting mask function accepts Cartesian coordinates
         with origin at a box corner.  Ignored unless `coord_system` is
         'cartesian'.
+    ret_nside : bool, optional
+        If `True` (default is `False`), return the `nside` parameter
+        from `mask_map` read in.
 
     Returns
     -------
@@ -138,6 +142,9 @@ def generate_mask_from_map(coord_system, mask_map=None, nside=None,
         pixel = hp.ang2pix(nside, *surf_coords[:, [-2, -1]].T)
 
         return mask_map[pixel].astype(bool)
+
+    if ret_nside:
+        return mask_function, nside
 
     return mask_function
 

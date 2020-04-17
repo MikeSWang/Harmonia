@@ -6,6 +6,8 @@ Evaluate integration kernels for computing spherical Fourier coupling
 coefficients.
 
 """
+import numpy as np
+
 from harmonia.algorithms.bases import spherical_besselj, spherical_harmonic
 
 
@@ -32,7 +34,7 @@ def angular_kernel(theta, phi, mu, nu, mask=None):
         * spherical_harmonic(nu[0], nu[1], theta, phi)
 
     if callable(mask):
-        kernel *= mask([theta, phi])
+        kernel *= mask(np.column_stack([theta, phi]))
 
     return kernel
 

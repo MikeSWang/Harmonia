@@ -88,7 +88,11 @@ import warnings
 import numpy as np
 
 from harmonia.algorithms.discretisation import DiscreteSpectrum
-from harmonia.algorithms.integration import angular_integral, radial_integral
+from harmonia.algorithms.integration import (
+    angular_integral,
+    pixelated_angular_integral,
+    radial_integral,
+)
 from harmonia.utils import mpi_compute, restore_warnings
 from ._kernels import angular_kernel, radial_kernel, RSD_kernel
 
@@ -138,6 +142,9 @@ class Couplings:
         If `True`, compile all coupling coefficients upon creation.
     external_angular_couplings : dict{tuple(tuple, tuple): complex} or None, optional
         Pre-compute angular couplings (default is `None`).
+    pixelate : int or None, optional
+        If not `None` (default), this sets the 'NSIDE' parameter of
+        `healpy` pixelation for angular coupling integration.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator (default is `None`).
 
@@ -164,7 +171,8 @@ class Couplings:
     ])
 
     def __init__(self, disc, survey_specs=None, cosmo_specs=None,
-                 initialise=True, external_angular_couplings=None, comm=None):
+                 initialise=True, external_angular_couplings=None,
+                 pixelate=None, comm=None):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.comm = comm
@@ -184,7 +192,7 @@ class Couplings:
         if external_angular_couplings is not None:
             self.load_angular_couplings(external_angular_couplings)
         if initialise:
-            self.compile_couplings()
+            self.compile_couplings(pixelate=pixelate)
 
     def __setstate__(self, state):
 
@@ -285,18 +293,26 @@ class Couplings:
 
         self.couplings.update({'angular': angular_couplings})
 
-    def compile_couplings(self):
+    def compile_couplings(self, pixelate=None):
         """Compile all coupling coefficients.
+
+        Parameters
+        ----------
+        pixelate : int or None, optional
+            If not `None` (default), this sets the 'NSIDE' parameter of
+            `healpy` pixelation for angular coupling integration.
 
         """
         for coupling_type in self._coupling_types:
             # Only compile empty coupling directories.
             if not self.couplings[coupling_type]:
-                self._compile_couplings_by_type(coupling_type)
+                self._compile_couplings_by_type(
+                    coupling_type, pixelate=pixelate
+                )
 
         self.initialised = True
 
-    def compute_coefficient(self, mu, nu, coupling_type):
+    def compute_coefficient(self, mu, nu, coupling_type, pixelate=None):
         r"""Compute coupling coefficients for given triplet indices.
 
         Parameters
@@ -305,6 +321,10 @@ class Couplings:
             Coefficient triplet or reduced doublet index.
         coupling_type : {'angular', 'radial', 'RSD'}
             Coupling type.
+        pixelate : int or None, optional
+            If not `None` (default), this sets the 'NSIDE' parameter of
+            `healpy` pixelation for computing angular coupling
+            coefficients.
 
         Returns
         -------
@@ -316,19 +336,27 @@ class Couplings:
             if not callable(self._survey_specs['mask']):  # Kronecker delta
                 coefficient = complex(mu[0] == nu[0] and mu[1] == nu[1])
             else:
-                with warnings.catch_warnings(record=True) as any_warning:
-                    coefficient = angular_integral(
+                if pixelate:
+                    coefficient = pixelated_angular_integral(
                         lambda theta, phi: angular_kernel(
                             theta, phi, mu, nu,
                             mask=self._survey_specs['mask']
+                        ), nside=pixelate
+                    )
+                else:
+                    with warnings.catch_warnings(record=True) as any_warning:
+                        coefficient = angular_integral(
+                            lambda theta, phi: angular_kernel(
+                                theta, phi, mu, nu,
+                                mask=self._survey_specs['mask']
+                            )
                         )
-                    )
-                if any_warning and not np.isclose(coefficient, 0.):
-                    warnings.warn(
-                        "Poorly determined angular coupling coefficients "
-                        "for index pair {} and {}.".format(mu, nu),
-                        category=SphericalCoefficientWarning
-                    )
+                    if any_warning and not np.isclose(coefficient, 0.):
+                        warnings.warn(
+                            "Poorly determined angular coupling coefficients "
+                            "for index pair {} and {}.".format(mu, nu),
+                            category=SphericalCoefficientWarning
+                        )
             return coefficient
 
         k_mu = self.disc.wavenumbers[mu[0], mu[-1]]
@@ -434,11 +462,12 @@ class Couplings:
 
         return self
 
-    def _compile_couplings_by_type(self, coupling_type):
+    def _compile_couplings_by_type(self, coupling_type, pixelate=None):
 
         indices_to_compile = self._gen_operable_indices(coupling_type)
-        index_compiler = lambda index: \
-            self._compile_couplings_by_index(index, coupling_type)
+        index_compiler = lambda index: self._compile_couplings_by_index(
+            index, coupling_type, pixelate=pixelate
+        )
 
         if self.comm is None or self.comm.rank == 0:
             self.logger.info(
@@ -473,7 +502,8 @@ class Couplings:
                 "... compiled %s couplings.", self._alias(coupling_type)
             )
 
-    def _compile_couplings_by_index(self, fixed_index, coupling_type):
+    def _compile_couplings_by_index(self, fixed_index, coupling_type,
+                                    pixelate=None):
 
         mu = (fixed_index[0], fixed_index[1]) if coupling_type == 'angular' \
             else (fixed_index[0], fixed_index[-1])
@@ -489,7 +519,7 @@ class Couplings:
         for nu in variable_indices:
             couplings_for_index.update({
                 (mu, nu): self.compute_coefficient(
-                    mu, nu, coupling_type
+                    mu, nu, coupling_type, pixelate=pixelate
                 )
             })
 

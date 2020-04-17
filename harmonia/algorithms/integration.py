@@ -16,10 +16,12 @@ Integrate numerically in specified coordinate systems.
 
     angular_integral
     radial_integral
+    pixelated_angular_integral
 
 |
 
 """
+import healpy as hp
 import numpy as np
 from scipy.integrate import dblquad, quad
 
@@ -131,3 +133,35 @@ def radial_integral(radial_func, rmax):
     integral, _ = quad(_radial_integrand, 0., rmax, args=(radial_func,))
 
     return integral
+
+
+def pixelated_angular_integral(angular_func, nside):
+    r"""Compute the full spherical angular integral with pixelation.
+
+    Notes
+    -----
+    Arguments :math:`(\theta, \phi)` of `angular_func` must be in radians
+    in the domain :math:`[0, \pi] \times [0, 2\pi]`.
+
+    Parameters
+    ----------
+    angular_func : callable
+        Angular function to be integrated.
+    nside : int
+        'NSIDE' parameter for `healpy` pixelation.
+
+    Returns
+    -------
+    complex
+        Angular integral value.
+
+    """
+    num_pixel = hp.nside2npix(nside)
+
+    theta, phi = hp.pix2ang(nside, ipix=range(num_pixel))
+
+    pixel_area = 4 * np.pi / num_pixel
+
+    pixel_value = angular_func(theta, phi)
+
+    return pixel_area * np.sum(pixel_value)

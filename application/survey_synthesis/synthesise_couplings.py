@@ -144,15 +144,17 @@ def synthesise_couplings():
     """
     # Apply any survey mask or selection functions.
     if params.mask_file is not None:
-        mask = generate_mask_from_map(
-            'spherical', mask_map_file=mask_or_selection_dir/params.mask_file
+        mask, nside = generate_mask_from_map(
+            'spherical', mask_map_file=mask_or_selection_dir/params.mask_file,
+            ret_nside=True
         )
     elif params.sky_fraction is not None:
         mask = generate_mask_by_sky_fraction(
             'spherical', sky_fraction=params.sky_fraction
         )
+        nside = None
     else:
-        mask = None
+        mask, nside = None, None
 
     if params.selection_file is not None:
         selection = generate_selection_from_samples(
@@ -184,7 +186,8 @@ def synthesise_couplings():
 
     disc = DiscreteSpectrum(params.rmax, 'dirichlet', params.kmax, comm=comm)
     _couplings = Couplings(
-        disc, survey_specs=dict(mask=mask, selection=selection), comm=comm
+        disc, survey_specs=dict(mask=mask, selection=selection),
+        pixelate=nside, comm=comm
     )
 
     return _couplings

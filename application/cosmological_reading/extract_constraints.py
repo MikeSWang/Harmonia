@@ -174,9 +174,19 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
                 h_levels[n] = h_flat[0]
 
         # Plot the contour.
-        contour = main_panel.contourf(
-            xx, yy, hh, h_levels, antialiased=True, cmap=cmap, alpha=_alpha
-        )
+        try:
+            contour = main_panel.contourf(
+                xx, yy, hh, h_levels, antialiased=True,
+                cmap=cmap, alpha=_alpha
+            )
+        except ValueError as e:
+            if str(e) == "Contour levels must be increasing":
+                raise ValueError(
+                    "Cannot process likelihood values into contours."
+                )
+            else:
+                raise e
+
         main_panel.contour(
             contour, colors=cmap(cmap.N), alpha=min(2 * _alpha, 1.)
         )

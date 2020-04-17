@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 
 from harmonia.algorithms.bases import spherical_besselj as sph_jn
-from harmonia.algorithms.integration import angular_integral, radial_integral
+from harmonia.algorithms.integration import (
+    angular_integral,
+    pixelated_angular_integral,
+    radial_integral,
+)
 
 from . import NamedFunction, display_mathematica_query as show_query
 
@@ -42,4 +46,18 @@ def test_angular_integral(angular_func):
         f"Integrate[{str(angular_func)}, {{theta, 0, Pi}}, {{phi, 0, 2 Pi}}]"
     )
     assert angular_integral(angular_func) == pytest.approx(0.), \
+        "Incorrect angular integration results for the test function."
+
+
+@pytest.mark.parametrize(
+    "nside",
+    [64, 128]
+)
+def test_pixelated_angular_integral(angular_func, nside):
+
+    show_query(
+        f"Integrate[{str(angular_func)}, {{theta, 0, Pi}}, {{phi, 0, 2 Pi}}]"
+    )
+    assert pixelated_angular_integral(angular_func, nside) \
+        == pytest.approx(0.), \
         "Incorrect angular integration results for the test function."

@@ -597,7 +597,7 @@ class SphericalCorrelator:
         Returns
         -------
         complex
-            Cosmological signal 2-point function value for given triplet
+            Spherical Fourier 2-point function value for given triplet
             indices.  If `cosmo_specs` is passed, radial and RSD couplings
             will be updated.
 
@@ -707,7 +707,7 @@ class SphericalCorrelator:
             self._set_baseline_model(**update_model_kwargs)
 
         index_array = SphericalArray(self._disc)
-        # NOTE: Careful sorting is need here.
+        # NOTE: Careful sorting is needed here.
         if pivot == 'natural':
             index_vector = [
                 tuple(index)
@@ -933,7 +933,7 @@ class SphericalCorrelator:
             self.logger.info("Compiling fixed angular sums...")
 
         # Compile, for each index pair of the form above, all its angular sums
-        # indexed by a new degree index (say, ell_sigma) of the form:
+        # indexed by a new degree index (say, `ell_sigma`) of the form:
         # sum_{m_ell} (mu_ell, mu_m, ell_sigma, m_ell)
         # * conj((nu_ell, nu_m, ell_sigma, m_ell)).
         angular_sums_by_index_pair = mpi_compute(
@@ -943,7 +943,7 @@ class SphericalCorrelator:
 
         # Store compiled results in a directory, where each key is an index
         # pair of the form above, and each entry is a dictionary of angular
-        # sums indexed by the new degree index (ell_sigma).
+        # sums indexed by the new degree index (i.e. `ell_sigma`).
         angular_sums = {}
         for index_pair, angular_sums_for_index_pair \
                 in zip(index_pair_vector, angular_sums_by_index_pair):
@@ -958,7 +958,7 @@ class SphericalCorrelator:
 
     def _compile_shot_noise_levels(self):
 
-        # Compiles all index pairs (mu, nu) where `nu` is a higher index
+        # Compiles all index pairs (`mu`, `nu`) where `nu` is a higher index
         # than `mu` (the other cases are obtained by Hermitian conjuate).
         index_pair_vector = list(
             (first_index, second_index)
@@ -971,7 +971,7 @@ class SphericalCorrelator:
             self.logger.info("Compiling shot noise levels...")
 
         # Compile, for each index pair of the form above, the shot noise
-        # level of the form: M_{mu, nu} * radial integral [selection, weight].
+        # level of the form: M_{mu, nu} * radial integral[selection, weight].
         shot_noise_levels_by_index_pair = mpi_compute(
             index_pair_vector, self._compile_shot_noise_levels_by_index_pair,
             comm=self.comm, process_name="shot noise level compilation"
@@ -1003,7 +1003,7 @@ class SphericalCorrelator:
 
         mu, nu = index_pair
 
-        # For each degree index (say ell_sigma), return sum_{m_sigma}
+        # For each degree index (say `ell_sigma`), return sum_{m_sigma}
         # of M_{mu, sigma} * conj(M_{nu, sigma}).
         angular_sums_for_index_pair_by_degree = {
             ell_sigma: sum([

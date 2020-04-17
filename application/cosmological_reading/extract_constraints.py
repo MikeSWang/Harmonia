@@ -184,8 +184,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
                 raise ValueError(
                     "Cannot process likelihood values into contours."
                 )
-            else:
-                raise e
+            raise e
 
         main_panel.contour(
             contour, colors=cmap(cmap.N), alpha=min(2 * _alpha, 1.)

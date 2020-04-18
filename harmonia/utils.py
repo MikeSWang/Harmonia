@@ -122,13 +122,13 @@ class Progress:
             self._which_proc = 'single'
         else:
             if comm.rank == root:
-                self._which_proc = "first"
-            elif comm.rank == comm.size - 1:
-                self._which_proc = "last"
-            elif comm.rank == comm.size // 2 + 1:
-                self._which_proc = "middle"
+                tracked_rank = random.randint(0, comm.size - 1)
             else:
-                self._which_proc = None
+                tracked_rank = None
+            tracked_rank = comm.bcast(tracked_rank, root=root)
+
+            self._which_proc = _num_to_ordinal(tracked_rank + 1) \
+                if comm.rank == tracked_rank else None
 
         self.progress_checkpts = \
             np.linspace(1. / num_checkpts, 1., num=num_checkpts)
@@ -420,17 +420,7 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
         tracked_rank = None
 
     tracked_rank = comm.bcast(tracked_rank, root=root)
-
-    tracked_ordinal = tracked_rank + 1
-    ordinal_suffix = "{}".format(
-        {1: "st", 2: "nd", 3: "rd", 11: "th", 12: "th", 13: "th"}.get(
-            tracked_ordinal % 100
-            if tracked_ordinal % 100 < 20
-            else tracked_ordinal % 10,
-            "th"
-        )
-    )
-    tracked_process = " ({}{} process)".format(tracked_ordinal, ordinal_suffix)
+    tracked_process = " ({} process)".format(_num_to_ordinal(tracked_rank + 1))
 
     segments = _allocate_segments(
         total_task=len(data_array), total_proc=comm.size
@@ -465,6 +455,15 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
     output_array = comm.bcast(output_array, root=root)
 
     return output_array
+
+
+def _num_to_ordinal(num):
+
+    _determine_suffix = lambda n: {
+        1: "st", 2: "nd", 3: "rd", 11: "th", 12: "th", 13: "th"
+    }.get(n % 100 if n % 100 < 20 else n % 10, "th")
+
+    return "{}{}".format(num, _determine_suffix(num))
 
 
 # Mathematical functions and algorithms

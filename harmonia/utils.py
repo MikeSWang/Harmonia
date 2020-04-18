@@ -421,16 +421,16 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
 
     tracked_rank = comm.bcast(tracked_rank, root=root)
 
-    tracked_ordinal = str(tracked_rank + 1)
-    if tracked_ordinal.endswith('1'):
-        tracked_ordinal = "{}st".format(tracked_ordinal)
-    elif tracked_ordinal.endswith('2'):
-        tracked_ordinal = "{}nd".format(tracked_ordinal)
-    elif tracked_ordinal.endswith('3'):
-        tracked_ordinal = "{}rd".format(tracked_ordinal)
-    else:
-        tracked_ordinal = "{}th".format(tracked_ordinal)
-    tracked_process = " ({} process)".format(tracked_ordinal)
+    tracked_ordinal = tracked_rank + 1
+    ordinal_suffix = "{}".format(
+        {1: "st", 2: "nd", 3: "rd", 11: "th", 12: "th", 13: "th"}.get(
+            tracked_ordinal % 100
+            if tracked_ordinal % 100 < 20
+            else tracked_ordinal % 10,
+            "th"
+        )
+    )
+    tracked_process = " ({}{} process)".format(tracked_ordinal, ordinal_suffix)
 
     segments = _allocate_segments(
         total_task=len(data_array), total_proc=comm.size
@@ -443,7 +443,7 @@ def mpi_compute(data_array, mapping, comm=None, root=0, process_name=None,
         output = list(tqdm(
             map(mapping, data_chunk),
             total=len(data_chunk), mininterval=update_rate,
-            desc=(process_name+tracked_process).strip(), file=sys.stdout
+            desc=(process_name + tracked_process).strip(), file=sys.stdout
         ))
     else:
         output = list(map(mapping, data_chunk))

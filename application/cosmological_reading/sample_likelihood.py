@@ -331,13 +331,15 @@ def evaluate_likelihood():
             compression_matrix = generate_compression_matrix(
                 {
                     'pivot': spherical_pivot,
-                    'spherical_model': likelihood_function.base_spherical_model,
+                    'spherical_model':
+                        likelihood_function.base_spherical_model,
                     'b_1': 2.5,
                     'f_nl': 0.,
                 },  # fiducial model
                 {
                     'pivot': spherical_pivot,
-                    'spherical_model': likelihood_function.base_spherical_model,
+                    'spherical_model':
+                        likelihood_function.base_spherical_model,
                     'b_1': 3.,
                     'f_nl': 100.,
                 } # extremal model

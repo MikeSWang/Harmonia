@@ -468,14 +468,19 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         if labels != [None] * len(args):
             main_panel.legend(handletextpad=0)
 
+        main_panel.axes.tick_params(
+            axis='x', which='both', direction='in', top=True
+        )
+        main_panel.axes.tick_params(
+            axis='y', which='both', direction='in', right=True
+        )
+
         x_panel.set_ylim(bottom=0)
         x_panel.axes.tick_params(
-            axis='x', which='both', direction='in',
-            top=False, labelbottom=False
+            axis='x', which='both', top=False, bottom=False, labelbottom=False
         )
         x_panel.axes.tick_params(
-            axis='y', which='both',
-            left=False, right=False, labelleft=False
+            axis='y', which='both', left=False, right=False, labelleft=False
         )
         x_panel.spines['top'].set_visible(False)
         x_panel.spines['left'].set_visible(False)
@@ -483,12 +488,10 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
         y_panel.set_xlim(left=0)
         y_panel.axes.tick_params(
-            axis='x', which='both',
-            top=False, bottom=False, labelbottom=False
+            axis='x', which='both', top=False, bottom=False, labelbottom=False
         )
         y_panel.axes.tick_params(
-            axis='y', which='both', direction='in',
-            right=False, labelleft=False
+            axis='y', which='both', left=False, right=False, labelleft=False
         )
         y_panel.spines['top'].set_visible(False)
         y_panel.spines['bottom'].set_visible(False)
@@ -567,13 +570,28 @@ if __name__ == "__main__":
         "rsd={}".format(RSD_TAG),
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ]))
+    output_file = output_dir/output_filename
 
     confirm_directory(output_dir)
 
-    # Collate likelihoods.
-    likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
+    # Collate and export likelihoods.
+    # pylint: disable=using-constant-test
+    if True:
+        likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
+        np.savez(
+            output_file,
+            likelihoods=likelihoods,
+            f_nl_coords=f_nl_coords,
+            b_1_coords=b_1_coords
+        )
+    else:
+        loaded_results = np.load(
+            output_file.with_suffix(output_file.suffix + '.npz')
+        )
+        for name in loaded_results.files:
+            globals()[name] = loaded_results[name]
 
-    # # Plot/export constraints.
+    # Plot constraints.
     figure, *results = plot_likelihood(
         likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
@@ -582,5 +600,4 @@ if __name__ == "__main__":
     )
     # pylint: disable=using-constant-test
     if True:
-        output_file = output_dir/output_filename
         figure.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))

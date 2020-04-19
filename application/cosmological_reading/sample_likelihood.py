@@ -322,24 +322,30 @@ def evaluate_likelihood():
 
         exclude_degrees = (0,) if params.no_monopole else ()
 
-        if comm.rank == 0:
-            logger.info("Generating a spherical data compression matrix...")
-        compression_matrix = generate_compression_matrix(
-            {
-                'pivot': spherical_pivot,
-                'spherical_model': likelihood_function.base_spherical_model,
-                'b_1': 2.5,
-                'f_nl': 0.,
-            },  # fiducial model
-            {
-                'pivot': spherical_pivot,
-                'spherical_model': likelihood_function.base_spherical_model,
-                'b_1': 3.,
-                'f_nl': 100.,
-            } # extremal model
-        )
-        if comm.rank == 0:
-            logger.info("... generated a spherical data compression matrix.")
+        # Data compression except in the diagonal/radialised case.
+        if not radialise:
+            if comm.rank == 0:
+                logger.info(
+                    "Generating a spherical data compression matrix..."
+                )
+            compression_matrix = generate_compression_matrix(
+                {
+                    'pivot': spherical_pivot,
+                    'spherical_model': likelihood_function.base_spherical_model,
+                    'b_1': 2.5,
+                    'f_nl': 0.,
+                },  # fiducial model
+                {
+                    'pivot': spherical_pivot,
+                    'spherical_model': likelihood_function.base_spherical_model,
+                    'b_1': 3.,
+                    'f_nl': 100.,
+                } # extremal model
+            )
+            if comm.rank == 0:
+                logger.info(
+                    "... generated a spherical data compression matrix."
+                )
 
         spherical_likelihood_kwargs = {
             'exclude_degrees': exclude_degrees,

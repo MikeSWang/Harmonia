@@ -295,10 +295,10 @@ def _allocate_tasks(total_task, total_proc):
     """
     try:
         total_task, total_proc = int(total_task), int(total_proc)
-    except TypeError as err:
+    except TypeError as error:
         raise TypeError(
             "`total_task` and `total_proc` must have integer values."
-        ) from err
+        ) from error
 
     num_task_remaining, num_proc_remaining, tasks = total_task, total_proc, []
 

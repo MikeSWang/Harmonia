@@ -510,9 +510,9 @@ class Couplings:
 
         # Reduce the number of indices to compile by exploting
         # exchange symmetry between indices.
-        reduce_by = mu if coupling_type == 'angular' else None
+        above_from = mu if coupling_type == 'angular' else None
         variable_indices = self._gen_operable_indices(
-            coupling_type, reduce_by=reduce_by
+            coupling_type, above_from=above_from
         )
 
         couplings_for_index = {}
@@ -525,7 +525,7 @@ class Couplings:
 
         return couplings_for_index
 
-    def _gen_operable_indices(self, coupling_type, reduce_by=None):
+    def _gen_operable_indices(self, coupling_type, above_from=None):
 
         if coupling_type == 'angular':
             operable_indices = [
@@ -533,9 +533,9 @@ class Couplings:
                 for ell in self.disc.degrees
                 for m in range(- ell, ell + 1)
             ]
-            if reduce_by is not None:
+            if above_from is not None:
                 operable_indices = [
-                    index for index in operable_indices if index >= reduce_by
+                    index for index in operable_indices if index >= above_from
                 ]
         else:
             operable_indices = [

@@ -193,6 +193,11 @@ class SphericalMap:
             list(self.disc.normalisations.values())
         )[sort_order]
 
+        mode_indices = [
+            self.disc.wavenumbers.keys()[order_index]
+            for order_index in sort_order
+        ]
+
         mode_counts = np.zeros_like(wavenumbers)
         mode_powers = np.zeros_like(wavenumbers)
 
@@ -206,6 +211,7 @@ class SphericalMap:
 
         return {
             'wavenumbers': wavenumbers,
+            'mode_indices': mode_indices,
             'mode_counts': mode_counts,
             'mode_powers': mode_powers,
         }

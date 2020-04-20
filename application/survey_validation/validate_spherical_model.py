@@ -71,7 +71,7 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
 
     spherical_correlator_matrix = spherical_model_fullsky.correlator_matrix(
         "spectral", b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
-        radialise=True
+        diagonal=True
     )
 
     _, unique_ind = np.unique(

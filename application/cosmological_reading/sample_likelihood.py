@@ -313,7 +313,7 @@ def evaluate_likelihood():
 
     if params.likelihood in ['spherical', 'hybrid']:
         # Radialise to speed up process when survey is trivial.
-        radialise = (
+        diagonal = (
             params.mask_tag is None or params.mask_tag.startswith('1.')
         ) and (
             params.selection_tag is None
@@ -322,8 +322,8 @@ def evaluate_likelihood():
 
         exclude_degrees = (0,) if params.no_monopole else ()
 
-        # Data compression except in the diagonal/radialised case.
-        if not radialise:
+        # Data compression except in the diagonal case.
+        if not diagonal:
             if comm.rank == 0:
                 logger.info(
                     "Generating a spherical data compression matrix..."
@@ -352,7 +352,7 @@ def evaluate_likelihood():
         spherical_likelihood_kwargs = {
             'exclude_degrees': exclude_degrees,
             'compression_matrix': compression_matrix,
-            'radialise': radialise,
+            'diagonal': diagonal,
         }
 
     if params.likelihood in ['cartesian', 'hybrid']:

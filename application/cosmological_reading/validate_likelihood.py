@@ -60,10 +60,10 @@ likelihood_func = LogLikelihood(
     spherical_pivot=PIVOT, nbar=2.5e-4, contrast=10.
 )
 
-radialise = (MASK_TAG is None or MASK_TAG.startswith('1.')) \
+diagonal = (MASK_TAG is None or MASK_TAG.startswith('1.')) \
     and (SELECTION_TAG is None or SELECTION_TAG.upper() == 'NONE')
 
-if radialise:
+if diagonal:
     comp_mat = None
 else:
     comp_mat = generate_compression_matrix(
@@ -84,8 +84,7 @@ png = [-100., 0., 100.]
 likelihood = np.reshape(
     [
         likelihood_func.spherical_map_likelihood(
-            b_1=b_1, f_nl=f_nl,
-            radialise=radialise, compression_matrix=comp_mat
+            b_1=b_1, f_nl=f_nl, diagonal=diagonal, compression_matrix=comp_mat
         ) for b_1 in bias for f_nl in png
     ],
     (len(bias), len(png))

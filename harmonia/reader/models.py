@@ -678,7 +678,11 @@ class SphericalCorrelator:
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
         diagonal : bool, optional
-            If `True`, return only the diagonal matrix part.
+            If `True` (default is `False`), return only the diagonal
+            matrix part.
+        shot_noise_only : bool, optional
+            If `True` (default is `False`), return only the shot noise
+            correlator matrix.
         update_model_kwargs : dict or None, optional
             Parameters `cosmo`, `power_spectrum`, `growth_rate` and
             `cosmo_specs` passed as keyword arguments to update the

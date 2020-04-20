@@ -21,7 +21,7 @@ from pprint import pformat
 
 from nbodykit.cosmology import Cosmology
 
-from .geometry import differential_AP_distortion
+from .geometry import differential_AP_distortion, redshift_from_distance
 from .scale_dependence import (
     modified_power_spectrum,
     scale_dependence_modification,

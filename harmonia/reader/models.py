@@ -89,6 +89,10 @@ from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.algorithms.arrays import CartesianArray, SphericalArray
 from harmonia.algorithms.integration import radial_integral
+from harmonia.cosmology.geometry import (
+    differential_AP_distortion,
+    redshift_from_distance,
+)
 from harmonia.cosmology.scale_dependence import scale_dependence_modification
 from harmonia.utils import Progress, mpi_compute, restore_warnings
 
@@ -466,40 +470,48 @@ class SphericalCorrelator:
         Redshift at which the model is evaluated.
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` *or None, optional*
         Baseline cosmological model used to produce the transfer function
-        and power spectrum and to compute the linear growth rate.
-        This can be subsequently updated when calling
-        :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
-        If `None` (default) and not subsequently updated, primordial
-        non-Gaussianity modifications cannot be computed.
+        (and the power spectrum and linear growth rate if these are not
+        set but required in model evaluation).  This can be subsequently
+        updated when calling :meth:`~.two_point_correlator`
+        or :meth:`~.correlator_matrix`.  If `None` (default) and not
+        subsequently updated, primordial non-Gaussianity modifications
+        cannot be computed.
     power_spectrum : callable or None, optional
         Baseline linear matter power spectrum model at `redshift`.
-        Ignored when `cosmo` is provided.  This cannot be `None` (default)
-        unless it is subsequently updated when calling
+        Ignored when `cosmo` is provided; otherwise this cannot be `None`
+        (default) unless it is subsequently updated when calling
         :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     growth_rate : float or None, optional
         Baseline linear growth rate at `redshift`.  If `None` (default),
-        this is set by `cosmo` if it is provided; otherwise this is set
-        to 0.  This can be subsequently updated when calling
+        this is set by `cosmo` (if provided); otherwise this is set
+        to zero.  This can be subsequently updated when calling
         :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     couplings : :class:`~.couplings.Couplings` *or None, optional*
-        Baseline coupling coefficients for the same cosmological model
-        `cosmo`.  If `None` (default), this is compiled from
-        `survey_specs` and `cosmo_specs` if either is provided; otherwise
-        couplings are assumed to be trivial (i.e. angular and radial
-        couplings are Kronecker deltas).  This can be subsequently updated
-        when calling :meth:`~.two_point_correlator` or
-        :meth:`~.correlator_matrix`.
+        Baseline coupling coefficients consistent with the underlying
+        cosmological model `cosmo`.  If `None` (default), this is compiled
+        from `survey_specs` and `cosmo_specs` if either is provided;
+        otherwise all couplings are assumed to be trivial (i.e. angular
+        and radial couplings are Kronecker deltas).  This can be
+        subsequently updated when calling :meth:`~.two_point_correlator`
+        or :meth:`~.correlator_matrix`.
     survey_specs : dict{str: callable or None} or None, optional
         Survey specification functions to be passed as `survey_specs` to
-        :class:`~harmonia.reader.couplings.Couplings`.  Also used in
-        shot noise calculations.
-    cosmo_specs : dict{str: callable or None} or None, optional
+        :class:`~harmonia.reader.couplings.Couplings` when couplings are
+        compiled.  Also used in shot noise calculations.
+    cosmo_specs : dict{str: callable, bool or None} or None, optional
         Baseline cosmological specification functions to be passed as
-        `cosmo_specs` to :class:`~harmonia.reader.couplings.Couplings`.
-        If this is set, its attributes must be consistent with the
-        baseline model `cosmo`.  This can be subsequently updated when
-        calling :meth:`~.two_point_correlator` or
-        :meth:`~.correlator_matrix`.
+        `cosmo_specs` to :class:`~harmonia.reader.couplings.Couplings`
+        when couplings are compiled.  If not `None` (default), it must be
+        a dictionary holding keys listed in :class:`~.couplings.Couplings`:
+        if callable values are passed to the keys ``'chi_of_z'``,
+        ``'clustering_evolution'``, ``'growth_evolution'`` or
+        ``'differential_AP_distortion'``, they should be consistent with
+        the current :attr:`cosmo`; otherwise `True` can be passed here and
+        their values are then derived from `cosmo` (which must then be
+        set), or unspecified keys assume `None` values; also note some
+        keys are linked and values must be simultaneously provided.  This
+        can be subsequently updated when calling
+        :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -516,6 +528,12 @@ class SphericalCorrelator:
         Linear growth rate at `redshift`.
     attrs : dict
         Any other attributes inherited from input parameters.
+
+    See Also
+    --------
+    :class:`~harmonia.reader.couplings.Couplings`
+        More details related to `couplings` and especially the
+        `cosmo_specs` parameter.
 
     """
 
@@ -534,14 +552,21 @@ class SphericalCorrelator:
         self._disc = disc
         self._z = redshift
 
+        # NOTE: This assignment is needed to help :meth:`_render_cosmo_specs`
+        # set the couplings next, which are not initialised with `cosmo`,
+        # whose formal assignment must come after in
+        # :meth:`_set_baseline_model`, as therein the couplings are processed.
+        self.cosmo = cosmo
+
         self._survey_specs = survey_specs
-        self._cosmo_specs = cosmo_specs
+        self._cosmo_specs = self._render_cosmo_specs(cosmo_specs)
 
         if couplings is None:
             self.couplings = Couplings(
                 self._disc,
                 survey_specs=self._survey_specs,
-                cosmo_specs=self._cosmo_specs
+                cosmo_specs=self._cosmo_specs,
+                initialise=True
             )
         else:
             self.couplings = couplings
@@ -810,34 +835,6 @@ class SphericalCorrelator:
             `cosmo_specs` and `update_couplings` to be set or reset.
 
         """
-        ## Only necessary to update radial and RSD couplings when `cosmo_specs`
-        ## is specified.  Any previously computed angular couplings
-        ## are attached.
-
-        if kwargs.get('update_couplings'):
-            try:
-                self._cosmo_specs = kwargs['cosmo_specs']
-            except KeyError:
-                warnings.warn(
-                    "`update_couplings` is ignored as `cosmo_specs` was not "
-                    "passed. If you intend it to be `None` it needs to be "
-                    "explicitly passed."
-                )
-            else:
-                try:
-                    current_angular_couplings = \
-                        self.couplings.couplings['angular']
-                except (AttributeError, KeyError):
-                    current_angular_couplings = None
-                self.couplings = Couplings(
-                    self._disc,
-                    survey_specs=self._survey_specs,
-                    cosmo_specs=self._cosmo_specs,
-                    external_angular_couplings=current_angular_couplings,
-                    initialise=True
-                )
-                self._grouped_couplings = _group_couplings(self.couplings)
-
         ## `self._kernel` is A(k) (see docstring), `self._mode_modification`
         ## is its evaluation at wavenumbers, and `self._normalised_mode_powers`
         ## is the evaluated matter power spectrum normalised 'spherically'.
@@ -897,6 +894,108 @@ class SphericalCorrelator:
                 self.growth_rate = kwargs['growth_rate'] \
                     if kwargs['growth_rate'] is not None \
                     else self.cosmo.scale_independent_growth_rate(self._z)
+
+        ## Only necessary to update radial and RSD couplings (based on the
+        ## latest `cosmo` attribute) when `cosmo_specs` is specified.  Any
+        ## previously computed angular couplings are attached.
+
+        if kwargs.get('update_couplings'):
+            try:
+                self._cosmo_specs = \
+                    self._render_cosmo_specs(kwargs['cosmo_specs'])
+            except KeyError:
+                warnings.warn(
+                    "`update_couplings` is ignored as `cosmo_specs` was not "
+                    "passed. If you intend it to be `None` it still needs to "
+                    "be explicitly passed."
+                )
+            else:
+                try:
+                    current_angular_couplings = \
+                        self.couplings.couplings['angular']
+                except (AttributeError, KeyError):
+                    current_angular_couplings = None
+                self.couplings = Couplings(
+                    self._disc,
+                    survey_specs=self._survey_specs,
+                    cosmo_specs=self._cosmo_specs,
+                    external_angular_couplings=current_angular_couplings,
+                    initialise=True
+                )
+                self._grouped_couplings = _group_couplings(self.couplings)
+
+    def _render_cosmo_specs(self, cosmo_specs):
+
+        # This renders `cosmo_specs` ready to be passed to
+        # :class:`~.couplings.Couplings` for coupling compilation.
+
+        _error_msg = (
+            "Cannot convert '{}' from True to callable as "
+            "the `cosmo` attribute is not set."
+        )
+
+        if cosmo_specs is None:
+            return None
+
+        if isinstance(cosmo_specs, dict):
+            # pylint: disable=protected-access
+            _cosmo_specs = dict.fromkeys(Couplings._cosmo_specs.keys())
+            if not set(cosmo_specs.keys()).issubset(_cosmo_specs.keys()):
+                raise ValueError(
+                    "Invalid `cosmo_specs` keys: {}.".format(
+                        set(cosmo_specs.keys()) - set(_cosmo_specs.keys())
+                    )
+                )
+            _cosmo_specs.update(cosmo_specs)
+
+            # Convert `True` values using the `cosmo` attribute.
+            if _cosmo_specs['z_from_r'] is True:
+                try:
+                    z_from_r = redshift_from_distance(self.cosmo)
+                except AttributeError:
+                    raise ValueError(_error_msg.format('z_from_r'))
+                else:
+                    _cosmo_specs.update({'z_from_r': z_from_r})
+
+            if _cosmo_specs['clustering_evolution'] is True:
+                try:
+                    clustering_evolution = lambda z: \
+                        self.cosmo.scale_independent_growth_factor(z) \
+                        / self.cosmo.scale_independent_growth_factor(self._z)
+                except AttributeError:
+                    raise ValueError(_error_msg.format('clustering_evolution'))
+                else:
+                    _cosmo_specs.update({
+                        'clustering_evolution': clustering_evolution
+                    })
+
+            if _cosmo_specs['growth_evolution'] is True:
+                try:
+                    growth_evolution = lambda z: \
+                        self.cosmo.scale_independent_growth_rate(z) \
+                        / self.cosmo.scale_independent_growth_rate(self._z)
+                except AttributeError:
+                    raise ValueError(_error_msg.format('growth_evolution'))
+                else:
+                    _cosmo_specs.update({'growth_evolution': growth_evolution})
+
+            if _cosmo_specs['differential_AP_distortion'] is True:
+                try:
+                    diff_AP = differential_AP_distortion(
+                        _cosmo_specs['chi_of_z'], self.cosmo.comoving_distance
+                    )
+                except AttributeError:
+                    raise ValueError(
+                        _error_msg.format('differential_AP_distortion')
+                    )
+                else:
+                    _cosmo_specs.update({
+                        'differential_AP_distortion': diff_AP
+                    })
+
+            return _cosmo_specs
+
+        raise TypeError("Invalid `cosmo_specs` passed.")
 
     def _get_grouped_couplings(self, coupling_type, mu):
 

@@ -654,7 +654,7 @@ class SphericalCorrelator:
         return correlator_value
 
     def correlator_matrix(self, pivot, b_1=None, f_nl=None, nbar=None,
-                          contrast=None, tracer_p=1., radialise=False,
+                          contrast=None, tracer_p=1., diagonal=False,
                           shot_noise_only=False, update_model_kwargs=None,
                           report_progress=False):
         """Compute two-point correlator matrix for some vetorisation of all
@@ -677,10 +677,8 @@ class SphericalCorrelator:
         tracer_p : float, optional
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
-        radialise : bool, optional
-            If `True`, return the diagonal matrix assuming mutual mode
-            independence (only valid for no survey or cosmological
-            specifications, i.e. trivial coupling coefficients.)
+        diagonal : bool, optional
+            If `True`, return only the diagonal matrix part.
         update_model_kwargs : dict or None, optional
             Parameters `cosmo`, `power_spectrum`, `growth_rate` and
             `cosmo_specs` passed as keyword arguments to update the
@@ -723,9 +721,9 @@ class SphericalCorrelator:
 
         dim = len(index_vector)
 
-        ## Radialisation: Only return diagonal matrix.
+        ## Diagonal: Only return diagonal matrix.
 
-        if radialise:
+        if diagonal:
             # Shot noise contribution.
             if nbar is None:
                 shot_noise_diag = np.zeros(dim, dtype=complex)
@@ -751,7 +749,7 @@ class SphericalCorrelator:
 
             return np.diag(two_point_corr_diag)
 
-        ## Full: Correlator matrix.
+        ## Full: Return the entire correlator matrix.
 
         # Shot noise contribution.
         shot_noise_mat = np.zeros((dim,) * 2, dtype=complex)
@@ -815,6 +813,13 @@ class SphericalCorrelator:
         if kwargs.get('update_couplings'):
             try:
                 self._cosmo_specs = kwargs['cosmo_specs']
+            except KeyError:
+                warnings.warn(
+                    "`update_couplings` is ignored as `cosmo_specs` was not "
+                    "passed. If you intend it to be `None` it needs to be "
+                    "explicitly passed."
+                )
+            else:
                 try:
                     current_angular_couplings = \
                         self.couplings.couplings['angular']
@@ -828,12 +833,6 @@ class SphericalCorrelator:
                     initialise=True
                 )
                 self._grouped_couplings = _group_couplings(self.couplings)
-            except KeyError:
-                warnings.warn(
-                    "`update_couplings` is ignored as `cosmo_specs` was not "
-                    "passed. If you intend it to be `None` it needs to be "
-                    "explicitly passed."
-                )
 
         ## `self._kernel` is A(k) (see docstring), `self._mode_modification`
         ## is its evaluation at wavenumbers, and `self._normalised_mode_powers`
@@ -903,7 +902,7 @@ class SphericalCorrelator:
 
         try:
             return self._angular_sums[(mu[0], mu[1]), (nu[0], nu[1])]
-        except (TypeError, KeyError):
+        except (KeyError, TypeError):
             try:  # use Hermitian conjugate if unavailable
                 return self._angular_sums[(nu[0], nu[1]), (mu[0], mu[1])]
             except TypeError:  # non-existent, reduce to Kronecker delta
@@ -918,14 +917,14 @@ class SphericalCorrelator:
 
     def _compile_angular_sums(self):
 
-        # Compiles all index pairs of the form (mu_ell, mu_m, nu_ell, nu_m)
-        # where `nu` is a higher index than `mu` (the other cases are obtained
-        # by Hermitian conjuate).
+        # Compiles all index pairs of the form (\ell_\mu, m_\mu, \ell_\nu,
+        # m_\nu) where \nu is a higher index than \mu (the other cases are
+        # obtained by Hermitian conjuate).
         index_pair_vector = list(
             (first_index, second_index)
             for first_index in self._gen_operable_indices(subtype='angular')
             for second_index in self._gen_operable_indices(
-                subtype='angular', reduce_by=first_index
+                subtype='angular', above_from=first_index
             )
         )
 
@@ -934,8 +933,8 @@ class SphericalCorrelator:
 
         # Compile, for each index pair of the form above, all its angular sums
         # indexed by a new degree index (say, `ell_sigma`) of the form:
-        # sum_{m_ell} (mu_ell, mu_m, ell_sigma, m_ell)
-        # * conj((nu_ell, nu_m, ell_sigma, m_ell)).
+        # \sum_{m_\ell} M_{\ell_\mu, m_\mu, \ell_\sigma, m_\sigma)
+        # * M_{\ell_\nu, m_\nu, \ell_\sigma, m_\sigma)^*.
         angular_sums_by_index_pair = mpi_compute(
             index_pair_vector, self._compile_angular_sums_by_index_pair,
             comm=self.comm, process_name="angular sum compilation"
@@ -964,14 +963,14 @@ class SphericalCorrelator:
             (first_index, second_index)
             for first_index in self._gen_operable_indices()
             for second_index in \
-                self._gen_operable_indices(reduce_by=first_index)
+                self._gen_operable_indices(above_from=first_index)
         )
 
         if self.comm is None or self.comm.rank == 0:
             self.logger.info("Compiling shot noise levels...")
 
-        # Compile, for each index pair of the form above, the shot noise
-        # level of the form: M_{mu, nu} * radial integral[selection, weight].
+        # Compile, for each index pair of the form above, the shot noise level
+        # of the form: M_{\mu, \nu} * shot noise integral[selection, weight].
         shot_noise_levels_by_index_pair = mpi_compute(
             index_pair_vector, self._compile_shot_noise_levels_by_index_pair,
             comm=self.comm, process_name="shot noise level compilation"
@@ -1003,8 +1002,8 @@ class SphericalCorrelator:
 
         mu, nu = index_pair
 
-        # For each degree index (say `ell_sigma`), return sum_{m_sigma}
-        # of M_{mu, sigma} * conj(M_{nu, sigma}).
+        # For each degree index (say `ell_sigma`), return \sum_{m_\sigma}
+        # M_{\mu, \sigma} * M_{\nu, \sigma}^*.
         angular_sums_for_index_pair_by_degree = {
             ell_sigma: sum([
                 self.couplings['angular', mu, (ell_sigma, m_sigma)]
@@ -1026,7 +1025,7 @@ class SphericalCorrelator:
         k_nu = self._disc.wavenumbers[nu[0], nu[-1]]
 
         # Return the radial integral over selection(r) * weight(r)^2 *
-        # sph_besselj(ell_mu, k_mu) * sph_besselj(ell_nu, k_nu).
+        # j_{\ell_mu}(k_\mu r) * j_{\ell_\nu}(k_\nu r).
         with warnings.catch_warnings(record=True) as any_warning:
             shot_noise_integral = radial_integral(
                 lambda r: shot_noise_kernel(
@@ -1044,7 +1043,7 @@ class SphericalCorrelator:
 
         return M_mu_nu * shot_noise_integral
 
-    def _gen_operable_indices(self, subtype=None, reduce_by=None):
+    def _gen_operable_indices(self, subtype=None, above_from=None):
 
         if subtype == 'angular':
             operable_indices = [
@@ -1066,9 +1065,9 @@ class SphericalCorrelator:
                 for n in range(1, nmax + 1)
             ]
 
-        if reduce_by is not None:
+        if above_from is not None:
             operable_indices = [
-                index for index in operable_indices if index >= reduce_by
+                index for index in operable_indices if index >= above_from
             ]
 
         return operable_indices

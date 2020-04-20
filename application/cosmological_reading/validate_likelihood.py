@@ -4,6 +4,7 @@
 import os
 import sys
 
+import numpy as np
 import seaborn as sns
 
 try:
@@ -27,8 +28,8 @@ except ImportError:
 # Set inputs.
 NG = 0
 MAP_SERIAL_NUM = 1
-MASK_TAG = "random0_BOSS_DR12v5_CMASS_North"
-SELECTION_TAG = "[100.0,500.0]"
+MASK_TAG = "1.0" # "random0_BOSS_DR12v5_CMASS_North"
+SELECTION_TAG = "None" # "[100.0,500.0]"
 
 PIVOT = 'natural'
 
@@ -39,7 +40,7 @@ couplings = Couplings.load(
 )
 
 spherical_data = SphericalArray.load(
-    data_dir/"raw"/"catalpgue_maps"/"catalogue-map-({}).npz".format(
+    data_dir/"raw"/"catalogue_maps"/"catalogue-map-({}).npz".format(
         ",".join([
             f"source=halo-(NG={NG}.,z=1.)-{MAP_SERIAL_NUM}",
             "map=spherical", "scale=[None,0.04]", "orders=None", "rsd=False",
@@ -80,10 +81,14 @@ else:
 bias = [2., 2.5, 3.]
 png = [-100., 0., 100.]
 
-likelihood = [
-    likelihood_func.spherical_map_likelihood(
-        b_1=b_1, f_nl=f_nl, radialise=radialise, compression_matrix=comp_mat
-    ) for b_1 in bias for f_nl in png
-]
+likelihood = np.reshape(
+    [
+        likelihood_func.spherical_map_likelihood(
+            b_1=b_1, f_nl=f_nl,
+            radialise=radialise, compression_matrix=comp_mat
+        ) for b_1 in bias for f_nl in png
+    ],
+    (len(bias), len(png))
+)
 
-sns.heatmap(likelihood, xticklabels=png, yticklabels=bias)
+sns.heatmap(likelihood, xticklabels=png, yticklabels=bias, annot=True)

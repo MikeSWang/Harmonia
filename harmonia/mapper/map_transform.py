@@ -166,15 +166,15 @@ class SphericalMap:
     def mode_power(self):
         """Spherical Fourier mode power suitably normalised.
 
-        In the simplest case of a full-sky statistically isotropic map,
-        this is equivalent to the power spectrum at the same mode
-        wavenumbers.
+        In the simplest case of a full-sky statistically isotropic map
+        without any mode coupling, this is equivalent to the Cartesian
+        power spectrum at the same wavenumbers.
 
         Returns
         -------
         dict
             Spherical mode power at discrete mode wavenumbers with mode
-            counts.
+            counts and indices.
 
         """
         if self._mode_power is not None:

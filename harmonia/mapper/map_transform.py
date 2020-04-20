@@ -110,6 +110,14 @@ class SphericalMap:
 
         self.__setstate__(state)
 
+        # pylint: disable=protected-access
+        if not hasattr(self, '_mode_power'):
+            self._mode_power = None
+        if not hasattr(self, '_data_coeff'):
+            self._data_coeff = {}
+        if not hasattr(self, '_rand_coeff'):
+            self._rand_coeff = {}
+
         return self
 
     @property
@@ -143,6 +151,16 @@ class SphericalMap:
         self._density_contrast = self._transform()
 
         return self._density_contrast
+
+    @density_contrast.setter
+    def density_contrast(self, value):
+
+        if isinstance(value, SphericalArray):
+            self._density_contrast = value
+        else:
+            raise TypeError(
+                "Only SphericalArray objects can be set as `density_contrast`."
+            )
 
     @property
     def mode_power(self):
@@ -234,8 +252,10 @@ class SphericalMap:
         loc_rand = c2s(self.catalogues.random_catalogue['Location'])
         vet_data = self.catalogues.data_catalogue['Selection']
         vet_rand = self.catalogues.random_catalogue['Selection']
-        sel_data = self.catalogues.data_catalogue['NZ']
-        sel_rand = self.catalogues.random_catalogue['NZ']
+        sel_data = self.catalogues.data_catalogue['NZ'] \
+            / self.catalogues.data_catalogue.attrs['nbar']
+        sel_rand = self.catalogues.random_catalogue['NZ'] \
+            / self.catalogues.data_catalogue.attrs['nbar']
         wgt_data = self.catalogues.data_catalogue['Weight']
         wgt_rand = self.catalogues.random_catalogue['Weight']
 

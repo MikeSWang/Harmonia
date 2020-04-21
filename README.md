@@ -23,7 +23,7 @@ pip install harmonia
 
 API documentation can be found at: [...](docs/).
 
-## Tutorial
+## Tutorials
 
 Currently under development. See the latest updates in 
 [``TODO.md``](tutorials/TODO.md).

@@ -10,3 +10,29 @@ https://github.com/mikeswang/Harmonia/blob/master/LICENCE)
 ``Harmonia`` is a Python package that combines spherical and Cartesian
 Fourier map transformations and likelihood constructions for linear,
 large-scale galaxy clustering analysis.
+
+## Installation
+
+The simplest installation method is ``pip``
+
+```bash
+pip install harmonia
+```
+
+## Documentation
+
+API documentation can be found at: [here](docs/).
+
+## Tutorial
+
+Currently under development. See the latest updates in 
+[``TODO.md``](tutorials/TODO.md).
+
+## Attribution
+
+## Licence
+
+Copyright 2020, M S Wang
+
+Licensed under GPL 3.0. See terms and conditions in 
+``[``Licence.md``](Licence.md).

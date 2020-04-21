@@ -26,7 +26,7 @@ API documentation can be found at [...](docs/).
 ## Tutorials
 
 Currently under development. See the latest updates in 
-[``TODO.md``](tutorials/TODO.md).
+[``TODO``](tutorials/TODO.md).
 
 ## Attribution
 
@@ -35,4 +35,4 @@ Currently under development. See the latest updates in
 Copyright 2020, M S Wang
 
 Licensed under GPL 3.0. See terms and conditions in 
-[``Licence.md``](Licence.md).
+[``Licence``](Licence).

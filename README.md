@@ -13,7 +13,7 @@ large-scale galaxy clustering analysis.
 
 ## Installation
 
-The simplest installation method is ``pip``
+The simplest installation method is ``pip``:
 
 ```bash
 pip install harmonia
@@ -21,7 +21,7 @@ pip install harmonia
 
 ## Documentation
 
-API documentation can be found at: [here](docs/).
+API documentation can be found at: [...](docs/).
 
 ## Tutorial
 

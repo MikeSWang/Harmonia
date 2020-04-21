@@ -35,4 +35,4 @@ Currently under development. See the latest updates in
 Copyright 2020, M S Wang
 
 Licensed under GPL 3.0. See terms and conditions in 
-[``Licence``](Licence).
+[``LICENCE``](LICENCE).

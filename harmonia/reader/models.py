@@ -825,6 +825,77 @@ class SphericalCorrelator:
 
         return two_point_corr_mat
 
+    def radialised_power(self, b_1=None, f_nl=None, nbar=None, contrast=None,
+                         tracer_p=1.):
+        """Compute the radialised spherical mode power.
+
+        Notes
+        -----
+        This relies on :meth:`~.correlator_matrix` with ``diagonal=True``.
+        Results are only meaningful in the radialisation limit when
+        all coupling coefficients are trivial (i.e. Kronecker deltas) so
+        that spherical modes are mutually independent [3]_.  Mode power is
+        averaged over equivalent spherical orders and suitably normalised
+        so that it matches the Cartesian power spectrum for a full-sky
+        statistically isotripoc map.
+
+        Parameters
+        ----------
+        b_1 : float
+            Scale-independent linear bias at input redshift.
+        f_nl : float or None, optional
+            Local primordial non-Gaussianity (default is `None`).
+        nbar : float or None, optional
+            Mean particle number density (in cubic :math:`h`/Mpc).  If
+            `None` (default), shot noise is neglected.
+        contrast : float or None, optional
+            If not `None` (default), this adds additional shot noise
+            ``1 / (contrast * nbar)`` from a FKP-style random catalogue.
+        tracer_p : float, optional
+            Tracer-dependent parameter for bias modulation by `f_nl`
+            (default is 1.).
+
+        Returns
+        -------
+        dict
+            Radialised spherical mode powers at wavenumbers with mode
+            indices.
+
+        See Also
+        --------
+        :attr:`~harmonia.mapper.map_transform.SphericalMap.mode_power`
+
+
+        .. [3] Rassat A. & Refregier A., 2012. A&A 540, A115.
+           [arXiv: `1112.3100 <https://arxiv.org/abs/1112.3100>`_]
+
+        """
+        diagonal_correlator = self.correlator_matrix(
+            'natural', b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
+            tracer_p=tracer_p, diagonal=True
+        )
+
+        index_vector = self._gen_operable_indices()
+
+        normalisation_vector = [
+            self._disc.normalisations[index[0], index[-1]]
+            for index in index_vector
+        ]
+
+        mode_power_array = SphericalArray(self._disc)
+
+        mode_power_array[:] = np.multiply(
+            normalisation_vector, np.diag(diagonal_correlator)
+        )
+
+        mode_powers = mode_power_array.vectorise('spectral', collapse='mean')
+        wavenumbers = np.sort(list(self._disc.wavenumbers.values()))
+
+        return {
+            'wavenumbers': wavenumbers,
+            'mode_powers': mode_powers,
+        }
+
     def _set_baseline_model(self, **kwargs):
         """(Re-)set baseline model.
 

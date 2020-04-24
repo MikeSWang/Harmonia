@@ -348,6 +348,8 @@ def evaluate_likelihood():
                 logger.info(
                     "... generated a spherical data compression matrix."
                 )
+        else:
+            compression_matrix = None
 
         spherical_likelihood_kwargs = {
             'exclude_degrees': exclude_degrees,

@@ -372,7 +372,7 @@ class SphericalFKPCatalogue:
 
             # Apply any mask, selection or weight.
             catalogue['NZ'] = \
-                self.data_catalogue.attrs['nbar'] * catalogue['Selection']
+                self.data_catalogue.attrs['nbar'] * np.ones(catalogue.csize)
 
             if callable(mask):
                 catalogue['Selection'] &= mask(catalogue['Location'])

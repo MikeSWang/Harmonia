@@ -194,7 +194,7 @@ class SphericalMap:
         )[sort_order]
 
         mode_indices = [
-            self.disc.wavenumbers.keys()[order_index]
+            list(self.disc.wavenumbers.keys())[order_index]
             for order_index in sort_order
         ]
 
@@ -267,14 +267,13 @@ class SphericalMap:
 
         coeff_data, coeff_rand = {}, {}
 
+        # Unpack spherical coordinates.
+        r_data, t_data, p_data = loc_data.swapaxes(0, 1)[:]
+        r_rand, t_rand, p_rand = loc_rand.swapaxes(0, 1)[:]
+
         for m in range(- ell, 1):
             for n in range(1, nmax + 1):
                 k = self.disc.wavenumbers[(ell, n)]
-
-                # Unpack spherical coordinates.
-                r_data, t_data, p_data = loc_data.swapaxes(0, 1)[:]
-                r_rand, t_rand, p_rand = loc_rand.swapaxes(0, 1)[:]
-
                 coeff_data[(ell, m, n)] = complex(
                     np.sum(
                         vet_data[:] * sel_data[:] * wgt_data[:]

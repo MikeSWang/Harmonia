@@ -747,6 +747,8 @@ class SphericalCorrelator:
                     np.argsort(index_array.array['wavenumber'])
                 ]
             ]
+        else:
+            raise ValueError(f"Invalid pivot option: {pivot}.")
 
         dim = len(index_vector)
 
@@ -826,7 +828,7 @@ class SphericalCorrelator:
         return two_point_corr_mat
 
     def radialised_power(self, b_1=None, f_nl=None, nbar=None, contrast=None,
-                         tracer_p=1.):
+                         tracer_p=1., shot_noise_only=False):
         """Compute the radialised spherical mode power.
 
         Notes
@@ -854,6 +856,9 @@ class SphericalCorrelator:
         tracer_p : float, optional
             Tracer-dependent parameter for bias modulation by `f_nl`
             (default is 1.).
+        shot_noise_only : bool, optional
+            If `True` (default is `False`), return only the shot noise
+            correlator matrix.
 
         Returns
         -------
@@ -872,7 +877,7 @@ class SphericalCorrelator:
         """
         diagonal_correlator = self.correlator_matrix(
             'natural', b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
-            tracer_p=tracer_p, diagonal=True
+            tracer_p=tracer_p, diagonal=True, shot_noise_only=shot_noise_only
         )
 
         index_vector = self._gen_operable_indices()

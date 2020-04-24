@@ -1,4 +1,5 @@
-"""Validate spherical modelling.
+"""Validate spherical map by comparison with the Cartesian power spectrum
+in the case of radialisation and/or the spherical mode amplitudes.
 
 """
 import os
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 try:
     from application import data_dir
     from harmonia.algorithms import SphericalArray
-    from harmonia.cosmology import BaseModel
+    from harmonia.cosmology import BaseModel, modified_power_spectrum
     from harmonia.mapper import SphericalMap
     from harmonia.reader import Couplings, SphericalCorrelator
 except ImportError:
@@ -21,71 +22,121 @@ except ImportError:
 
     from application import data_dir
     from harmonia.algorithms import SphericalArray
-    from harmonia.cosmology import BaseModel
+    from harmonia.cosmology import BaseModel, modified_power_spectrum
     from harmonia.mapper import SphericalMap
     from harmonia.reader import Couplings, SphericalCorrelator
 
-# Set inputs.
-NG = 0
-MAP_SERIALS = range(1, 1 + 24)
-MASK_TAG = "random0_BOSS_DR12v5_CMASS_North"
-SELECTION_TAG = "[100.0,500.0]"
-PIVOT = 'natural'
 
-# Extract spherical powers from spherical maps.
-spherical_power = []
-for serial_num in MAP_SERIALS:
-    spherical_data = SphericalArray.load(
-        data_dir/"raw"/"catalpgue_maps"/"catalogue-map-({}).npz".format(
-            ",".join([
-                f"source=halo-(NG={NG}.,z=1.)-{serial_num}", "map=spherical",
-                "scale=[None,0.04]", "orders=None", "rsd=False",
-                f"mask={MASK_TAG}", f"selection={SELECTION_TAG}"
-            ])
+def extract_map_power(map_serial_nums):
+    """Extract mode power from spherical maps.
+
+    Returns
+    -------
+    list, list, :class:`harmonia.algorithms.disscretisation.DiscreteSpectrum`
+        Lists of mode power and spherical map coefficients from the serial
+        maps and the discrete spectrum.
+
+    """
+    _mode_power, _mode_coeff = [], []
+    for serial_num in map_serial_nums:
+        spherical_data = SphericalArray.load(
+            map_dir/map_file.format(NG, serial_num)
         )
+
+        _disc = spherical_data.disc
+
+        # pylint: disable=protected-access
+        spherical_map = SphericalMap._from_state({
+            'density_contrast': spherical_data.__getstate__(),
+            'disc': _disc.__getstate__(),
+        })
+
+        _mode_power.append(spherical_map.mode_power['mode_powers'])
+        _mode_coeff.append(spherical_data.array)
+
+    return _mode_power, _mode_coeff, _disc
+
+
+def predict_power_spectrum():
+    """Predict the power spectrum from spherical modelling.
+
+    """
+    spherical_model = SphericalCorrelator(
+        disc, redshift=1., growth_rate=0.,
+        couplings=Couplings.load(product_dir/couplings_file),
+        cosmo=cosmology
     )
 
-    disc = spherical_data.disc
+    radialised_power = spherical_model.radialised_power(**model_params)
 
-    # pylint: disable=protected-access
-    spherical_map = SphericalMap._from_state({
-        'density_contrast': spherical_data.__getstate__(),
-        'disc': disc.__getstate__(),
-    })
+    return radialised_power['mode_powers']
 
-    spherical_power.append(spherical_map.mode_power['mode_powers'])
 
-# Make spherical model predictions.
-couplings = Couplings.load(
-    data_dir/"processed"/"survey_products"/
-    f"couplings-(kmax=0.04,mask={MASK_TAG},selection={SELECTION_TAG}).npz"
-)
+def compare_power_spectrum():
+    """Compare map mode power, spherical model mode power and the
+    Cartesian power spectrum.
 
-spherical_model = SphericalCorrelator(
-    disc, redshift=1., growth_rate=0., couplings=couplings,
-    cosmo=BaseModel(data_dir/"external"/"cosmology"/"simulation.txt")
-)
+    Returns
+    -------
+    fig : :class:`matplotlib.figure.Figure`
+        Comparison plot.
 
-spherical_correlator = spherical_model.correlator_matrix(
-    "spectral", b_1=2.35, f_nl=NG, nbar=2.5e-4, contrast=10., radialise=True
-)
+    """
+    wavenumbers = np.sort(list(disc.wavenumbers.values()))
 
-_, unique_ind = np.unique(
-    np.diag(np.around(spherical_correlator, decimals=0)),
-    return_index=True
-)
+    cartesian_spectrum = modified_power_spectrum(
+        cosmo=cosmology, redshift=1., **model_params
+    )(wavenumbers)
 
-sort_order = np.argsort(list(disc.wavenumbers.values()))
-normalisations = np.array(list(disc.normalisations.values()))[sort_order]
+    fig = plt.figure()
+    plt.loglog(wavenumbers, np.mean(map_power, axis=0), label='map power')
+    plt.loglog(wavenumbers, spherical_spectrum, ls='--', label='spherical model')
+    plt.loglog(wavenumbers, cartesian_spectrum, ls=':', label='power spectrum')
+    plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
+    plt.ylabel(r"$P(k)\ \ [(\mathrm{{Mpc}}/h)^3]$")
+    plt.legend()
 
-spherical_spectrum = \
-    normalisations * np.diag(spherical_correlator)[np.sort(unique_ind)]
+    return fig
 
-# Compare map powers with model predictions.
-wavenumbers = np.array(list(disc.wavenumbers.values()))[sort_order]
 
-plt.loglog(wavenumbers, np.mean(spherical_power, axis=0), label='map power')
-plt.loglog(wavenumbers, spherical_spectrum, ls='--', label='model spectrum')
-plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
-plt.ylabel(r"$P(k)\ \ [(\mathrm{{Mpc}}/h)^3]$")
-plt.legend()
+if __name__ == '__main__':
+
+    NG = 0
+    MAP_SERIALS = range(1, 2)
+
+    MASK_TAG = "1.0" # "random0_BOSS_DR12v5_CMASS_North"
+    SELECTION_TAG = "None" # "[100.0,500.0]"
+
+    # Set I/O paths.
+    cosmo_file = data_dir/"external"/"cosmology"/"simulation.txt"
+
+    map_dir = data_dir/"raw"/"catalogue_maps"
+    map_file = "catalogue-map-({}).npz".format(",".join([
+        "source=halo-(NG={}.,z=1.)-{}", "map=spherical",
+        "scale=[None,0.04]", "orders=None", "rsd=False",
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
+    ]))
+
+    product_dir = data_dir/"processed"/"survey_products"
+    couplings_file = "couplings-({}).npz".format(",".join([
+        "kmax=0.04",
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
+    ]))
+
+    output_dir = data_dir/"raw"/"survey_validation"
+    output_filename = "spherical-map-validation-({})".format(",".join([
+        "scale=[None,0.04]", "rsd=False",
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
+    ]))
+
+    # Validate maps.
+    cosmology = BaseModel(cosmo_file)
+
+    model_params = dict(b_1=2.35, f_nl=NG, nbar=2.5e-4, contrast=10.)
+
+    map_power, _, disc = extract_map_power(MAP_SERIALS)
+    spherical_spectrum = predict_power_spectrum()
+    figure = compare_power_spectrum()
+    # pylint: disable=using-constant-test
+    if False:
+        figure.save(output_dir/(output_filename + '.pdf'))

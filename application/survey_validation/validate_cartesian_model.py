@@ -230,7 +230,7 @@ if __name__ == '__main__':
 
     ## Outputs.
     output_dir = data_dir/"raw"/"survey_validation"
-    output_filename = "cartesian-validation-({})".format(",".join([
+    output_filename = "cartesian-model-validation-({})".format(",".join([
         "NG={}.".format(NG),
         "scale={}".format(scale_tag),
         "rsd={}".format(rsd_tag),

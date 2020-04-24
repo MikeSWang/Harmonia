@@ -204,7 +204,7 @@ if __name__ == '__main__':
     ]))
 
     output_dir = data_dir/"raw"/"survey_validation"
-    output_filename = "spherical-validation-({})".format(",".join([
+    output_filename = "spherical-model-validation-({})".format(",".join([
         "scale=[None,{}]".format(kmax),
         "rsd=False", "mask={}", "selection={}"
     ]))

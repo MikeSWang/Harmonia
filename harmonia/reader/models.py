@@ -893,7 +893,7 @@ class SphericalCorrelator:
 
         return {
             'wavenumbers': wavenumbers,
-            'mode_powers': mode_powers,
+            'mode_powers': np.real(mode_powers),
         }
 
     def _set_baseline_model(self, **kwargs):

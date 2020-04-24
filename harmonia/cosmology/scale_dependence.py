@@ -99,7 +99,8 @@ def scale_dependent_bias(b_1, f_nl, cosmo, redshift=0., tracer_p=1.):
     return b_k
 
 
-def modified_power_spectrum(b_1, f_nl, cosmo, redshift=0., tracer_p=1.):
+def modified_power_spectrum(b_1, f_nl, cosmo, redshift=0., tracer_p=1.,
+                            nbar=None, contrast=None):
     r"""Return the tracer power spectrum modified by primordial
     non-Gaussianity.
 
@@ -115,6 +116,12 @@ def modified_power_spectrum(b_1, f_nl, cosmo, redshift=0., tracer_p=1.):
         Redshift at which quantities are evaluated (default is 0.).
     tracer_p : float, optional
         Tracer-dependent parameter :math:`p` (default is 1.).
+    nbar : float or None, optional
+        If not `None` (default), add ``1/nbar`` as shot noise to the
+        resulting power spectrum.
+    contrast : float or None, optional
+        If not `None` (default), add additional ``1/(contrast*nbar)``
+        as shot noise to the resulting power spectrum.
 
     Returns
     -------
@@ -129,4 +136,7 @@ def modified_power_spectrum(b_1, f_nl, cosmo, redshift=0., tracer_p=1.):
 
     power_spectrum = cosmology.LinearPower(cosmo, redshift=redshift)
 
-    return lambda k: bias(k) ** 2 * power_spectrum(k)
+    alpha = 0. if contrast is None else 1 / contrast
+    shot_noise = 0. if nbar is None else (1 + alpha) / nbar
+
+    return lambda k: bias(k) ** 2 * power_spectrum(k) + shot_noise

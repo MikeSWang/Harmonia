@@ -15,13 +15,13 @@ from matplotlib.colors import ListedColormap
 from scipy.integrate import cumtrapz, simps
 
 try:
-    from application import confirm_directory, data_dir
+    from application import confirm_directory, data_dir, overwrite_protection
 except ImportError:
     # Adds to Python search path.
     sys.path.insert(0, os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../../"
     ))
-    from application import confirm_directory, data_dir
+    from application import confirm_directory, data_dir, overwrite_protection
 
 sns.set(style='ticks', font='serif')
 
@@ -57,10 +57,10 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
     cum_dist_function = cumtrapz(likelihood, x, initial=0.)
 
     lkhds /= cdfs[:, [-1]]
-    likelihood /= cum_dist_function[:, [-1]]
+    likelihood /= cum_dist_function[-1]
 
     cdfs /= cdfs[:, [-1]]
-    cum_dist_function /= cum_dist_function[:, [-1]]
+    cum_dist_function /= cum_dist_function[-1]
 
     # Plot to specifications.
     canvas, *_ = fig.axes
@@ -74,7 +74,7 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
 
     if estimate:
         # Obtain estimates and uncertainties.
-        if estimate == 'max':
+        if estimate == 'maximum':
             x_fit = x[np.argmax(likelihood)]
         elif estimate == 'median':
             x_fit = x[np.argmin(np.abs(cum_dist_function - 1./2.))]
@@ -97,18 +97,23 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
 
         # Mark estimates and uncertainties.
         x_label = x_label + '=' if x_label else ''
-        canvas.axvline(x_fit, ls=':', c=summary_colour)
+        canvas.axvline(
+            x_fit, ls=':', c=summary_colour,
+            label=r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+                x_label, x_fit, dx_lower, dx_upper
+            )
+        )
         canvas.axvline(x=x_lower, ls=':', c=summary_colour)
         canvas.axvline(x=x_upper, ls=':', c=summary_colour)
-        canvas.annotate(
-            r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
-                x_label, x_fit, dx_lower, dx_upper
-            ),
-            xy=(0.5, 1.1),
-            xycoords='axes fraction',
-            verticalalignment='baseline',
-            horizontalalignment='center'
-        )
+        # canvas.annotate(
+        #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+        #         x_label, x_fit, dx_lower, dx_upper
+        #     ),
+        #     xy=(0.5, 1.1),
+        #     xycoords='axes fraction',
+        #     verticalalignment='baseline',
+        #     horizontalalignment='center'
+        # )
 
     return fig, (x_fit, dx_lower, dx_upper)
 
@@ -212,7 +217,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
         y_panel.plot(pdf_y, y, c=cmap(cmap.N), alpha=_alpha)
 
         if _estimate:
-            if _estimate == 'max':
+            if _estimate == 'maximum':
                 x_fit_idx = np.argmax(pdf_x)
                 y_fit_idx = np.argmax(pdf_y)
             elif _estimate == 'median':
@@ -249,42 +254,48 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
 
             x_panel.vlines(
                 x_fit, ymin=0., ymax=pdf_x[x_fit_idx],
-                linestyles='--', colors=[cmap(cmap.N)]
+                linestyles='--', colors=[cmap(cmap.N)],
+                label=r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+                    x_label, x_fit, dx_lower, dx_upper
+                )
             )
             x_panel.fill_between(
                 x[x_lower_idx:(x_upper_idx + 1)],
                 pdf_x[x_lower_idx:(x_upper_idx + 1)],
                 color=[cmap(cmap.N)], antialiased=True, alpha=AREA_FILL_ALPHA
             )
-            x_panel.annotate(
-                r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
-                    x_label, x_fit, dx_lower, dx_upper
-                ),
-                xy=(0.5, 1.1),
-                xycoords='axes fraction',
-                verticalalignment='baseline',
-                horizontalalignment='center'
-            )
+            # x_panel.annotate(
+            #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+            #         x_label, x_fit, dx_lower, dx_upper
+            #     ),
+            #     xy=(0.5, 1.1),
+            #     xycoords='axes fraction',
+            #     verticalalignment='baseline',
+            #     horizontalalignment='center'
+            # )
 
             y_panel.hlines(
                 y_fit, xmin=0., xmax=pdf_y[y_fit_idx],
-                linestyles='--', colors=[cmap(cmap.N)]
+                linestyles='--', colors=[cmap(cmap.N)],
+                label=r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+                    y_label, y_fit, dy_lower, dy_upper
+                )
             )
             y_panel.fill_betweenx(
                 y[y_lower_idx:(y_upper_idx + 1)],
                 pdf_y[y_lower_idx:(y_upper_idx + 1)],
                 color=[cmap(cmap.N)], antialiased=True, alpha=AREA_FILL_ALPHA
             )
-            y_panel.annotate(
-                r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
-                    y_label, y_fit, dy_lower, dy_upper
-                ),
-                xy=(1.1, 0.5),
-                xycoords='axes fraction',
-                rotation=-90,
-                verticalalignment='center',
-                horizontalalignment='left'
-            )
+            # y_panel.annotate(
+            #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
+            #         y_label, y_fit, dy_lower, dy_upper
+            #     ),
+            #     xy=(1.1, 0.5),
+            #     xycoords='axes fraction',
+            #     rotation=-90,
+            #     verticalalignment='center',
+            #     horizontalalignment='left'
+            # )
 
             return (x_fit, x_lower, x_upper), (y_fit, y_lower, y_upper)
 
@@ -393,11 +404,11 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
     elif isinstance(labels, str):
         labels = [labels]
 
-    fig = fig or plt.figure("likelihood")
-
     if ndim == 1:
+        fig = fig or plt.figure()
         if not fig.axes:
             fig.add_subplot(111)
+        canvas = fig.axes[0]
 
         x_results = []
         for likelihood_results, label in zip(likeliood_sets, labels):
@@ -409,13 +420,15 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             x_results.append(x_result)
 
         if truth_x is not None:
-            fig.axvline(x=truth_x, ls='--', label="truth {}".format(truth_x))
+            canvas.axvline(
+                x=truth_x, ls='--', label="truth {}".format(truth_x)
+            )
 
-        fig.set_xlim(sample_points_x.min(), sample_points_x.max())
-        fig.set_xlabel(r'${}$'.format(label_x))
+        canvas.set_xlim(sample_points_x.min(), sample_points_x.max())
+        canvas.set_xlabel(r'${}$'.format(label_x))
 
         if labels == [None] * len(args):
-            fig.legend()
+            canvas.legend()
 
         return fig, x_results
 
@@ -432,13 +445,17 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         if alphas is None:
             alphas = [1.] * len(args)
 
-        main_panel = plt.subplot2grid((4, 4), (1, 0), rowspan=3, colspan=3)
-        x_panel = plt.subplot2grid(
-            (4, 4), (0, 0), colspan=3, sharex=main_panel
-        )
-        y_panel = plt.subplot2grid(
-            (4, 4), (1, 3), rowspan=3, sharey=main_panel
-        )
+        if fig is None:
+            fig = plt.figure()
+            main_panel = plt.subplot2grid((4, 4), (1, 0), rowspan=3, colspan=3)
+            x_panel = plt.subplot2grid(
+                (4, 4), (0, 0), colspan=3, sharex=main_panel
+            )
+            y_panel = plt.subplot2grid(
+                (4, 4), (1, 3), rowspan=3, sharey=main_panel
+            )
+        else:
+            main_panel, x_panel, y_panel = fig.axes
 
         x_results, y_results = [], []
         for likelihood_results, cmap, alpha, label in zip(
@@ -467,6 +484,9 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
         if labels != [None] * len(args):
             main_panel.legend(handletextpad=0)
+
+        x_panel.legend()
+        y_panel.legend()
 
         main_panel.axes.tick_params(
             axis='x', which='both', direction='in', top=True
@@ -575,16 +595,28 @@ if __name__ == "__main__":
     confirm_directory(output_dir)
 
     # Collate and export likelihoods.
-    # pylint: disable=using-constant-test
-    if True:
-        likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
+    likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
+    output_path = output_file.with_suffix(output_file.suffix + '.npz')
+    if overwrite_protection(output_path):
         np.savez(
             output_file,
             likelihoods=likelihoods,
             f_nl_coords=f_nl_coords,
             b_1_coords=b_1_coords
         )
-    else:
+    # pylint: disable=using-constant-test
+    if False:
+        MAP = "cartesian"
+        SCALE_TAG = "[None,None,0.1]"
+        output_filename = "likelihood-({})".format(",".join([
+            "source=halo-(NG={}.,z=1.)".format(int(NG)),
+            "map={}".format(MAP), "scale={}".format(SCALE_TAG),
+            "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
+            "rsd={}".format(RSD_TAG),
+            "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
+        ]))
+        output_file = output_dir/output_filename
+
         loaded_results = np.load(
             output_file.with_suffix(output_file.suffix + '.npz')
         )
@@ -595,8 +627,8 @@ if __name__ == "__main__":
     figure, *results = plot_likelihood(
         likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
-        precision_x=0, precision_y=2, truth_x=NG,
-        scatter_plot=True
+        precision_x=0, precision_y=2, truth_x=NG, # estimate='maximum',
+        scatter_plot=True, # alphas=[1.0, 0.33]
     )
     # pylint: disable=using-constant-test
     if True:

@@ -61,6 +61,8 @@ def predict_power_spectrum():
     """Predict the power spectrum from spherical modelling.
 
     """
+    # pylint: disable=global-statement
+    global spherical_model
     spherical_model = SphericalCorrelator(
         disc, redshift=1., growth_rate=0.,
         couplings=Couplings.load(product_dir/couplings_file),
@@ -88,10 +90,22 @@ def compare_power_spectrum():
         cosmo=cosmology, redshift=1., **model_params
     )(wavenumbers)
 
+    try:
+        volume_factor = float(MASK_TAG)
+    except (TypeError, ValueError):
+        volume_factor = 1.
+    finally:
+        cartesian_model_str = \
+            r'${:.2f}\times$ power spectrum'.format(volume_factor) \
+            if volume_factor != 1. else 'power spectrum'
+
     fig = plt.figure()
     plt.loglog(wavenumbers, np.mean(map_power, axis=0), label='map power')
     plt.loglog(wavenumbers, spherical_spectrum, ls='--', label='spherical model')
-    plt.loglog(wavenumbers, cartesian_spectrum, ls=':', label='power spectrum')
+    plt.loglog(
+        wavenumbers, volume_factor * cartesian_spectrum, ls=':',
+        label=cartesian_model_str
+    )
     plt.xlabel(r"$k\ \  [h/\mathrm{{Mpc}}]$")
     plt.ylabel(r"$P(k)\ \ [(\mathrm{{Mpc}}/h)^3]$")
     plt.legend()
@@ -99,10 +113,11 @@ def compare_power_spectrum():
     return fig
 
 
+spherical_model = None
 if __name__ == '__main__':
 
     NG = 0
-    MAP_SERIALS = range(1, 2)
+    MAP_SERIALS = range(1, 1+24)
 
     MASK_TAG = "1.0" # "random0_BOSS_DR12v5_CMASS_North"
     SELECTION_TAG = "None" # "[100.0,500.0]"

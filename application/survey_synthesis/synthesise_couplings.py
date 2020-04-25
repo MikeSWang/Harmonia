@@ -151,9 +151,8 @@ def synthesise_couplings():
     nside = params.pixelate
 
     if params.mask_file is not None:
-        mask, nside = generate_mask_from_map(
-            'spherical', mask_map_file=mask_or_selection_dir/params.mask_file,
-            ret_nside=True
+        mask = generate_mask_from_map(
+            'spherical', mask_map_file=mask_or_selection_dir/params.mask_file
         )
     elif params.sky_fraction is not None:
         mask = generate_mask_by_sky_fraction(

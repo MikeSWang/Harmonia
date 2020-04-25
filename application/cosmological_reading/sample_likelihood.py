@@ -209,6 +209,8 @@ def setup_likelihood():
                     params.khyb, params.mask_tag, params.selection_tag
                 )
             )
+        else:
+            couplings = None
 
         spherical_model = SphericalCorrelator(
             spherical_data.disc, params.redshift,

@@ -637,7 +637,7 @@ if __name__ == "__main__":
 
     # Plot constraints.
     figure, *results = plot_likelihood(
-        likelihoods1, likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
+        likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
         precision_x=0, precision_y=2, truth_x=NG,  # estimate='maximum',
         scatter_plot=True,  # cmaps='Greens'

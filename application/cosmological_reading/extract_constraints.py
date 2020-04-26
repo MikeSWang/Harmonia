@@ -551,7 +551,7 @@ def process_likelihood_results():
         lkhds.append(sum(
             (
                 matched_file_data[var].T
-                for var in matched_file_data.files if 'cartesian_likelihood' in var
+                for var in matched_file_data.files if 'likelihood' in var
             )
         ))
         fnls.append(matched_file_data['f_nl'])

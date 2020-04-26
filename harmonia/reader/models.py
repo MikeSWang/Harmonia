@@ -566,7 +566,7 @@ class SphericalCorrelator:
                 self._disc,
                 survey_specs=self._survey_specs,
                 cosmo_specs=self._cosmo_specs,
-                initialise=True
+                initialise=True, comm=self.comm
             )
         else:
             self.couplings = couplings
@@ -996,7 +996,7 @@ class SphericalCorrelator:
                     survey_specs=self._survey_specs,
                     cosmo_specs=self._cosmo_specs,
                     external_angular_couplings=current_angular_couplings,
-                    initialise=True
+                    initialise=True, comm=self.comm
                 )
                 self._grouped_couplings = _group_couplings(self.couplings)
 

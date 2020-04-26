@@ -22,6 +22,7 @@ function and algorithms.
 .. autosummary::
 
     const_function
+    normalise_vector
     binary_search
     covar_to_corr
     mat_logdet
@@ -484,6 +485,25 @@ def const_function(const):
 
     """
     return lambda *args, **kwargs: const
+
+
+def normalise_vector(vector_array):
+    """Normalise vector(s).
+
+    Parameters
+    ----------
+    vector_array : float, array_like
+        An array of row vectors.
+
+    Returns
+    -------
+    float :class:`numpy.ndarray`
+        Normalise vector array.
+
+    """
+    norms = np.linalg.norm(vector_array, axis=-1)
+
+    return vector_array / norms[:, None]
 
 
 def _scan_interval(func, a, b, dx):

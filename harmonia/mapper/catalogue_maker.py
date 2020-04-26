@@ -20,6 +20,8 @@ import warnings
 import numpy as np
 from nbodykit.lab import CSVCatalog, FKPCatalog, UniformCatalog
 
+from harmonia.utils import normalise_vector
+
 
 def spherical_indicator(cartesian_position, bounding_radius):
     """Indicate whether an object lies within the a spherical domain
@@ -167,10 +169,11 @@ class SourceCatalogue(CSVCatalog):
 
         # Add redshift-space distortions.
         if offset:
-            self['Position'] = \
+            self['Position'] = (
                 self['vx'][:, None] * [offset_upscale, 0, 0] \
                 + self['vy'][:, None] * [0, offset_upscale, 0] \
                 + self['vz'][:, None] * [0, 0, offset_upscale]
+            ) * normalise_vector(self['Position'])
 
         if self.comm is None or self.comm.rank == 0:
             self.logger.debug("%s generated.", self)

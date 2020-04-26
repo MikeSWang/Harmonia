@@ -27,6 +27,20 @@ def test_const_function(const, args):
         "Constant function fails to return the specified constant."
 
 
+@pytest.mark.parametrize(
+    "vector,result",
+    [
+        (
+            [[1, 0, 0], [1, 1, 0]],
+            [[1, 0, 0], [1 / np.sqrt(2), 1 / np.sqrt(2), 0]]
+        ),
+    ]
+)
+def test_normalise_vector(vector, result):
+    assert np.allclose(u.normalise_vector(vector), result), \
+        "Vector normalisation failed."
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "func,a,b,maxnum,values",

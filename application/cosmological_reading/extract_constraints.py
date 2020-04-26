@@ -65,12 +65,14 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
     # Plot to specifications.
     canvas, *_ = fig.axes
 
-    summary_lkhd_plot = canvas.plot(x, likelihood, label=label)
+    summary_lkhd_plot = canvas.plot(x, likelihood, zorder=2, label=label)
     summary_colour = summary_lkhd_plot[-1].get_color()
 
     if plt_scatter:
         for lkhd in lkhds:
-            canvas.plot(x, lkhd, c=summary_colour, alpha=LINE_SCATTER_ALPHA)
+            canvas.plot(
+                x, lkhd, c=summary_colour, zorder=1, alpha=LINE_SCATTER_ALPHA
+            )
 
     if estimate:
         # Obtain estimates and uncertainties.
@@ -98,13 +100,13 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
         # Mark estimates and uncertainties.
         x_label = x_label + '=' if x_label else ''
         canvas.axvline(
-            x_fit, ls=':', c=summary_colour,
+            x_fit, ls=':', c=summary_colour, zorder=2,
             label=r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
                 x_label, x_fit, dx_lower, dx_upper
             )
         )
-        canvas.axvline(x=x_lower, ls=':', c=summary_colour)
-        canvas.axvline(x=x_upper, ls=':', c=summary_colour)
+        canvas.axvline(x=x_lower, ls=':', c=summary_colour, zorder=2,)
+        canvas.axvline(x=x_upper, ls=':', c=summary_colour, zorder=2,)
         # canvas.annotate(
         #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
         #         x_label, x_fit, dx_lower, dx_upper
@@ -182,7 +184,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
         try:
             contour = main_panel.contourf(
                 xx, yy, hh, h_levels, antialiased=True,
-                cmap=cmap, alpha=_alpha
+                cmap=cmap, alpha=_alpha, zorder=1
             )
         except ValueError as error:
             if str(error) == "Contour levels must be increasing":
@@ -192,7 +194,7 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
             raise ValueError from error
 
         main_panel.contour(
-            contour, colors=cmap(cmap.N), alpha=min(2 * _alpha, 1.)
+            contour, colors=cmap(cmap.N), alpha=min(2 * _alpha, 1.), zorder=2
         )
 
     _plot_contours(likelihood, alpha)
@@ -262,7 +264,8 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
             x_panel.fill_between(
                 x[x_lower_idx:(x_upper_idx + 1)],
                 pdf_x[x_lower_idx:(x_upper_idx + 1)],
-                color=[cmap(cmap.N)], antialiased=True, alpha=AREA_FILL_ALPHA
+                antialiased=True,
+                color=[cmap(cmap.N)], alpha=AREA_FILL_ALPHA, zorder=1
             )
             # x_panel.annotate(
             #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
@@ -284,7 +287,8 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
             y_panel.fill_betweenx(
                 y[y_lower_idx:(y_upper_idx + 1)],
                 pdf_y[y_lower_idx:(y_upper_idx + 1)],
-                color=[cmap(cmap.N)], antialiased=True, alpha=AREA_FILL_ALPHA
+                antialiased=True,
+                color=[cmap(cmap.N)], alpha=AREA_FILL_ALPHA, zorder=1
             )
             # y_panel.annotate(
             #     r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
@@ -308,8 +312,8 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
 
     if estimate:
         main_panel.scatter(
-            x_result[0], y_result[0], marker='+', s=64, c=[cmap(cmap.N)],
-            label=label
+            x_result[0], y_result[0], marker='+', s=64,
+            c=[cmap(cmap.N)], zorder=2, label=label
         )
 
     return fig, x_result, y_result
@@ -385,13 +389,13 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
     """
     # Check input likelihood dimensions.
-    likeliood_sets, ndim = [], []
+    likelihood_sets, ndim = [], []
     for arg in args:
         if isinstance(arg, Sequence):
-            likeliood_sets.append(arg)
+            likelihood_sets.append(arg)
             ndim.extend(list(map(np.ndim, arg)))
         else:
-            likeliood_sets.append([arg])
+            likelihood_sets.append([arg])
             ndim.append(np.ndim(arg))
     if len(set(ndim)) > 1:
         raise ValueError(
@@ -411,7 +415,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         canvas = fig.axes[0]
 
         x_results = []
-        for likelihood_results, label in zip(likeliood_sets, labels):
+        for likelihood_results, label in zip(likelihood_sets, labels):
             fig, x_result = _plot_likelihood_1d(
                 fig, likelihood_results, sample_points_x,
                 x_precision=precision_x, x_range=range_x, x_label=label_x,
@@ -421,7 +425,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
         if truth_x is not None:
             canvas.axvline(
-                x=truth_x, ls='--', label="truth {}".format(truth_x)
+                x=truth_x, ls='--', zorder=2, label="truth {}".format(truth_x)
             )
 
         canvas.set_xlim(sample_points_x.min(), sample_points_x.max())
@@ -436,6 +440,8 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         if cmaps is None:
             cmaps = ['Oranges', 'Greens', 'Blues'] \
                 + ['Blues'] * (len(args) - 3)
+        elif isinstance(cmaps, str):
+            cmaps = [cmaps]
         elif not isinstance(cmaps, Sequence):
             cmaps = [cmaps]
         cmaps = list(map(
@@ -459,7 +465,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
         x_results, y_results = [], []
         for likelihood_results, cmap, alpha, label in zip(
-                likeliood_sets, cmaps, alphas, labels
+                likelihood_sets, cmaps, alphas, labels
             ):
             fig, x_result, y_result = _plot_likelihood_2d(
                 fig, cmap, alpha, likelihood_results,
@@ -535,14 +541,17 @@ def process_likelihood_results():
     search_filename = str(
         input_dir/input_file.replace("=[", "=[[]").replace("],", "[]],")
     )
+    matched_files = glob.glob(search_filename)
+    if not matched_files:
+        raise IOError("No files matched input information.")
 
     lkhds, fnls, b_1s = [], [], []
-    for matched_file in glob.iglob(search_filename):
+    for matched_file in matched_files:
         matched_file_data = np.load(matched_file)
         lkhds.append(sum(
             (
                 matched_file_data[var].T
-                for var in matched_file_data.files if 'likelihood' in var
+                for var in matched_file_data.files if 'cartesian_likelihood' in var
             )
         ))
         fnls.append(matched_file_data['f_nl'])
@@ -563,6 +572,7 @@ if __name__ == "__main__":
 
     NG = 0.
     MAP = "hybrid"
+    SOURCE = "halo"  # "jalos"
     MASK_TAG = "1.0"  # random0_BOSS_DR12v5_CMASS_North
     SELECTION_TAG = "None"  # [100.0,500.0]
 
@@ -575,7 +585,7 @@ if __name__ == "__main__":
     # Set I/O paths.
     input_dir = data_dir/"raw"/"likelihoods"
     input_file = "likelihood-({}).npz".format(",".join([
-        "source=halo-(NG={}.,z=1.)-{}".format(int(NG), "*"),
+        "source={}-(NG={}.,z=1.)-{}".format(SOURCE, int(NG), "*"),
         "map={}".format(MAP), "scale={}".format(SCALE_TAG),
         "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
         "rsd={}".format(RSD_TAG),
@@ -584,7 +594,7 @@ if __name__ == "__main__":
 
     output_dir = data_dir/"processed"/"likelihoods"
     output_filename = "likelihood-({})".format(",".join([
-        "source=halo-(NG={}.,z=1.)".format(int(NG)),
+        "source={}-(NG={}.,z=1.)".format(SOURCE, int(NG)),
         "map={}".format(MAP), "scale={}".format(SCALE_TAG),
         "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
         "rsd={}".format(RSD_TAG),
@@ -608,28 +618,30 @@ if __name__ == "__main__":
     if False:
         MAP = "cartesian"
         SCALE_TAG = "[None,None,0.1]"
-        output_filename = "likelihood-({})".format(",".join([
-            "source=halo-(NG={}.,z=1.)".format(int(NG)),
+
+        comparison_filename = "likelihood-({})".format(",".join([
+            "source={}-(NG={}.,z=1.)".format(SOURCE, int(NG)),
             "map={}".format(MAP), "scale={}".format(SCALE_TAG),
             "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
             "rsd={}".format(RSD_TAG),
             "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
         ]))
-        output_file = output_dir/output_filename
+        comparison_file = output_dir/comparison_filename
 
         loaded_results = np.load(
-            output_file.with_suffix(output_file.suffix + '.npz')
+            comparison_file.with_suffix(comparison_file.suffix + '.npz')
         )
-        for name in loaded_results.files:
-            globals()[name] = loaded_results[name]
+        likelihoods_compared = [
+            lkhd[:, :] for lkhd in loaded_results['likelihoods']
+        ]
 
     # Plot constraints.
     figure, *results = plot_likelihood(
-        likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
+        likelihoods1, likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
-        precision_x=0, precision_y=2, truth_x=NG, # estimate='maximum',
-        scatter_plot=True, # alphas=[1.0, 0.33]
+        precision_x=0, precision_y=2, truth_x=NG,  # estimate='maximum',
+        scatter_plot=True,  # cmaps='Greens'
     )
     # pylint: disable=using-constant-test
-    if True:
+    if False:
         figure.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))

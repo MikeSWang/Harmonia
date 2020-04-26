@@ -26,7 +26,7 @@ except ImportError:
 sns.set(style='ticks', font='serif')
 
 LINE_SCATTER_ALPHA = 1./8.
-CONTOUR_SCATTER_RELATIVE_ALPHA = 1./20.
+CONTOUR_SCATTER_RELATIVE_ALPHA = 1./35.
 AREA_FILL_ALPHA = 1./3.
 ONE_SIGMA_QUANTILES = [0.158655, 0.841345]
 SIGMA_LEVELS = [0.954500, 0.682689, 0.000001]
@@ -634,13 +634,15 @@ if __name__ == "__main__":
         likelihoods_compared = [
             lkhd[:, :] for lkhd in loaded_results['likelihoods']
         ]
+        # for var in loaded_results.files:
+        #    globals()[var] = loaded_results[var]
 
     # Plot constraints.
     figure, *results = plot_likelihood(
         likelihoods, sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
         precision_x=0, precision_y=2, truth_x=NG,  # estimate='maximum',
-        scatter_plot=True,  # cmaps='Greens'
+        scatter_plot=True
     )
     # pylint: disable=using-constant-test
     if False:

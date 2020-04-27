@@ -47,8 +47,9 @@ def _plot_likelihood_1d(fig, lkhds, x, x_precision, x_range, x_label,
     x, lkhds = x[x_selector], np.asarray(lkhds)[:, x_selector]
 
     # Safe exponentiation.
-    lkhds -= np.min(lkhds, axis=1)[:, None]
-    likelihood = np.average(lkhds, axis=0)
+    lkhds -= np.max(lkhds, axis=1)[:, None]
+    likelihood = np.average(lkhds, axis=0)  # sum
+    likelihood = likelihood - np.max(lkhds)
 
     lkhds, likelihood = np.exp(lkhds), np.exp(likelihood)
 
@@ -152,8 +153,9 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
     lkhds = np.asarray(lkhds)[:, x_selector, y_selector]
 
     # Safe exponentiation.
-    lkhds = [lkhd - np.median(lkhd) for lkhd in lkhds]
-    likelihood = np.average(lkhds, axis=0)
+    lkhds = [lkhd - np.max(lkhd) for lkhd in lkhds]
+    likelihood = np.average(lkhds, axis=0)  # sum
+    likelihood = likelihood - np.max(likelihood)
 
     lkhds, likelihood = np.exp(lkhds), np.exp(likelihood)
 
@@ -604,18 +606,20 @@ if __name__ == "__main__":
 
     confirm_directory(output_dir)
 
-    # Collate and export likelihoods.
-    likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
-    output_path = output_file.with_suffix(output_file.suffix + '.npz')
-    if overwrite_protection(output_path):
-        np.savez(
-            output_file,
-            likelihoods=likelihoods,
-            f_nl_coords=f_nl_coords,
-            b_1_coords=b_1_coords
-        )
+    # Collate and export likelihoods (by setting COLLATE, LOAD to True/False.)
+    COLLATE, LOAD = True, False
+    if COLLATE:
+        likelihoods, f_nl_coords, b_1_coords = process_likelihood_results()
+        output_path = output_file.with_suffix(output_file.suffix + '.npz')
+        if overwrite_protection(output_path):
+            np.savez(
+                output_file,
+                likelihoods=likelihoods,
+                f_nl_coords=f_nl_coords,
+                b_1_coords=b_1_coords
+            )
     # pylint: disable=using-constant-test
-    if False:
+    if LOAD:
         MAP = "cartesian"
         SCALE_TAG = "[None,None,0.1]"
 

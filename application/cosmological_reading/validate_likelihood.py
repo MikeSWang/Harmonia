@@ -74,20 +74,21 @@ else:
         {
             'pivot': PIVOT, 'spherical_model': spherical_model,
             'b_1': 1., 'f_nl': NG - 100
-        }
+        },
+        # discard=228
     )
 
 # Evaluate likelihood on a grid.
-bias = [2., 2.5, 3.]
-png = [-100., 0., 100.]
+bias = [1.75, 2.5, 3.25]
+png = [-150., 0., 150.]
 
-likelihood = np.reshape(
+likelihood = np.flipud(np.reshape(
     [
         likelihood_func.spherical_map_likelihood(
             b_1=b_1, f_nl=f_nl, diagonal=diagonal, compression_matrix=comp_mat
         ) for b_1 in bias for f_nl in png
     ],
     (len(bias), len(png))
-)
+))
 
-sns.heatmap(likelihood, xticklabels=png, yticklabels=bias, annot=True)
+sns.heatmap(likelihood, xticklabels=png, yticklabels=np.flip(bias), annot=True)

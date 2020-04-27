@@ -71,6 +71,10 @@ def initialise_parameters():
         help="exclude monopoles from spherical likelihood evaluation"
     )
     parser.add_argument(
+        '--discard-modes', type=int, default=None,
+        help="discard a certain number of modes with the compression matrix"
+    )
+    parser.add_argument(
         '--orders', type=int, nargs='+', default=[0],
         help=(
             "orders of power spectrum multipoles "
@@ -344,7 +348,8 @@ def evaluate_likelihood():
                         likelihood_function.base_spherical_model,
                     'b_1': 3.,
                     'f_nl': 100.,
-                } # extremal model
+                }, # extremal model
+                discard=params.discard_modes
             )
             if comm.rank == 0:
                 logger.info(

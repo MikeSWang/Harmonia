@@ -662,7 +662,7 @@ def generate_compression_matrix(fiducial_model_kwargs,
 
     # Compression by discard.
     if discard is not None:
-        selectors.append(np.indices(evals_fiducial) >= discard)
+        selectors.append(np.arange(len(evals_fiducial)) >= discard)
 
     # Compression by comparison for sensitivity.
     extremal_covariance = spherical_covariance(**extremal_model_kwargs)

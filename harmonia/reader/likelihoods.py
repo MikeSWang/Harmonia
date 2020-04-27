@@ -144,7 +144,7 @@ def complex_normal_pdf(data_vector, covariance_matrix, ret_log=True,
     density = \
         - log_normalisation \
         - mat_logdet(covariance_matrix) \
-        - chi_square(data_vector, covariance_matrix)
+        - np.real_if_close(chi_square(data_vector, covariance_matrix))
 
     return density if ret_log else np.exp(density)
 

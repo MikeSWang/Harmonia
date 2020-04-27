@@ -86,8 +86,8 @@ def chi_square(data_vector, covariance_matrix):
     if not _are_valid_moments(data_vector, covariance_matrix):
         raise ValueError("Check input dimensions.")
 
-    chi_sq = np.real(
-        np.conj(data_vector).T @ np.linalg.inv(covariance_matrix) @ data_vector
+    chi_sq = np.dot(
+        np.conj(data_vector), np.linalg.solve(covariance_matrix, data_vector)
     )
 
     return chi_sq

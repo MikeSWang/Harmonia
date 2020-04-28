@@ -42,7 +42,6 @@ import warnings
 
 # pylint: disable=no-name-in-module
 import numpy as np
-import scipy.linalg
 from scipy.special import loggamma
 
 from harmonia.utils import (
@@ -89,10 +88,7 @@ def chi_square(data_vector, covariance_matrix):
 
     # pylint: disable=unexpected-keyword-arg
     chi_sq = np.dot(
-        np.conj(data_vector),
-        scipy.linalg.solve(
-            covariance_matrix, data_vector, check_finite=False, assume_a='her'
-        )
+        np.conj(data_vector), np.linalg.solve(covariance_matrix, data_vector)
     )
 
     return chi_sq

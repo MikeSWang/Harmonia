@@ -312,9 +312,17 @@ def _plot_likelihood_2d(fig, cmap, alpha, lkhds, x, y, x_label, y_label,
         for lkhd in lkhds:
             _plot_pdfs(lkhd, _estimate=False, _alpha=LINE_SCATTER_ALPHA)
 
-    if estimate:
+    if estimate == 'median':
         main_panel.scatter(
             x_result[0], y_result[0], marker='+', s=64,
+            c=[cmap(cmap.N)], zorder=2, label=label
+        )
+    elif estimate == 'maximum':
+        # Note this provides the joint maximum posterior estimates
+        # not the marginal maximum posterior estimates.
+        xy_fit_idx = np.unravel_index(np.argmax(likelihood), likelihood.shape)
+        main_panel.scatter(
+            xx[xy_fit_idx], yy[xy_fit_idx], marker='+', s=64,
             c=[cmap(cmap.N)], zorder=2, label=label
         )
 
@@ -565,7 +573,7 @@ def process_likelihood_results():
             "Input likelihoods are not evaludated on the same parameter grid."
         )
 
-    fnls, b_1s = np.average(fnls, axis=0), np.average(b_1s, axis=0)
+    fnls, b_1s = np.mean(fnls, axis=0), np.mean(b_1s, axis=0)
 
     return lkhds, fnls, b_1s
 

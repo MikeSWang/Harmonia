@@ -351,6 +351,15 @@ def evaluate_likelihood():
                 }, # extremal model
                 discard=params.discard_modes
             )
+            if exclude_degrees:
+                # pylint: disable=no-member
+                deselector = np.logical_and.reduce([
+                    likelihood_function.spherical_data.array['index'][:, 0]
+                    == deg
+                    for deg in exclude_degrees
+                ])
+                # pylint: disable=unsubscriptable-object
+                compression_matrix = compression_matrix[:, ~deselector]
             if comm.rank == 0:
                 logger.info(
                     "... generated a spherical data compression matrix."

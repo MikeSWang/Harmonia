@@ -69,6 +69,9 @@ def initialise_parameters():
     )
 
     parser.add_argument(
+        '--boxsize', type=float, default=1000.0, help="random map box size"
+    )
+    parser.add_argument(
         '--kmin', type=float, default=None,
         help="minimum wavenumber of the hybrid map"
     )
@@ -174,7 +177,8 @@ def extract_map_data():
     _spherical_data, _cartesian_data = [], []
     for source_name in source_names:
         cartesian_map_file = input_dir/input_filename.format(
-            source_name, 'cartesian', params.khyb, params.kmax, order_tag
+            source_name, 'cartesian',
+            params.boxsize, params.khyb, params.kmax, order_tag
         )
         cartesian_map_data = CartesianArray.load(
             cartesian_map_file.with_suffix(
@@ -185,7 +189,8 @@ def extract_map_data():
 
         if not params.cartesian_only:
             spherical_map_file = input_dir/input_filename.format(
-                source_name, 'spherical', params.kmin, params.khyb, None
+                source_name, 'spherical',
+                params.boxsize, params.kmin, params.khyb, None
             )
             spherical_map_data = SphericalArray.load(
                 spherical_map_file.with_suffix(
@@ -205,7 +210,9 @@ def export_map_statistics():
     cartesian_covariance_estimator = CovarianceEstimator(cartesian_data)
 
     output_file = output_dir/output_filename.format(
-        'cartesian', "[{},{}]".format(params.khyb, params.kmax), order_tag
+        'cartesian',
+        params.boxsize, "[{},{}]".format(params.khyb, params.kmax),
+        order_tag
     )
 
     cartesian_covariance_estimator.save(output_file)
@@ -236,7 +243,9 @@ def export_map_statistics():
         ])) / len(spherical_data_array)
 
         output_file = output_dir/output_filename.format(
-            'spherical', "[{},{}]".format(params.kmin, params.khyb), None
+            'spherical',
+            params.boxsize, "[{},{}]".format(params.kmin, params.khyb),
+            None
         )
 
         np.save(output_file, spherical_correlation_estimate)
@@ -284,7 +293,7 @@ def export_map_statistics():
         sample_corr = covar_to_corr(sample_covar)
 
         output_file = output_dir/output_filename.format(
-            'cross',
+            "cross", params.boxsize,
             "[{},{},{}]".format(params.kmin, params.khyb, params.kmax),
             order_tag
         )
@@ -320,7 +329,7 @@ if __name__ == '__main__':
     # Set I/O paths.
     input_dir = data_dir/params.map_dir
     input_filename = "random-map-({})".format(",".join([
-        "source={}", "map={}", "scale=[{},{}]", "orders={}",
+        "source={}", "map={}", "boxsize={:.1f}", "scale=[{},{}]", "orders={}",
         "mask={}".format(mask_tag),
         "selection={}".format(selection_tag),
     ]))
@@ -328,7 +337,7 @@ if __name__ == '__main__':
     output_dir = data_dir/"raw"/"survey_products"
     output_filename = "covar-estimate-({})".format(",".join([
         "source={}-{}".format(source_range[0], source_range[-1]),
-        "map={}", "scale={}", "orders={}",
+        "map={}", "boxsize={:.1f}", "scale={}", "orders={}",
         "mask={}".format(mask_tag),
         "selection={}".format(selection_tag),
     ]))

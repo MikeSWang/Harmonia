@@ -43,8 +43,22 @@ def initialise_parameters():
     parser = ArgumentParser()
 
     parser.add_argument(
+        '--series', type=str, required=True, help="catalogue source series"
+    )
+    parser.add_argument(
         '--serial-number', type=str, required=True,
         help="catalogue source serial number"
+    )
+    parser.add_argument(
+        '--cosmology-file', type=str, required=True,
+        help="catalogue source cosmological parameter file"
+    )
+    parser.add_argument(
+        '--boxsize', type=float, default=1000.0, help="catalogue box size"
+    )
+    parser.add_argument(
+        '--density', type=float, required=True,
+        help="catalogue mean number density"
     )
     parser.add_argument(
         '--NG', type=str, required=True, help="catalogue source PNG value"
@@ -85,7 +99,7 @@ def make_catalogue_measurements(kmin=None, kmax=None):
     catalogue = SourceCatalogue(
         input_dir/input_filename,
         headings=["x", "y", "z", "vx", "vy", "vz", "mass"],
-        mean_density=DENSITY, boxsize=BOXSIZE
+        mean_density=progrc.density, boxsize=progrc.boxsize
     )
 
     fftmesh = catalogue.to_mesh(Nmesh=NMESH, resampler='tsc', compensated=True)
@@ -115,7 +129,7 @@ def log_likelihood(b_1):
         Gaussnianised log-likelihood value.
 
     """
-    model_vector = 1 / DENSITY \
+    model_vector = 1 / progrc.density \
         + (b_1 + (b_1 - TRACER_P) * mode_modifications) ** 2 * mode_powers
 
     gaussianised_model_vector = gaussianised_expectation_factor \
@@ -132,28 +146,22 @@ def log_likelihood(b_1):
     )
 
 
-Z = 1.
-TRACER_P = 1.
-
 KMIN = 1.e-4
 KMAX = 0.1
-
-DENSITY = 2.5e-4
+Z = 1.
+TRACER_P = 1.
 CONTRAST = 10.
-
-BOXSIZE = 1000.
 NMESH = 256
-
-COSMO = BaseModel(data_dir/"external"/"cosmology"/"simulation.txt")
-CATALOGUE = "halo-(NG={},z=1.)-{}.txt"
 
 if __name__ == '__main__':
 
     progrc = initialise_parameters()
 
     # Set I/O paths.
+    cosmo_dir = data_dir/"external"/"cosmology"
+
     input_dir = data_dir/"external"/"simulations"
-    input_filename = CATALOGUE.format(progrc.NG, progrc.serial_number)
+    input_filename = progrc.series + '-{}.txt'.format(progrc.serial_number)
 
     output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "likelihood-({})".format(",".join([
@@ -170,9 +178,11 @@ if __name__ == '__main__':
         make_catalogue_measurements(kmin=progrc.kmin, kmax=progrc.kmax)
 
     # Make model predictions.
+    cosmo = BaseModel(cosmo_dir/progrc.cosmology_file)
+
     mode_modifications = float(progrc.NG) \
-        * scale_dependence_modification(COSMO, Z)(measurements['k'])
-    mode_powers = LinearPower(COSMO, Z)(measurements['k'])
+        * scale_dependence_modification(cosmo, Z)(measurements['k'])
+    mode_powers = LinearPower(cosmo, Z)(measurements['k'])
 
     gaussianised_data_vector = measurements['pk'] ** (1./3.)
     gaussianised_expectation_factor = np.array([

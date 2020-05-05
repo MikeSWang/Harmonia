@@ -192,7 +192,7 @@ if __name__ == '__main__':
     ## Map data.
     map_data_dir = data_dir/"raw"/"catalogue_maps"
     map_data_file = "catalogue-map-({}).npz".format(",".join([
-        "source=halo-({},z=1.)-{}",
+        "source=halos-({},z=1.)-standard-{}",
         "map=cartesian",
         "scale={}".format(scale_tag),
         "orders={}".format(order_tag),
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     window_file = "window-({}).npz".format(mask_or_file_info)
 
     covariance_estimate_info = ",".join([
-        "source=1-2500", "map=cartesian",
+        "source=1-2500", "map=cartesian", "boxsize=1000.0",
         "scale={}".format(scale_tag),
         "orders={}".format(order_tag),
         "mask={}".format(mask_tag),
@@ -226,7 +226,7 @@ if __name__ == '__main__':
 
     ## Cosmological inputs.
     cosmo_dir = data_dir/"external"/"cosmology"
-    cosmo_file = "simulation.txt"
+    cosmo_file = "simulation-GadgetAHF.txt"
 
     ## Outputs.
     output_dir = data_dir/"raw"/"survey_validation"

@@ -209,6 +209,7 @@ if __name__ == '__main__':
 
     output_dir = data_dir/"raw"/"survey_products"
     output_filename = "couplings-({})".format(",".join([
+        "rmax={:.1f}".format(params.rmax),
         "kmax={}".format(params.kmax),
         "mask={}".format(mask_tag),
         "selection={}".format(selection_tag),

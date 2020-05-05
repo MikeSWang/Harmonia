@@ -187,16 +187,16 @@ if __name__ == '__main__':
 
     # Set I/O paths.
     cosmo_dir = data_dir/"external"/"cosmology"
-    cosmo_file = "simulation.txt"
+    cosmo_file = "simulation-GadgetAHF.txt"
 
     survey_product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(
-        ",".join(["kmax={}", "mask={}", "selection={}"])
+        ",".join(["rmax=500.0", "kmax={}", "mask={}", "selection={}"])
     )
 
     raw_product_dir = data_dir/"raw"/"survey_products"
     corr_estimate_file = "covar-estimate-({}).npy".format(",".join([
-        "source=1-2500", "map=spherical",
+        "source=1-2500", "map=spherical", "boxsize=1000.0",
         "scale=[None,{}]".format(kmax),
         "orders=None",
         "mask={}".format(mask_tag),

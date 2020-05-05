@@ -66,6 +66,9 @@ def initialise_parameters():
     )
 
     parser.add_argument(
+        '--boxsize', type=float, default=1000.0, help="random map box size"
+    )
+    parser.add_argument(
         '--kmin', type=float, default=None,
         help="minimum wavenumber of the map to make"
     )
@@ -236,7 +239,7 @@ def synthesise_random_maps():
         )
 
         output_file = output_filename.format(
-            batch_no, 'cartesian', params.khyb, params.kmax,
+            batch_no, 'cartesian', params.boxsize, params.khyb, params.kmax,
             str(params.orders).replace(" ", "")
         )
 
@@ -251,7 +254,8 @@ def synthesise_random_maps():
             disc = DiscreteSpectrum(radius, 'dirichlet', params.khyb)
 
             output_file = output_filename.format(
-                batch_no, 'spherical', params.kmin, params.khyb, None
+                batch_no, 'spherical',
+                params.boxsize, params.kmin, params.khyb, None
             )
 
             spherical_map = SphericalMap(catalogues, disc)
@@ -272,7 +276,7 @@ if __name__ == '__main__':
 
     output_dir = data_dir/"raw"/"random_maps"
     output_filename = "random-map-({})".format(",".join([
-        "source={}", "map={}", "scale=[{},{}]", "orders={}",
+        "source={}", "map={}", "boxsize={:.1f}", "scale=[{},{}]", "orders={}",
         "mask={}".format(mask_tag),
         "selection={}".format(selection_tag),
     ]))

@@ -123,18 +123,18 @@ if __name__ == '__main__':
     SELECTION_TAG = "None" # "[100.0,500.0]"
 
     # Set I/O paths.
-    cosmo_file = data_dir/"external"/"cosmology"/"simulation.txt"
+    cosmo_file = data_dir/"external"/"cosmology"/"simulation-GadgetAHF.txt"
 
     map_dir = data_dir/"raw"/"catalogue_maps"
     map_file = "catalogue-map-({}).npz".format(",".join([
-        "source=halo-(NG={}.,z=1.)-{}", "map=spherical",
+        "source=halos-(NG={}.,z=1.)-standard-{}", "map=spherical",
         "scale=[None,0.04]", "orders=None", "rsd=False",
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
 
     product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(",".join([
-        "kmax=0.04",
+        "rmax=500.0", "kmax=0.04",
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
 

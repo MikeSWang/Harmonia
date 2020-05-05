@@ -44,7 +44,7 @@ def load_map_data(map_serial_num):
 
     return SphericalArray.load(
         map_dir/"catalogue-map-({}).npz".format(",".join([
-            f"source=halo-(NG={NG}.,z=1.)-{map_serial_num}",
+            f"source=halos-(NG={NG}.,z=1.)-standard-{map_serial_num}",
             "map=spherical", "scale=[None,0.04]", "orders=None", "rsd=False",
             f"mask={MASK_TAG}", f"selection={SELECTION_TAG}"
         ]))
@@ -66,12 +66,14 @@ def set_base_model(disc):
 
     """
     cosmo_dir = data_dir/"external"/"cosmology"
-    cosmo = BaseModel(cosmo_dir/"simulation.txt")
+    cosmo = BaseModel(cosmo_dir/"simulation-GadgetAHF.txt")
 
     product_dir = data_dir/"processed"/"survey_products"
     couplings = Couplings.load(
-        product_dir/
-        f"couplings-(kmax=0.04,mask={MASK_TAG},selection={SELECTION_TAG}).npz"
+        product_dir/(
+            "couplings-(rmax=500.0,kmax=0.04,mask={},selection={}).npz"
+            .format(MASK_TAG, SELECTION_TAG)
+        )
     )
 
     return SphericalCorrelator(

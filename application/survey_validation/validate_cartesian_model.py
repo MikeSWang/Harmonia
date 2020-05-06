@@ -106,14 +106,14 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
 
     multipole_model = {
         order: cartesian_model.convolved_power_multipoles(
-            orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
+            orders=[order], b_1=BIAS, f_nl=NG, nbar=2.5e-4, contrast=10.
         ).array['power']
         for order in orders
     }
 
     multipole_null_model = {
         order: null_cartesian_model.convolved_power_multipoles(
-            orders=[order], b_1=2.3415, f_nl=NG, nbar=2.5e-4, contrast=10.
+            orders=[order], b_1=BIAS, f_nl=NG, nbar=2.5e-4, contrast=10.
         ).array['power']
         for order in orders
     }
@@ -176,6 +176,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
 
 REDSHIFT = 1.
 NG = 0
+BIAS = 2.324  # 2.354
 
 if __name__ == '__main__':
 

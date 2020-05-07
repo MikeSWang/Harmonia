@@ -354,14 +354,18 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
 
         x_coords = np.mean(x_coords, axis=0)
         y_coords = np.mean(y_coords, axis=0)
+        likelihood_grids = [
+            np.real_if_close(likelihood, tol=10**10).T
+            for likelihood in likelihoods_
+        ]
 
-        return likelihoods_, x_coords, y_coords
+        return likelihood_grids, x_coords, y_coords
 
     xx, yy = np.meshgrid(x_grid, y_grid)
 
     likelihood_grids = []
     for likelihood, x, y in zip(likelihoods_, x_coords, y_coords):
-        likelihood_flat = likelihood.flatten()
+        likelihood_flat = np.real_if_close(likelihood, tol=10**10).flatten()
         xy_flat = np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
         likelihood_grids.append(griddata(
             xy_flat, likelihood_flat, (xx.T, yy.T), method='linear'

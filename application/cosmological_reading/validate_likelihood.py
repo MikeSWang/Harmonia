@@ -136,7 +136,7 @@ def likelihood_evaluation(bias, png, map_data, map_model, discard=None):
         (len(bias), len(png))
     )
 
-    return np.real_if_close(likelihood, tol=10000)
+    return np.real_if_close(likelihood, tol=10**10)
 
 
 PIVOT = 'natural'

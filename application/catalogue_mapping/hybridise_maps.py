@@ -269,7 +269,7 @@ def export_hybrid_maps(hybrid_map_data, thredshold=0.):
     )
     plt.subplot2grid((1, 4), (0, 1))
     sns.heatmap(
-        np.real_if_close(cartesian_correlation), cmap='coolwarm',
+        np.real_if_close(cartesian_correlation, tol=10*10), cmap='coolwarm',
         square=True, center=0., vmin=-1., vmax=1.
     )
     plt.subplot2grid((1, 4), (0, 2))

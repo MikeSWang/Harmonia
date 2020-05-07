@@ -54,13 +54,13 @@ def plot_1d_constraints(posteriors, x, fig=None, label='', colour=None,
 
     """
     # Set up the plottable grid.
-    if x_range is None:
-        x_selector = slice(None)
-    else:
+    if x_range:
         x_selector = slice(
             np.argmin(np.abs(x - x_range[0])),
             np.argmin(np.abs(x - x_range[1])) + 1
         )
+    else:
+        x_selector = slice(None)
 
     x, posts = np.asarray(x)[x_selector], np.asarray(posteriors)[:, x_selector]
 
@@ -135,7 +135,7 @@ def plot_1d_constraints(posteriors, x, fig=None, label='', colour=None,
         # Mark estimates and uncertainties.
         canvas.vlines(
             x_fit, ymin=0., ymax=posterior[x_fit_idx],
-            c=posterior_colour, ls='--', zorder=3,
+            color=posterior_colour, ls='--', zorder=3,
             label=r"${} {{{}}}_{{-{}}}^{{+{}}}$".format(
                 x_label + '=' if x_label else '',
                 x_fit_disp, dx_lower_disp, dx_upper_disp

@@ -181,6 +181,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             canvas.axvline(x=truth_x, ls='--', zorder=3)
 
         canvas.set_xlim(np.min(sample_points_xs), np.max(sample_points_xs))
+        canvas.set_ylim(bottom=0.)
         canvas.set_xlabel(r'${}$'.format(label_x))
         canvas.legend()
 
@@ -344,7 +345,10 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
         if likelihood_name in data_name
     ]
 
-    likelihoods_ = list(map(sum, zip(*likelihood_constituents)))
+    likelihoods_ = [
+        np.real_if_close(np.squeeze(likelihood), tol=10**10)
+        for likelihood in list(map(sum, zip(*likelihood_constituents)))
+    ]
 
     x_coords = collated_data[x_name]
     y_coords = collated_data[y_name]
@@ -360,10 +364,7 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
 
         x_coords = np.mean(x_coords, axis=0)
         y_coords = np.mean(y_coords, axis=0)
-        likelihood_grids = [
-            np.real_if_close(likelihood, tol=10**10).T
-            for likelihood in likelihoods_
-        ]
+        likelihood_grids = [likelihood.T for likelihood in likelihoods_]
 
         return likelihood_grids, x_coords, y_coords
 
@@ -371,7 +372,7 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
 
     likelihood_grids = []
     for likelihood, x, y in zip(likelihoods_, x_coords, y_coords):
-        likelihood_flat = np.real_if_close(likelihood, tol=10**10).flatten()
+        likelihood_flat = likelihood.flatten()
         xy_flat = np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
         likelihood_grids.append(griddata(
             xy_flat, likelihood_flat, (xx.T, yy.T), method='linear'

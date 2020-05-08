@@ -339,7 +339,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
                     x_fit, dx_lower, dx_upper
             elif x_precision == 0:
                 x_fit_disp, dx_lower_disp, dx_upper_disp = \
-                    map(round, (x_fit, dx_lower, dx_upper))
+                    map(int, map(round, (x_fit, dx_lower, dx_upper)))
             else:
                 x_fit_disp = np.around(x_fit, decimals=x_precision)
                 dx_lower_disp = np.around(dx_lower, decimals=x_precision)
@@ -350,7 +350,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
                     y_fit, dy_lower, dy_upper
             elif y_precision == 0:
                 y_fit_disp, dy_lower_disp, dy_upper_disp = \
-                    map(round, (y_fit, dy_lower, dy_upper))
+                    map(int, map(round, (y_fit, dy_lower, dy_upper)))
             else:
                 y_fit_disp = np.around(y_fit, decimals=y_precision)
                 dy_lower_disp = np.around(dy_lower, decimals=y_precision)
@@ -403,7 +403,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
 
     if estimation == 'median':
         main_panel.scatter(
-            x_result[0], y_result[0], marker='+', s=64,
+            x_result[0], y_result[0], marker='+', s=40,
             c=[main_contour.cmap(main_contour.cmap.N)], zorder=3, label=label
         )
     elif estimation == 'maximum':
@@ -411,7 +411,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         # not the marginal maximum posterior estimates.
         xy_fit_idx = np.unravel_index(np.argmax(posterior), posterior.shape)
         main_panel.scatter(
-            xx[xy_fit_idx], yy[xy_fit_idx], marker='+', s=64,
+            xx[xy_fit_idx], yy[xy_fit_idx], marker='+', s=40,
             c=[main_contour.cmap(main_contour.cmap.N)],
             zorder=3, label=label
         )

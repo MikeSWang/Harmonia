@@ -227,8 +227,14 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         if truth_y is not None:
             main_panel.axhline(truth_y, c='k', ls='--', zorder=3)
 
-        main_panel.set_xlim(np.min(sample_points_xs), np.max(sample_points_xs))
-        main_panel.set_ylim(np.min(sample_points_ys), np.max(sample_points_ys))
+        main_panel.set_xlim(
+            min(map(np.min, sample_points_xs)),
+            max(map(np.max, sample_points_xs))
+        )
+        main_panel.set_ylim(
+            min(map(np.min, sample_points_ys)),
+            max(map(np.max, sample_points_ys))
+        )
         main_panel.set_xlabel(r'${}$'.format(label_x))
         main_panel.set_ylabel(r'${}$'.format(label_y))
 
@@ -428,7 +434,7 @@ if __name__ == "__main__":
         label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
         precision_x=0, precision_y=2,  # estimate='maximum',
         truth_x=NG,
-        scatter_plot=True,
+        scatter_plot=True,  # aggregate=True,
     )
     # pylint: disable=using-constant-test
     if False:

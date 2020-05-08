@@ -431,11 +431,16 @@ if __name__ == "__main__":
     # Plot constraints.
     figure, *results = plot_likelihood(
         likelihoods,
-        sample_points_x=f_nl_coords, sample_points_y=b_1_coords,
-        label_x=r'f_{\mathrm{NL}}', label_y=r'b_1',
-        precision_x=0, precision_y=2,  # estimate='maximum',
+        sample_points_x=f_nl_coords,
+        sample_points_y=b_1_coords,
+        label_x=r'f_{\mathrm{NL}}',
+        label_y=r'b_1',
+        precision_x=0,
+        precision_y=3,
+        # estimate='maximum',
+        # aggregate=True,
         truth_x=NG,
-        scatter_plot=True,  # aggregate=True,
+        scatter_plot=True,
     )
     # pylint: disable=using-constant-test
     if False:

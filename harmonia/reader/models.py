@@ -858,7 +858,7 @@ class SphericalCorrelator:
             (default is 1.).
         shot_noise_only : bool, optional
             If `True` (default is `False`), return only the shot noise
-            correlator matrix.
+            power.
 
         Returns
         -------

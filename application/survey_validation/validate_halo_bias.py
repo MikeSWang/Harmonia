@@ -138,7 +138,7 @@ def log_likelihood(b_1):
         * model_vector ** (2./3.)
 
     return - 1./2. * (
-        np.prod(gaussianised_model_variance) +
+        np.sum(np.log(gaussianised_model_variance)) +
         np.sum(
             (gaussianised_data_vector - gaussianised_model_vector) ** 2
             / gaussianised_model_variance

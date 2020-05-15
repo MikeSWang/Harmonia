@@ -23,7 +23,7 @@ def plot_1d_constraints(posteriors, x, fig=None, label='', colour=None,
         (Sequence of) logarithmic posterior evaluations.
     x : float, array_like
         Parameter coordinates.
-    fig : :class:`matplotlib.figure.Figure`, optional
+    fig : :class:`matplotlib.figure.Figure` *or None, optional*
         Existing figure object to plot on (default is `None`).
     label : str, optional
         Constraint label (default is '').
@@ -165,9 +165,9 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         (Sequence of) logarithmic posterior evaluations.
     x, y : float, array_like
         Parameter coordinates.
-    fig : :class:`matplotlib.figure.Figure`, optional
+    fig : :class:`matplotlib.figure.Figure` *or None*, optional
         Existing figure object to plot on (default is `None`).
-    label : str, optional
+    label : str or None, optional
         Constraint label (default is `None`).
     cmap : str or None, optional
         Principal colour map (default is `None`).

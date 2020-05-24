@@ -54,6 +54,10 @@ def initialise_parameters():
         help="catalogue source cosmological parameter file"
     )
     parser.add_argument(
+        '--mass-cut', type=float,
+        help="mass cut as a multiple of 10^13 solar masses"
+    )
+    parser.add_argument(
         '--boxsize', type=float, default=1000.0, help="catalogue box size"
     )
     parser.add_argument(
@@ -101,6 +105,9 @@ def make_catalogue_measurements(kmin=None, kmax=None):
         headings=["x", "y", "z", "vx", "vy", "vz", "mass"],
         mean_density=progrc.density, boxsize=progrc.boxsize
     )
+    catalogue['Selection'] = np.greater_equal(
+        catalogue['mass'], progrc.mass_cut * 10**13
+    )
 
     fftmesh = catalogue.to_mesh(Nmesh=NMESH, resampler='tsc', compensated=True)
 
@@ -109,10 +116,14 @@ def make_catalogue_measurements(kmin=None, kmax=None):
     k = results.power['k']
     pk = results.power['power'].real
     nk = results.power['modes']
+    shotnoise = results.power.attrs['shotnoise']
 
     valid_bins = nk > 1
 
-    return {'k': k[valid_bins], 'pk': pk[valid_bins], 'nk': nk[valid_bins]}
+    return {
+        'k': k[valid_bins], 'pk': pk[valid_bins], 'nk': nk[valid_bins],
+        'shotnoise': [shotnoise],
+    }
 
 
 def log_likelihood(b_1):
@@ -176,6 +187,11 @@ if __name__ == '__main__':
     # Make catalogue measurements.
     measurements = \
         make_catalogue_measurements(kmin=progrc.kmin, kmax=progrc.kmax)
+
+    np.savez(
+        output_dir/output_filename.replace("likelihood", "pk"),
+        **measurements
+    )
 
     # Make model predictions.
     cosmo = BaseModel(cosmo_dir/progrc.cosmology_file)

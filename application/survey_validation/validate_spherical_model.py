@@ -56,10 +56,6 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
         )
         disc = fullsky_couplings.disc
 
-    sort_order = np.argsort(list(disc.wavenumbers.values()))
-    wavenumbers = np.array(list(disc.wavenumbers.values()))[sort_order]
-    normalisations = np.array(list(disc.normalisations.values()))[sort_order]
-
     # Spherical model.
     # pylint: disable=global-statement
     global spherical_model_fullsky
@@ -69,17 +65,12 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
         comm=comm
     )
 
-    spherical_correlator_matrix = spherical_model_fullsky.correlator_matrix(
-        "spectral", b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast,
-        diagonal=True
+    spherical_radial = spherical_model_fullsky.radialised_power(
+        b_1=b_1, f_nl=f_nl, nbar=nbar, contrast=contrast
     )
 
-    _, unique_ind = np.unique(
-        np.diag(np.around(spherical_correlator_matrix, decimals=0)),
-        return_index=True
-    )
-    spherical_spectrum = normalisations * \
-        np.diag(spherical_correlator_matrix)[np.sort(unique_ind)]
+    wavenumbers = spherical_radial['wavenumbers']
+    spherical_spectrum = spherical_radial['mode_powers']
 
     # Cartesian model.
     cartesian_spectrum = modified_power_spectrum(
@@ -191,7 +182,7 @@ if __name__ == '__main__':
 
     survey_product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(
-        ",".join(["rmax=500.0", "kmax={}", "mask={}", "selection={}"])
+        ",".join(["boxsize=1000.0", "kmax={}", "mask={}", "selection={}"])
     )
 
     raw_product_dir = data_dir/"raw"/"survey_products"

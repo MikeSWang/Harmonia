@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(",".join([
-        "rmax=500.0", "kmax=0.04",
+        "boxsize=1000.0", "kmax=0.04",
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
 

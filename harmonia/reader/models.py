@@ -66,7 +66,8 @@ and the shot noise part
 
 where :math:`*` denotes quantities computed at the fiducial epoch
 :math:`z_*`, :math:`\kappa` denotes the normalisation coefficients (see
-:mod:`~harmonia.algorithms.discretisation`) and
+:mod:`~harmonia.algorithms.discretisation`), :math:`\bar{n}` is the mean
+number density and
 :math:`j_\mu(r) \equiv j_{\ell_\mu}(k_{\ell_\mu n_\mu} r)`.
 
 
@@ -462,10 +463,20 @@ class SphericalCorrelator:
     """Spherical two-point correlator predicted for a given cosmological
     model and survey specifications.
 
+    Notes
+    -----
+    Summation is performed over spherical modes to compute the correlator
+    model.  Owing to mode couplings, sums need to be truncated at higher
+    mode wavenumbers than wavenumbers under consideration to ensure
+    convergence.  We suggest the user trial discrete spectra with different
+    upper wavenumber cutoffs for the couplings and use
+    :meth:`~.radialised_power` to gauge convergence.  In the future,
+    an automated facility for this purpose may be provided.
+
     Parameters
     ----------
     disc : :class:`~harmonia.algorithms.discretisation.DiscreteSpectrum`
-        Discrete spectrum associated with the couplings.
+        Discrete spectrum associated with the correlator model.
     redshift : float
         Redshift at which the model is evaluated.
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology` *or None, optional*
@@ -494,6 +505,13 @@ class SphericalCorrelator:
         and radial couplings are Kronecker deltas).  This can be
         subsequently updated when calling :meth:`~.two_point_correlator`
         or :meth:`~.correlator_matrix`.
+    coupling_disc : :class:`~.couplings.Couplings` *or None, optional*
+        Discrete spectrum for the baseline coupling coefficients
+        (default is `None`).  This must be provided if `couplings` is
+        `None` and needs to be compiled.  To ensure sum convergence in the
+        correlator model, the upper wavenumber cutoff for this spectrum
+        may need to be higher than that of the correlator model,
+        i.e. `disc`.
     survey_specs : dict{str: callable or None} or None, optional
         Survey specification functions to be passed as `survey_specs` to
         :class:`~harmonia.reader.couplings.Couplings` when couplings are
@@ -538,7 +556,7 @@ class SphericalCorrelator:
     """
 
     def __init__(self, disc, redshift, cosmo=None, power_spectrum=None,
-                 growth_rate=None, couplings=None,
+                 growth_rate=None, couplings=None, coupling_disc=None,
                  survey_specs=None, cosmo_specs=None, comm=None):
 
         self.comm = comm
@@ -562,13 +580,15 @@ class SphericalCorrelator:
         self._cosmo_specs = self._render_cosmo_specs(cosmo_specs)
 
         if couplings is None:
+            self._dummy_disc = coupling_disc
             self.couplings = Couplings(
-                self._disc,
+                self._dummy_disc,
                 survey_specs=self._survey_specs,
                 cosmo_specs=self._cosmo_specs,
                 initialise=True, comm=self.comm
             )
         else:
+            self._dummy_disc = couplings.disc
             self.couplings = couplings
 
         # Group couplings for mass access.
@@ -635,7 +655,7 @@ class SphericalCorrelator:
         f = self.growth_rate
         # Grand sum over dummy degree index, say `ell_sigma`.
         correlator_value = 0.
-        for ell_idx, ell_sigma in enumerate(self._disc.degrees):
+        for ell_idx, ell_sigma in enumerate(self._dummy_disc.degrees):
             # Fetch angular sum over order `m_sigma`.
             try:
                 angular_sum = self._get_angular_sums(mu, nu)[ell_sigma]
@@ -880,7 +900,7 @@ class SphericalCorrelator:
             tracer_p=tracer_p, diagonal=True, shot_noise_only=shot_noise_only
         )
 
-        index_vector = self._gen_operable_indices()
+        index_vector = self._gen_operable_indices(self._disc)
 
         normalisation_vector = [
             self._disc.normalisations[index[0], index[-1]]
@@ -928,12 +948,12 @@ class SphericalCorrelator:
                 self._mode_modification = [
                     np.asarray([
                         self._kernel(
-                            self._disc.wavenumbers[ell_sigma, n_sigma]
+                            self._dummy_disc.wavenumbers[ell_sigma, n_sigma]
                         )
                         for n_sigma in range(1, nmax_sigma + 1)
                     ])
                     for ell_sigma, nmax_sigma in zip(
-                        self._disc.degrees, self._disc.depths
+                        self._dummy_disc.degrees, self._dummy_disc.depths
                     )
                 ]
 
@@ -949,12 +969,12 @@ class SphericalCorrelator:
                 self._normalised_mode_powers = [
                     np.asarray([
                         self.matter_power_spectrum(
-                            self._disc.wavenumbers[ell_sigma, n_sigma]
-                        ) / self._disc.normalisations[ell_sigma, n_sigma]
+                            self._dummy_disc.wavenumbers[ell_sigma, n_sigma]
+                        ) / self._dummy_disc.normalisations[ell_sigma, n_sigma]
                         for n_sigma in range(1, nmax_sigma + 1)
                     ])
                     for ell_sigma, nmax_sigma in zip(
-                        self._disc.degrees, self._disc.depths
+                        self._dummy_disc.degrees, self._dummy_disc.depths
                     )
                 ]
             except TypeError:
@@ -992,7 +1012,7 @@ class SphericalCorrelator:
                 except (AttributeError, KeyError):
                     current_angular_couplings = None
                 self.couplings = Couplings(
-                    self._disc,
+                    self._dummy_disc,
                     survey_specs=self._survey_specs,
                     cosmo_specs=self._cosmo_specs,
                     external_angular_couplings=current_angular_couplings,
@@ -1101,9 +1121,11 @@ class SphericalCorrelator:
         # obtained by Hermitian conjuate).
         index_pair_vector = list(
             (first_index, second_index)
-            for first_index in self._gen_operable_indices(subtype='angular')
+            for first_index in self._gen_operable_indices(
+                self._disc, subtype='angular'
+            )
             for second_index in self._gen_operable_indices(
-                subtype='angular', above_from=first_index
+                self._disc, subtype='angular', above_from=first_index
             )
         )
 
@@ -1140,9 +1162,9 @@ class SphericalCorrelator:
         # than `mu` (the other cases are obtained by Hermitian conjuate).
         index_pair_vector = list(
             (first_index, second_index)
-            for first_index in self._gen_operable_indices()
+            for first_index in self._gen_operable_indices(self._disc)
             for second_index in \
-                self._gen_operable_indices(above_from=first_index)
+                self._gen_operable_indices(self._disc, above_from=first_index)
         )
 
         if self.comm is None or self.comm.rank == 0:
@@ -1189,7 +1211,7 @@ class SphericalCorrelator:
                 * np.conj(self.couplings['angular', nu, (ell_sigma, m_sigma)])
                 for m_sigma in range(- ell_sigma, ell_sigma + 1)
             ])
-            for ell_sigma in self._disc.degrees
+            for ell_sigma in self._dummy_disc.degrees
         }
 
         return angular_sums_for_index_pair_by_degree
@@ -1222,24 +1244,25 @@ class SphericalCorrelator:
 
         return M_mu_nu * shot_noise_integral
 
-    def _gen_operable_indices(self, subtype=None, above_from=None):
+    @staticmethod
+    def _gen_operable_indices(disc, subtype=None, above_from=None):
 
         if subtype == 'angular':
             operable_indices = [
                 (ell, m)
-                for ell in self._disc.degrees
+                for ell in disc.degrees
                 for m in range(- ell, ell + 1)
             ]
         elif subtype == 'radial':
             operable_indices = [
                 (ell, n)
-                for ell, nmax in zip(self._disc.degrees, self._disc.depths)
+                for ell, nmax in zip(disc.degrees, disc.depths)
                 for n in range(1, nmax + 1)
             ]
         else:
             operable_indices = [
                 (ell, m, n)
-                for ell, nmax in zip(self._disc.degrees, self._disc.depths)
+                for ell, nmax in zip(disc.degrees, disc.depths)
                 for m in range(- ell, ell + 1)
                 for n in range(1, nmax + 1)
             ]

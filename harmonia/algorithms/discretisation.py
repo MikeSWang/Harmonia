@@ -61,11 +61,11 @@ class DiscreteSpectrum:
     condition : {'dirichlet', 'neumann'}
         Either Dirichlet or Neumann boundary condition.
     highcut : float
-        Fourier spectrum upper cutoff.
+        Upper cutoff wavenumber of the spectrum.
     maxdeg : int or None, optional
         Maximum spherical degree (default is `None`).
     lowcut : float, optional
-        Fourier spectrum lower cutoff (default is 0.).
+        Lower cutoff wavenumber of the spectrum (default is 0.).
     mindeg : int, optional
         Minimum spherical degree (default is 0).
     comm : :class:`mpi4py.MPI.Comm`
@@ -124,14 +124,6 @@ class DiscreteSpectrum:
 
         return f"{self.__class__.__name__}({str_info})"
 
-    def __setstate__(self, state):
-
-        for attr, value in state.items():
-            if attr in ['wavenumbers', 'normalisations']:
-                setattr(self, '_' + attr, value)
-            else:
-                setattr(self, attr, value)
-
     def __getstate__(self):
 
         state = {
@@ -143,6 +135,14 @@ class DiscreteSpectrum:
         }
 
         return state
+
+    def __setstate__(self, state):
+
+        for attr, value in state.items():
+            if attr in ['wavenumbers', 'normalisations']:
+                setattr(self, '_' + attr, value)
+            else:
+                setattr(self, attr, value)
 
     @classmethod
     def _from_state(cls, state, comm=None):  # internal classmethod
@@ -195,19 +195,20 @@ class DiscreteSpectrum:
         if self._normalisations is not None:
             return self._normalisations
 
+        # pylint: disable=bad-continuation
         if self.attrs['boundary_condition'] == 'dirichlet':
             self._normalisations = {
-                (ell, n_idx + 1): 2. \
-                    / self.attrs['boundary_radius'] ** 3 \
+                (ell, n_idx + 1): 2.
+                    / self.attrs['boundary_radius'] ** 3
                     / spherical_besselj(ell + 1, u) ** 2
                 for ell in self.degrees
                 for n_idx, u in enumerate(self.roots[ell])
             }
         if self.attrs['boundary_condition'] == 'neumann':
             self._normalisations = {
-                (ell, n_idx + 1): 2. \
-                    / self.attrs['boundary_radius'] ** 3 \
-                    / spherical_besselj(ell, u) ** 2 \
+                (ell, n_idx + 1): 2.
+                    / self.attrs['boundary_radius'] ** 3
+                    / spherical_besselj(ell, u) ** 2
                     / (1 - ell * (ell + 1) / u**2)
                 for ell in self.degrees
                 for n_idx, u in enumerate(self.roots[ell])

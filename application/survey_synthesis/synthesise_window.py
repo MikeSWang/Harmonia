@@ -228,7 +228,7 @@ def export_window_and_mask():
     output_window_file = \
         output_dir/output_filename.replace("mask_or_window", "window")
 
-    window_multipoles.save(output_window_file, 'npz')
+    window_multipoles.save(output_window_file, '.npz')
 
     output_mask_file = \
         output_dir/output_filename.replace("mask_or_window", "mask")

@@ -3,8 +3,8 @@
 Algorithms (:mod:`~harmonia.algorithms`)
 ***************************************************************************
 
-Provide Fourier basis evaluation and integration, spectral mode
-decomposition and structured arrays for cosmological data.
+Provide algorithms for Fourier basis evaluation and integration, spectrum
+discretisation and structured array manipulation for cosmological data.
 
 """
 from .arrays import CartesianArray, SphericalArray

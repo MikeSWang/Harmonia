@@ -262,7 +262,7 @@ def transform_catalogues():
         disc = DiscreteSpectrum(radius, 'dirichlet', params.kmax)
         spherical_map = SphericalMap(catalogues, disc)
         spherical_map_data = spherical_map.density_contrast
-        spherical_map_data.save(output_path, 'npz')
+        spherical_map_data.save(output_path, '.npz')
 
         return spherical_map
 
@@ -272,7 +272,7 @@ def transform_catalogues():
             kmin=params.kmin, kmax=params.kmax, num_mesh=params.mesh
         )
         cartesian_map_data = cartesian_map.power_multipoles
-        cartesian_map_data.save(output_path, 'npz')
+        cartesian_map_data.save(output_path, '.npz')
 
         return cartesian_map
 

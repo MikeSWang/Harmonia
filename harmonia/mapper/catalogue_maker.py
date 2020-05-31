@@ -36,15 +36,11 @@ def spherical_indicator(cartesian_position, bounding_radius):
 
     Returns
     -------
-    indication : bool :class:`numpy.ndarray`
+    bool :class:`numpy.ndarray`
         `True` if the objection position lies within the spherical domain.
 
     """
-    indication = (
-        np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
-    )
-
-    return indication
+    return np.linalg.norm(cartesian_position, axis=-1) <= bounding_radius
 
 
 class RandomCatalogue(UniformCatalog):
@@ -52,7 +48,7 @@ class RandomCatalogue(UniformCatalog):
 
     Notes
     -----
-    Origin of the catalogue is at a catalogue box corner.
+    Origin of the catalogue is at a corner of the catalogue box.
 
     Parameters
     ----------
@@ -143,7 +139,7 @@ class SourceCatalogue(CSVCatalog):
         # WARNING: Unresolved MPI bug with `nbodykit`.
         if self.comm is not None and self.comm.size > 1:
             warnings.warn(
-                "Beware of using multi-processing: "
+                "Beware of enabling multi-processing for data catalogues: "
                 "unresolved MPI issue with 'nbodykit'."
             )
 
@@ -210,19 +206,18 @@ class SphericalFKPCatalogue:
         `random_catalogue` is provided.
     mask : callable or None, optional
         Any veto mask function to be applied to both the data and random
-        catalogues.  Must be a function of three Cartesian
-        coordinates only assuming the origin is at the centre of
+        catalogues.  Must be a function of 3-d Cartesian
+        coordinates only, assuming the origin is at the centre of
         the catalogues.
     selection : callable or None, optional
         Any selection function (normalised to unity) to be applied to both
-        the data and random catalogues.  Must be a function of three
-        Cartesian coordinates only assuming the origin is at the centre of
+        the data and random catalogues.  Must be a function of 3-d
+        Cartesian coordinates only, assuming the origin is at the centre of
         the catalogues.
     weight : callable or None, optional
         Any weight function to be applied to both the data and random
-        catalogues.  Must be a function of three Cartesian
-        coordinates only assuming the origin is at the centre of
-        the catalogues.
+        catalogues.  Must be a function of 3-d Cartesian coordinates only,
+        assuming the origin is at the centre of the catalogues.
     random_seed : int or None, optional
         Random seed of the random catalogue (default is `None`).
     apply_selection_as_veto : bool, optional
@@ -347,9 +342,9 @@ class SphericalFKPCatalogue:
                 break
 
             # Check the bounding sphere is entirely within the catalogue.
-            if np.any(np.less(boxsize, 2*radius)):
+            if np.any(np.less(boxsize, 2 * radius)):
                 self.logger.debug(
-                    self._msg['inscribe'], name, 2*radius, boxsize
+                    self._msg['inscribe'], name, 2 * radius, boxsize
                 )
 
             # Centre the coordinate origin if not already centred.

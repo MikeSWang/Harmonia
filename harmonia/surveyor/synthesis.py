@@ -499,6 +499,15 @@ class CovarianceEstimator:
                 self.realisations[0].array['wavenumber']
             )
 
+    def __getstate__(self):
+
+        state = self.__dict__
+
+        if self.reference is not None:
+            state.update({'reference': self.reference.__getstate__()})
+
+        return state
+
     def __setstate__(self, state):
 
         for attr, value in state.items():
@@ -508,15 +517,6 @@ class CovarianceEstimator:
                 setattr(self, 'reference', reference)
             else:
                 setattr(self, attr, value)
-
-    def __getstate__(self):
-
-        state = self.__dict__
-
-        if self.reference is not None:
-            state.update({'reference': self.reference.__getstate__()})
-
-        return state
 
     def save(self, output_file):
         """Save the estimator with its attributes as a .npz file.

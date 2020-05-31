@@ -17,7 +17,6 @@ from collections.abc import Sequence
 from itertools import product
 
 import numpy as np
-from numpy.lib import recfunctions
 
 from .discretisation import DiscreteSpectrum
 
@@ -27,7 +26,7 @@ except ModuleNotFoundError:
     import pickle
 
 
-class IndexingError(Exception):
+class IndexingError(IndexError):
     """Exception raised for unsupported slicing or indexing in
     `__getitem__` methods.
 
@@ -35,15 +34,15 @@ class IndexingError(Exception):
 
 
 class DataArray:
-    """Abstract structured array with saving and loading methods.
+    """Abstract data array with save and load methods.
 
     """
 
-    def __setstate__(self, state):
+    def __getstate__(self):
 
         raise NotImplementedError
 
-    def __getstate__(self):
+    def __setstate__(self, state):
 
         raise NotImplementedError
 
@@ -54,14 +53,14 @@ class DataArray:
         ----------
         output_file : *str or* :class:`pathlib.Path`
             Output file path.
-        extension : {'pkl', 'npz'}
+        extension : {'.pkl', '.npz'}
             Output file extension.
 
         """
-        if file_extension == 'pkl':
+        if file_extension == '.pkl':
             with open(output_file, 'wb') as output_data:
                 pickle.dump(self, output_data, protocol=-1)
-        elif file_extension == 'npz':
+        elif file_extension == '.npz':
             np.savez(output_file, **self.__getstate__())
         else:
             raise IOError(
@@ -86,12 +85,14 @@ class DataArray:
 
         if extension.endswith('npz'):
             state_data = np.load(input_file)
+
             state = {}
             for attr in state_data.files:
                 try:
                     state.update({attr: state_data[attr].item()})
                 except ValueError:
                     state.update({attr: state_data[attr]})
+
             self = object.__new__(cls)
             self.__setstate__(state)
         elif extension.endswith('pkl'):
@@ -107,9 +108,9 @@ class DataArray:
 
 
 class SphericalArray(DataArray):
-    r"""Structured array for spherical decomposition of cosmological data.
+    r"""Structured array for spherically decomposed cosmological data.
 
-    Array is initialised with a discrete spectrum of spherical modes
+    Array is initialised with a discrete spectrum of Fourier modes
     and consists of three fields: the 'index' field of
     :math:`(\ell, m_\ell, n_\ell)` triplets, the 'wavenumber' field
     of discrete :math:`k_{\ell n}`, and the 'coefficient' field of
@@ -164,27 +165,8 @@ class SphericalArray(DataArray):
 
         return f"{self.__class__.__name__}({str(self.disc)})"
 
-    def __setitem__(self, key, value):
-        """Set the 'coefficient' field value(s).
-
-        Parameters
-        ----------
-        key : int, tuple of int or slice
-            Coefficient access key.
-        value : complex
-            Complex coefficient entry.
-
-        See Also
-        --------
-        :meth:`__getitem__`
-
-        """
-        position = self._find_position(key)
-
-        self.array['coefficient'][position] = value
-
     def __getitem__(self, key):
-        """Access the 'coefficient' field.
+        """Get the 'coefficient' field value(s).
 
         The access key can be an integer, a slice expression, a tuple of
         index triplet or a string, e.g. ``[-1]``, ``[:]``, ``[(0, 0, 1)]``
@@ -205,19 +187,24 @@ class SphericalArray(DataArray):
 
         return self.array['coefficient'][position]
 
-    def __setstate__(self, state):
+    def __setitem__(self, key, value):
+        """Set the 'coefficient' field value(s).
 
-        for attr, value in state.items():
-            if attr == 'disc':
-                self.disc = DiscreteSpectrum._from_state(state['disc'])
-            else:
-                setattr(self, attr, value)
+        Parameters
+        ----------
+        key : int, tuple of int or slice
+            'coefficient' field access key.
+        value : complex
+            'coefficient' field data entry.
 
-        # NOTE: For backward compatibility.  To be removed in the future.
-        if '_position' not in self.array.dtype.names:
-            self.array = recfunctions.append_fields(
-                self.array, '_position', list(range(self.size))
-            )
+        See Also
+        --------
+        :meth:`.SphericalArray.__getitem__`
+
+        """
+        position = self._find_position(key)
+
+        self.array['coefficient'][position] = value
 
     def __getstate__(self):
 
@@ -227,11 +214,24 @@ class SphericalArray(DataArray):
 
         return state
 
+    def __setstate__(self, state):
+
+        for attr, value in state.items():
+            if attr == 'disc':
+                self.disc = DiscreteSpectrum._from_state(value)
+            else:
+                setattr(self, attr, value)
+
+        # NOTE: For backward compatibility; may be removed in the future.
+        if '_position' not in self.array.dtype.names:
+            self.array = np.lib.recfunctions.append_fields(
+                self.array, '_position', list(range(self.size))
+            )
+
     @classmethod
     def _from_state(cls, state):  # internal classmethod
 
         self = object.__new__(cls)
-
         self.__setstate__(state)
 
         return self
@@ -239,14 +239,14 @@ class SphericalArray(DataArray):
     def vectorise(self, pivot, collapse=None):
         r"""Returrn a data vector from the 'coefficient' field.
 
-        Vectorisation is performed by *pivoting* in two orders of
-        precedence---
+        Vectorisation is performed by *pivoting* in either of the following
+        orders of precedence---
 
             * 'natural': ordered by :math:`(\ell, m, n)`;
             * 'spectral': ordered by :math:`(k_{\ell n}, m)`.
 
         Subarrays of equivalent :math:`(\ell, n)` may be further collapsed
-        over spherical order :math:`m` by averaging or averaging in
+        over spherical order :math:`m` by simple averaging or averaging in
         quadrature.
 
         Parameters
@@ -269,7 +269,7 @@ class SphericalArray(DataArray):
         else:
             # Initialise the collapsed array.
             doublet_list = self._gen_index_list(
-                self.disc.degrees, self.disc.depths, reduce=True
+                self.disc.degrees, self.disc.depths, reduction=True
             )
 
             array = np.empty(len(doublet_list), dtype=self._dtype_collapsed)
@@ -292,12 +292,11 @@ class SphericalArray(DataArray):
                     raise ValueError(f"Unknown `collapse` option: {collapse}.")
 
                 array['coefficient'][pos] = collapsed_subarray
-                array['wavenumber'][pos] = \
-                    self.disc.wavenumbers[tuple(ind)]
+                array['wavenumber'][pos] = self.disc.wavenumbers[tuple(ind)]
 
         # Sort array by the pivot order.  It is unsafe to sort by the
-        # 'index' field which is multi-dimensional and becomes scrambled.
-        # The private field '_position' is initialised for this purpose.
+        # 'index' field which is multi-dimensional.  The private field
+        # '_position' was initialised for this purpose.
         if pivot == 'natural':
             sort_order = ['_position', 'wavenumber']
         elif pivot == 'spectral':
@@ -337,7 +336,7 @@ class SphericalArray(DataArray):
         if isinstance(key, int):
             position = key if key >= 0 else key % self.size
             if position > self.size:
-                raise IndexError(
+                raise IndexingError(
                     f"Index {position} out of bound for key: {key}."
                 )
             return position
@@ -364,9 +363,9 @@ class SphericalArray(DataArray):
         raise TypeError(f"Invalid type for key: {key}.")
 
     @staticmethod
-    def _gen_index_list(degrees, depths, reduce=False):
+    def _gen_index_list(degrees, depths, reduction=False):
 
-        if reduce:
+        if reduction:
             index_list = [
                 (ell, n + 1)
                 for ell, nmax in zip(degrees, depths)
@@ -397,7 +396,7 @@ class CartesianArray(DataArray):
     r"""Structured array for Cartesian decomposition of cosmological data.
 
     Array is initialised with three fields: the 'order' field of the
-    Legendre multipole, the 'wavenumber' field of :math:`k`-bin centres
+    Legendre multipoles, the 'wavenumber' field of :math:`k`-bin centres
     and the 'power' field for power spectrum multipole measurements.
 
     Parameters
@@ -449,25 +448,6 @@ class CartesianArray(DataArray):
 
         self.array, self._directory = self._initialise_array()
 
-    def __setitem__(self, key, value):
-        """Set the 'power' field value(s).
-
-        Parameters
-        ----------
-        key : int, tuple(int, float) or slice
-            'power' field access key.
-        value : float
-            'power' field data entry.
-
-        See Also
-        --------
-        :meth:`__getitem__`
-
-        """
-        position = self._find_position(key)
-
-        self.array['power'][position] = value
-
     def __getitem__(self, key):
         """Access the 'power' field.
 
@@ -490,22 +470,39 @@ class CartesianArray(DataArray):
 
         return self.array['power'][position]
 
+    def __setitem__(self, key, value):
+        """Set the 'power' field value(s).
+
+        Parameters
+        ----------
+        key : int, tuple(int, float) or slice
+            'power' field access key.
+        value : float
+            'power' field data entry.
+
+        See Also
+        --------
+        :meth:`.CartesianArray.__getitem__`
+
+        """
+        position = self._find_position(key)
+
+        self.array['power'][position] = value
+
+    def __getstate__(self):
+
+        return self.__dict__
+
     def __setstate__(self, state):
 
         for attr, value in state.items():
             setattr(self, attr, value)
 
-    def __getstate__(self):
-
-        state = self.__dict__
-
-        return state
-
     def vectorise(self, pivot):
         r"""Return a data vector from the 'power' field.
 
-        Vectorisation is performed by *pivoting* in two orders of
-        precedence---
+        Vectorisation is performed by *pivoting* in either of the following
+        orders of precedence---
 
             * 'order': ordered by multipole order :math:`\ell`;
             * 'wavenumber': ordered by wavenumber :math:`k`.
@@ -556,7 +553,7 @@ class CartesianArray(DataArray):
         if isinstance(key, int):
             position = key if key >= 0 else key % self.size
             if position > self.size:
-                raise IndexError(
+                raise IndexingError(
                     f"Index {position} out of bound for key: {key}."
                 )
             return position

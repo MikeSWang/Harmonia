@@ -248,7 +248,7 @@ def synthesise_random_maps():
             kmin=params.khyb, kmax=params.kmax, num_mesh=params.mesh
         )
         cartesian_map_data = cartesian_map.power_multipoles
-        cartesian_map_data.save(output_dir/output_file, 'npz')
+        cartesian_map_data.save(output_dir/output_file, '.npz')
 
         if not params.cartesian_only:
             disc = DiscreteSpectrum(radius, 'dirichlet', params.khyb)
@@ -260,7 +260,7 @@ def synthesise_random_maps():
 
             spherical_map = SphericalMap(catalogues, disc)
             spherical_map_data = spherical_map.density_contrast
-            spherical_map_data.save(output_dir/output_file, 'npz')
+            spherical_map_data.save(output_dir/output_file, '.npz')
 
         progress.report(iter_num)
 

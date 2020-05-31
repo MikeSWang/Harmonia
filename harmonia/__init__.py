@@ -4,8 +4,7 @@
 ###########################################################################
 
 ``Harmonia`` is a Python package that combines spherical and Cartesian
-Fourier map transformations and likelihood constructions for linear,
-large-scale galaxy clustering analysis.
+Fourier maps and likelihoods for large-scale galaxy clustering analysis.
 
 .. topic:: Licence Statement
 
@@ -26,9 +25,9 @@ large-scale galaxy clustering analysis.
 
 """
 __author__ = "Mike S Wang"
-__contact__ = "M S Wang"
+__contact__ = "Mike S Wang"
 __copyright__ = "Copyright 2020, Harmonia/M S Wang"
-__date__ = "2020/04/01"
+__date__ = "2020/06/01"
 __description__ = "Hybrid map inference from large-scale galaxy clustering."
 __email__ = "mike.wang@port.ac.uk"
 __license__ = "GPLv3"

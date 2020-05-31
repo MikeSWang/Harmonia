@@ -19,27 +19,30 @@ include the following factors:
 
     * angular mask :math:`M(\hat{\mathbf{r}})`;
     * radial selection :math:`\phi(r)`;
-    * radial weight :math:`w(r)` or its derivative :math:`w'(r)`;
-    * linear bias evolution :math:`G(z, k) = b(z, k) / b(z_*, k)`
-      normalised to unity at a fiducial epoch :math:`z_*`, where
-      :math:`b(z, k)` is the scale-dependent linear bias;
+    * radial weight :math:`w(r)` and its derivative :math:`w'(r)`;
     * clustering evolution, :math:`D(z)`, which is the linear growth
       factor normalised to unity at the :math:`z = 0` epoch;
-    * linear growth rate evolution :math:`F(z) = f(z) / f(z_*)` normalised
-      to unity at a fiducial epoch :math:`z_*`;
+    * linear bias + clustering evolution
+      :math:`G(z, k) = b(z, k) D(z) / b(z_*, k) D(z_*)` normalised to unity
+      at a fiducial epoch :math:`z_*`, where :math:`b(z, k)` is the
+      scale-dependent linear bias;
+    * linear growth rate + clustering evolution
+      :math:`F(z) = f(z) D(z) / f(z_*) D(z_*)` normalised to unity at a
+      fiducial epoch :math:`z_*`, where :math:`f(z)` is the linear
+      growth rate;
     * differential Alcock--Paczynski (AP) distortion
 
       .. math::
 
           \gamma(z) = \frac{
-              \operatorname{d}\!\tilde{r}(z)
+              \operatorname{d}\!\breve{\chi}(z)
           }{
-              \operatorname{d}\!r(z)
+              \operatorname{d}\!\chi(z)
           } \,,
 
-      where :math:`\tilde{r} = \tilde{r}(z)` is the distance converted
+      where :math:`\breve{r} = \breve{\chi}(z)` is the distance converted
       from redshift in a fiducial cosmology rather than from the true
-      comoving distance--redshift correspondence :math:`z = z(r)`.
+      comoving distance--redshift correspondence :math:`z = \chi^{-1}(r)`.
 
 
 Couplings
@@ -56,18 +59,18 @@ RSD coupling kernels
            M(\hat{\mathbf{r}})
            Y_{\ell_\nu m_\nu}(\hat{\mathbf{r}}) \,, \\
        \Phi_{\mu\nu} &= \kappa_{\ell_\nu n_\nu}
-           \int \operatorname{d}\!r \, r^2 w(\tilde{r})
-           j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
+           \int \operatorname{d}\!r \, r^2 w(\breve{r})
+           j_{\ell_\mu}(k_{\ell_\mu n_\mu} \breve{r})
            j_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           G(z, k_{\ell_\nu n_\nu}) D(z) \phi(r) \,, \\
+           G(z(r), k_{\ell_\nu n_\nu}) \phi(r) \,, \\
        \Upsilon_{\mu\nu} &=
            \frac{\kappa_{\ell_\nu n_\nu}}{k_{\ell_\nu n_\nu}}
            \int \operatorname{d}\!r \, r^2
-           \frac{\operatorname{d}\!}{\operatorname{d}\!\tilde{r}}
-           \left[ w(\tilde{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \tilde{r})
+           \frac{\operatorname{d}\!}{\operatorname{d}\!\breve{r}}
+           \left[ w(\breve{r}) j_{\ell_\mu}(k_{\ell_\mu n_\mu} \breve{r})
                \right]
            j'_{\ell_\nu}(k_{\ell_\nu n_\nu} r)
-           \gamma(z) F(z) D(z) \phi(r) \,,
+           \gamma(z(r)) F(z(r)) \phi(r) \,,
    \end{align*}
 
 over the spherical volume element, where :math:`k_{\ell n}` is the
@@ -194,16 +197,6 @@ class Couplings:
         if initialise:
             self.compile_couplings(pixelate=pixelate)
 
-    def __setstate__(self, state):
-
-        for attr, value in state.items():
-            if attr == 'disc':
-                self.disc = DiscreteSpectrum._from_state(state['disc'])
-            else:
-                # NOTE: Strip '_' for backward compatibility.  To
-                # be removed in the future.
-                setattr(self, attr.strip('_'), value)
-
     def __getstate__(self):
 
         state = {
@@ -212,6 +205,16 @@ class Couplings:
         }
 
         return state
+
+    def __setstate__(self, state):
+
+        for attr, value in state.items():
+            if attr == 'disc':
+                self.disc = DiscreteSpectrum._from_state(state['disc'])
+            else:
+                # NOTE: Strip '_' for backward compatibility; may be
+                # removed in the future.
+                setattr(self, attr.strip('_'), value)
 
     def __getitem__(self, key):
         r"""Access coupling coefficient by key.

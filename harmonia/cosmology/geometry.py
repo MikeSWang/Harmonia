@@ -16,7 +16,7 @@ import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 
-def redshift_from_distance(cosmo, log10_num_sample=5):
+def redshift_from_distance(cosmo, lg_num_sample=5):
     """Invert redshift-to-distance relationship of a cosmological model
     to redshift-from-distance.
 
@@ -29,7 +29,7 @@ def redshift_from_distance(cosmo, log10_num_sample=5):
     ----------
     cosmo : :class:`nbodykit.cosmology.cosmology.Cosmology`
         Cosmological model.
-    lg10_num_sample : float, optional
+    lg_num_sample : float, optional
         Base-10 logarithm of the number of redshift points to sample
         the comoving distance as a function of redshift (default
         is 5, i.e. 100000 samle points).
@@ -42,14 +42,14 @@ def redshift_from_distance(cosmo, log10_num_sample=5):
     """
     Z_LOG_RANGE = (-3, 2)
 
-    z_samples = np.logspace(*Z_LOG_RANGE, num=10**log10_num_sample)
+    z_samples = np.logspace(*Z_LOG_RANGE, num=10**lg_num_sample)
     r_samples = cosmo.comoving_distance(z_samples)
 
     return Spline(r_samples, z_samples, ext='raise')
 
 
 def differential_AP_distortion(fiducial_z_to_r, variable_z_to_r,
-                               max_redshift=10., log10_num_sample=5):
+                               max_redshift=10., lg_num_sample=5):
     """Compute the differential Alcock--Paczynski distortion between a
     fiducial and a cosmological redshift-to-distance conversion as a
     fuction of redshift.
@@ -62,7 +62,7 @@ def differential_AP_distortion(fiducial_z_to_r, variable_z_to_r,
         Variable redshift-to-distance conversion.
     max_redshift : float, optional
         Maximum redshift to sample for interpolation (default is 10).
-    lg10_num_sample : float, optional
+    lg_num_sample : float, optional
         Base-10 logarithm of the number of redshift points to sample
         the differential distortion as a function of redshift (default
         is 5, i.e. 100000 samle points).
@@ -73,7 +73,7 @@ def differential_AP_distortion(fiducial_z_to_r, variable_z_to_r,
         Differential distortion as a fuction of redshift.
 
     """
-    z_samples = np.linspace(0., max_redshift, 10 ** log10_num_sample)
+    z_samples = np.linspace(0., max_redshift, 10 ** lg_num_sample)
 
     r_tilde = fiducial_z_to_r(z_samples)
     r = variable_z_to_r(z_samples)

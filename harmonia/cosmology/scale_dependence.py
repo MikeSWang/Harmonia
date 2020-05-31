@@ -33,6 +33,8 @@ relates to the cosmological model and its growth factor :math:`D(z)`
 |
 
 """
+# pylint: disable=no-name-in-module
+from astropy.constants import c
 from nbodykit import cosmology
 
 
@@ -55,7 +57,7 @@ def scale_dependence_modification(cosmo, redshift):
 
     """
     SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY = 1.686
-    SPEED_OF_LIGHT_IN_KM_PER_S = 299792.
+    SPEED_OF_LIGHT_IN_KM_PER_S = c.to('km/s').value
     GROWTH_FACTOR_NORMALISATION = 1.27
 
     num_factors = GROWTH_FACTOR_NORMALISATION \

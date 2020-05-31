@@ -9,8 +9,7 @@ https://github.com/mikeswang/Harmonia/blob/master/LICENCE)
 # Hybrid Map Inference from Large-Scale Galaxy Clustering
 
 ``Harmonia`` is a Python package that combines spherical and Cartesian
-Fourier map transformations and likelihood constructions for linear,
-large-scale galaxy clustering analysis.
+Fourier maps and likelihoods for large-scale galaxy clustering analysis.
 
 
 ## Installation

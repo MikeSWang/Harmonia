@@ -26,9 +26,6 @@ import numpy as np
 from scipy.integrate import dblquad, quad
 
 
-# Spherical integrals
-# -----------------------------------------------------------------------------
-
 def _angular_integrand(phi, theta, func, complex_part):
     r"""Evaluate the angular integrand with the Jacobian factor
     :math:`\sin\theta`.

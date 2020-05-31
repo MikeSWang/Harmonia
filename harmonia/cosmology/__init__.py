@@ -31,7 +31,16 @@ from .scale_dependence import (
 
 class BaseModel(Cosmology):
     """Fixed (fiducial) cosmological model built with a parameter
-    dictionary read from an external file.
+    dictionary read from an external file, e.g. with file contents
+
+    .. code-block::
+
+        {
+            'h': 0.70,
+            'Omega0_b': 0.044,
+            'Omega0_cdm': 0.226,
+            'sigma8': 0.8,
+        }
 
     Parameters
     ----------
@@ -54,7 +63,9 @@ class BaseModel(Cosmology):
             }
 
         cosmo_params = {
-            k: v for k, v in source_params.items() if k != 'sigma8'
+            param_name: param_value
+            for param_name, param_value in source_params.items()
+            if param_name != 'sigma8'
         }
 
         super().__init__(**cosmo_params)

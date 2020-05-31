@@ -77,19 +77,6 @@ class SphericalMap:
 
         return f"{self.__class__.__name__}({str_info})"
 
-    def __setstate__(self, state):
-
-        for attr, val in state.items():
-            if attr == 'disc':
-                self.disc = DiscreteSpectrum._from_state(state['disc'])
-            elif attr == 'density_contrast':
-                self.density_contrast = \
-                    SphericalArray._from_state(state['density_contrast'])
-            elif attr.endswith('_coeff'):
-                setattr(self, '_' + attr, val)
-            else:
-                setattr(self, attr, val)
-
     def __getstate__(self):
 
         state = {
@@ -102,6 +89,19 @@ class SphericalMap:
         }
 
         return state
+
+    def __setstate__(self, state):
+
+        for attr, val in state.items():
+            if attr == 'disc':
+                self.disc = DiscreteSpectrum._from_state(state['disc'])
+            elif attr == 'density_contrast':
+                self.density_contrast = \
+                    SphericalArray._from_state(state['density_contrast'])
+            elif attr.endswith('_coeff'):
+                setattr(self, '_' + attr, val)
+            else:
+                setattr(self, attr, val)
 
     @classmethod
     def _from_state(cls, state):
@@ -376,11 +376,6 @@ class CartesianMap:
 
         return f"{self.__class__.__name__}({str_info})"
 
-    def __setstate__(self, state):
-
-        for attr, val in state.items():
-            setattr(self, attr, val)
-
     def __getstate__(self):
 
         state = {
@@ -389,6 +384,11 @@ class CartesianMap:
         }
 
         return state
+
+    def __setstate__(self, state):
+
+        for attr, val in state.items():
+            setattr(self, attr, val)
 
     @classmethod
     def _from_state(cls, state):  # internal classmethod

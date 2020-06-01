@@ -245,7 +245,7 @@ def synthesise_random_maps():
 
         cartesian_map = CartesianMap(
             catalogues, params.orders,
-            kmin=params.khyb, kmax=params.kmax, num_mesh=params.mesh
+            dk=0.01, kmin=params.khyb, kmax=params.kmax, num_mesh=params.mesh
         )
         cartesian_map_data = cartesian_map.power_multipoles
         cartesian_map_data.save(output_dir/output_file, '.npz')

@@ -269,7 +269,7 @@ def transform_catalogues():
     if params.map == 'cartesian':
         cartesian_map = CartesianMap(
             catalogues, params.orders,
-            kmin=params.kmin, kmax=params.kmax, num_mesh=params.mesh
+            dk=0.01, kmin=params.kmin, kmax=params.kmax, num_mesh=params.mesh
         )
         cartesian_map_data = cartesian_map.power_multipoles
         cartesian_map_data.save(output_path, '.npz')

@@ -13,20 +13,26 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.ticker import AutoMinorLocator
 from scipy.interpolate import griddata
 
 try:
-    from application import confirm_directory, data_dir, overwrite_protection
+    from application import confirm_directory, overwrite_protection
+    from application import data_dir, harmony
 except ImportError:
     # Adds to Python search path.
     sys.path.insert(0, os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../../"
     ))
-    from application import confirm_directory, data_dir, overwrite_protection
+    from application import confirm_directory, overwrite_protection
+    from application import data_dir, harmony
 
 from plot_constraints import plot_1d_constraints, plot_2d_constraints
 
 sns.set(style='ticks', font='serif')
+plt.style.use(harmony)
+
+legend_state = ([], [])
 
 
 def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
@@ -99,6 +105,8 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
     """
     # pylint: disable=redefined-argument-from-local
+
+    LS = iter(['-', '--', '-.'])
 
     # Check likelihood dimensions and restructure input arrays.
     likelihood_sets, ndim = [], []
@@ -188,8 +196,10 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         return fig, x_estimate
 
     if ndim == 2:
+        # pylint: disable=global-statement
+        global legend_state
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(figsize=(5, 5))
             main_panel = plt.subplot2grid(
                 (4, 4), (1, 0), rowspan=3, colspan=3
             )
@@ -199,6 +209,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             y_panel = plt.subplot2grid(
                 (4, 4), (1, 3), rowspan=3, sharey=main_panel
             )
+            legend_state = ([], [])
         else:
             main_panel, x_panel, y_panel = fig.axes
 
@@ -211,17 +222,20 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
                 likelihood_sets, sample_points_xs, sample_points_ys,
                 labels, cmaps, alphas
             ):
-            fig, x_estimate_, y_estimate_ = plot_2d_constraints(
-                likelihoods, x, y, fig=fig,
-                label=label, cmap=cmap, alpha=alpha,
+            fig, x_estimate_, y_estimate_, patch = plot_2d_constraints(
+                likelihoods, x, y, fig=fig, cmap=cmap, alpha=alpha,
                 x_label=label_x, y_label=label_y,
                 x_range=range_x, y_range=range_y,
                 x_precision=precision_x, y_precision=precision_y,
                 aggregation=aggregation, estimation=estimate,
-                scatter_plot=scatter_plot
+                scatter_plot=scatter_plot, line_style=next(LS)
             )
             x_estimate.append(x_estimate_)
             y_estimate.append(y_estimate_)
+
+            legend_state[0].append(patch)
+            legend_state[1].append(label)
+
 
         if truth_x is not None:
             main_panel.axvline(truth_x, c='k', ls='--', zorder=3)
@@ -240,11 +254,13 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         main_panel.set_ylabel(r'${}$'.format(label_y))
 
         if labels != [None] * len(args):
-            main_panel.legend(handletextpad=0)
-        x_panel.legend()
-        y_panel.legend()
+            main_panel.legend(*legend_state, handlelength=1.6)
+        x_panel.legend(loc='upper left')
+        y_panel.legend(loc='upper left')
 
         # Tidy up panels.
+        main_panel.xaxis.set_minor_locator(AutoMinorLocator())
+        main_panel.yaxis.set_minor_locator(AutoMinorLocator())
         main_panel.axes.tick_params(
             axis='x', which='both', direction='in', top=True
         )
@@ -392,7 +408,7 @@ if __name__ == "__main__":
     MASK_TAG = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"  #
     SELECTION_TAG = "None"  # "[100.0,500.0]"  #
 
-    SCALE_TAG = "[None,0.04,0.1]"
+    SCALE_TAG = "[None,0.04,0.09]"
     ORDER_TAG = "[0]"
 
     DEGREE_TAG = "False"

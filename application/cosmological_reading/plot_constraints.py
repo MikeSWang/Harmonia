@@ -145,18 +145,18 @@ def plot_1d_constraints(posteriors, x, fig=None, label='', colour=None,
             x[x_lower_idx:(x_upper_idx + 1)],
             posterior[x_lower_idx:(x_upper_idx + 1)],
             antialiased=True,
-            facecolor=posterior_colour, alpha=AREA_FILL_ALPHA,
-            label=label, zorder=2
+            facecolor=posterior_colour, edgecolor='none',
+            alpha=AREA_FILL_ALPHA, label=label, zorder=2
         )
 
     return fig, estimate
 
 
-def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
-                        cmap=None, alpha=None, x_label=None, y_label=None,
-                        x_range=None, y_range=None, aggregation='average',
-                        estimation=None, x_precision=None, y_precision=None,
-                        scatter_plot=False):
+def plot_2d_constraints(posteriors, x, y, fig=None, cmap=None, alpha=None,
+                        x_label=None, y_label=None, x_range=None, y_range=None,
+                        aggregation='average', estimation=None,
+                        x_precision=None, y_precision=None,
+                        scatter_plot=False, line_style='-'):
     """Plot 2-d constraints.
 
     Parameters
@@ -167,8 +167,6 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         Parameter coordinates.
     fig : :class:`matplotlib.figure.Figure` *or None*, optional
         Existing figure object to plot on (default is `None`).
-    label : str or None, optional
-        Constraint label (default is `None`).
     cmap : str or None, optional
         Principal colour map (default is `None`).
     alpha : str or None, optional
@@ -188,6 +186,8 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
     scatter_plot : bool, optional
         If `True`, plot individual posteriors evaluations (default is
         `False`).
+    line_style : str, optional
+        Line style for the contours (default is '-').
 
     Returns
     -------
@@ -195,6 +195,8 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         Plotted figure object.
     x_estimate, y_estimate : tuple of float
         Parameter estimates with low and upper uncertainties.
+    patch : :class:`matplotlib.patches.Rectangle`
+        A colour patch to be used in the legend.
 
     """
     # Set up the plottable grid.
@@ -272,7 +274,8 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
                 alpha=relative_alpha*alpha, zorder=zorder or 1
             )
             main_panel.contour(
-                contour, colors=contour.cmap(contour.cmap.N),
+                contour,
+                linestyles=line_style, colors=contour.cmap(contour.cmap.N),
                 alpha=min(2*relative_alpha*alpha, 1.), zorder=zorder or 1
             )
         except ValueError as error:
@@ -285,6 +288,10 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         return contour
 
     main_contour = _plot_contours(posterior, relative_alpha=1., zorder=2)
+    patch = plt.Rectangle(
+        (0., 0.), 2., 1., ls=line_style,
+        ec=None, fc=main_contour.collections[-1].get_facecolor()[0]
+    )
     if scatter_plot:
         scattered_contours = []
         for post in posts:
@@ -367,7 +374,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
             x_panel.fill_between(
                 x[x_lower_idx:(x_upper_idx + 1)],
                 pdf_x[x_lower_idx:(x_upper_idx + 1)],
-                antialiased=True, facecolor=[cm(cm.N)],
+                antialiased=True, facecolor=[cm(cm.N)], edgecolor='none',
                 alpha=AREA_FILL_ALPHA, zorder=2
             )
 
@@ -382,7 +389,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
             y_panel.fill_betweenx(
                 y[y_lower_idx:(y_upper_idx + 1)],
                 pdf_y[y_lower_idx:(y_upper_idx + 1)],
-                antialiased=True, facecolor=[cm(cm.N)],
+                antialiased=True, facecolor=[cm(cm.N)], edgecolor='none',
                 alpha=AREA_FILL_ALPHA, zorder=2
             )
 
@@ -404,7 +411,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
     if estimation == 'median':
         main_panel.scatter(
             x_result[0], y_result[0], marker='+', s=40,
-            c=[main_contour.cmap(main_contour.cmap.N)], zorder=3, label=label
+            c=[main_contour.cmap(main_contour.cmap.N)], zorder=3
         )
     elif estimation == 'maximum':
         # Note this provides the joint maximum posterior estimates
@@ -413,7 +420,7 @@ def plot_2d_constraints(posteriors, x, y, fig=None, label=None,
         main_panel.scatter(
             xx[xy_fit_idx], yy[xy_fit_idx], marker='+', s=40,
             c=[main_contour.cmap(main_contour.cmap.N)],
-            zorder=3, label=label
+            zorder=3
         )
 
-    return fig, x_result, y_result
+    return fig, x_result, y_result, patch

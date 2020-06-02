@@ -132,6 +132,10 @@ def initialise_parameters():
         '--redshift', type=float, default=1.,
         help="this times higher mean number density for the random catalogue"
     )
+    parser.add_argument(
+        '--tracer-p', type=float, default=1.,
+        help="tracer-dependent parameter for scale-dependent bias"
+    )
 
     parser.add_argument(
         '--cosmology-file', type=str, required=True,
@@ -278,6 +282,7 @@ def setup_likelihood():
         base_spherical_model=spherical_model,
         base_cartesian_model=cartesian_model,
         nbar=params.density, contrast=params.contrast,
+        tracer_p=params.tracer_p,
         comm=comm
     )
 

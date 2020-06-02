@@ -66,9 +66,6 @@ def initialise_parameters():
     )
 
     parser.add_argument(
-        '--boxsize', type=float, default=1000.0, help="random map box size"
-    )
-    parser.add_argument(
         '--kmin', type=float, default=None,
         help="minimum wavenumber of the map to make"
     )

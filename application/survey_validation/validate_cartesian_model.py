@@ -94,12 +94,12 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
     )) / (1 / 2.5e-4)
 
     cartesian_model = CartesianMultipoles(
-        wavenumbers, redshift=REDSHIFT, cosmo=simulation_cosmo, growth_rate=0.,
+        wavenumbers, redshift=1., cosmo=simulation_cosmo, growth_rate=0.,
         mask_multipoles=mask_multipoles, window_multipoles=window_multipoles
     )
 
     null_cartesian_model = CartesianMultipoles(
-        wavenumbers, redshift=REDSHIFT, cosmo=simulation_cosmo, growth_rate=0.
+        wavenumbers, redshift=1., cosmo=simulation_cosmo, growth_rate=0.
     )
 
     orders = multipole_data.keys()
@@ -166,7 +166,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
 
     plt.suptitle(",  ".join([
         r"$f_\mathrm{{NL}} = {}$".format(NG),
-        "mask={}".format(mask_tag), "selection={}".format(selection_tag)
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
     plt.subplots_adjust(hspace=0)
     plt.savefig(output_file.with_suffix('.pdf'))
@@ -174,34 +174,38 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
     return _ratios
 
 
-REDSHIFT = 1.
-NG = 0
-DENSITY = 2.5e-4
-CONTRAST = 10.
-BIAS = 2.324  # 2.354
-
 if __name__ == '__main__':
 
-    mask_tag = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"
-    selection_tag = "None"  # "[100.0,500.0]"
+    TRACER = "halos"
+    SERIES = '-cut_2'
+    NG = 0
+    MAP_SERIALS = range(1, 1+24)
+    BIAS = 3.55  # 3.50
+    DENSITY = 4.75e-5  # 4.91e-5
+    CONTRAST = 50.
 
-    scale_tag = "[None,0.1]"
-    order_tag = "[0]"
-    rsd_tag = "False"
+    MASK_TAG = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"  #
+    SELECTION_TAG = "None"  # "[100.0,500.0]"  #
 
-    source_tags = list(product(("NG={}.".format(NG),), range(1, 25)))
+    SCALE_TAG = "[0.04,0.09]"
+    ORDER_TAG = "[0]"
+    RSD_TAG = "False"
+
+    source_tags = list(product(
+        [TRACER,], ["NG={}.".format(NG),], [SERIES,], range(1, 25)
+    ))
 
     # Set I/O paths.
     ## Map data.
     map_data_dir = data_dir/"raw"/"catalogue_maps"
     map_data_file = "catalogue-map-({}).npz".format(",".join([
-        "source=halos-({},z=1.)-standard-{}",
+        "source={}-({},z=1.){}-{}",
         "map=cartesian",
-        "scale={}".format(scale_tag),
-        "orders={}".format(order_tag),
-        "rsd={}".format(rsd_tag),
-        "mask={}".format(mask_tag),
-        "selection={}".format(selection_tag),
+        "scale={}".format(SCALE_TAG),
+        "orders={}".format(ORDER_TAG),
+        "rsd={}".format(RSD_TAG),
+        "mask={}".format(MASK_TAG),
+        "selection={}".format(SELECTION_TAG),
     ]))
 
     ## Survey products.
@@ -209,8 +213,7 @@ if __name__ == '__main__':
 
     mask_or_file_info = ",".join([
         "orders=[0,2,4,6,8]", "boxsize=1000.0", "expansion=70.0", "mesh=768",
-        "mask={}".format(mask_tag),
-        "selection={}".format(selection_tag),
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ])
     mask_file = "mask-({}).npy".format(mask_or_file_info)
 
@@ -218,10 +221,8 @@ if __name__ == '__main__':
 
     covariance_estimate_info = ",".join([
         "source=1-2500", "map=cartesian", "boxsize=1000.0",
-        "scale={}".format(scale_tag),
-        "orders={}".format(order_tag),
-        "mask={}".format(mask_tag),
-        "selection={}".format(selection_tag),
+        "scale={}".format(SCALE_TAG), "orders={}".format(ORDER_TAG),
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ])
     covariance_estimate_file = "covar-estimate-({}).npz".format(
         covariance_estimate_info
@@ -235,10 +236,8 @@ if __name__ == '__main__':
     output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "cartesian-model-validation-({})".format(",".join([
         "NG={}.".format(NG),
-        "scale={}".format(scale_tag),
-        "rsd={}".format(rsd_tag),
-        "mask={}".format(mask_tag),
-        "selection={}".format(selection_tag),
+        "scale={}".format(SCALE_TAG), "rsd={}".format(RSD_TAG),
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ]))
 
     # Validate Cartesian modelling.

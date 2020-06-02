@@ -375,21 +375,22 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
         likelihood_flat = likelihood.flatten()
         xy_flat = np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
         likelihood_grids.append(griddata(
-            xy_flat, likelihood_flat, (xx.T, yy.T), method='linear'
+            xy_flat, likelihood_flat, (xx.T, yy.T), method='cubic'
         ))
 
     return likelihood_grids, x_grid, y_grid
 
 
-SOURCE = "standard"
+TRACER = "halos"
+SERIES = "-cut_2"
 
 if __name__ == "__main__":
 
     MAP = "hybrid"
     NG = 0.
 
-    MASK_TAG = "1.0"  # random0_BOSS_DR12v5_CMASS_North
-    SELECTION_TAG = "None"  # [100.0,500.0]
+    MASK_TAG = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"  #
+    SELECTION_TAG = "None"  # "[100.0,500.0]"  #
 
     SCALE_TAG = "[None,0.04,0.1]"
     ORDER_TAG = "[0]"
@@ -400,7 +401,7 @@ if __name__ == "__main__":
     # Set I/O paths.
     input_dir = data_dir/"raw"/"likelihoods"
     input_file = "likelihood-({}).npz".format(",".join([
-        "source=halos-(NG={}.,z=1.)-{}-{}".format(int(NG), SOURCE, "*"),
+        "source={}-(NG={}.,z=1.){}-{}".format(TRACER, int(NG), SERIES, "*"),
         "map={}".format(MAP), "scale={}".format(SCALE_TAG),
         "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
         "rsd={}".format(RSD_TAG),
@@ -409,7 +410,7 @@ if __name__ == "__main__":
 
     output_dir = data_dir/"processed"/"likelihoods"
     output_filename = "likelihood-({})".format(",".join([
-        "source=halos-(NG={}.,z=1.)-{}".format(int(NG), SOURCE),
+        "source={}-(NG={}.,z=1.){}".format(TRACER, int(NG), SERIES),
         "map={}".format(MAP), "scale={}".format(SCALE_TAG),
         "orders={}".format(ORDER_TAG), "excl_monop={}".format(DEGREE_TAG),
         "rsd={}".format(RSD_TAG),
@@ -431,8 +432,8 @@ if __name__ == "__main__":
     # Plot constraints.
     figure, *results = plot_likelihood(
         likelihoods,
-        sample_points_x=f_nl_coords,
-        sample_points_y=b_1_coords,
+        sample_points_x=[f_nl_coords,],
+        sample_points_y=[b_1_coords,],
         label_x=r'f_{\mathrm{NL}}',
         label_y=r'b_1',
         precision_x=0,

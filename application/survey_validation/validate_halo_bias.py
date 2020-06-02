@@ -54,8 +54,8 @@ def initialise_parameters():
         help="catalogue source cosmological parameter file"
     )
     parser.add_argument(
-        '--mass-cut', type=float,
-        help="mass cut as a multiple of 10^13 solar masses"
+        '--mass-cut', type=float, default=None,
+        help="mass cut in solar masses"
     )
     parser.add_argument(
         '--boxsize', type=float, default=1000.0, help="catalogue box size"
@@ -105,9 +105,10 @@ def make_catalogue_measurements(kmin=None, kmax=None):
         headings=["x", "y", "z", "vx", "vy", "vz", "mass"],
         mean_density=progrc.density, boxsize=progrc.boxsize
     )
-    catalogue['Selection'] = np.greater_equal(
-        catalogue['mass'], progrc.mass_cut * 10**13
-    )
+    if progrc.mass_cut:
+        catalogue['Selection'] = np.greater_equal(
+            catalogue['mass'], progrc.mass_cut
+        )
 
     fftmesh = catalogue.to_mesh(Nmesh=NMESH, resampler='tsc', compensated=True)
 
@@ -161,7 +162,6 @@ KMIN = 1.e-4
 KMAX = 0.1
 Z = 1.
 TRACER_P = 1.
-CONTRAST = 10.
 NMESH = 256
 
 if __name__ == '__main__':

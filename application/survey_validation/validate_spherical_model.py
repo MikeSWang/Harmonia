@@ -49,10 +49,12 @@ def validate_fullsky_spherical_model(b_1=2.3415, f_nl=100., nbar=2.5e-4,
 
     if use_shortcut:
         fullsky_couplings = None
-        disc = DiscreteSpectrum(rmax, 'dirichlet', kmax)
+        disc = DiscreteSpectrum(RMAX, 'dirichlet', KMAX)
     else:
         fullsky_couplings = Couplings.load(
-            survey_product_dir/couplings_file.format(kmax, "1.0", "None")
+            survey_product_dir/couplings_file.format(
+                RMAX, KCUT, "1.0", "None"
+            )
         )
         disc = fullsky_couplings.disc
 
@@ -110,7 +112,9 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
     simulation_cosmo = BaseModel(cosmo_dir/cosmo_file)
 
     couplings = Couplings.load(
-        survey_product_dir/couplings_file.format(kmax, mask_tag, selection_tag)
+        survey_product_dir/couplings_file.format(
+            RMAX, KCUT, MASK_TAG, SELECTION_TAG
+        )
     )
 
     spherical_correlation_estimate = covar_to_corr(np.load(
@@ -157,7 +161,7 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
         wspace=0.4, bottom=0.175, top=0.825, left=0.05, right=0.95
     )
 
-    output_file = output_dir/output_filename.format(mask_tag, selection_tag)
+    output_file = output_dir/output_filename.format(MASK_TAG, SELECTION_TAG)
     plt.savefig(output_file.with_suffix(output_file.suffix + '.pdf'))
 
     return _ratios
@@ -171,10 +175,11 @@ if __name__ == '__main__':
 
     comm = MPI.COMM_WORLD
 
-    rmax = 500.
-    kmax = 0.04
-    mask_tag = "0.5" # "random0_BOSS_DR12v5_CMASS_North"
-    selection_tag = "None" # "[100.0,500.0]"
+    RMAX = 500.
+    KMAX = 0.04
+    KCUT = 0.04
+    MASK_TAG = "0.5"  # "random0_BOSS_DR12v5_CMASS_North"
+    SELECTION_TAG = "None"  # "[100.0,500.0]"
 
     # Set I/O paths.
     cosmo_dir = data_dir/"external"/"cosmology"
@@ -182,21 +187,21 @@ if __name__ == '__main__':
 
     survey_product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(
-        ",".join(["boxsize=1000.0", "kmax={}", "mask={}", "selection={}"])
+        ",".join(["rmax={:.1f}", "kmax={}", "mask={}", "selection={}"])
     )
 
     raw_product_dir = data_dir/"raw"/"survey_products"
     corr_estimate_file = "covar-estimate-({}).npy".format(",".join([
         "source=1-2500", "map=spherical", "boxsize=1000.0",
-        "scale=[None,{}]".format(kmax),
+        "scale=[None,{}]".format(KMAX),
         "orders=None",
-        "mask={}".format(mask_tag),
-        "selection={}".format(selection_tag),
+        "mask={}".format(MASK_TAG),
+        "selection={}".format(SELECTION_TAG),
     ]))
 
     output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "spherical-model-validation-({})".format(",".join([
-        "scale=[None,{}]".format(kmax),
+        "scale=[None,{}]".format(KMAX),
         "rsd=False", "mask={}", "selection={}"
     ]))
 

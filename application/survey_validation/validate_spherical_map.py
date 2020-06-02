@@ -40,7 +40,7 @@ def extract_map_power(map_serial_nums):
     _mode_power, _mode_coeff = [], []
     for serial_num in map_serial_nums:
         spherical_data = SphericalArray.load(
-            map_dir/map_file.format(NG, serial_num)
+            map_dir/map_file.format(TRACER, NG, SERIES, serial_num)
         )
 
         _disc = spherical_data.disc
@@ -101,7 +101,9 @@ def compare_power_spectrum():
 
     fig = plt.figure()
     plt.loglog(wavenumbers, np.mean(map_power, axis=0), label='map power')
-    plt.loglog(wavenumbers, spherical_spectrum, ls='--', label='spherical model')
+    plt.loglog(
+        wavenumbers, spherical_spectrum, ls='--', label='spherical model'
+    )
     plt.loglog(
         wavenumbers, volume_factor * cartesian_spectrum, ls=':',
         label=cartesian_model_str
@@ -114,40 +116,47 @@ def compare_power_spectrum():
 
 
 spherical_model = None
+
 if __name__ == '__main__':
 
+    TRACER = 'halos'
+    SERIES = '-cut_2'
     NG = 0
     MAP_SERIALS = range(1, 1+24)
+    BIAS = 3.55  # 3.50
+    DENSITY = 4.75e-5  # 4.91e-5
+    CONTRAST = 50.
+    KCUT = 0.04
 
-    MASK_TAG = "1.0" # "random0_BOSS_DR12v5_CMASS_North"
-    SELECTION_TAG = "None" # "[100.0,500.0]"
+    MASK_TAG = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"
+    SELECTION_TAG = "None"  # "[100.0,500.0]"
 
     # Set I/O paths.
     cosmo_file = data_dir/"external"/"cosmology"/"simulation-GadgetAHF.txt"
 
     map_dir = data_dir/"raw"/"catalogue_maps"
     map_file = "catalogue-map-({}).npz".format(",".join([
-        "source=halos-(NG={}.,z=1.)-standard-{}", "map=spherical",
+        "source={}-(NG={}.,z=1.){}-{}", "map=spherical",
         "scale=[None,0.04]", "orders=None", "rsd=False",
-        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ]))
 
     product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(",".join([
-        "boxsize=1000.0", "kmax=0.04",
-        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
+        "rmax=500.0", "kmax=0.05",
+        "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ]))
 
     output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "spherical-map-validation-({})".format(",".join([
-        "scale=[None,0.04]", "rsd=False",
+        "scale=[None,{}]".format(KCUT), "rsd=False",
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
 
     # Validate maps.
     cosmology = BaseModel(cosmo_file)
 
-    model_params = dict(b_1=2.35, f_nl=NG, nbar=2.5e-4, contrast=10.)
+    model_params = dict(b_1=BIAS, f_nl=NG, nbar=DENSITY, contrast=CONTRAST)
 
     map_power, _, disc = extract_map_power(MAP_SERIALS)
     spherical_spectrum = predict_power_spectrum()

@@ -328,7 +328,7 @@ def cartesian_moments(pivot, orders, cartesian_model,
         assert np.allclose(
             cartesian_model.attrs['wavenumbers'],
             covariance_estimator.wavenumbers,
-            rtol=0.01
+            atol=0.001
         ), (
             "The wavenumbers at which the Cartesian power multipole model "
             "is evaluated must match the wavenumbers at which "

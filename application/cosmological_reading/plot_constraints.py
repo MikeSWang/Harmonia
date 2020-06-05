@@ -290,7 +290,8 @@ def plot_2d_constraints(posteriors, x, y, fig=None, cmap=None, alpha=None,
     main_contour = _plot_contours(posterior, relative_alpha=1., zorder=2)
     patch = plt.Rectangle(
         (0., 0.), 2., 1., ls=line_style,
-        ec=None, fc=main_contour.collections[-1].get_facecolor()[0]
+        ec=None, fc=main_contour.cmap(main_contour.cmap.N), alpha=0.8,
+        # main_contour.collections[-1].get_facecolor()[0]
     )
     if scatter_plot:
         scattered_contours = []
@@ -314,11 +315,11 @@ def plot_2d_constraints(posteriors, x, y, fig=None, cmap=None, alpha=None,
         cdf_y /= cdf_y[-1]
 
         x_panel.plot(
-            x, pdf_x, c=cm(cm.N),
+            x, pdf_x, c=cm(cm.N), ls=line_style,
             alpha=relative_alpha, zorder=zorder or 1
         )
         y_panel.plot(
-            pdf_y, y, c=cm(cm.N),
+            pdf_y, y, c=cm(cm.N), ls=line_style,
             alpha=relative_alpha, zorder=zorder or 1
         )
 

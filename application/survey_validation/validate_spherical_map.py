@@ -143,13 +143,13 @@ if __name__ == '__main__':
 
     product_dir = data_dir/"processed"/"survey_products"
     couplings_file = "couplings-({}).npz".format(",".join([
-        "rmax=500.0", "kmax=0.05",
+        "rmax=500.0", "kmax={}".format(KCUT),
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG),
     ]))
 
     output_dir = data_dir/"raw"/"survey_validation"
     output_filename = "spherical-map-validation-({})".format(",".join([
-        "scale=[None,{}]".format(KCUT), "rsd=False",
+        "scale=[None,0.04]", "rsd=False",
         "mask={}".format(MASK_TAG), "selection={}".format(SELECTION_TAG)
     ]))
 

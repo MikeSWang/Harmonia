@@ -44,7 +44,7 @@ def load_map_data(map_serial_num):
 
     return SphericalArray.load(
         map_dir/"catalogue-map-({}).npz".format(",".join([
-            f"source=halos-(NG={NG}.,z=1.)-standard-{map_serial_num}",
+            f"source=halos-(NG={NG}.,z=1.){SERIES}-{map_serial_num}",
             "map=spherical", "scale=[None,0.04]", "orders=None", "rsd=False",
             f"mask={MASK_TAG}", f"selection={SELECTION_TAG}"
         ]))
@@ -71,8 +71,8 @@ def set_base_model(disc):
     product_dir = data_dir/"processed"/"survey_products"
     couplings = Couplings.load(
         product_dir/(
-            "couplings-(rmax=500.0,kmax=0.04,mask={},selection={}).npz"
-            .format(MASK_TAG, SELECTION_TAG)
+            "couplings-(rmax=500.0,kmax={},mask={},selection={}).npz"
+            .format(KCUT, MASK_TAG, SELECTION_TAG)
         )
     )
 
@@ -140,24 +140,27 @@ def likelihood_evaluation(bias, png, map_data, map_model, discard=None):
 
 
 PIVOT = 'natural'
-NBAR, CONTRAST = 2.5e-4, 10.
+SERIES = '-cut_2'
 
 if __name__ == '__main__':
 
     MAP_SERIAL_NUM = 1
 
     NG = 0
+    NBAR, CONTRAST = 4.75e-5, 50.  # 4.91e-5
+    KCUT = 0.04
     MASK_TAG = "1.0"  # "random0_BOSS_DR12v5_CMASS_North"
     SELECTION_TAG = "None"  # "[100.0,500.0]"
 
     spherical_data = load_map_data(MAP_SERIAL_NUM)
     spherical_model = set_base_model(spherical_data.disc)
 
-    bias_grid = np.flip([2., 2.5, 3.])
+    bias_grid = np.flip([3., 4., 3.])
     png_grid = [NG - 100., NG, NG + 100.]
 
     likelihood_grid = likelihood_evaluation(
-        bias_grid, png_grid, spherical_data, spherical_model
+        bias_grid, png_grid, spherical_data, spherical_model,
+        # discard=376
     )
 
     sns.heatmap(

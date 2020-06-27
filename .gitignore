@@ -71,3 +71,4 @@ venv.bak/
 
 # User customised
 storage/
+notebooks/*/*.pdf

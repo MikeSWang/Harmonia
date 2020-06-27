@@ -530,6 +530,9 @@ class SphericalCorrelator:
         keys are linked and values must be simultaneously provided.  This
         can be subsequently updated when calling
         :meth:`~.two_point_correlator` or :meth:`~.correlator_matrix`.
+    ini_shot_noise : bool, optional
+        If `True` (default), shot noise integrals are evaluated upon
+        initialisation.
     comm : :class:`mpi4py.MPI.Comm` *or None, optional*
         MPI communicator.  If `None` (default), no multiprocessing
         is invoked.
@@ -557,7 +560,8 @@ class SphericalCorrelator:
 
     def __init__(self, disc, redshift, cosmo=None, power_spectrum=None,
                  growth_rate=None, couplings=None, coupling_disc=None,
-                 survey_specs=None, cosmo_specs=None, comm=None):
+                 survey_specs=None, cosmo_specs=None, ini_shot_noise=True,
+                 comm=None):
 
         self.comm = comm
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -604,7 +608,10 @@ class SphericalCorrelator:
 
         # Compile shot noise levels and cosmology-independent angular
         # coupling sums as directories to reduce computational redundancy.
-        self._shot_noise_levels = self._compile_shot_noise_levels()
+        if ini_shot_noise:
+            self._shot_noise_levels = self._compile_shot_noise_levels()
+        else:
+            self._shot_noise_levels = None
         if self.couplings is None:
             self._angular_sums = None
         else:
@@ -1110,6 +1117,9 @@ class SphericalCorrelator:
     def _get_shot_noise_level(self, mu, nu):
 
         try:
+            return self._shot_noise_levels[mu, nu]
+        except TypeError:  # if initialised with ``ini_shot_noise=False``
+            self._shot_noise_levels = self._compile_shot_noise_levels()
             return self._shot_noise_levels[mu, nu]
         except KeyError:  # use Hermitian conjugate if unavailable
             return self._shot_noise_levels[nu, mu]

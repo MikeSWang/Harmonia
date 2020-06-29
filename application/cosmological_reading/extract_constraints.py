@@ -27,7 +27,12 @@ except ImportError:
     from application import confirm_directory, overwrite_protection
     from application import data_dir, harmony
 
-from plot_constraints import plot_1d_constraints, plot_2d_constraints
+try:
+    from plot_constraints import plot_1d_constraints, plot_2d_constraints
+except (ImportError, ModuleNotFoundError):
+    from application.cosmological_reading.plot_constraints import (
+        plot_1d_constraints, plot_2d_constraints
+    )
 
 sns.set(style='ticks', font='serif')
 plt.style.use(harmony)
@@ -106,7 +111,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
     """
     # pylint: disable=redefined-argument-from-local
 
-    LS = iter(['-', '--', '-.'])
+    LS = iter(['--', '-', '-.'])
 
     # Check likelihood dimensions and restructure input arrays.
     likelihood_sets, ndim = [], []
@@ -199,7 +204,7 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         # pylint: disable=global-statement
         global legend_state
         if fig is None:
-            fig = plt.figure(figsize=(5, 5))
+            fig = plt.figure(figsize=(3.2, 3.2))
             main_panel = plt.subplot2grid(
                 (4, 4), (1, 0), rowspan=3, colspan=3
             )
@@ -238,9 +243,9 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
 
         if truth_x is not None:
-            main_panel.axvline(truth_x, c='k', ls='--', zorder=3)
+            main_panel.axvline(truth_x, c='0.33', ls=':', zorder=3)
         if truth_y is not None:
-            main_panel.axhline(truth_y, c='k', ls='--', zorder=3)
+            main_panel.axhline(truth_y, c='0.33', ls=':', zorder=3)
 
         main_panel.set_xlim(
             min(map(np.min, sample_points_xs)),
@@ -254,7 +259,9 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
         main_panel.set_ylabel(r'${}$'.format(label_y))
 
         if labels != [None] * len(args):
-            main_panel.legend(*legend_state, handlelength=1.6)
+            main_panel.legend(
+                *legend_state, handlelength=1.6, fontsize='medium'
+            )
         x_panel.legend(loc='upper left')
         y_panel.legend(loc='upper left')
 
@@ -457,7 +464,9 @@ if __name__ == "__main__":
         # estimate='maximum',
         # aggregate=True,
         truth_x=NG,
-        scatter_plot=True,
+        scatter_plot=False,
+        cmap=['Reds', 'Blues',],
+        label=['standard', 'hybrid',]  # r'high-$k$', r'low-$k$',
     )
     # pylint: disable=using-constant-test
     if False:

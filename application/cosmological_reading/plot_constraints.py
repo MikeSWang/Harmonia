@@ -152,6 +152,7 @@ def plot_1d_constraints(posteriors, x, fig=None, label='', colour=None,
     return fig, estimate
 
 
+# pylint: disable=unused-argument
 def plot_2d_constraints(posteriors, x, y, fig=None, cmap=None, alpha=None,
                         x_label=None, y_label=None, x_range=None, y_range=None,
                         aggregation='average', estimation=None,
@@ -339,8 +340,8 @@ def plot_2d_constraints(posteriors, x, y, fig=None, cmap=None, alpha=None,
             x_fit, x_lower, x_upper = x[[x_fit_idx, x_lower_idx, x_upper_idx]]
             y_fit, y_lower, y_upper = y[[y_fit_idx, y_lower_idx, y_upper_idx]]
 
-            dx_lower, dx_upper = x_fit - x_lower, x_upper - x_fit
-            dy_lower, dy_upper = y_fit - y_lower, y_upper - y_fit
+            # dx_lower, dx_upper = x_fit - x_lower, x_upper - x_fit
+            # dy_lower, dy_upper = y_fit - y_lower, y_upper - y_fit
 
             # if x_precision is None:
             #     x_fit_disp, dx_lower_disp, dx_upper_disp = \

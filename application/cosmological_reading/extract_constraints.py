@@ -241,7 +241,6 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
             legend_state[0].append(patch)
             legend_state[1].append(label)
 
-
         if truth_x is not None:
             main_panel.axvline(truth_x, c='0.33', ls=':', zorder=3)
         if truth_y is not None:
@@ -260,7 +259,9 @@ def plot_likelihood(*args, sample_points_x=None, sample_points_y=None,
 
         if labels != [None] * len(args):
             main_panel.legend(
-                *legend_state, handlelength=1.6, fontsize='medium'
+                *legend_state, fontsize='medium',
+                handlelength=1.6, handletextpad=0.5,
+                frameon=True, framealpha=0.67, edgecolor='none'
             )
         x_panel.legend(loc='upper left')
         y_panel.legend(loc='upper left')
@@ -331,7 +332,8 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
     if load:
         # Load collated likelihood data from file.
         loaded_data = np.load(
-            output_file.with_suffix(output_file.suffix + '.npz')
+            output_file.with_suffix(output_file.suffix + '.npz'),
+            allow_pickle=True
         )
         collated_data = {
             data_name: loaded_data[data_name]
@@ -349,7 +351,7 @@ def aggregate_likelihood_results(constituent='all', load=False, export=False,
 
         collated_data = defaultdict(list)
         for matched_file in matched_files:
-            matched_file_data = np.load(matched_file)
+            matched_file_data = np.load(matched_file, allow_pickle=True)
             for data_name in matched_file_data.files:
                 collated_data[data_name].append(matched_file_data[data_name])
 
@@ -444,8 +446,8 @@ if __name__ == "__main__":
     confirm_directory(output_dir)
 
     # Aggregate likelihood results.
-    f_nl_grid = np.linspace(-300, 300, num=1201)
-    b_1_grid = np.linspace(2.1, 2.6, num=201)
+    f_nl_grid = np.linspace(-250, 250, num=1001)
+    b_1_grid = np.linspace(3.2, 4.0, num=161)
 
     likelihoods, f_nl_coords, b_1_coords = aggregate_likelihood_results(
         constituent='all', x_name='f_nl', y_name='b_1',

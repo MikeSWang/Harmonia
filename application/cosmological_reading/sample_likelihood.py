@@ -241,7 +241,8 @@ def setup_likelihood():
 
         if params.mask_multipole_file is not None:
             mask_multipoles = np.load(
-                survey_product_dir/params.mask_multipole_file
+                survey_product_dir/params.mask_multipole_file,
+                allow_pickle=True
             )
         else:
             mask_multipoles = None

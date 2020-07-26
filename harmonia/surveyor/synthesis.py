@@ -539,7 +539,7 @@ class CovarianceEstimator:
             Input file path.
 
         """
-        state_data = np.load(input_file)
+        state_data = np.load(input_file, allow_pickle=True)
 
         state = {}
         for attr in state_data.files:

@@ -118,7 +118,7 @@ def validate_spherical_correlator_model(b_1=1., f_nl=0., nbar=2.5e-4,
     )
 
     spherical_correlation_estimate = covar_to_corr(np.load(
-        raw_product_dir/corr_estimate_file
+        raw_product_dir/corr_estimate_file, allow_pickle=True
     ))
 
     # Spherical model.

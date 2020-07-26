@@ -79,7 +79,7 @@ def compare_with_cartesian_model(wavenumbers, multipole_data):
     """
     simulation_cosmo = BaseModel(cosmo_dir/cosmo_file)
 
-    mask_multipoles = np.load(survey_product_dir/mask_file)
+    mask_multipoles = np.load(survey_product_dir/mask_file, allow_pickle=True)
 
     window_multipoles = CartesianArray.load(
         survey_product_dir/window_file

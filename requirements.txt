@@ -1,0 +1,7 @@
+numpy
+scipy
+mpi4py
+astropy
+healpy
+nbodykit
+tqdm

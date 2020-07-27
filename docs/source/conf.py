@@ -66,6 +66,7 @@ htmlhelp_basename = 'Harmonia_doc'
 # -- Extension configuration -------------------------------------------------
 
 autodoc_member_order = 'bysource'
+autodoc_mock_imports = ["nbodykit"]
 autosummary_generate = True
 
 napoleon_include_special_with_doc = True
@@ -75,8 +76,8 @@ napoleon_use_ivar = True
 
 intersphinx_mapping = {
     'python': ("https://docs.python.org/3", None),
-    'pytest': ("http://docs.pytest.org/en/latest/", None),
-    'numpy': ("https://docs.scipy.org/doc/numpy", None),
+    'pytest': ("https://docs.pytest.org/en/latest/", None),
+    'numpy': ("https://numpy.org/doc/stable/", None),
     'scipy': ("https://docs.scipy.org/doc/scipy/reference", None),
     'matplotlib': ("https://matplotlib.org", None),
     'mpi4py': ("https://mpi4py.readthedocs.io/en/latest", None),

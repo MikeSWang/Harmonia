@@ -226,8 +226,7 @@ def modified_student_pdf(data_vector, expectation_vector, covariance_matrix,
 
     dim = np.size(data_vector)
 
-    log_normalisation = \
-        + dim / 2. * np.log((degree - 1) * np.pi) \
+    log_normalisation = dim / 2. * np.log((degree - 1) * np.pi) \
         + loggamma((degree - dim) / 2.) \
         - loggamma(degree / 2.)
 

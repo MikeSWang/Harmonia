@@ -15,6 +15,7 @@ Handle the survey coordinate systems.
 |
 
 """
+# pylint: disable=assignment-from-no-return
 import warnings
 from functools import wraps
 

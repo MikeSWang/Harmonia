@@ -6,13 +6,20 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+develop-eggs/
 dist/
 downloads/
+eggs/
+.eggs/
+*.egg
+*.egg-info/
+.installed.cfg
 lib/
 lib64/
+parts/
+sdist/
 var/
-.installed.cfg
-MANIFEST
+wheels/
 
 # PyInstaller
 *.manifest
@@ -70,6 +77,5 @@ venv.bak/
 .vscode/
 
 # User customised
-storage/
-notebooks/*/*.txt
-notebooks/*/*.pdf
+application/storage/
+application/publication/**/*.pdf

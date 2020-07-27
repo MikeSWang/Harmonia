@@ -83,10 +83,10 @@ import logging
 import warnings
 
 import numpy as np
-from mcfit import P2xi, xi2P
-from nbodykit.lab import cosmology
 from scipy.integrate import IntegrationWarning
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
+from mcfit import P2xi, xi2P
+from nbodykit.lab import cosmology
 
 from harmonia.algorithms.arrays import CartesianArray, SphericalArray
 from harmonia.algorithms.integration import radial_integral

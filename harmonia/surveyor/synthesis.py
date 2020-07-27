@@ -21,9 +21,9 @@ import warnings
 
 import numpy as np
 import psutil
+from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 from mcfit import P2xi
 from nbodykit.lab import FKPCatalog
-from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from harmonia.algorithms.arrays import CartesianArray
 from harmonia.mapper.catalogue_maker import (

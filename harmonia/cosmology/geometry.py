@@ -48,6 +48,7 @@ def redshift_from_distance(cosmo, lg_num_sample=5):
     return Spline(r_samples, z_samples, ext='raise')
 
 
+# pylint: disable=assignment-from-no-return
 def differential_AP_distortion(fiducial_z_to_r, variable_z_to_r,
                                max_redshift=10., lg_num_sample=5):
     """Compute the differential Alcock--Paczynski distortion between a

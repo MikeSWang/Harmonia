@@ -38,7 +38,7 @@ pip install harmonia
 API documentation can be found at [mikeswang.github.io/Harmonia](
 https://mikeswang.github.io/Harmonia).  Tutorials (in the format of
 notebooks) will be gradually added in the future; for now, scripts in
-[``application/``](../application/) may offer illustrative examples of
+[``application/``](application/) may offer illustrative examples of
 how to use <span style="font-variant: small-caps">HorizonGRound</span>.
 
 

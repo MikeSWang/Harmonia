@@ -1,0 +1,20 @@
+name: harmonia-docs
+
+channels:
+    - defaults
+    - astropy
+    - bccp
+
+dependencies:
+    - python=3.6
+    - numpy
+    - scipy
+    - astropy
+    - healpy
+    - nbodykit
+    - IPython
+    - sphinx
+    - pip
+    - pip:
+        - numpydoc
+        - nbsphinx

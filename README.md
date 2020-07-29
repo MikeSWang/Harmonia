@@ -17,7 +17,7 @@ https://img.shields.io/badge/licence-GPLv3-informational
 )](https://github.com/mikeswang/Harmonia/tree/master/LICENCE)
 
 
-# Hybrid-Basis Inference of Large-Scale Galaxy Clustering
+# Hybrid-Basis Inference for Large-Scale Galaxy Clustering
 
 <span style="font-variant: small-caps">Harmonia</span> is a Python package
 that combines clustering statistics decomposed in spherical and Cartesian
@@ -26,7 +26,12 @@ Fourier bases for large-scale galaxy clustering likelihood analysis.
 
 ## Installation
 
-The simplest installation method is  ``pip``:
+We recommend that you first install ``nbodykit`` by following these
+[instructions](
+https://nbodykit.readthedocs.io/en/latest/getting-started/install.html).
+
+After that, you can install
+<span style="font-variant: small-caps">Harmonia</span> simply using ``pip``:
 
 ```bash
 pip install harmonia

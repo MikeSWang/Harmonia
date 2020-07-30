@@ -20,9 +20,7 @@ setuptools.setup(
     author="Mike S Wang",
     author_email="mike.wang@port.ac.uk",
     license="GPLv3",
-    description=(
-        "Hybrid-basis Fourier analysis of large-scale galaxy clustering."
-    ),
+    description="Hybrid-basis inference for large-scale galaxy clustering.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/MikeSWang/Harmonia/",

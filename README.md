@@ -60,7 +60,7 @@ following BibTeX record.
 
     @article{Wang_2020b,
         author={Wang, M.~S. and Avila, S. and Bianchi, D. and Crittenden, R. and Percival, W.~J.},
-        title={Hybrid-basis inference for large-scale galaxy clustering: combining spherical and Cartesian {Fourier} analyses},
+        title={Hybrid-basis inference for large-scale galaxy clustering: combining spherical and {Cartesian} {Fourier} analyses},
         year={2020},
         eprint={2007.14962},
         archivePrefix={arXiv},

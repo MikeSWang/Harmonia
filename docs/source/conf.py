@@ -6,17 +6,15 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
-author = 'Mike S Wang'
-copyright = '2020, M S Wang'
+author = 'Mike Shengbo Wang'
+copyright = ' Copyright 2020, Mike Shengbo Wang'
 project = 'Harmonia'
 release = '0.1'
 
 
 # -- General configuration ---------------------------------------------------
 
-source_suffix = ['.rst', '.txt', '.md']
-
-master_doc = 'harmonia'
+exclude_patterns = ['setup', 'config', 'tests', 'application', 'scripts']
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -28,30 +26,21 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'nbsphinx',
 ]
 
-templates_path = ['_templates']
+master_doc = 'index'
 
 pygments_style = 'sphinx'
 
-language = None
+source_suffix = ['.rst', '.txt', '.md']
 
-exclude_patterns = ['tests']
+templates_path = ['_templates']
 
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = 'alabaster'
-
-html_theme_options = {
-    'page_width': '1150px',
-    'sidebar_width': '250px',
-    'fixed_sidebar' : True,
-    'github_user': 'MikeSWang',
-    'github_repo': 'Harmonia',
-}
-
-html_static_path = ['_static']
+htmlhelp_basename = 'Harmonia_doc'
 
 html_logo = '_static/Harmonia.png'
 
@@ -60,7 +49,17 @@ html_sidebars = {
     'using/windows': ['windowssidebar.html', 'searchbox.html'],
 }
 
-htmlhelp_basename = 'Harmonia_doc'
+html_static_path = ['_static']
+
+html_theme = 'alabaster'
+
+html_theme_options = {
+    'fixed_sidebar' : True,
+    'github_repo': 'Harmonia',
+    'github_user': 'MikeSWang',
+    'page_width': '1150px',
+    'sidebar_width': '250px',
+}
 
 
 # -- Extension configuration -------------------------------------------------
@@ -69,20 +68,21 @@ autodoc_member_order = 'bysource'
 autodoc_mock_imports = ["nbodykit"]
 autosummary_generate = True
 
-napoleon_include_special_with_doc = True
-napoleon_google_docstring = False
-napoleon_use_param = False
-napoleon_use_ivar = True
-
 intersphinx_mapping = {
     'python': ("https://docs.python.org/3", None),
     'pytest': ("https://docs.pytest.org/en/latest/", None),
+    'mpmath': ("http://mpmath.org/doc/1.1.0/", None),
     'numpy': ("https://numpy.org/doc/stable/", None),
     'scipy': ("https://docs.scipy.org/doc/scipy/reference", None),
     'matplotlib': ("https://matplotlib.org", None),
     'mpi4py': ("https://mpi4py.readthedocs.io/en/latest", None),
-    'mpmath': ("http://mpmath.org/doc/1.1.0/", None),
+    'astropy': ('https://docs.astropy.org/en/stable/', None),
     'nbodykit': ("https://nbodykit.readthedocs.io/en/latest", None),
 }
+
+napoleon_include_special_with_doc = True
+napoleon_google_docstring = False
+napoleon_use_param = False
+napoleon_use_ivar = True
 
 todo_include_todos = True

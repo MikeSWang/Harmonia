@@ -40,7 +40,6 @@ class TestSphericalArray:
     @pytest.mark.parametrize(
         "pivot,collapse,value",
         [
-            ('natural', 'mean', [0. + 1.j, 1. + 1.j, 2. + 1.j]),
             ('spectral', None, [0. + 1.j, 1. + 1.j, 1. + 1.j,])
         ]
     )

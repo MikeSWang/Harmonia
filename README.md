@@ -1,11 +1,11 @@
 ![Harmonia](https://github.com/MikeSWang/Harmonia/raw/master/docs/source/_static/Harmonia.png)
 
 [![arXiv eprint](
-https://img.shields.io/badge/arXiv-200y.xxxxx-important
-)](https://arxiv.org/abs/200y.xxxxx)
+https://img.shields.io/badge/arXiv-2007.14962-important
+)](https://arxiv.org/abs/2007.14962)
 [![GitHub release (latest by date)](
 https://img.shields.io/github/v/release/MikeSWang/Harmonia?label=release
-)](https://github.com/MikeSWang/HorizonGRound/releases/latest)
+)](https://github.com/MikeSWang/Harmonia/releases/latest)
 [![Documentation status](
 https://readthedocs.org/projects/harmonia/badge/?version=latest
 )](https://harmonia.readthedocs.io/en/latest)
@@ -37,29 +37,34 @@ After that, you can install
 pip install harmoniacosmo
 ```
 
+Note that only here does the name "harmoniacosmo" appear because
+unfortunately on PyPI the project name "harmonia" has already been taken.
+
 
 ## Documentation
 
 API documentation can be found at [mikeswang.github.io/Harmonia](
 https://mikeswang.github.io/Harmonia).  Tutorials (in the format of
 notebooks) will be gradually added in the future; for now, scripts in
-[``application/``](application/) may offer illustrative examples of
-how to use <span style="font-variant: small-caps">HorizonGRound</span>.
+[``application/``](
+https://github.com/MikeSWang/Harmonia/tree/master/application) may offer
+illustrative examples of how to use
+<span style="font-variant: small-caps">Harmonia</span>.
 
 
 ## Attribution
 
 If you would like to acknowledge this work, please cite
-[Wang et al. (2020)](https://arxiv.org/abs/200y.xxxxx). You may use the
+[Wang et al. (2020)](https://arxiv.org/abs/2007.14962). You may use the
 following BibTeX record.
 
-    @article{Wang_2020a,
-        author={Wang, M.~S. and \'{A}vila, S. and Bianchi, D. and Crittenden, C. and Percival, W.~J.},
-        title={Hybrid-basis inference of large-scale galaxy clustering},
+    @article{Wang_2020b,
+        author={Wang, M.~S. and Avila, S. and Bianchi, D. and Crittenden, R. and Percival, W.~J.},
+        title={Hybrid-basis inference for large-scale galaxy clustering: combining spherical and Cartesian {Fourier} analyses},
         year={2020},
+        eprint={2007.14962},
         archivePrefix={arXiv},
         primaryClass={astro-ph.CO},
-        eprint={200y.xxxxx},
     }
 
 

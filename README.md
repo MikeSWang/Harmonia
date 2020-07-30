@@ -34,7 +34,7 @@ After that, you can install
 <span style="font-variant: small-caps">Harmonia</span> simply using ``pip``:
 
 ```bash
-pip install harmonia
+pip install harmoniacosmo
 ```
 
 

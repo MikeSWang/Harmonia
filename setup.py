@@ -15,7 +15,7 @@ with open("version.txt", 'r') as version_info:
         branch = version_tag
 
 setuptools.setup(
-    name="Harmonia",
+    name="HarmoniaCosmo",
     version=version,
     author="Mike S Wang",
     author_email="mike.wang@port.ac.uk",

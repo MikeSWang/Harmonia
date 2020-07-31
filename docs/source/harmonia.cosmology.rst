@@ -1,15 +1,9 @@
-harmonia.cosmology
-==================
-
 .. automodule:: harmonia.cosmology
    :members:
    :undoc-members:
    :show-inheritance:
 
-Modules
--------
-.. toctree::
+   .. toctree::
 
-   harmonia.cosmology.geometry
-   harmonia.cosmology.scale_dependence
-
+      harmonia.cosmology.geometry
+      harmonia.cosmology.scale_dependence

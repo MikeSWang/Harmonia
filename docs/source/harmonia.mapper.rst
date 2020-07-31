@@ -1,15 +1,9 @@
-harmonia.mapper
-===============
-
 .. automodule:: harmonia.mapper
    :members:
    :undoc-members:
    :show-inheritance:
 
-Modules
--------
-.. toctree::
+   .. toctree::
 
-   harmonia.mapper.catalogue_maker
-   harmonia.mapper.map_transform
-
+      harmonia.mapper.catalogue_maker
+      harmonia.mapper.map_transform

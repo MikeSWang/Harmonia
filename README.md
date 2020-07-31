@@ -26,8 +26,9 @@ Fourier bases for large-scale galaxy clustering likelihood analysis.
 
 ## Installation
 
-We recommend that you first install ``nbodykit`` by following these
-[instructions](
+We recommend that you first install
+[``nbodykit``](https://nbodykit.readthedocs.io/en/latest/) by following
+these [instructions](
 https://nbodykit.readthedocs.io/en/latest/getting-started/install.html).
 
 After that, you can install

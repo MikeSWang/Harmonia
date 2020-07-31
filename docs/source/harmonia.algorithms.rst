@@ -1,7 +1,6 @@
 .. automodule:: harmonia.algorithms
    :members:
    :undoc-members:
-   :show-inheritance:
 
    .. toctree::
 

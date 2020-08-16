@@ -16,13 +16,17 @@ modification kernel
 
     .. math::
 
-        A(k,z) = 1.27 \left( \frac{H_0}{\mathrm{c}} \right)^2
+        A(k,z) = 1.27 \left( \frac{H_0}{c} \right)^2
             \frac{3\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z) T(k)}
 
 relates to the cosmological model and its growth factor :math:`D(z)`
 (normalised to unity at the current epoch; hence the numerical factor
 1.27) and transfer function :math:`T(k)` (normalised to unity as
-:math:`k \to 0`).
+:math:`k \to 0`).  Here :math:`H_0` is the Hubble parameter :math:`H(z)`
+(in km s\ :sup:`-1` Mpc\ :sup:`-1`) at the current epoch :math:`z = 0`,
+:math:`c` the speed of light, :math:`\varOmega_\mathrm{m,0}` the matter
+density parameter at the current epoch, and :math:`\delta_\mathrm{c}` the
+critical over-density in spherical gravitational collapse.
 
 .. autosummary::
 

@@ -16,8 +16,9 @@ modification kernel
 
     .. math::
 
-        A(k,z) = 1.27 \left( \frac{H_0}{c} \right)^2
-            \frac{3\Omega_\textrm{m,0} \delta_\textrm{c}}{k^2 D(z) T(k)}
+        A(k,z) = 1.27 \left( \frac{H_0}{c} \right)^2 \frac{
+            3\varOmega_\textrm{m,0} \delta_\textrm{c}
+        }{k^2 D(z) T(k)}
 
 relates to the cosmological model and its growth factor :math:`D(z)`
 (normalised to unity at the current epoch; hence the numerical factor

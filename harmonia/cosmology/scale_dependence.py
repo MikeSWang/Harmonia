@@ -16,13 +16,13 @@ modification kernel
 
     .. math::
 
-        A(k,z) = 1.27 \left( \frac{H_0}{c} \right)^2 \frac{
+        A(k,z) = 1.3 \left( \frac{H_0}{c} \right)^2 \frac{
             3\varOmega_\textrm{m,0} \delta_\textrm{c}
         }{k^2 D(z) T(k)}
 
 relates to the cosmological model and its growth factor :math:`D(z)`
 (normalised to unity at the current epoch; hence the numerical factor
-1.27) and transfer function :math:`T(k)` (normalised to unity as
+1.3) and transfer function :math:`T(k)` (normalised to unity as
 :math:`k \to 0`).  Here :math:`H_0` is the Hubble parameter :math:`H(z)`
 (in km s\ :sup:`-1` Mpc\ :sup:`-1`) at the current epoch :math:`z = 0`,
 :math:`c` the speed of light, :math:`\varOmega_\mathrm{m,0}` the matter
@@ -63,7 +63,7 @@ def scale_dependence_modification(cosmo, redshift):
     """
     SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY = 1.686
     SPEED_OF_LIGHT_IN_KM_PER_S = c.to('km/s').value
-    GROWTH_FACTOR_NORMALISATION = 1.27
+    GROWTH_FACTOR_NORMALISATION = 1.3
 
     num_factors = GROWTH_FACTOR_NORMALISATION \
         * 3 * cosmo.Omega0_m * SPHERICAL_COLLAPSE_CRITICAL_OVERDENSITY \

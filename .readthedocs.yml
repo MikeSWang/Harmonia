@@ -1,10 +1,18 @@
-name: harmonia-docs
+version: 2
 
-type: sphinx
+build:
+  os: ubuntu-22.04
+  tools:
+    python: '3.8'
+
+sphinx:
+  configuration: docs/source/conf.py
 
 conda:
-    file: docs/.environment.yml
+  environment: docs/.environment.yml
 
 python:
-    version: 3.6
-    setup_py_install: true
+  install:
+    - method: pip
+      path: .
+  system_packages: true

@@ -1,20 +1,19 @@
 name: harmonia-docs
 
 channels:
-    - defaults
-    - astropy
+    - conda-forge
     - bccp
+    - defaults
 
 dependencies:
-    - python=3.6
+    - python=3.8
     - numpy
     - scipy
     - astropy
     - healpy
     - nbodykit
-    - IPython
-    - sphinx
     - pip
-    - pip:
-        - numpydoc
-        - nbsphinx
+    - sphinx
+    - IPython
+    - numpydoc
+    - nbsphinx
